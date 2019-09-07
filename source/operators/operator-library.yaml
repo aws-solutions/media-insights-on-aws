@@ -1,0 +1,1531 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Media Insight Engine - Operator library"
+
+Mappings:
+  SourceCode:
+    General:
+      S3Bucket: "%%BUCKET_NAME%%"
+      KeyPrefix: "media-insights-solution/%%VERSION%%/code"
+
+Parameters:
+  DataPlaneEndpoint:
+    Type: "String"
+    Description: "Name of the dataplane handler lambda function"
+  DataPlaneBucket:
+    Type: "String"
+    Description: "Bucket for the dataplane"
+  DataPlaneHandlerArn:
+    Type: "String"
+    Description: "Arn of dataplane lambda handler"
+
+  WorkflowCustomResourceArn:
+    Type: String
+    Description: "ARN of the Media insights custom resource that handles creating operations, stages and workflows"
+
+  MediaInsightsEnginePython37Layer:
+    Type: String
+    Description: "ARN of the Media insights lambda layer that contains basic python dependencies for boto3, chalice, control plane and dataplane"
+
+Resources:
+  # SNS topic for storing the output of async Rekognition jobs:
+  snsRekognitionTopic:
+    Type: "AWS::SNS::Topic"
+    Properties:
+      DisplayName: "SNS Role for Rekognition"
+
+  # IAM Roles:
+
+  mediaConvertS3Role:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "mediaconvert.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Policies:
+        - PolicyName: "MediaconvertAllowS3"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  - "s3:GetObject"
+                  - "s3:PutObject"
+                Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
+                Effect: "Allow"
+
+  mediaConvertLambdaRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action: "sts:AssumeRole"
+            Effect: "Allow"
+            Principal:
+              Service: "lambda.amazonaws.com"
+      Policies:
+        - PolicyName: "MediaConvertLambdaAccess"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  [
+                    "mediaconvert:GetJob",
+                    "mediaconvert:ListJobs",
+                    "mediaconvert:DescribeEndpoints",
+                    "mediaconvert:CreateJob"
+                  ]
+                Resource: "*"
+                Effect: "Allow"
+              - Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: "arn:aws:logs:*:*:*:*"
+                Effect: "Allow"
+              - Action:
+                  - "iam:PassRole"
+                Resource: !GetAtt "mediaConvertS3Role.Arn"
+                Effect: "Allow"
+              - Action:
+                  - "s3:GetObject"
+                  - "s3:PutObject"
+                Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
+                Effect: "Allow"
+              - Action: "lambda:InvokeFunction"
+                Resource: !Ref DataPlaneHandlerArn
+                Effect: "Allow"
+
+  transcribeRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action: "sts:AssumeRole"
+            Effect: "Allow"
+            Principal:
+              Service: "lambda.amazonaws.com"
+      Policies:
+        - PolicyName: "TranscribeAccess"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  [
+                    "transcribe:GetVocabulary",
+                    "transcribe:GetTranscriptionJob",
+                    "transcribe:CreateVocabulary",
+                    "transcribe:StartStreamTranscription",
+                    "transcribe:StartTranscriptionJob",
+                    "transcribe:UpdateVocabulary",
+                    "transcribe:ListTranscriptionJobs",
+                    "transcribe:ListVocabularies"
+                  ]
+                Resource: "*"
+                Effect: "Allow"
+              - Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: "arn:aws:logs:*:*:*:*"
+                Effect: Allow
+              - Action:
+                  - "s3:GetObject"
+                  - "s3:PutObject"
+                Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
+                Effect: "Allow"
+              - Action: "lambda:InvokeFunction"
+                Resource: !Ref DataPlaneHandlerArn
+                Effect: "Allow"
+
+  captionsRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action: "sts:AssumeRole"
+            Effect: "Allow"
+            Principal:
+              Service: "lambda.amazonaws.com"
+      Policies:
+        - PolicyName: "CaptionsAccess"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: "arn:aws:logs:*:*:*:*"
+                Effect: Allow
+              - Action:
+                  - "s3:GetObject"
+                  - "s3:PutObject"
+                Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
+                Effect: "Allow"
+              - Action: "lambda:InvokeFunction"
+                Resource: !Ref DataPlaneHandlerArn
+                Effect: "Allow"
+
+  translateRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action: "sts:AssumeRole"
+            Effect: "Allow"
+            Principal:
+              Service: "lambda.amazonaws.com"
+      Policies:
+        - PolicyName: "TranslateAccess"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action: [
+                "translate:GetTerminology",
+                "translate:ListTerminologies",
+                "translate:ImportTerminology",
+                "translate:TranslateText"
+              ]
+                Resource: "*"
+                Effect: "Allow"
+              - Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: "arn:aws:logs:*:*:*:*"
+                Effect: Allow
+              - Action:
+                  - "s3:GetObject"
+                  - "s3:PutObject"
+                Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
+                Effect: "Allow"
+              - Action: "lambda:InvokeFunction"
+                Resource: !Ref DataPlaneHandlerArn
+                Effect: "Allow"
+
+  pollyRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action: "sts:AssumeRole"
+            Effect: "Allow"
+            Principal:
+              Service: "lambda.amazonaws.com"
+          - Action: "sts:AssumeRole"
+            Effect: "Allow"
+            Principal:
+              Service: "comprehend.amazonaws.com"
+      Policies:
+        - PolicyName: "PollyAccess"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  [
+                    "polly:SynthesizeSpeech",
+                    "polly:StartSpeechSynthesisTask",
+                    "polly:ListLexicons",
+                    "polly:GetSpeechSynthesisTask",
+                    "polly:ListSpeechSynthesisTasks",
+                    "comprehend:DetectDominantLanguage",
+                    "polly:GetLexicon",
+                    "polly:DescribeVoices"
+                  ]
+                Resource: "*"
+                Effect: "Allow"
+              - Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: "arn:aws:logs:*:*:*:*"
+                Effect: Allow
+              - Action:
+                  - "s3:GetObject"
+                  - "s3:PutObject"
+                Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
+                Effect: "Allow"
+              - Action:
+                  - "comprehend:DetectDominantLanguage"
+                Resource: "*"
+                Effect: "Allow"
+              - Action: "lambda:InvokeFunction"
+                Resource: !Ref DataPlaneHandlerArn
+                Effect: "Allow"
+
+  comprehendS3Role:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "comprehend.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Policies:
+        - PolicyName: "ComprehendAllowS3"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  - "s3:GetObject"
+                  - "s3:PutObject"
+                Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
+                Effect: "Allow"
+              - Action:
+                  - "s3:ListBucket"
+                Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}"
+                Effect: "Allow"
+
+  comprehendRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action: "sts:AssumeRole"
+            Effect: "Allow"
+            Principal:
+              Service: "lambda.amazonaws.com"
+      Policies:
+        - PolicyName: "comprehendAccess"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  - iam:PassRole
+                Resource: !GetAtt "comprehendS3Role.Arn"
+                Effect: "Allow"
+              - Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: "arn:aws:logs:*:*:*:*"
+                Effect: "Allow"
+              - Action:
+                  - "s3:GetObject"
+                  - "s3:PutObject"
+                Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
+                Effect: "Allow"
+              - Action:
+                  [
+                    "comprehend:StartEntitiesDetectionJob",
+                    "comprehend:DetectSentiment",
+                    "comprehend:DescribeEntityRecognizer",
+                    "comprehend:ListTopicsDetectionJobs",
+                    "comprehend:DescribeDominantLanguageDetectionJob",
+                    "comprehend:StopTrainingEntityRecognizer",
+                    "comprehend:DescribeDocumentClassificationJob",
+                    "comprehend:StopSentimentDetectionJob",
+                    "comprehend:StartDominantLanguageDetectionJob",
+                    "comprehend:StartTopicsDetectionJob",
+                    "comprehend:DetectDominantLanguage",
+                    "comprehend:CreateDocumentClassifier",
+                    "comprehend:ListEntityRecognizers",
+                    "iam:PassRole",
+                    "comprehend:ListSentimentDetectionJobs",
+                    "comprehend:BatchDetectSyntax",
+                    "comprehend:StartSentimentDetectionJob",
+                    "comprehend:ListDominantLanguageDetectionJobs",
+                    "comprehend:ListDocumentClassifiers",
+                    "comprehend:DescribeKeyPhrasesDetectionJob",
+                    "comprehend:CreateEntityRecognizer",
+                    "comprehend:ListKeyPhrasesDetectionJobs",
+                    "comprehend:DescribeSentimentDetectionJob",
+                    "comprehend:DescribeTopicsDetectionJob",
+                    "comprehend:StopDominantLanguageDetectionJob",
+                    "comprehend:BatchDetectSentiment",
+                    "comprehend:StartKeyPhrasesDetectionJob",
+                    "comprehend:BatchDetectEntities",
+                    "comprehend:BatchDetectKeyPhrases",
+                    "comprehend:ListEntitiesDetectionJobs",
+                    "comprehend:StopKeyPhrasesDetectionJob",
+                    "comprehend:ListDocumentClassificationJobs",
+                    "comprehend:DetectSyntax",
+                    "comprehend:DescribeEntitiesDetectionJob",
+                    "comprehend:StopTrainingDocumentClassifier",
+                    "comprehend:ListTagsForResource",
+                    "comprehend:DescribeDocumentClassifier",
+                    "comprehend:StopEntitiesDetectionJob",
+                    "comprehend:BatchDetectDominantLanguage",
+                    "comprehend:StartDocumentClassificationJob",
+                    "comprehend:DetectEntities",
+                    "comprehend:DetectKeyPhrases"
+                  ]
+                Resource: "*"
+                Effect: "Allow"
+              - Action: "lambda:InvokeFunction"
+                Resource: !Ref DataPlaneHandlerArn
+                Effect: "Allow"
+
+  rekognitionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      ManagedPolicyArns:
+        # TODO: Security - Scope this down
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonSNSFullAccess
+        - arn:aws:iam::aws:policy/AmazonRekognitionFullAccess
+        - arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
+        - arn:aws:iam::aws:policy/AmazonSQSFullAccess
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action:
+              - "sts:AssumeRole"
+            Effect: "Allow"
+            Principal:
+              Service: "lambda.amazonaws.com"
+      Policies:
+        - PolicyName: "RekogPassRolePolicy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              # TODO: Security - Scope this down
+              - Action:
+                  - iam:PassRole
+                Resource: "*"
+                Effect: "Allow"
+              - Action: "lambda:InvokeFunction"
+                Resource: !Ref DataPlaneHandlerArn
+                Effect: "Allow"
+        - PolicyName: "RekognitionSNSPublishPolicy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  - sns:Publish
+                Resource: !Ref "snsRekognitionTopic"
+                Effect: "Allow"
+
+  StepFunctionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action: "sts:AssumeRole"
+            Effect: "Allow"
+            Principal:
+              Service: "states.amazonaws.com"
+      Policies:
+        - PolicyName: "MieSfnLambdaAccess"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              # TODO: Security - Need to scope this down (no good answer for this yet)
+              - Action: "lambda:InvokeFunction"
+                Resource: "arn:aws:lambda:*:*:function:*"
+                Effect: "Allow"
+
+  # Lambda functions
+
+  # Comprehend
+
+  startKeyPhrases:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "start_key_phrases.lambda_handler"
+      Layers:
+        - !Ref MediaInsightsEnginePython37Layer
+      Role: !GetAtt comprehendRole.Arn
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "start_key_phrases.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Timeout: 300
+      Environment:
+        Variables:
+          OPERATOR_NAME: "comprehendStartKeyPhrases"
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          comprehendRole: !GetAtt comprehendS3Role.Arn
+
+  getKeyPhrases:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "get_key_phrases.lambda_handler"
+      Layers:
+        - !Ref MediaInsightsEnginePython37Layer
+      Role: !GetAtt comprehendRole.Arn
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "get_key_phrases.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Timeout: 300
+      Environment:
+        Variables:
+          OPERATOR_NAME: "comprehendGetKeyPhrases"
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          comprehendRole: !GetAtt comprehendS3Role.Arn
+
+  startEntityDetection:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "start_entity_detection.lambda_handler"
+      Layers:
+        - !Ref MediaInsightsEnginePython37Layer
+      Role: !GetAtt comprehendRole.Arn
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "start_entity_detection.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Timeout: 300
+      Environment:
+        Variables:
+          OPERATOR_NAME: "comprehendStartEntityDetection"
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          comprehendRole: !GetAtt comprehendS3Role.Arn
+
+  getEntityDetection:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "get_entity_detection.lambda_handler"
+      Layers:
+        - !Ref MediaInsightsEnginePython37Layer
+      Role: !GetAtt comprehendRole.Arn
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "get_entity_detection.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Timeout: 300
+      Environment:
+        Variables:
+          OPERATOR_NAME: "comprehendEntityDetection"
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          comprehendRole: !GetAtt comprehendS3Role.Arn
+
+
+  # Rekognition
+
+  startCelebrityRecognition:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "start_celebrity_recognition.lambda_handler"
+      Layers:
+        - !Ref MediaInsightsEnginePython37Layer
+      Role: !GetAtt "rekognitionRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+              !FindInMap ["SourceCode", "General", "KeyPrefix"],
+              "start_celebrity_recognition.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Timeout: 300
+      Environment:
+        Variables:
+          REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          OPERATOR_NAME: "celebrityRecognition"
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+
+  checkCelebrityRecognition:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "check_celebrity_recognition_status.lambda_handler"
+      Layers:
+        - !Ref MediaInsightsEnginePython37Layer
+      Role: !GetAtt "rekognitionRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+              !FindInMap ["SourceCode", "General", "KeyPrefix"],
+              "check_celebrity_recognition_status.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Timeout: 300
+      Environment:
+        Variables:
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          OPERATOR_NAME: "celebrityRecognition"
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+
+  startContentModeration:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "start_content_moderation.lambda_handler"
+      Layers:
+        - !Ref MediaInsightsEnginePython37Layer
+      Role: !GetAtt "rekognitionRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+              !FindInMap ["SourceCode", "General", "KeyPrefix"],
+              "start_content_moderation.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Timeout: 300
+      Environment:
+        Variables:
+          REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          OPERATOR_NAME: "contentModeration"
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+
+  checkContentModeration:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "check_content_moderation_status.lambda_handler"
+      Layers:
+        - !Ref MediaInsightsEnginePython37Layer
+      Role: !GetAtt "rekognitionRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+              !FindInMap ["SourceCode", "General", "KeyPrefix"],
+              "check_content_moderation_status.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Timeout: 300
+      Environment:
+        Variables:
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          OPERATOR_NAME: "contentModeration"
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+
+  startFaceDetection:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "start_face_detection.lambda_handler"
+      Layers:
+        - !Ref MediaInsightsEnginePython37Layer
+      Role: !GetAtt "rekognitionRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+              !FindInMap ["SourceCode", "General", "KeyPrefix"],
+              "start_face_detection.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Timeout: 300
+      Environment:
+        Variables:
+          REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          OPERATOR_NAME: "faceDetection"
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+
+  checkFaceDetection:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "check_face_detection_status.lambda_handler"
+      Layers:
+        - !Ref MediaInsightsEnginePython37Layer
+      Role: !GetAtt "rekognitionRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+              !FindInMap ["SourceCode", "General", "KeyPrefix"],
+              "check_face_detection_status.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Timeout: 300
+      Environment:
+        Variables:
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          OPERATOR_NAME: "faceDetection"
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+
+  startFaceSearch:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "start_face_search.lambda_handler"
+      Layers:
+        - !Ref MediaInsightsEnginePython37Layer
+      Role: !GetAtt "rekognitionRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+              !FindInMap ["SourceCode", "General", "KeyPrefix"],
+              "start_face_search.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Timeout: 300
+      Environment:
+        Variables:
+          REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          OPERATOR_NAME: "faceSearch"
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+
+  checkFaceSearch:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "check_face_search_status.lambda_handler"
+      Layers:
+        - !Ref MediaInsightsEnginePython37Layer
+      Role: !GetAtt "rekognitionRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+              !FindInMap ["SourceCode", "General", "KeyPrefix"],
+              "check_face_search_status.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Timeout: 300
+      Environment:
+        Variables:
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          OPERATOR_NAME: "faceSearch"
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+
+  startLabelDetection:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "start_label_detection.lambda_handler"
+      Layers:
+        - !Ref MediaInsightsEnginePython37Layer
+      Role: !GetAtt "rekognitionRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+              !FindInMap ["SourceCode", "General", "KeyPrefix"],
+              "start_label_detection.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Timeout: 300
+      Environment:
+        Variables:
+          REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          OPERATOR_NAME: "labelDetection"
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+
+  checkLabelDetection:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "check_label_detection_status.lambda_handler"
+      Layers:
+        - !Ref MediaInsightsEnginePython37Layer
+      Role: !GetAtt "rekognitionRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+              !FindInMap ["SourceCode", "General", "KeyPrefix"],
+              "check_label_detection_status.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Timeout: 300
+      Environment:
+        Variables:
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          OPERATOR_NAME: "labelDetection"
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+
+  startPersonTracking:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "start_person_tracking.lambda_handler"
+      Layers:
+        - !Ref MediaInsightsEnginePython37Layer
+      Role: !GetAtt "rekognitionRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+              !FindInMap ["SourceCode", "General", "KeyPrefix"],
+              "start_person_tracking.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Timeout: 300
+      Environment:
+        Variables:
+          REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          OPERATOR_NAME: "personTracking"
+
+  checkPersonTracking:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "check_person_tracking_status.lambda_handler"
+      Layers:
+        - !Ref MediaInsightsEnginePython37Layer
+      Role: !GetAtt "rekognitionRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+              !FindInMap ["SourceCode", "General", "KeyPrefix"],
+              "check_person_tracking_status.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Timeout: 300
+      Environment:
+        Variables:
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          OPERATOR_NAME: "personTracking"
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+
+  # Mediaconvert Lambdas
+
+  StartMediaConvertFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "start_media_convert.lambda_handler"
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
+      Role: !GetAtt "mediaConvertLambdaRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+              !FindInMap ["SourceCode", "General", "KeyPrefix"],
+              "start_media_convert.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Environment:
+        Variables:
+          mediaconvertRole: !GetAtt "mediaConvertS3Role.Arn"
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+
+  CheckMediaConvertFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "get_media_convert.lambda_handler"
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
+      Role: !GetAtt "mediaConvertLambdaRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+              !FindInMap ["SourceCode", "General", "KeyPrefix"],
+              "get_media_convert.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Environment:
+        Variables:
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+
+  # Transcribe Lambdas
+
+  StartTranscribeFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "start_transcribe.lambda_handler"
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
+      Role: !GetAtt "transcribeRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+              !FindInMap ["SourceCode", "General", "KeyPrefix"],
+              "start_transcribe.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Environment:
+        Variables:
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+
+  CheckTranscribeFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "get_transcribe.lambda_handler"
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
+      Role: !GetAtt "transcribeRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+              !FindInMap ["SourceCode", "General", "KeyPrefix"],
+              "get_transcribe.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Environment:
+        Variables:
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+
+  # Create Web Captions Lambda
+
+  WebCaptionsFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "get_captions.web_captions"
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
+      Role: !GetAtt "captionsRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "get_captions.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Timeout: 300
+      Environment:
+        Variables:
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+
+  # Create Time Series Lambda
+
+  CreateSRTCaptionsFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "get_captions.create_srt"
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
+      Role: !GetAtt "captionsRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "get_captions.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Timeout: 300
+      Environment:
+        Variables:
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+
+  CreateVTTCaptionsFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "get_captions.create_vtt"
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
+      Role: !GetAtt "captionsRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "get_captions.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Timeout: 300
+      Environment:
+        Variables:
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+
+  WebToSRTCaptionsFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "get_captions.web_to_srt"
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
+      Role: !GetAtt "captionsRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "get_captions.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Timeout: 300
+      Environment:
+        Variables:
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+
+  WebToVTTCaptionsFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "get_captions.web_to_vtt"
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
+      Role: !GetAtt "captionsRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "get_captions.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Timeout: 300
+      Environment:
+        Variables:
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+
+  # Translate Lambdas
+
+  TranslateFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "start_translate.lambda_handler"
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
+      Role: !GetAtt "translateRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+              !FindInMap ["SourceCode", "General", "KeyPrefix"],
+              "start_translate.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Environment:
+        Variables:
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+
+  # Polly Lambdas
+
+  StartPollyFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "start_polly.lambda_handler"
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
+      Role: !GetAtt "pollyRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+              !FindInMap ["SourceCode", "General", "KeyPrefix"],
+              "start_polly.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Environment:
+        Variables:
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+
+  CheckPollyFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "get_polly.lambda_handler"
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
+      Role: !GetAtt "pollyRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+              !FindInMap ["SourceCode", "General", "KeyPrefix"],
+              "get_polly.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Environment:
+        Variables:
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+
+  # Register as operators in the control plane
+
+  MediaconvertOperation:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "Mediaconvert"
+      Type: "Async"
+      Configuration: { "MediaType": "Video", "Enabled": true }
+      StartLambdaArn: !GetAtt StartMediaConvertFunction.Arn
+      MonitorLambdaArn: !GetAtt CheckMediaConvertFunction.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
+  TranscribeOperation:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "Transcribe"
+      Type: "Async"
+      Configuration:
+        { "TranscribeLanguage": "en-US", "MediaType": "Audio", "Enabled": true }
+      StartLambdaArn: !GetAtt StartTranscribeFunction.Arn
+      MonitorLambdaArn: !GetAtt CheckTranscribeFunction.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
+  WebCaptionsOperation:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "WebCaptions"
+      Type: "Sync"
+      Configuration: { "MediaType": "Text", "Enabled": true }
+      StartLambdaArn: !GetAtt WebCaptionsFunction.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
+  CreateSRTCaptionsOperation:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "CreateSRTCaptions"
+      Type: "Sync"
+      Configuration: { "MediaType": "Text", "Enabled": true }
+      StartLambdaArn: !GetAtt CreateSRTCaptionsFunction.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
+  CreateVTTCaptionsOperation:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "CreateVTTCaptions"
+      Type: "Sync"
+      Configuration: { "MediaType": "Text", "Enabled": true }
+      StartLambdaArn: !GetAtt CreateVTTCaptionsFunction.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
+  WebToSRTCaptionsOperation:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "WebToSRTCaptions"
+      Type: "Sync"
+      Configuration: { "MediaType": "MetadataOnly", "Enabled": true }
+      StartLambdaArn: !GetAtt WebToSRTCaptionsFunction.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
+  WebToVTTCaptionsOperation:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "WebToVTTCaptions"
+      Type: "Sync"
+      Configuration: { "MediaType": "MetadataOnly", "Enabled": true }
+      StartLambdaArn: !GetAtt WebToVTTCaptionsFunction.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
+  TranslateOperation:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "Translate"
+      Type: "Sync"
+      Configuration:
+        {
+          "MediaType": "Text",
+          "TargetLanguageCode": "ru",
+          "Enabled": true,
+          "SourceLanguageCode": "en",
+        }
+      StartLambdaArn: !GetAtt TranslateFunction.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
+  PollyOperation:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "Polly"
+      Type: "Async"
+      Configuration: { "MediaType": "Text", "Enabled": true }
+      StartLambdaArn: !GetAtt StartPollyFunction.Arn
+      MonitorLambdaArn: !GetAtt CheckPollyFunction.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
+  comprehendPhrasesOperation:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "ComprehendKeyPhrases"
+      Type: "Async"
+      Configuration: { "MediaType": "Text", "Enabled": true }
+      StartLambdaArn: !GetAtt startKeyPhrases.Arn
+      MonitorLambdaArn: !GetAtt getKeyPhrases.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
+  comprehendEntitiesOperation:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "ComprehendEntities"
+      Type: "Async"
+      Configuration: { "MediaType": "Text", "Enabled": true }
+      StartLambdaArn: !GetAtt startEntityDetection.Arn
+      MonitorLambdaArn: !GetAtt getEntityDetection.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
+  celebrityRecognitionOperation:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "celebrityRecognition"
+      Type: "Async"
+      Configuration: { "MediaType": "Video", "Enabled": true }
+      StartLambdaArn: !GetAtt startCelebrityRecognition.Arn
+      MonitorLambdaArn: !GetAtt checkCelebrityRecognition.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
+  celebrityRecognitionOperationImage:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "celebrityRecognitionImage"
+      Type: "Sync"
+      Configuration: { "MediaType": "Image", "Enabled": true }
+      StartLambdaArn: !GetAtt startCelebrityRecognition.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
+  contentModerationOperation:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "contentModeration"
+      Type: "Async"
+      Configuration: { "MediaType": "Video", "Enabled": true }
+      StartLambdaArn: !GetAtt startContentModeration.Arn
+      MonitorLambdaArn: !GetAtt checkContentModeration.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
+  contentModerationOperationImage:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "contentModerationImage"
+      Type: "Sync"
+      Configuration: { "MediaType": "Image", "Enabled": true }
+      StartLambdaArn: !GetAtt startContentModeration.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
+  faceDetectionOperation:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "faceDetection"
+      Type: "Async"
+      Configuration: { "MediaType": "Video", "Enabled": true }
+      StartLambdaArn: !GetAtt startFaceDetection.Arn
+      MonitorLambdaArn: !GetAtt checkFaceDetection.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
+  faceDetectionOperationImage:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "faceDetectionImage"
+      Type: "Sync"
+      Configuration: { "MediaType": "Image", "Enabled": true }
+      StartLambdaArn: !GetAtt startFaceDetection.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
+  faceSearchOperation:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "faceSearch"
+      Type: "Async"
+      Configuration: { "MediaType": "Video", "Enabled": true }
+      StartLambdaArn: !GetAtt startFaceSearch.Arn
+      MonitorLambdaArn: !GetAtt checkFaceSearch.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
+  faceSearchOperationImage:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "faceSearchImage"
+      Type: "Sync"
+      Configuration: { "MediaType": "Image", "Enabled": true }
+      StartLambdaArn: !GetAtt startFaceSearch.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
+  labelDetectionOperation:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "labelDetection"
+      Type: "Async"
+      Configuration: { "MediaType": "Video", "Enabled": true }
+      StartLambdaArn: !GetAtt startLabelDetection.Arn
+      MonitorLambdaArn: !GetAtt checkLabelDetection.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
+  labelDetectionOperationImage:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "labelDetectionImage"
+      Type: "Sync"
+      Configuration: { "MediaType": "Image", "Enabled": true }
+      StartLambdaArn: !GetAtt startLabelDetection.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
+  personTrackingOperation:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "personTracking"
+      Type: "Async"
+      Configuration: { "MediaType": "Video", "Enabled": true }
+      StartLambdaArn: !GetAtt startPersonTracking.Arn
+      MonitorLambdaArn: !GetAtt checkPersonTracking.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
+  # Export operator names as outputs
+
+Outputs:
+  MediaconvertOperation:
+    Description: "Operation name of mediaconvert"
+    Value: !GetAtt MediaconvertOperation.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", Mediaconvert]]
+  TranscribeOperation:
+    Description: "Operation name of transcribe"
+    Value: !GetAtt TranscribeOperation.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", Transcribe]]
+  WebCaptionsOperation:
+    Description: "Operation to create web captions"
+    Value: !GetAtt WebCaptionsOperation.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", WebCaptions]]
+  CreateSRTCaptionsOperation:
+    Description: "Operation to create SRT captions"
+    Value: !GetAtt CreateSRTCaptionsOperation.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", CreateSRTCaptions]]
+  CreateVTTCaptionsOperation:
+    Description: "Operation to create VTT captions"
+    Value: !GetAtt CreateVTTCaptionsOperation.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", CreateVTTCaptions]]
+  WebToSRTCaptionsOperation:
+    Description: "Operation to convert web captions to SRT format"
+    Value: !GetAtt WebToSRTCaptionsOperation.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", WebToSRTCaptions]]
+  WebToVTTCaptionsOperation:
+    Description: "Operation to convert web captions to VTT format"
+    Value: !GetAtt WebToVTTCaptionsOperation.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", WebToVTTCaptions]]
+  TranslateOperation:
+    Description: "Operation name of translate"
+    Value: !GetAtt TranslateOperation.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", Translate]]
+  PollyOperation:
+    Description: "Operation name of polly"
+    Value: !GetAtt PollyOperation.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", Polly]]
+  comprehendPhrasesOperation:
+    Description: "Operation name of polly"
+    Value: !GetAtt comprehendPhrasesOperation.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", ComprehendPhrases]]
+  comprehendEntitiesOperation:
+    Description: "Operation name of polly"
+    Value: !GetAtt comprehendEntitiesOperation.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", ComprehendEntities]]
+
+  # Rekognition video
+  CelebRecognition:
+    Description: "CelebRecognition operator"
+    Value: !GetAtt celebrityRecognitionOperation.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", CelebRecognition]]
+  ContentModeration:
+    Description: "Content moderation operator"
+    Value: !GetAtt contentModerationOperation.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", ContentModeration]]
+  FaceSearch:
+    Description: "Face search operator"
+    Value: !GetAtt faceSearchOperation.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", FaceSearch]]
+  FaceDetection:
+    Description: "Face detection operator"
+    Value: !GetAtt faceDetectionOperation.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", FaceDetection]]
+  LabelDetection:
+    Description: "Label detection operator"
+    Value: !GetAtt labelDetectionOperation.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", LabelDetection]]
+  PersonTracking:
+    Description: "Person tracking"
+    Value: !GetAtt personTrackingOperation.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", PersonTracking]]
+
+  # Rekognition image
+  CelebrityRecognitionOperationImage:
+    Description: "CelebRecognition image operator"
+    Value: !GetAtt celebrityRecognitionOperationImage.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", CelebRecognitionImage]]
+  ContentModerationOperationImage:
+    Description: "Content moderation image operator"
+    Value: !GetAtt contentModerationOperationImage.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", ContentModerationImage]]
+  FaceDetectionOperationImage:
+    Description: "Face detection image operator"
+    Value: !GetAtt faceDetectionOperationImage.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", FaceDetectionImage]]
+  FaceSearchOperationImage:
+    Description: "Face search image operator"
+    Value: !GetAtt faceSearchOperationImage.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", FaceSearchImage]]
+  LabelDetectionOperationImage:
+    Description: "CelebRecognition image operator"
+    Value: !GetAtt labelDetectionOperationImage.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", LabelDetectionImage]]
+  StackName:
+    Value: !Ref AWS::StackName

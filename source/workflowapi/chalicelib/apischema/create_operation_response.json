@@ -1,0 +1,129 @@
+{
+    "definitions": {},
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "http://example.com/root.json",
+    "type": "object",
+    "title": "create_operation_response",
+    "required": [
+      "StartLambdaArn",
+      "Configuration",
+      "StateMachineExecutionRoleArn",
+      "Type",
+      "Name",
+      "StateMachineAsl",
+      "StageName"
+    ],
+    "properties": {
+      "StartLambdaArn": {
+        "$id": "#/properties/StartLambdaArn",
+        "type": "string",
+        "title": "The Startlambdaarn Schema",
+        "default": "",
+        "examples": [
+          "arn:aws:lambda:us-east-1:123456789123:function:miereset-TestWorkflow-1SYWUV3PP7FP1-video-test-sync"
+        ],
+        "pattern": "^(.*)$"
+      },
+      "MonitorLambdaArn": {
+        "$id": "#/properties/StartLambdaArn",
+        "type": "string",
+        "title": "The Startlambdaarn Schema",
+        "default": "",
+        "examples": [
+          "arn:aws:lambda:us-east-1:123456789123:function:miereset-TestWorkflow-1SYWUV3PP7FP1-check-video-test-sync"
+        ],
+        "pattern": "^(.*)$"
+      },
+      "Configuration": {
+        "$id": "#/properties/Configuration",
+        "type": "object",
+        "title": "The Configuration Schema",
+        "required": [
+          "MediaType",
+          "Enabled"
+        ],
+        "properties": {
+          "MediaType": {
+            "$id": "#/properties/Configuration/properties/MediaType",
+            "type": "string",
+            "title": "The Mediatype Schema",
+            "default": "",
+            "examples": [
+              "Video"
+            ],
+            "pattern": "^(.*)$"
+          },
+          "Enabled": {
+            "$id": "#/properties/Configuration/properties/Enabled",
+            "type": "boolean",
+            "title": "The Enabled Schema",
+            "default": false,
+            "examples": [
+              true
+            ]
+          }
+        }
+      },
+      "ResourceType": {
+        "$id": "#/properties/ResourceType",
+        "type": "string",
+        "title": "The Resourcetype Schema",
+        "default": "",
+        "examples": [
+          "Operation"
+        ],
+        "pattern": "^(.*)$"
+      },
+      "StateMachineExecutionRoleArn": {
+        "$id": "#/properties/StateMachineExecutionRoleArn",
+        "type": "string",
+        "title": "The Statemachineexecutionrolearn Schema",
+        "default": "",
+        "examples": [
+          "arn:aws:iam::123456789123:role/mieop-TestWorkflow-9NNV0CFGPK0-StepFunctionRole-G0DD6BL45WDG"
+        ],
+        "pattern": "^(.*)$"
+      },
+      "Type": {
+        "$id": "#/properties/Type",
+        "type": "string",
+        "title": "The Type Schema",
+        "default": "",
+        "examples": [
+          "Sync",
+          "Async"
+        ],
+        "pattern": "^(.*)$"
+      },
+      "Name": {
+        "$id": "#/properties/Name",
+        "type": "string",
+        "title": "The Name Schema",
+        "default": "",
+        "examples": [
+          "v-sync-api-operator"
+        ],
+        "pattern": "^(.*)$"
+      },
+      "StateMachineAsl": {
+        "$id": "#/properties/StateMachineAsl",
+        "type": "string",
+        "title": "The Statemachineasl Schema",
+        "default": "",
+        "examples": [
+          "{\"StartAt\": \"Is v-sync-api-operator Enabled? (%%STAGE_NAME%%)\", \"States\": {\"Is v-sync-api-operator Enabled? (%%STAGE_NAME%%)\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.Configuration.v-sync-api-operator.Enabled\", \"BooleanEquals\": true, \"Next\": \"Is v-sync-api-operator Media Type? (%%STAGE_NAME%%)\"}], \"Default\": \"v-sync-api-operator Not Started (%%STAGE_NAME%%)\"}, \"Is v-sync-api-operator Media Type? (%%STAGE_NAME%%)\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.Configuration.v-sync-api-operator.MediaType\", \"StringEquals\": \"Video\", \"Next\": \"Execute v-sync-api-operator (%%STAGE_NAME%%)\"}], \"Default\": \"v-sync-api-operator Not Started (%%STAGE_NAME%%)\"}, \"v-sync-api-operator Not Started (%%STAGE_NAME%%)\": {\"Type\": \"Succeed\"}, \"Execute v-sync-api-operator (%%STAGE_NAME%%)\": {\"Type\": \"Task\", \"Resource\": \"arn:aws:lambda:us-east-1:123456789123:function:miereset-TestWorkflow-1SYWUV3PP7FP1-video-test-sync\", \"ResultPath\": \"$.Outputs\", \"OutputPath\": \"$.Outputs\", \"Next\": \"Did v-sync-api-operator Complete (%%STAGE_NAME%%)\", \"Retry\": [{\"ErrorEquals\": [\"Lambda.ServiceException\", \"Lambda.AWSLambdaException\", \"Lambda.SdkClientException\", \"Lambda.Unknown\", \"MasExecutionError\"], \"IntervalSeconds\": 2, \"MaxAttempts\": 2, \"BackoffRate\": 2}], \"Catch\": [{\"ErrorEquals\": [\"States.ALL\"], \"Next\": \"v-sync-api-operator Failed (%%STAGE_NAME%%)\", \"ResultPath\": \"$.Outputs\"}]}, \"Did v-sync-api-operator Complete (%%STAGE_NAME%%)\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.Status\", \"StringEquals\": \"Complete\", \"Next\": \"v-sync-api-operator Succeeded (%%STAGE_NAME%%)\"}], \"Default\": \"v-sync-api-operator Failed (%%STAGE_NAME%%)\"}, \"v-sync-api-operator Failed (%%STAGE_NAME%%)\": {\"Type\": \"Task\", \"End\": True, \"Resource\": \"%%OPERATION_FAILED_LAMBDA%%\", \"ResultPath\": \"$\", \"Retry\": [{\"ErrorEquals\": [\"Lambda.ServiceException\", \"Lambda.AWSLambdaException\", \"Lambda.SdkClientException\", \"Lambda.Unknown\", \"MasExecutionError\"], \"IntervalSeconds\": 2, \"MaxAttempts\": 2, \"BackoffRate\": 2}]}, \"v-sync-api-operator Succeeded (%%STAGE_NAME%%)\": {\"Type\": \"Succeed\"}}}"
+        ],
+        "pattern": "^((.|\\s)*)$"
+      },
+      "StageName": {
+        "$id": "#/properties/StageName",
+        "type": "string",
+        "title": "The Stagename Schema",
+        "default": "",
+        "examples": [
+          "_v-sync-api-operator"
+        ],
+        "pattern": "^(.*)$"
+      }
+    }
+  }

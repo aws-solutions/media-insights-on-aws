@@ -1,0 +1,107 @@
+{
+    "definitions": {},
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "http://example.com/root.json",
+    "type": "object",
+    "title": "create_operation_request",
+    "required": [
+      "StartLambdaArn",
+      "Configuration",
+      "StateMachineExecutionRoleArn",
+      "Type",
+      "Name"
+    ],
+    "properties": {
+      "StartLambdaArn": {
+        "$id": "#/properties/StartLambdaArn",
+        "type": "string",
+        "title": "The Startlambdaarn Schema",
+        "default": "",
+        "examples": [
+          "arn:aws:lambda:us-east-1:999999999999:function:miereset-TestWorkflow-1SYWUV3PP7FP1-video-test-sync"
+        ],
+        "pattern": "^(.*)$"
+      },
+      "MonitorLambdaArn": {
+        "$id": "#/properties/StartLambdaArn",
+        "type": "string",
+        "title": "The Startlambdaarn Schema",
+        "default": "",
+        "examples": [
+          "arn:aws:lambda:us-east-1:999999999999:function:miereset-TestWorkflow-1SYWUV3PP7FP1-check-video-test-sync"
+        ],
+        "pattern": "^(.*)$"
+      },
+      "Configuration": {
+        "$id": "#/properties/Configuration",
+        "type": "object",
+        "title": "The Configuration Schema",
+        "required": [
+          "MediaType",
+          "Enabled"
+        ],
+        "properties": {
+          "MediaType": {
+            "$id": "#/properties/Configuration/properties/MediaType",
+            "type": "string",
+            "title": "The Mediatype Schema",
+            "default": "",
+            "examples": [
+              "Video"
+            ],
+            "pattern": "^(.*)$"
+          },
+          "Enabled": {
+            "$id": "#/properties/Configuration/properties/Enabled",
+            "type": "boolean",
+            "title": "The Enabled Schema",
+            "default": false,
+            "examples": [
+              true
+            ]
+          }
+        }
+      },
+      "ResourceType": {
+        "$id": "#/properties/ResourceType",
+        "type": "string",
+        "title": "The Resourcetype Schema",
+        "default": "",
+        "examples": [
+          "Operation"
+        ],
+        "pattern": "^(.*)$"
+      },
+      "StateMachineExecutionRoleArn": {
+        "$id": "#/properties/StateMachineExecutionRoleArn",
+        "type": "string",
+        "title": "The Statemachineexecutionrolearn Schema",
+        "default": "",
+        "examples": [
+          "arn:aws:iam::999999999999:role/mieop-TestWorkflow-9NNV0CFGPK0-StepFunctionRole-G0DD6BL45WDG"
+        ],
+        "pattern": "^(.*)$"
+      },
+      "Type": {
+        "$id": "#/properties/Type",
+        "type": "string",
+        "title": "The Type Schema",
+        "default": "",
+        "examples": [
+          "Sync",
+          "Async"
+        ],
+        "pattern": "^(.*)$"
+      },
+      "Name": {
+        "$id": "#/properties/Name",
+        "type": "string",
+        "title": "The Name Schema",
+        "default": "",
+        "examples": [
+          "v-sync-api-operator"
+        ],
+        "pattern": "^(.*)$"
+      }
+    }
+  }

@@ -1,0 +1,55 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Action": [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+            ],
+            "Resource": "*",
+            "Effect": "Allow",
+            "Sid": "Logging"
+        },
+        {
+            "Action": [
+                "dynamodb:*"
+            ],
+            "Resource": [
+                "*"
+            ],
+            "Effect": "Allow",
+            "Sid": "DynamoTables"
+        },
+        {
+            "Effect": "Allow",
+            "Action": "states:*",
+            "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": "lambda:InvokeFunction",
+            "Resource": "*"
+        },
+        {
+            "Action": [
+                "sqs:*"
+            ],
+            "Resource": [
+                "*"
+            ],
+            "Effect": "Allow",
+            "Sid": "SQS"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [ 
+              "iam:PassRole"
+            ],
+            "Resource": [
+              "*"
+            ]
+          }
+
+    ]
+}

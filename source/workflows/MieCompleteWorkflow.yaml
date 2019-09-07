@@ -1,0 +1,107 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Media Insights Engine - Workflow to run all MIE analyses"
+
+Parameters:
+  WorkflowCustomResourceArn:
+    Type: String
+    Description: "ARN of the Media Insights custom resource that handles creating operations, stages and workflows"
+  # FIXME - this doesn't work well with nesting - just pass in the layer resource
+  # MediaInsightsWorkflowStack:
+    # Description: "Name of the base media insights workflow stack"
+    # Type: String
+  OperatorLibraryStack:
+    Description: "Name of the operator library stack"
+    Type: String
+
+Resources:
+  defaultVideoStage:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Stage"
+      Name: "defaultVideoStage"
+      Operations:
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:CelebRecognition"
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:ContentModeration"
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:FaceDetection"
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:FaceSearch"
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:LabelDetection"
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:PersonTracking"
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:Mediaconvert"
+
+  defaultAudioStage:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Stage"
+      Name: "defaultAudioStage"
+      Operations:
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:Transcribe"
+
+  defaultTextStage:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Stage"
+      Name: "defaultTextStage"
+      Operations:
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:Translate"
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:ComprehendPhrases"
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:ComprehendEntities"
+
+  defaultTextSynthesisStage:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Stage"
+      Name: "defaultTextSynthesisStage"
+      Operations:
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:Polly"
+
+  MieCompleteWorkflow:
+    DependsOn:
+      - defaultVideoStage
+      - defaultAudioStage
+      - defaultTextStage
+      - defaultTextSynthesisStage
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Workflow"
+      Name: "MieCompleteWorkflow"
+      StartAt: !GetAtt defaultVideoStage.Name
+      Stages: !Sub
+        - |-
+          {
+            "${defaultVideoStage}":{
+              "Next": "${defaultAudioStage}"
+              },
+            "${defaultAudioStage}":{
+              "Next": "${defaultTextStage}"
+              },
+            "${defaultTextStage}":{
+              "Next": "${defaultTextSynthesisStage}"
+              },
+            "${defaultTextSynthesisStage}":{
+              "End": true
+              }
+          }
+        - {
+          defaultVideoStage: !GetAtt defaultVideoStage.Name,
+          defaultAudioStage: !GetAtt defaultAudioStage.Name,
+          defaultTextStage: !GetAtt defaultTextStage.Name,
+          defaultTextSynthesisStage: !GetAtt defaultTextSynthesisStage.Name
+        }
+

@@ -1,0 +1,164 @@
+{
+    "definitions": {},
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "http://example.com/root.json",
+    "type": "object",
+    "title": "create_workflow_response",
+    "required": [
+      "Name",
+      "StartAt",
+      "Stages",
+      "Trigger",
+      "StateMachineArn"
+    ],
+    "properties": {
+      "Name": {
+        "$id": "#/properties/Name",
+        "type": "string",
+        "title": "The Name Schema",
+        "default": "",
+        "examples": [
+          "v-sync-api-workflow"
+        ],
+        "pattern": "^(.*)$"
+      },
+      "StartAt": {
+        "$id": "#/properties/StartAt",
+        "type": "string",
+        "title": "The Startat Schema",
+        "default": "",
+        "examples": [
+          "v-sync-api-stage"
+        ],
+        "pattern": "^(.*)$"
+      },
+      "Stages": {
+        "$id": "#/properties/Stages",
+        "type": "object",
+        "title": "The Stages Schema",
+        "required": [
+          "v-sync-api-stage"
+        ],
+        "properties": {
+          "v-sync-api-stage": {
+            "$id": "#/properties/Stages/properties/v-sync-api-stage",
+            "type": "object",
+            "title": "The V-sync-api-stage Schema",
+            "required": [
+              "End",
+              "StateMachineArn",
+              "Operations",
+              "Configuration",
+              "Name"
+            ],
+            "properties": {
+              "End": {
+                "$id": "#/properties/Stages/properties/v-sync-api-stage/properties/End",
+                "type": "boolean",
+                "title": "The End Schema",
+                "default": false,
+                "examples": [
+                  true
+                ]
+              },
+              "StateMachineArn": {
+                "$id": "#/properties/Stages/properties/v-sync-api-stage/properties/StateMachineArn",
+                "type": "string",
+                "title": "The Statemachinearn Schema",
+                "default": "",
+                "examples": [
+                  "arn:aws:states:us-east-1:123456789123:stateMachine:v-sync-api-stage"
+                ],
+                "pattern": "^(.*)$"
+              },
+              "Operations": {
+                "$id": "#/properties/Stages/properties/v-sync-api-stage/properties/Operations",
+                "type": "array",
+                "title": "The Operations Schema",
+                "items": {
+                  "$id": "#/properties/Stages/properties/v-sync-api-stage/properties/Operations/items",
+                  "type": "string",
+                  "title": "The Items Schema",
+                  "default": "",
+                  "examples": [
+                    "v-sync-api-operator"
+                  ],
+                  "pattern": "^(.*)$"
+                }
+              },
+              "Configuration": {
+                "$id": "#/properties/Stages/properties/v-sync-api-stage/properties/Configuration",
+                "type": "object",
+                "title": "The Configuration Schema",
+                "required": [
+                  "v-sync-api-operator"
+                ],
+                "properties": {
+                  "v-sync-api-operator": {
+                    "$id": "#/properties/Stages/properties/v-sync-api-stage/properties/Configuration/properties/v-sync-api-operator",
+                    "type": "object",
+                    "title": "The V-sync-api-operator Schema",
+                    "required": [
+                      "MediaType",
+                      "Enabled"
+                    ],
+                    "properties": {
+                      "MediaType": {
+                        "$id": "#/properties/Stages/properties/v-sync-api-stage/properties/Configuration/properties/v-sync-api-operator/properties/MediaType",
+                        "type": "string",
+                        "title": "The Mediatype Schema",
+                        "default": "",
+                        "examples": [
+                          "Video"
+                        ],
+                        "pattern": "^(.*)$"
+                      },
+                      "Enabled": {
+                        "$id": "#/properties/Stages/properties/v-sync-api-stage/properties/Configuration/properties/v-sync-api-operator/properties/Enabled",
+                        "type": "boolean",
+                        "title": "The Enabled Schema",
+                        "default": false,
+                        "examples": [
+                          true
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              "Name": {
+                "$id": "#/properties/Stages/properties/v-sync-api-stage/properties/Name",
+                "type": "string",
+                "title": "The Name Schema",
+                "default": "",
+                "examples": [
+                  "v-sync-api-stage"
+                ],
+                "pattern": "^(.*)$"
+              }
+            }
+          }
+        }
+      },
+      "Trigger": {
+        "$id": "#/properties/Trigger",
+        "type": "string",
+        "title": "The Trigger Schema",
+        "default": "",
+        "examples": [
+          "api"
+        ],
+        "pattern": "^(.*)$"
+      },
+      "StateMachineArn": {
+        "$id": "#/properties/StateMachineArn",
+        "type": "string",
+        "title": "The Statemachinearn Schema",
+        "default": "",
+        "examples": [
+          "arn:aws:states:us-east-1:123456789123:stateMachine:v-sync-api-workflow"
+        ],
+        "pattern": "^(.*)$"
+      }
+    }
+  }

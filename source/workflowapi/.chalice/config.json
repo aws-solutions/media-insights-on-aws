@@ -1,0 +1,28 @@
+{
+  "version": "2.0",
+  "app_name": "workflowapi",
+  "environment_variables": {
+    "SYSTEM_TABLE_NAME":"",
+    "WORKFLOW_TABLE_NAME":"",
+    "STAGE_TABLE_NAME":"",
+    "WORKFLOW_EXECUTION_TABLE_NAME":"",
+    "HISTORY_TABLE_NAME":"",
+    "STAGE_EXECUTION_QUEUE_URL": "",
+    "OPERATION_TABLE_NAME": "",
+    "COMPLETE_STAGE_LAMBDA_ARN": "",
+    "FILTER_OPERATION_LAMBDA_ARN":"",
+    "WORKFLOW_SCHEDULER_LAMBDA_ARN":"",
+    "STAGE_EXECUTION_ROLE": "",
+    "DataplaneEndpoint": "",
+    "DATAPLANE_BUCKET": "",
+    "OPERATOR_FAILED_LAMBDA_ARN": ""
+    },
+  "stages": {
+    "dev": {
+      "api_gateway_stage": "api",
+      "autogen_policy": false,
+      "iam_policy_file": "dev-app-policy.json",
+      "api_gateway_endpoint_type": "EDGE"
+    }
+  }
+}

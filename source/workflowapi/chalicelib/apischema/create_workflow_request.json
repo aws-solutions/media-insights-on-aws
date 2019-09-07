@@ -1,0 +1,64 @@
+
+{
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "http://example.com/root.json",
+  "type": "object",
+  "title": "create_workflow_request",
+  "required": [
+    "Name",
+    "StartAt",
+    "Stages"
+  ],
+  "properties": {
+    "Name": {
+      "$id": "#/properties/Name",
+      "type": "string",
+      "title": "The Name Schema",
+      "default": "",
+      "examples": [
+        "v-sync-api-workflow"
+      ],
+      "pattern": "^(.*)$"
+    },
+    "StartAt": {
+      "$id": "#/properties/StartAt",
+      "type": "string",
+      "title": "The Startat Schema",
+      "default": "",
+      "examples": [
+        "v-sync-api-stage"
+      ],
+      "pattern": "^(.*)$"
+    },
+    "Stages": {
+      "$id": "#/properties/Stages",
+      "type": "object",
+      "title": "The Stages Schema",
+      "required": [
+        "v-sync-api-stage"
+      ],
+      "properties": {
+        "v-sync-api-stage": {
+          "$id": "#/properties/Stages/properties/v-sync-api-stage",
+          "type": "object",
+          "title": "The V-sync-api-stage Schema",
+          "required": [
+            "End"
+          ],
+          "properties": {
+            "End": {
+              "$id": "#/properties/Stages/properties/v-sync-api-stage/properties/End",
+              "type": "boolean",
+              "title": "The End Schema",
+              "default": false,
+              "examples": [
+                true
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

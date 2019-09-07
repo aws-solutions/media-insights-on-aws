@@ -1,0 +1,38 @@
+{
+    "definitions": {},
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "http://example.com/root.json",
+    "type": "object",
+    "title": "create_stage_request",
+    "required": [
+      "Name",
+      "Operations"
+    ],
+    "properties": {
+      "Name": {
+        "$id": "#/properties/Name",
+        "type": "string",
+        "title": "The Name Schema",
+        "default": "",
+        "examples": [
+          "v-sync-api-stage"
+        ],
+        "pattern": "^(.*)$"
+      },
+      "Operations": {
+        "$id": "#/properties/Operations",
+        "type": "array",
+        "title": "The Operations Schema",
+        "items": {
+          "$id": "#/properties/Operations/items",
+          "type": "string",
+          "title": "The Items Schema",
+          "default": "",
+          "examples": [
+            "v-sync-api-operator"
+          ],
+          "pattern": "^(.*)$"
+        }
+      }
+    }
+  }

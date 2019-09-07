@@ -1,0 +1,88 @@
+{
+    "definitions": {},
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "http://example.com/root.json",
+    "type": "object",
+    "title": "create_stage_response",
+    "required": [
+      "Name",
+      "Operations",
+      "Configuration",
+      "StateMachineArn"
+    ],
+    "properties": {
+      "Name": {
+        "$id": "#/properties/Name",
+        "type": "string",
+        "title": "The Name Schema",
+        "default": "",
+        "examples": [
+          "v-sync-api-stage"
+        ],
+        "pattern": "^(.*)$"
+      },
+      "Operations": {
+        "$id": "#/properties/Operations",
+        "type": "array",
+        "title": "The Operations Schema",
+        "items": {
+          "$id": "#/properties/Operations/items",
+          "type": "string",
+          "title": "The Items Schema",
+          "default": "",
+          "examples": [
+            "v-sync-api-operator"
+          ],
+          "pattern": "^(.*)$"
+        }
+      },
+      "Configuration": {
+        "$id": "#/properties/Configuration",
+        "type": "object",
+        "title": "The Configuration Schema",
+        "minProperties": 1,
+        "PatternProperties": {
+          "^(.*)$": {
+            "$id": "#/properties/Configuration/properties/op-config",
+            "type": "object",
+            "title": "The V-sync-api-operator Schema",
+            "required": [
+              "MediaType",
+              "Enabled"
+            ],
+            "properties": {
+              "MediaType": {
+                "$id": "#/properties/Configuration/properties/op-config/properties/MediaType",
+                "type": "string",
+                "title": "The Mediatype Schema",
+                "default": "",
+                "examples": [
+                  "Video"
+                ],
+                "pattern": "^(.*)$"
+              },
+              "Enabled": {
+                "$id": "#/properties/Configuration/properties/op-config/properties/Enabled",
+                "type": "boolean",
+                "title": "The Enabled Schema",
+                "default": false,
+                "examples": [
+                  true
+                ]
+              }
+            }
+          }
+        }
+      },
+      "StateMachineArn": {
+        "$id": "#/properties/StateMachineArn",
+        "type": "string",
+        "title": "The Statemachinearn Schema",
+        "default": "",
+        "examples": [
+          "arn:aws:states:us-east-1:123456789123:stateMachine:v-sync-api-stage"
+        ],
+        "pattern": "^(.*)$"
+      }
+    }
+  }

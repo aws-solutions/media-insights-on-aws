@@ -31,6 +31,8 @@ US East (Virgina) | [![Launch in us-east-1](doc/images/launch-stack.png)](https:
 
 ###  Sample application
 
+![](doc/images/MIEDemo.gif)
+
 The Media Insights sample application runs an MIE workflow that contains many of the ML content analysis services available on AWS and stores them in a search engine for easy exploration.  A web based GUI is used to search and visualize the resulting data along-side the input media.  Analysis and transformations included in this application include:
 
 * **AWS MediaConvert** to separate a video package into video and audio tracks for downstream analysis.
@@ -77,3 +79,7 @@ See the [CONTRIBUTING](https://github.com/awslabs/aws-media-insights-engine/blob
 # License
 
 See the [LICENSE](https://github.com/awslabs/aws-media-insights-engine/blob/master/LICENSE) file for our project's licensing.
+
+Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 

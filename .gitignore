@@ -34,4 +34,4 @@ deployment/lambda_layer_factory/python 2/**
 doc/sphinx/output/
 
 # explicitly named "private" files
-**/private*
+**/private*webapp/README.md

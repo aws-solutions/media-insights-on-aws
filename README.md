@@ -1,24 +1,40 @@
 # Media Insights Engine
 
-Welcome to the preview of the Media Insights Engine project!
+Welcome to the preview of the Media Insights Engine (MIE) project!
 
-# Overview
+Media Insights Engine is a framework that makes analyzing and transforming media in applications quick and easy. MIE lets builders: 
 
-The Media Insights Engine (MIE) is a framework that enables you to quickly build applications that extract key details about the content of your media files using AWS machine learning (ML) and computational services.  The project includes a serverless architecture on AWS as well as a sample web application for exploring your data.
+1. Create media analysis workflows from a library of base operations built on AWS Machine Learning and Media Services such as AWS Rekognition, AWS Transcribe, AWS Translate, AWS Cognito, AWS Polly, and AWS MediaConvert.
+2. Execute workflows and persist the resulting media and analysis for later use.
+3. Query analysis extracted from media.
+4. Interatively explore some of the capabilities of MIE using the included content and analysis and search web application.
+5. Extend MIE for new applications by adding custom operators and custom data stores.
+   
 
-The serverless architecture provides the following building blocks:
+# Architecture Overview
+
+Media Insights Engine is a serverless architecture on AWS.  The following diagram is an overview of the major components of MIE and how they interact when an MIE workflow is executed.  
+
+![](doc/images/MIE-execute-workflow-architecture.png)
 
 
-**Controlplane:** Workflow orchestration, scheduling, and lifecycle management of MIE components.
+**Workflow API** Trigger the execution of a workflow. Trigger creation of assets in the data plane (see below). Create, update and delete workflows and operators.  Monitor the status of workflows.
 
-**Dataplane:** Storage, retrieval, and search functionality for assets and metadata derived by workflows.
+**Control plane** Executes the AWS Step Functions state machine for the workflow against the provided input.  Workflow state machines are generated from MIE operators.  As operators within the state machine are executed, the interact with the MIE dataplane to store and retrieve dervied asset and metadata generated from the workflow.  
+
+**Data plane:** Storage, retrieval, and search functionality for assets and metadata derived by workflows.
+
+**Data plane API:** 
+
+MIE manages the following objects:
 
 **Operators:** Transform or extract metadata from media.  
 
 **Stages:** Group of operators that can be executed in parallel for increased workflow performance.
 
-**Workflows:** Execution of a sequence of operators or stages in a pipeline.
+**Workflows:** Execution of a sequence of operators or stages in a pipeline.  
 
+**Assets:** A media object that has been processed by a MIE workflow. Extracted metadata and derived assets can be retreived using an assetId.
 
 
 # Installation / Deployment
@@ -27,22 +43,27 @@ Deploy the demo architecture and application in your AWS account and start explo
 Region| Launch
 ------|-----
 US East (Virgina) | [![Launch in us-east-1](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-east-1.s3.amazonaws.com/media-insights-solution/v0.1.0/cf/media-insights-stack.template)
+
 # Usage
 
 ###  Sample application
 
 ![](doc/images/MIEDemo.gif)
 
-The Media Insights sample application runs an MIE workflow that contains many of the ML content analysis services available on AWS and stores them in a search engine for easy exploration.  A web based GUI is used to search and visualize the resulting data along-side the input media.  Analysis and transformations included in this application include:
+The Media Insights sample application lets you upload videos, images, audio and text files for content analysis and add the results to a collection that can be searched to find media that has attributes you are looking for.  It runs an MIE workflow that extracts insights using many of the ML content analysis services available on AWS and stores them in a search engine for easy exploration.  A web based GUI is used to search and visualize the resulting data along-side the input media.  The analysis and transformations included in MIE workflw for this application include:
 
-* **AWS MediaConvert** to separate a video package into video and audio tracks for downstream analysis.
-* **AWS Rekognition** computer vision to identify objects, celebrities, people, faces and moderated content. 
-* **AWS Transcribe** to convert speech in audio to text.
-* **AWS Translate** to translate text to new languages.
-* **AWS Comprehend** to identify key phrases and entitites that occur in the audio of the video.
+* Proxy encode of videos and separation of video and audio tracks using **AWS MediaConvert**. 
+* Object, scene, and activity detection in images and video using **AWS Rekognition**. 
+* Celebrity detection in images and video using **AWS Rekognition**
+* Face search from a collection of known faces in images and video using **AWS Rekognition**
+* Facial analysis to detect facial features and faces in images and videos to determine things like happiness, age range, eyes open, glasses, facial hair, etc. In video, you can also measure how these things change over time, such as constructing a timeline of the emotions expressed by an actor.  From **AWS Rekognition**.
+* Unsafe content detection using **AWS Rekognition**. Identify potentially unsafe or inappropriate content across both image and video assets. 
+* Convert speech to text from audio and video assets using **AWS Transcribe**.
+* Convert text from one language to another uing **AWS Translate**.
+* Identify entities in text using **AWS Comprehend**. 
+* Identify key phrases in text using **AWS Comprehend**
 
 Data are stored in AWS Elasticsearch search engine and can be retrieved using Lucene queries in the Collection view search page.
-
 
 ### Example use cases for Media Insights Engine
  
@@ -64,6 +85,7 @@ The Media Analysis Engine is built to be extended for new use cases.  You can:
 See the [Developer Guide](https://github.com/awslabs/aws-media-insights-engine/blob/master/DEVELOPER_QUICK_START.md) for more information on extending the application for a custom use case.
 
 API Reference - Coming soon!
+
 Builder's guide - Coming soon!
 
 # Known Issues

@@ -61,7 +61,7 @@ The Media Analysis Engine is built to be extended for new use cases.  You can:
 * Create new workflows using the existing operators and/or your own operators.
 * Add new data consumers to provide data management that suits the needs of your application.
 
-See the [Developer Guide](https://github.com/awslabs/aws-media-insights-engine/blob/master/DEVELOPER_QUICK_START) for more information on extending the application for a custom use case.
+See the [Developer Guide](https://github.com/awslabs/aws-media-insights-engine/blob/master/DEVELOPER_QUICK_START.md) for more information on extending the application for a custom use case.
 
 API Reference - Coming soon!
 Builder's guide - Coming soon!
@@ -74,7 +74,7 @@ Visit the Issue page in this repository for known issues and feature requests.
 
 # Contributing
 
-See the [CONTRIBUTING](https://github.com/awslabs/aws-media-insights-engine/blob/master/CONTRIBUTING) file for how to contribute.
+See the [CONTRIBUTING](https://github.com/awslabs/aws-media-insights-engine/blob/master/CONTRIBUTING.md) file for how to contribute.
 
 # License
 

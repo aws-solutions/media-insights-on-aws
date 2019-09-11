@@ -41,7 +41,7 @@ Trigger create, update, delete and retrieval of media assets and their associate
 
 Stores metadata for an asset that can be retrieved as a single block or pages of data using the objects AssetId and Metadata type.  Writing data to the pipeline triggers a copy of the data to be stored in a **Kinesis Stream**.
 
-### ** Data plane pipeline consumer
+### ** Data plane pipeline consumer**
 
 A lambda function that consumes data from the dataplane pipeline and stores it (or acts on it) in another downstream data store.  Data can be stored in different kind of data stores to fit the data management and query needs of the application.  There can be 0 or more pipeline consumers in a MIE application. 
 

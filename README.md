@@ -2,7 +2,7 @@
 
 Welcome to the preview of the Media Insights Engine (MIE) project!
 
-Media Insights Engine is a framework that makes analyzing and transforming media in applications quick and easy. MIE lets builders: 
+MIE is a serverless framework to accelerate the development of applications that discover next-generation insights in your video, audio, text, and image resources by utilizing AWS Machine Learning services.  MIE lets builders: 
 
 1. Create media analysis workflows from a library of base operations built on AWS Machine Learning and Media Services such as AWS Rekognition, AWS Transcribe, AWS Translate, AWS Cognito, AWS Polly, and AWS MediaConvert.
 2. Execute workflows and store the resulting media and analysis for later use.
@@ -83,7 +83,7 @@ MIE is a reusable architecture that can support many different applications.  Ex
 
 # Developer Quickstart
 
-The Media Analysis Engine is built to be extended for new use cases.  You can:
+The Media Insights Engine is built to be extended for new use cases.  You can:
 
 * Run existing workflows using custom runtime confgurations.
 * Create new operators for new types of analysis or transformations of your media.

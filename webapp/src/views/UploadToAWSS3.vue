@@ -78,8 +78,7 @@ export default {
             "parallelRekognitionStageImage": {
               "faceSearchImage": {
                 "MediaType": "Image",
-                "Enabled": true,
-                "CollectionId": "family_faces"
+                "Enabled": false,
               },
               "labelDetectionImage": {"MediaType": "Image", "Enabled": true},
               "celebrityRecognitionImage": {"MediaType": "Image", "Enabled": true},
@@ -102,9 +101,8 @@ export default {
           "Configuration": {
             "defaultVideoStage": {
               "faceSearch": {
-                "CollectionId": "family_faces",
                 "MediaType": "Video",
-                "Enabled": true
+                "Enabled": false
               }
             }
           },

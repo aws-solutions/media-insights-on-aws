@@ -601,6 +601,13 @@ Resources:
   DataplaneBucket:
     Type: "AWS::S3::Bucket"
     DeletionPolicy: Retain
+    Properties:
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ['*']
+            AllowedMethods: ['GET','POST']
+            AllowedOrigins: ['*']
+            Id: AllowUploadsFromWebApp
 
   # Services - SQS
 

@@ -1,7 +1,7 @@
 deployment/media-analysis-dataplane-api-stack.yaml
 webapp/public/
 venv/
-dist/
+./dist/
 package/
 node_modules/
 source/web_site/build/

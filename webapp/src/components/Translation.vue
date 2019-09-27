@@ -1,9 +1,21 @@
 <template>
   <div>
-    <div v-if="this.isBusy" class="wrapper">
-      <b-spinner variant="secondary" label="Loading..."></b-spinner>
-      <p class="text-muted">(Loading...)</p></div>
-    <div v-else class="wrapper">
+    <div
+      v-if="isBusy"
+      class="wrapper"
+    >
+      <b-spinner
+        variant="secondary"
+        label="Loading..."
+      />
+      <p class="text-muted">
+        (Loading...)
+      </p>
+    </div>
+    <div
+      v-else
+      class="wrapper"
+    >
       <label>Source Language:</label> {{ source_language }}<br>
       <label>Target Language:</label> {{ target_language }}<br>
       {{ translated_text }}
@@ -23,6 +35,18 @@ export default {
       operator: "translation"
     }
   },
+  deactivated: function () {
+    console.log('deactivated component:', this.operator)
+  },
+  activated: function () {
+    console.log('activated component:', this.operator)
+    this.fetchAssetData();
+  },
+  beforeDestroy: function () {
+      this.translated_text = "",
+      this.source_language = "",
+      this.target_language = ""
+    },
   methods: {
     fetchAssetData () {
       const vm = this;
@@ -43,18 +67,6 @@ export default {
         })
       );
     }
-  },
-  deactivated: function () {
-    console.log('deactivated component:', this.operator)
-  },
-  activated: function () {
-    console.log('activated component:', this.operator)
-    this.fetchAssetData();
-  },
-  beforeDestroy: function () {
-      this.translated_text = "",
-      this.source_language = "",
-      this.target_language = ""
-    }
+  }
 }
 </script>

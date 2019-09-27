@@ -2,14 +2,37 @@
   <div>
     <div class="wrapper">
       Confidence Threshold<br>
-      <input @click="updateConfidence" type="range" value="90" min="55" max="99" step="1">
+      <input
+        type="range"
+        value="90"
+        min="55"
+        max="99"
+        step="1"
+        @click="updateConfidence"
+      >
       {{ Confidence }}%<br>
     </div>
-    <div v-if="this.isBusy" class="wrapper">
-       <Loading />
+    <div
+      v-if="isBusy"
+      class="wrapper"
+    >
+      <Loading />
     </div>
     <div class="wrapper">
-      <b-table responsive fixed :items="entities" :fields="fields" :sort-by="sortBy"></b-table>
+      <b-table
+        responsive
+        fixed
+        :items="entities"
+        :fields="fields"
+        :sort-by="sortBy"
+      >
+        <template
+          slot="Confidence"
+          slot-scope="data"
+        >
+          {{ (data.item.Confidence * 1).toFixed(2) }}
+        </template>
+      </b-table>
     </div>
   </div>
 </template>
@@ -25,6 +48,7 @@ export default {
     },
   data() {
     return {
+      Confidence: 90,
       sortBy: "BeginOffset",
       fields: [
         { key: 'EntityText', sortable: true },
@@ -38,10 +62,24 @@ export default {
       operator: "entities"
     }
   },
+  computed: {
+    ...mapState(['player']),
+  },
+  deactivated: function () {
+    console.log('deactivated component:', this.operator)
+  },
+  activated: function () {
+    console.log('activated component:', this.operator)
+    this.fetchAssetData();
+  },
+  beforeDestroy: function () {
+    this.entities = []
+  },
   methods: {
     updateConfidence (event) {
-      this.isBusy = true
-      this.$store.commit('updateConfidence', event.target.value);
+      this.isBusy = true;
+      this.entities = [];
+      this.Confidence = event.target.value;
       this.fetchAssetData()
     },
     fetchAssetData () {
@@ -61,19 +99,6 @@ export default {
         })
       );
     }
-  },
-  computed: {
-      ...mapState(['Confidence', 'player']),
-  },
-  deactivated: function () {
-    console.log('deactivated component:', this.operator)
-  },
-  activated: function () {
-    console.log('activated component:', this.operator)
-    this.fetchAssetData();
-  },
-  beforeDestroy: function () {
-      this.entities = []
-    }
+  }
 }
 </script>

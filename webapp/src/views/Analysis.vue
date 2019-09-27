@@ -2,57 +2,108 @@
   <div>
     <Header />
     <b-container fluid>
-      <b-alert v-model="showElasticSearchAlert" variant="danger" dismissible>
+      <b-alert
+        v-model="showElasticSearchAlert"
+        variant="danger"
+        dismissible
+      >
         Elasticsearch server denied access. Please check its access policy.
       </b-alert>
       <b-row class="dataColumns">
         <b-col>
           <div>
-            <b-row  align-h="center">
-            <b-tabs content-class="mt-3" fill>
-              <b-tab @click="currentView = 'LabelObjects'; mlTabs = 0" title="ML Vision" active>
-              <b-container fluid>
-                <b-row>
-                  <div>
-                    <b-tabs v-model="mlTabs" content-class="mt-3" fill>
-                      <b-tab @click="currentView = 'LabelObjects'" title="Objects"></b-tab>
-                      <b-tab @click="currentView = 'Celebrities'" title="Celebrities"></b-tab>
-                      <b-tab @click="currentView = 'ContentModeration'" title="Moderation"></b-tab>
-                      <b-tab @click="currentView = 'FaceDetection'" title="Faces"></b-tab>
-                    </b-tabs>
-                  </div>
-                </b-row>
-              </b-container>
-              </b-tab>
-              <b-tab @click="currentView = 'Transcript'; speechTabs = 0" title="Speech Recognition">
-                <b-tabs v-model="speechTabs" content-class="mt-3" fill>
-                  <b-tab @click="currentView = 'Transcript'" title="Transcript"></b-tab>
-                  <b-tab @click="currentView = 'Translation'" title="Translation"></b-tab>
-                  <b-tab @click="currentView = 'KeyPhrases'" title="KeyPhrases"></b-tab>
-                  <b-tab @click="currentView = 'Entities'" title="Entities"></b-tab>
-                </b-tabs>
-              </b-tab>
-            </b-tabs>
+            <b-row align-h="center">
+              <b-tabs
+                content-class="mt-3"
+                fill
+              >
+                <b-tab
+                  title="ML Vision"
+                  active
+                  @click="currentView = 'LabelObjects'; mlTabs = 0"
+                >
+                  <b-container fluid>
+                    <b-row>
+                      <div>
+                        <b-tabs
+                          v-model="mlTabs"
+                          content-class="mt-3"
+                          fill
+                        >
+                          <b-tab
+                            title="Objects"
+                            @click="currentView = 'LabelObjects'"
+                          />
+                          <b-tab
+                            title="Celebrities"
+                            @click="currentView = 'Celebrities'"
+                          />
+                          <b-tab
+                            title="Moderation"
+                            @click="currentView = 'ContentModeration'"
+                          />
+                          <b-tab
+                            title="Faces"
+                            @click="currentView = 'FaceDetection'"
+                          />
+                        </b-tabs>
+                      </div>
+                    </b-row>
+                  </b-container>
+                </b-tab>
+                <b-tab
+                  title="Speech Recognition"
+                  @click="currentView = 'Transcript'; speechTabs = 0"
+                >
+                  <b-tabs
+                    v-model="speechTabs"
+                    content-class="mt-3"
+                    fill
+                  >
+                    <b-tab
+                      title="Transcript"
+                      @click="currentView = 'Transcript'"
+                    />
+                    <b-tab
+                      title="Translation"
+                      @click="currentView = 'Translation'"
+                    />
+                    <b-tab
+                      title="KeyPhrases"
+                      @click="currentView = 'KeyPhrases'"
+                    />
+                    <b-tab
+                      title="Entities"
+                      @click="currentView = 'Entities'"
+                    />
+                  </b-tabs>
+                </b-tab>
+              </b-tabs>
             </b-row>
           </div>
           <div>
             <keep-alive>
-              <component v-bind:is="currentView">
+              <component :is="currentView">
                 <!-- inactive components will be cached! -->
               </component>
             </keep-alive>
-        </div>
+          </div>
         </b-col>
         <b-col>
-          <div v-if="this.videoOptions.sources[0].src === ''">
+          <div v-if="videoOptions.sources[0].src === ''">
             <Loading />
           </div>
           <div v-else>
-            <VideoPlayer :options="videoOptions"></VideoPlayer>
+            <VideoPlayer :options="videoOptions" />
+            <LineChart />
           </div>
           <div>
-            <b-row class='mediaSummary'>
-            <MediaSummaryBox :s3_uri=s3_uri :filename=filename />
+            <b-row class="mediaSummary">
+              <MediaSummaryBox
+                :s3Uri="s3_uri"
+                :filename="filename"
+                :videoUrl="videoOptions.sources[0].src"
+              />
             </b-row>
           </div>
         </b-col>
@@ -67,40 +118,20 @@
   import Loading from '@/components/Loading.vue'
   import ComponentLoadingError from '@/components/ComponentLoadingError.vue'
   import MediaSummaryBox from '@/components/MediaSummaryBox.vue'
+  import LineChart from '@/components/LineChart.vue'
   import { mapState } from 'vuex'
 
   export default {
     name: 'Home',
-    data: function () {
-      return {
-        s3_uri: '',
-        filename: '',
-        currentView: 'LabelObjects',
-        showElasticSearchAlert: false,
-        mlTabs: 0,
-        speechTabs: 0,
-        signed_url: '',
-        videoOptions: {
-          preload: 'auto',
-          loop: true,
-				  controls: true,
-				  sources: [
-					    {
-						    src: "",
-						    type: "video/mp4"
-					    }
-				  ]
-			  }
-      }
-    },
     components: {
       Header,
       ComponentLoadingError,
       MediaSummaryBox,
       Loading,
       VideoPlayer,
+      LineChart,
       LabelObjects: () => ({
-        component: new Promise(function(resolve, reject) {
+        component: new Promise(function(resolve) {
           setTimeout(function() {
             resolve(import('@/components/LabelObjects.vue'));
         }, 1000);
@@ -109,7 +140,7 @@
       }),
 
       Celebrities: () => ({
-        component: new Promise(function(resolve, reject) {
+        component: new Promise(function(resolve) {
           setTimeout(function() {
             resolve(import('@/components/Celebrities.vue'));
         }, 1000);
@@ -118,7 +149,7 @@
       }),
 
       ContentModeration: () => ({
-        component: new Promise(function(resolve, reject) {
+        component: new Promise(function(resolve) {
           setTimeout(function() {
             resolve(import('@/components/ContentModeration.vue'));
         }, 1000);
@@ -126,7 +157,7 @@
         loading: Loading,
       }),
       Transcript: () => ({
-        component: new Promise(function(resolve, reject) {
+        component: new Promise(function(resolve) {
           setTimeout(function() {
             resolve(import('@/components/Transcript.vue'));
         }, 1000);
@@ -134,7 +165,7 @@
         loading: Loading,
       }),
       Translation: () => ({
-        component: new Promise(function(resolve, reject) {
+        component: new Promise(function(resolve) {
           setTimeout(function() {
             resolve(import('@/components/Translation.vue'));
         }, 1000);
@@ -142,7 +173,7 @@
         loading: Loading,
       }),
       FaceDetection: () => ({
-        component: new Promise(function(resolve, reject) {
+        component: new Promise(function(resolve) {
           setTimeout(function() {
             resolve(import('@/components/FaceDetection.vue'));
         }, 1000);
@@ -150,7 +181,7 @@
         loading: Loading,
       }),
       Entities: () => ({
-        component: new Promise(function(resolve, reject) {
+        component: new Promise(function(resolve) {
           setTimeout(function() {
             resolve(import('@/components/ComprehendEntities.vue'));
         }, 1000);
@@ -158,7 +189,7 @@
         loading: Loading,
       }),
       KeyPhrases: () => ({
-        component: new Promise(function(resolve, reject) {
+        component: new Promise(function(resolve) {
           setTimeout(function() {
             resolve(import('@/components/ComprehendKeyPhrases.vue'));
         }, 1000);
@@ -167,6 +198,47 @@
         error: ComponentLoadingError
       })
     },
+    data: function () {
+      return {
+        s3_uri: '',
+        filename: '',
+        currentView: 'LabelObjects',
+        showElasticSearchAlert: false,
+        mlTabs: 0,
+        speechTabs: 0,
+        videoOptions: {
+          preload: 'auto',
+          loop: true,
+          controls: true,
+          sources: [
+            {
+              src: "",
+              type: "video/mp4"
+            }
+          ]
+        }
+      }
+    },
+    computed: {
+      ...mapState(['Confidence'])
+    },
+    created() {
+          this.checkServerAccess();
+          var asset_id = this.$route.params.asset_id;
+          fetch(process.env.VUE_APP_DATAPLANE_API_ENDPOINT+'/metadata/'+asset_id, {
+            method: 'get'
+          }).then(response => {
+            response.json().then(data => ({
+                data: data,
+              })
+            ).then(res => {
+              this.s3_uri = 's3://'+res.data.results.S3Bucket+'/'+res.data.results.S3Key
+              this.filename = this.s3_uri.split("/").pop();
+              this.getVideoUrl()
+            })
+          });
+          this.updateAssetId();
+      },
     methods: {
       getVideoUrl() {
         // This function gets the video URL then initializes the video player
@@ -204,26 +276,6 @@
           })
         );
       }
-    },
-    created() {
-          this.checkServerAccess();
-          var asset_id = this.$route.params.asset_id;
-          fetch(process.env.VUE_APP_DATAPLANE_API_ENDPOINT+'/metadata/'+asset_id, {
-            method: 'get'
-          }).then(response => {
-            response.json().then(data => ({
-                data: data,
-              })
-            ).then(res => {
-              this.s3_uri = 's3://'+res.data.results.S3Bucket+'/'+res.data.results.S3Key
-              this.filename = this.s3_uri.split("/").pop();
-              this.getVideoUrl()
-            })
-          });
-          this.updateAssetId();
-      },
-    computed: {
-      ...mapState(['Confidence'])
     }
   }
 </script>

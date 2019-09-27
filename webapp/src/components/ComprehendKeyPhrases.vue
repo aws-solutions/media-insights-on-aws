@@ -2,14 +2,40 @@
   <div>
     <div class="wrapper">
       Confidence Threshold<br>
-      <input @click="updateConfidence" type="range" value="90" min="55" max="99" step="1">
+      <input
+        type="range"
+        value="90"
+        min="55"
+        max="99"
+        step="1"
+        @click="updateConfidence"
+      >
       {{ Confidence }}%<br>
     </div>
-    <div v-if="this.isBusy" class="wrapper">
-        <Loading />
+    <div
+      v-if="isBusy"
+      class="wrapper"
+    >
+      <Loading />
     </div>
-    <div v-else class="wrapper">
-      <b-table responsive fixed :items="key_phrases" :fields="fields" :sort-by="sortBy"></b-table>
+    <div
+      v-else
+      class="wrapper"
+    >
+      <b-table
+        responsive
+        fixed
+        :items="key_phrases"
+        :fields="fields"
+        :sort-by="sortBy"
+      >
+        <template
+          slot="Confidence"
+          slot-scope="data"
+        >
+          {{ (data.item.Confidence * 1).toFixed(2) }}
+        </template>
+      </b-table>
     </div>
   </div>
 </template>
@@ -25,6 +51,7 @@ export default {
   },
   data() {
     return {
+      Confidence: 90,
       sortBy: "BeginOffset",
       fields: [
         { key: 'PhraseText', sortable: false },
@@ -37,10 +64,26 @@ export default {
       operator: "key_phrases"
     }
   },
+  computed: {
+    ...mapState(['player']),
+  },
+  deactivated: function () {
+    console.log('deactivated component:', this.operator)
+    // clearing this value after every deactivation so we dont carry this huge amount of data in memory
+    this.key_phrases = []
+  },
+  activated: function () {
+    console.log('activated component:', this.operator)
+    this.fetchAssetData();
+  },
+  beforeDestroy: function () {
+    this.key_phrases = []
+  },
   methods: {
     updateConfidence (event) {
-        this.isBusy = true
-        this.$store.commit('updateConfidence', event.target.value);
+        this.isBusy = true;
+        this.key_phrases = [];
+        this.Confidence = event.target.value;
         this.fetchAssetData()
     },
     fetchAssetData () {
@@ -60,21 +103,6 @@ export default {
         })
       );
     }
-  },
-  computed: {
-      ...mapState(['Confidence', 'player']),
-  },
-  deactivated: function () {
-    console.log('deactivated component:', this.operator)
-    // clearing this value after every deactivation so we dont carry this huge amount of data in memory
-    this.key_phrases = []
-  },
-  activated: function () {
-    console.log('activated component:', this.operator)
-    this.fetchAssetData();
-  },
-  beforeDestroy: function () {
-      this.key_phrases = []
-    }
+  }
 }
 </script>

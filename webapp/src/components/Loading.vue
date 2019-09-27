@@ -1,7 +1,7 @@
 <template>
   <div>
     <b-container>
-      <b-spinner label="Loading..."></b-spinner>
+      <b-spinner label="Loading..." />
     </b-container>
   </div>
 </template>

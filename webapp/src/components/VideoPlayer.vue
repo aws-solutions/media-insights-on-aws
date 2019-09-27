@@ -1,10 +1,25 @@
 <template>
-  <div id="videoplayer" class="videoplayer">
-    <video ref="videoPlayer" width=600 height=300 data-setup='{ "inactivityTimeout": 0 }' class="video-js vjs-fluid vjs-default-skin" controls>
-       <source v-bind:src="video_url" type="video/mp4">
-       <canvas class="canvas" id="canvas" width="600" height="300"></canvas> 
-    </video>  
-  </div>
+  <b-container fluid>
+    <video
+      id="videoPlayer"
+      ref="videoPlayer"
+      width="600"
+      height="300"
+      data-setup="{ &quot;inactivityTimeout&quot;: 0 }"
+      class="video-js vjs-fluid vjs-default-skin"
+      controls
+      playsinline
+    >
+      <source
+        :src="video_url"
+        type="video/mp4"
+      >
+    </video>
+    <canvas
+      id="canvas"
+      class="canvas"
+    />
+  </b-container>
 </template>
 
 <script>
@@ -12,72 +27,91 @@ import videojs from 'video.js'
 import '@/../node_modules/video.js/dist/video-js.css'
 import '@/../node_modules/videojs-markers/dist/videojs.markers.css'
 import '@/../node_modules/videojs-markers/dist/videojs-markers.js'
+import '@/../node_modules/videojs-hotkeys/build/videojs.hotkeys.min.js'
 
 export default {
+  name: 'VideoPlayer',
+  props: {
+    options: {
+      type: Object,
+      default() {
+        return {};
+      }
+    }
+  },
   data: function () {
     return {
       video_url: '',
       player: null
     }
   },
-  name: 'VideoPlayer',
-  props: {
-        options: {
-            type: Object,
-            default() {
-                return {};
-            }
-        }
-  },
   beforeDestroy() {
-        if (this.player) {
-            this.player.dispose()
-            this.$store.commit('updatePlayer', null)
-        }
+    if (this.player) {
+      this.player.dispose();
+      this.$store.commit('updatePlayer', null)
+    }
   },
   created() {
-    const video_url = this.options.sources[0].src
+    const video_url = this.options.sources[0].src;
     this.video_url = video_url
   },
   mounted: function () {
-    console.log('mount')
-    // Fill canvas overlay red and draw a rectangle
-    var canvas = document.getElementById('canvas');
-    var ctx = canvas.getContext('2d');
-    ctx.rect(20, 20, 150, 100);
-    // Uncomment to draw rectangle:
-    // ctx.stroke();
-    this.player = videojs(this.$refs.videoPlayer)
-      this.player.ready( () => {
-      console.log('player', this.player)
-      this.player.loop(true)
+    this.player = videojs(this.$refs.videoPlayer);
+    this.player.ready(() => {
+      this.player.hotkeys({
+        volumeStep: 0.1,
+        seekStep: 1,
+        enableVolumeScroll: false,
+        enableNumbers: false,
+        enableModifiersForNumbers: false
+      });
+      this.player.loop(true);
       this.player.markers({
         breakOverlay: {
+          display: false,
+        },
+        markerTip: {
           display: true,
-          displayTime: 1,
           text: function (marker) {
-            return marker.overlayText;
+            return marker.text;
           }
         },
         markers: []
-        });
-      this.player.autoplay('muted')
-      this.player.currentTime(0)
-      this.$store.commit('updatePlayer', this.player)
-    })
+      });
+      this.player.autoplay('muted');
+      this.player.currentTime(0);
+      this.$store.commit('updatePlayer', this.player);
+
+      // Set canvas size to videoPlayer size
+      var canvas = document.getElementById('canvas');
+      var video = document.getElementById('videoPlayer');
+      canvas.width = video.clientWidth;
+      canvas.height = video.clientHeight;
+    });
+    window.addEventListener('resize', function () {
+      // Update canvas size when window is resized
+      var canvas = document.getElementById('canvas');
+      var video = document.getElementById('videoPlayer');
+      canvas.width = video.clientWidth;
+      canvas.height = video.clientHeight;
+    });
   },
   beforeUpdate: function () {
     this.$store.commit('updatePlayer', this.player)
-  } 
+  }
 }
 </script>
 
+<style>
+  .video-js .vjs-current-time, .vjs-no-flex .vjs-current-time {
+    display: block; }
+</style>
 <style scoped>
   .canvas {
     position: absolute;
     top: 0;
-    left: 0;
-    z-index: 10;
+    left: 30px;
+    /*background-color:rgba(255,0,0,0.5);*/
     pointer-events: none;
   }
 </style>

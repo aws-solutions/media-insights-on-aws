@@ -1,44 +1,100 @@
 <template>
   <div>
     <div class="headerTextBackground">
-    <Header v-bind:isCollectionActive=true></Header>
-    <b-container fluid>
-      <b-row align-h="center">
-        <h1>Media Collection</h1>
-      </b-row>
-      <b-row align-h="center" class="tagline">
-        <b>Discover insights in your media by searching for keywords, objects, or even people.</b>
-      </b-row>
-      <b-row class="my-1" align-v="center" align-h="center">
-        <b-col sm="5">
-          <input type="text" v-model="user_defined_query" placeholder="Search Collection..." v-on:keyup.enter="elasticsearchQuery"/>
+      <Header :is-collection-active="true" />
+      <b-container fluid>
+        <b-row align-h="center">
+          <h1>Media Collection</h1>
+        </b-row>
+        <b-row
+          align-h="center"
+          class="tagline"
+        >
+          <b>Discover insights in your media by searching for keywords, objects, or even people.</b>
+        </b-row>
+        <b-row
+          class="my-1"
+          align-v="center"
+          align-h="center"
+        >
+          <b-col sm="5">
+            <input
+              v-model="user_defined_query"
+              type="text"
+              placeholder="Search Collection..."
+              @keyup.enter="elasticsearchQuery"
+            >
           </b-col>
-        <b-col sm="1">
-          <b-button size="lg" v-on:click="elasticsearchQuery">Search</b-button>
-        </b-col>
-    </b-row>
-    </b-container>
+          <b-col sm="1">
+            <b-button
+              size="lg"
+              @click="elasticsearchQuery"
+            >
+              Search
+            </b-button>
+          </b-col>
+        </b-row>
+      </b-container>
     </div>
-    <b-container fluid class="resultsTable">
+    <b-container
+      fluid
+      class="resultsTable"
+    >
       <b-row>
         <b-col>
           <div>
             <div class="column">
               <b-row class="my-1">
                 <b-col>
-                  <b-table striped hover fixed responsive :fields="fields" :items="asset_list" :sort-by.sync="sortBy" :sort-desc.sync="sortDesc" :current-page="currentPage" :per-page="perPage">
-                    <template slot="Thumbnail" slot-scope="data">
-                      <VideoThumbnail :ThumbnailID="data.item.ThumbnailID" :signed_url="data.item.signed_url"></VideoThumbnail>
+                  <b-table
+                    striped
+                    hover
+                    fixed
+                    responsive
+                    :fields="fields"
+                    :items="asset_list"
+                    :sort-by.sync="sortBy"
+                    :sort-desc.sync="sortDesc"
+                    :current-page="currentPage"
+                    :per-page="perPage"
+                  >
+                    <template
+                      slot="Thumbnail"
+                      slot-scope="data"
+                    >
+                      <VideoThumbnail
+                        :thumbnail-i-d="data.item.thumbnailID"
+                        :signed-url="data.item.signedUrl"
+                      />
                     </template>
-                    <template slot="Actions" slot-scope="data">
-                      <b-button variant="orange" @click="$router.push(`/analysis/${data.item.asset_id}`)">Analyze</b-button>
+                    <template
+                      slot="Actions"
+                      slot-scope="data"
+                    >
+                      <b-button
+                        variant="orange"
+                        @click="$router.push(`/analysis/${data.item.asset_id}`)"
+                      >
+                        Analyze
+                      </b-button>
                       &nbsp;
-                      <b-button :pressed="false" variant="red" @click="deleteAsset(`${data.item.asset_id}`)">Delete</b-button>
+                      <b-button
+                        :pressed="false"
+                        variant="red"
+                        @click="deleteAsset(`${data.item.asset_id}`)"
+                      >
+                        Delete
+                      </b-button>
                     </template>
                   </b-table>
-                  <div v-if="this.isBusy" class="wrapper">
-                    <Loading v-if="this.isBusy" />
-                    <p class="text-muted">(Loading...)</p>
+                  <div
+                    v-if="isBusy"
+                    class="wrapper"
+                  >
+                    <Loading v-if="isBusy" />
+                    <p class="text-muted">
+                      (Loading...)
+                    </p>
                   </div>
                 </b-col>
               </b-row>
@@ -47,15 +103,14 @@
                   v-model="currentPage"
                   :total-rows="totalRows"
                   :per-page="perPage"
-                  class="my-0">
-                </b-pagination>
+                  class="my-0"
+                />
               </b-row>
             </div>
           </div>
         </b-col>
       </b-row>
     </b-container>
-
   </div>
 </template>
 
@@ -66,6 +121,11 @@
 
   export default {
     name: "Run",
+    components: {
+      Header,
+      Loading,
+      VideoThumbnail
+    },
     data() {
       return {
         totalRows: 1,
@@ -108,10 +168,8 @@
         }
       }
     },
-    components: {
-      Header,
-      Loading,
-      VideoThumbnail
+    created: function () {
+      this.fetchAssetList();
     },
     methods: {
       deleteAsset(asset_id) {
@@ -214,8 +272,8 @@
                               Filename: filename,
                               status: status,
                               s3_uri: s3_uri,
-                              signed_url: signed_url,
-                              ThumbnailID: '_' + assetid,
+                              signedUrl: signed_url,
+                              thumbnailID: '_' + assetid,
                               Thumbnail: '',
                               Actions: 'Run'
                             })
@@ -284,10 +342,11 @@
                           status: response.status
                         })
                       ).then(res => {
-                        if (res.status != 200) {
-                          console.log("ERROR: Failed to get workflow status")
+                        if (res.status != 200 || res == undefined || res.data[0] == undefined) {
+                          console.log("ERROR: Failed to get workflow status for asset " + assetid)
                         } else {
                           var status = res.data[0].Status;
+                          console.log("Got workflow status " + status + " for asset " + assetid)
                           const signed_url = data;
                           // media_type = res2.data2.results.S3Key.split('.').pop();
                           // console.log('media type: ' + media_type)
@@ -297,8 +356,8 @@
                             Filename: filename,
                             status: status,
                             s3_uri: s3_uri,
-                            signed_url: signed_url,
-                            ThumbnailID: '_' + assetid,
+                            signedUrl: signed_url,
+                            thumbnailID: '_' + assetid,
                             Thumbnail: '',
                             Actions: 'Run'
                           })
@@ -315,9 +374,6 @@
           })
         )
       },
-    },
-    created: function () {
-      this.fetchAssetList();
     }
   }
 </script>

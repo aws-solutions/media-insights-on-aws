@@ -16,8 +16,8 @@
 #   Then run `./deploy.sh`
 #
 ###############################################################################
-MIE_STACK_NAME=mie01
-REGION=us-west-2
+MIE_STACK_NAME=mie02
+REGION=us-east-1
 DIST_OUTPUT_BUCKET=media-insights-engine
 PROFILE=default
 
@@ -38,7 +38,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-cd /Users/ianwow/development/MediaInsightsEngine/deployment
+cd ../deployment
 
 # Exit if MIE_STACK_NAME stack if it already exists
 aws cloudformation describe-stacks --stack-name $STACK_NAME --region $REGION --profile $PROFILE 2> /dev/null > /dev/null
@@ -76,7 +76,7 @@ ParameterKey=DeployComprehendWorkflow,ParameterValue=true \
 ParameterKey=DeployKitchenSinkWorkflow,ParameterValue=true \
 ParameterKey=DeployAnalyticsPipeline,ParameterValue=true \
 ParameterKey=DeployDemoSite,ParameterValue=true \
-ParameterKey=ApiIpList,ParameterValue="72.21.198.65/32" \
+ParameterKey=ApiIpList,ParameterValue="0.0.0.0/0" \
 --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --profile $PROFILE --disable-rollback
 
 # Tell bash to stop echoing

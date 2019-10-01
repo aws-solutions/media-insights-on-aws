@@ -299,7 +299,7 @@
         }
         // Look for and draw bounding boxes every 100ms
         const interval_ms = 100;
-        const erase_on_iteration = 1;
+        const erase_on_iteration = 2;
         var i = 0;
         this.canvasRefreshInterval = setInterval(function () {
           i++;

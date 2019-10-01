@@ -168,6 +168,9 @@ Resources:
                   - "es:ESHttpPut"
                   - "es:ESHttpDelete"
                   - "es:ESHttpGet"
+                Resource: !Join ["", [!GetAtt ESDomain.DomainArn, "/*"]]
+              - Effect: Allow
+                Action:
                   - "es:DescribeElasticsearchDomain"
                   - "es:GetCompatibleElasticsearchVersions"
                   - "es:DescribeElasticsearchDomains"

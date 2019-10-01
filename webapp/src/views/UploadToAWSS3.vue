@@ -10,7 +10,7 @@
         @dismissed="dismissCountDown=0"
         @dismiss-count-down="countDownChanged"
       >
-        {{ errorMessage }}
+        {{ uploadErrorMessage }}
       </b-alert>
       <h1>Upload Videos</h1>
       <p>{{ description }}</p>
@@ -25,17 +25,13 @@
       <br>
       <label>Upload destination:</label>
       <span class="note"> {{ s3_destination }} </span><br>
-      <b-button v-b-toggle.collapse-2 class="m-1">Configure Workflow</b-button>
-      <b-button v-if="validForm"
-        variant="primary"
-        @click="uploadFiles"
-      >
+      <b-button v-b-toggle.collapse-2 class="m-1">
+        Configure Workflow
+      </b-button>
+      <b-button v-if="validForm" variant="primary" @click="uploadFiles">
         Start Upload and Run Workflow
       </b-button>
-      <b-button v-else disabled
-        variant="primary"
-        @click="uploadFiles"
-      >
+      <b-button v-else disabled variant="primary" @click="uploadFiles">
         Start Upload and Run Workflow
       </b-button>
       <br>
@@ -46,46 +42,52 @@
             <b-card header="Video Operators">
               <b-form-group>
                 <b-form-checkbox-group
-                    id="checkbox-group-1"
-                    v-model="enabledOperators"
-                    :options="videoOperators"
-                    name="flavour-1"
+                  id="checkbox-group-1"
+                  v-model="enabledOperators"
+                  :options="videoOperators"
+                  name="flavour-1"
                 ></b-form-checkbox-group>
-                <b-form-input v-if='enabledOperators.includes("faceSearch")' v-model="faceCollectionId" placeholder="Enter face collection id"></b-form-input>
+                <b-form-input v-if="enabledOperators.includes('faceSearch')" v-model="faceCollectionId" placeholder="Enter face collection id"></b-form-input>
               </b-form-group>
-              <div v-if='!validForm' style="color:red">{{ videoFormErrorMessage }}</div>
+              <div v-if="videoFormError" style="color:red">
+                {{ videoFormError }}
+              </div>
             </b-card>
             <b-card header="Audio Operators">
               <b-form-group>
                 <b-form-checkbox-group
-                    id="checkbox-group-2"
-                    v-model="enabledOperators"
-                    :options="audioOperators"
-                    name="flavour-2"
+                  id="checkbox-group-2"
+                  v-model="enabledOperators"
+                  :options="audioOperators"
+                  name="flavour-2"
                 ></b-form-checkbox-group>
-                <div v-if='enabledOperators.includes("Transcribe")'>
+                <div v-if="enabledOperators.includes('Transcribe')">
                   <label>Source Language</label>
                   <b-form-select v-model="transcribeLanguage" :options="transcribeLanguages"></b-form-select>
                 </div>
               </b-form-group>
-              <div v-if='!validForm' style="color:red">{{ audioFormErrorMessage }}</div>
+              <div v-if="audioFormError" style="color:red">
+                {{ audioFormError }}
+              </div>
             </b-card>
             <b-card header="Text Operators">
               <b-form-group>
                 <b-form-checkbox-group
-                    id="checkbox-group-3"
-                    v-model="enabledOperators"
-                    :options="textOperators"
-                    name="flavour-3"
+                  id="checkbox-group-3"
+                  v-model="enabledOperators"
+                  :options="textOperators"
+                  name="flavour-3"
                 ></b-form-checkbox-group>
-                <div v-if='enabledOperators.includes("Translate")'>
+                <div v-if="enabledOperators.includes('Translate')">
                   <label>Translation Source Language</label>
                   <b-form-select v-model="sourceLanguageCode" :options="translateLanguages"></b-form-select>
                   <label>Translation Target Language</label>
                   <b-form-select v-model="targetLanguageCode" :options="translateLanguages"></b-form-select>
                 </div>
               </b-form-group>
-              <div v-if='!validForm' style="color:red">{{ textFormErrorMessage }}</div>
+              <div v-if="textFormError" style="color:red">
+                {{ textFormError }}
+              </div>
             </b-card>
           </b-card-group>
         </b-container>
@@ -135,10 +137,7 @@ export default {
       {text: 'Polly', value: 'Polly'},
       {text: 'Translate', value: 'Translate'},
     ],
-    faceCollectionId: "",
-    videoFormErrorMessage: "",
-    audioFormErrorMessage: "",
-    textFormErrorMessage: "",
+    faceCollectionId: "undefined",
     transcribeLanguage: "en-US",
     transcribeLanguages: [
       {text: 'US English', value: 'en-US'},
@@ -187,7 +186,7 @@ export default {
     ],
     sourceLanguageCode: "en",
     targetLanguageCode: "ru",
-    errorMessage: "",
+    uploadErrorMessage: "",
     dismissSecs: 8,
     dismissCountDown: 0,
     executed_assets: [],
@@ -209,42 +208,41 @@ export default {
   }
   },
   computed: {
-    validForm() {
-      var validStatus = true;
+    textFormError() {
       // Validate translated text is en, ru, es, or fr if Polly is enabled
       if (this.enabledOperators.includes('Polly') && this.targetLanguageCode !== "en" && this.targetLanguageCode !== "ru" && this.targetLanguageCode !== "es" && this.targetLanguageCode !== "fr") {
-        this.textFormErrorMessage = "Polly is only available when translation target is English, Russian, Spanish, or French.";
-        validStatus = false;
-      } else {
-        this.textFormErrorMessage = "";
+        return "Polly is only available when translation target is English, Russian, Spanish, or French.";
       }
+      return "";
+    },
+    audioFormError() {
       // Validate transcribe is enabled if any text operator is enabled
       if (!this.enabledOperators.includes("Transcribe") && (this.enabledOperators.includes("Translate") || this.enabledOperators.includes("ComprehendEntities") || this.enabledOperators.includes("ComprehendKeyPhrases") || this.enabledOperators.includes("Polly"))) {
-        this.audioFormErrorMessage = "Transcribe must be enabled if any text operator is enabled.";
-        validStatus = false;
-      } else {
-        this.audioFormErrorMessage = "";
+        return "Transcribe must be enabled if any text operator is enabled.";
       }
+      return "";
+    },
+    videoFormError() {
       // Validate face collection ID if face search is enabled
       if (this.enabledOperators.includes("faceSearch")) {
         // Validate that the collection ID is defined
         if (this.faceCollectionId === "") {
-          this.videoFormErrorMessage = "Face collection name is required.";
-          validStatus = false;
+          return "Face collection name is required.";
         }
         // Validate that the collection ID matches required regex
-        else if ((new RegExp('[^a-zA-Z0-9_.\-]')).test(this.faceCollectionId)) {
-          this.videoFormErrorMessage = "Face collection name must match pattern [a-zA-Z0-9_.\\\\-]+";
-          validStatus = false;
+        else if ((new RegExp('[^a-zA-Z0-9_.\\-]')).test(this.faceCollectionId)) {
+          return "Face collection name must match pattern [a-zA-Z0-9_.\\\\-]+";
         }
         // Validate that the collection ID is not too long
         else if (this.faceCollectionId.length > 255) {
-          this.videoFormErrorMessage = "Face collection name have fewer than 255 characters.";
-          validStatus = false;
-        } else {
-          this.videoFormErrorMessage = "";
+          return "Face collection name have fewer than 255 characters.";
         }
       }
+      return "";
+    },
+    validForm() {
+      var validStatus = true;
+      if (this.textFormError || this.audioFormError || this.videoFormError) validStatus = false;
       return validStatus;
     },
     workflowConfig() {
@@ -311,16 +309,13 @@ export default {
     clearInterval(this.workflow_status_polling)
   },
   methods: {
-    checkForm(e) {
-      return (this.videoFormErrorMessage === "")
-    },
     countDownChanged(dismissCountDown) {
       this.dismissCountDown = dismissCountDown
     },
     s3UploadError(error) {
       console.log(error);
       // display alert
-      this.errorMessage = error;
+      this.uploadErrorMessage = error;
       this.dismissCountDown = this.dismissSecs;
     },
     s3UploadComplete: function (location) {
@@ -337,14 +332,21 @@ export default {
           "Configuration": {
             "parallelRekognitionStageImage": {
               "faceSearchImage": {
-                "MediaType": "Image",
-                "Enabled": false,
-                "CollectionId": ""
+                "Enabled": this.enabledOperators.includes("faceSearch"),
+                "CollectionId": this.faceCollectionId
               },
-              "labelDetectionImage": {"MediaType": "Image", "Enabled": true},
-              "celebrityRecognitionImage": {"MediaType": "Image", "Enabled": true},
-              "contentModerationImage": {"MediaType": "Image", "Enabled": true},
-              "faceDetectionImage": {"MediaType": "Image", "Enabled": true}
+              "labelDetectionImage": {
+                "Enabled": this.enabledOperators.includes("labelDetection"),
+              },
+              "celebrityRecognitionImage": {
+                "Enabled": this.enabledOperators.includes("celebrityRecognition"),
+              },
+              "contentModerationImage": {
+                "Enabled": this.enabledOperators.includes("contentModeration"),
+              },
+              "faceDetectionImage": {
+                "Enabled": this.enabledOperators.includes("faceDetection"),
+              }
             }
           },
           "Input": {
@@ -434,8 +436,6 @@ export default {
       }, poll_frequency)
     },
     uploadFiles() {
-      if (!this.checkForm())
-        return;
       if (this.signurl) {
         this.$refs.myVueDropzone.setAWSSigningURL(this.signurl);
         this.$refs.myVueDropzone.processQueue();

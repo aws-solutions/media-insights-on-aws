@@ -367,7 +367,7 @@ export default {
             if (response.success) {
               file.s3ObjectLocation = response.message
               // set dropzone url option to the URL in the get_presigned_url() response
-              this.options.url = response.message.url
+              this.dropzone.options.url = response.message.url
               setTimeout(() => this.dropzone.processFile(file))
               this.$emit('vdropzone-s3-upload-success', response.message);
             } else {

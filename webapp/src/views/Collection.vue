@@ -3,6 +3,13 @@
     <div class="headerTextBackground">
       <Header :is-collection-active="true" />
       <b-container fluid>
+        <b-alert
+            v-model="showElasticSearchAlert"
+            variant="danger"
+            dismissible
+        >
+          Elasticsearch server denied access. Please check its access policy.
+        </b-alert>
         <b-row align-h="center">
           <h1>Media Collection</h1>
         </b-row>
@@ -128,6 +135,7 @@
     },
     data() {
       return {
+        showElasticSearchAlert: false,
         totalRows: 1,
         currentPage: 1,
         perPage: 10,
@@ -194,8 +202,12 @@
         var vm = this;
         vm.isBusy = true;
         var user_defined_query = vm.user_defined_query;
+        // if search is empty string then get asset list from dataplane instead of Elasticsearch.
         if (user_defined_query === "") {
-          user_defined_query = "*"
+          this.showElasticSearchAlert = false;
+          vm.asset_list = [];
+          this.fetchAssetList();
+          return;
         }
         // Get the list of assets that contain metadata matching the user-specified search query.
         var data = {
@@ -218,6 +230,9 @@
               status: response.status
             })
           ).then(res => {
+            if (res.status == 403) {
+              this.showElasticSearchAlert = true
+            }
             var filtered_asset_list = [];
             if (!res.data.aggregations) {
               // the search returned no data

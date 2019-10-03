@@ -10,6 +10,13 @@
         >
           Elasticsearch server denied access. Please check its access policy.
         </b-alert>
+        <b-alert
+            v-model="showDataplaneAlert"
+            variant="danger"
+            dismissible
+        >
+          Failed to connect to dataplane. Please check access control policy in API Gateway.
+        </b-alert>
         <b-row align-h="center">
           <h1>Media Collection</h1>
         </b-row>
@@ -136,6 +143,7 @@
     data() {
       return {
         showElasticSearchAlert: false,
+        showDataplaneAlert: false,
         totalRows: 1,
         currentPage: 1,
         perPage: 10,
@@ -323,6 +331,7 @@
               status: response.status
             })
           ).then(res => {
+             this.showDataplaneAlert = false
             if (res.data.assets.length === 0) {
               vm.isBusy = false;
             }
@@ -393,7 +402,9 @@
               })
             })
           })
-        )
+        ).catch(error => {
+          this.showDataplaneAlert = true
+        })
       },
     }
   }

@@ -238,7 +238,10 @@
                     datetime.setUTCSeconds(res2.data2.results.Created);
                     var s3_uri = 's3://'+res2.data2.results.S3Bucket+'/'+res2.data2.results.S3Key;
                     var filename = res2.data2.results.S3Key.split("/").pop()
-                    var thumbnail_s3_key = 'private/assets/' + assetid + '/' + filename.substring(0,filename.lastIndexOf(".")) + '_thumbnail.0000001.jpg'
+                    var thumbnail_s3_key = 'private/assets/' + assetid + '/input/' + filename;
+                    if (filename.substring(filename.lastIndexOf(".")) === ".mp4") {
+                      thumbnail_s3_key = 'private/assets/' + assetid + '/' + filename.substring(0, filename.lastIndexOf(".")) + '_thumbnail.0000001.jpg';
+                    }
                     // get URL to thumbnail file in S3
                     fetch(process.env.VUE_APP_DATAPLANE_API_ENDPOINT + '/download', {
                       method: 'POST',
@@ -321,7 +324,10 @@
                   datetime.setUTCSeconds(res2.data2.results.Created);
                   var s3_uri = 's3://'+res2.data2.results.S3Bucket+'/'+res2.data2.results.S3Key;
                   var filename = res2.data2.results.S3Key.split("/").pop()
-                  var thumbnail_s3_key = 'private/assets/' + assetid + '/' + filename.substring(0,filename.lastIndexOf(".")) + '_thumbnail.0000001.jpg'
+                  var thumbnail_s3_key = 'private/assets/' + assetid + '/input/' + filename;
+                  if (filename.substring(filename.lastIndexOf(".")) === ".mp4") {
+                    thumbnail_s3_key = 'private/assets/' + assetid + '/' + filename.substring(0, filename.lastIndexOf(".")) + '_thumbnail.0000001.jpg';
+                  }
                   // get URL to thumbnail file in S3
                   fetch(process.env.VUE_APP_DATAPLANE_API_ENDPOINT + '/download', {
                     method: 'POST',

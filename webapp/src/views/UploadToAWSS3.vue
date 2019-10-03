@@ -137,7 +137,7 @@ export default {
       {text: 'Polly', value: 'Polly'},
       {text: 'Translate', value: 'Translate'},
     ],
-    faceCollectionId: "undefined",
+    faceCollectionId: "",
     transcribeLanguage: "en-US",
     transcribeLanguages: [
       {text: 'US English', value: 'en-US'},
@@ -195,10 +195,15 @@ export default {
     signurl: process.env.VUE_APP_DATAPLANE_API_ENDPOINT + '/upload',
     s3_destination: 's3://' + process.env.VUE_APP_DATAPLANE_BUCKET,
     dropzoneOptions: {
+      // TODO: initialize this url with the url returned by get_presigned_url(). For now, we'll set this in vue-dropzone.vue.
       url: 'https://' + process.env.VUE_APP_DATAPLANE_BUCKET + '.s3.amazonaws.com',
       thumbnailWidth: 200,
       addRemoveLinks: true,
       autoProcessQueue: false,
+      // disable network timeouts (important for large uploads)
+      timeout: 0,
+      // limit max upload file size (in MB)
+      maxFilesize: 500
     },
     awss3: {
       signingURL: '',
@@ -270,7 +275,7 @@ export default {
             },
             "faceSearch": {
               "Enabled": this.enabledOperators.includes("faceSearch"),
-              "CollectionId": this.faceCollectionId
+              "CollectionId": this.faceCollectionId==="" ? "undefined" : this.faceCollectionId
             }
 
           },
@@ -333,7 +338,7 @@ export default {
             "parallelRekognitionStageImage": {
               "faceSearchImage": {
                 "Enabled": this.enabledOperators.includes("faceSearch"),
-                "CollectionId": this.faceCollectionId
+                "CollectionId": this.faceCollectionId === "" ? "undefined" : this.faceCollectionId
               },
               "labelDetectionImage": {
                 "Enabled": this.enabledOperators.includes("labelDetection"),

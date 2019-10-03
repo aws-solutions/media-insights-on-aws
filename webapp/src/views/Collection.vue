@@ -3,6 +3,20 @@
     <div class="headerTextBackground">
       <Header :is-collection-active="true" />
       <b-container fluid>
+        <b-alert
+          v-model="showElasticSearchAlert"
+          variant="danger"
+          dismissible
+        >
+          Elasticsearch server denied access. Please check its access policy.
+        </b-alert>
+        <b-alert
+          v-model="showDataplaneAlert"
+          variant="danger"
+          dismissible
+        >
+          Failed to connect to dataplane. Please check access control policy in API Gateway.
+        </b-alert>
         <b-row align-h="center">
           <h1>Media Collection</h1>
         </b-row>
@@ -128,6 +142,8 @@
     },
     data() {
       return {
+        showElasticSearchAlert: false,
+        showDataplaneAlert: false,
         totalRows: 1,
         currentPage: 1,
         perPage: 10,
@@ -194,8 +210,12 @@
         var vm = this;
         vm.isBusy = true;
         var user_defined_query = vm.user_defined_query;
+        // if search is empty string then get asset list from dataplane instead of Elasticsearch.
         if (user_defined_query === "") {
-          user_defined_query = "*"
+          this.showElasticSearchAlert = false;
+          vm.asset_list = [];
+          this.fetchAssetList();
+          return;
         }
         // Get the list of assets that contain metadata matching the user-specified search query.
         var data = {
@@ -218,6 +238,9 @@
               status: response.status
             })
           ).then(res => {
+            if (res.status == 403) {
+              this.showElasticSearchAlert = true
+            }
             var filtered_asset_list = [];
             if (!res.data.aggregations) {
               // the search returned no data
@@ -238,7 +261,10 @@
                     datetime.setUTCSeconds(res2.data2.results.Created);
                     var s3_uri = 's3://'+res2.data2.results.S3Bucket+'/'+res2.data2.results.S3Key;
                     var filename = res2.data2.results.S3Key.split("/").pop()
-                    var thumbnail_s3_key = 'private/assets/' + assetid + '/' + filename.substring(0,filename.lastIndexOf(".")) + '_thumbnail.0000001.jpg'
+                    var thumbnail_s3_key = 'private/assets/' + assetid + '/input/' + filename;
+                    if (filename.substring(filename.lastIndexOf(".")) === ".mp4") {
+                      thumbnail_s3_key = 'private/assets/' + assetid + '/' + filename.substring(0, filename.lastIndexOf(".")) + '_thumbnail.0000001.jpg';
+                    }
                     // get URL to thumbnail file in S3
                     fetch(process.env.VUE_APP_DATAPLANE_API_ENDPOINT + '/download', {
                       method: 'POST',
@@ -305,6 +331,7 @@
               status: response.status
             })
           ).then(res => {
+             this.showDataplaneAlert = false
             if (res.data.assets.length === 0) {
               vm.isBusy = false;
             }
@@ -321,7 +348,10 @@
                   datetime.setUTCSeconds(res2.data2.results.Created);
                   var s3_uri = 's3://'+res2.data2.results.S3Bucket+'/'+res2.data2.results.S3Key;
                   var filename = res2.data2.results.S3Key.split("/").pop()
-                  var thumbnail_s3_key = 'private/assets/' + assetid + '/' + filename.substring(0,filename.lastIndexOf(".")) + '_thumbnail.0000001.jpg'
+                  var thumbnail_s3_key = 'private/assets/' + assetid + '/input/' + filename;
+                  if (filename.substring(filename.lastIndexOf(".")) === ".mp4") {
+                    thumbnail_s3_key = 'private/assets/' + assetid + '/' + filename.substring(0, filename.lastIndexOf(".")) + '_thumbnail.0000001.jpg';
+                  }
                   // get URL to thumbnail file in S3
                   fetch(process.env.VUE_APP_DATAPLANE_API_ENDPOINT + '/download', {
                     method: 'POST',
@@ -372,7 +402,10 @@
               })
             })
           })
-        )
+        ).catch(error => {
+          console.log(error);
+          this.showDataplaneAlert = true
+        })
       },
     }
   }

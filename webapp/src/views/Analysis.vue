@@ -90,12 +90,17 @@
           </div>
         </b-col>
         <b-col>
-          <div v-if="videoOptions.sources[0].src === ''">
-            <Loading />
+          <div v-if="mediaType === 'image/jpg'">
+            <img width="90%" :src="videoOptions.sources[0].src">
           </div>
           <div v-else>
-            <VideoPlayer :options="videoOptions" />
-            <LineChart />
+            <div v-if="videoOptions.sources[0].src === ''">
+              <Loading />
+            </div>
+            <div v-else>
+              <VideoPlayer :options="videoOptions" />
+              <LineChart />
+            </div>
           </div>
           <div>
             <b-row class="mediaSummary">
@@ -206,6 +211,7 @@
         showElasticSearchAlert: false,
         mlTabs: 0,
         speechTabs: 0,
+        mediaType: "",
         videoOptions: {
           preload: 'auto',
           loop: true,
@@ -234,6 +240,12 @@
             ).then(res => {
               this.s3_uri = 's3://'+res.data.results.S3Bucket+'/'+res.data.results.S3Key
               this.filename = this.s3_uri.split("/").pop();
+              if (this.filename.substring(this.filename.lastIndexOf(".")) === ".jpg") {
+                this.mediaType = "image/jpg"
+              }
+              if (this.filename.substring(this.filename.lastIndexOf(".")) === ".mp4") {
+                this.mediaType = "video/mp4"
+              }
               this.getVideoUrl()
             })
           });

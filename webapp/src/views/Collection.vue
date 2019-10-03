@@ -72,19 +72,13 @@
                     :current-page="currentPage"
                     :per-page="perPage"
                   >
-                    <template
-                      slot="Thumbnail"
-                      slot-scope="data"
-                    >
+                    <template v-slot:cell(Thumbnail)="data">
                       <VideoThumbnail
                         :thumbnail-i-d="data.item.thumbnailID"
                         :signed-url="data.item.signedUrl"
                       />
                     </template>
-                    <template
-                      slot="Actions"
-                      slot-scope="data"
-                    >
+                    <template v-slot:cell(Actions)="data">
                       <b-button
                         variant="orange"
                         @click="$router.push(`/analysis/${data.item.asset_id}`)"

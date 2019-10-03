@@ -72,19 +72,13 @@
                     :current-page="currentPage"
                     :per-page="perPage"
                   >
-                    <template
-                      slot="Thumbnail"
-                      slot-scope="data"
-                    >
+                    <template v-slot:cell(Thumbnail)="data">
                       <VideoThumbnail
                         :thumbnail-i-d="data.item.thumbnailID"
                         :signed-url="data.item.signedUrl"
                       />
                     </template>
-                    <template
-                      slot="Actions"
-                      slot-scope="data"
-                    >
+                    <template v-slot:cell(Actions)="data">
                       <b-button
                         variant="orange"
                         @click="$router.push(`/analysis/${data.item.asset_id}`)"
@@ -152,36 +146,48 @@
         asset_list: [],
         sortBy: 'Created',
         sortDesc: true,
-        fields: {
-            'Thumbnail': {
+        fields: [
+            {
+              'Thumbnail': {
               label: "Thumbnail",
               sortable: false
+              }
             },
-            'Filename': {
+            {
+              'Filename': {
               label: "File Name",
               sortable: true,
               tdClass: ["tableWordWrap"]
+              }
             },
-            'status': {
+            {
+              'status': {
               label: "Status",
               sortable: true,
               tdClass: ["tableWordWrap"]
+              }
             },
+            {
             'asset_id': {
               label: 'Asset ID',
               sortable: false,
               tdClass: ["tableWordWrap"]
+              }
             },
-            'Created': {
+            {
+              'Created': {
               label: "Created",
               sortable: true,
               tdClass: ["tableWordWrap"]
+              }
             },
-            'Actions': {
+            {
+              'Actions': {
               label: 'Actions',
               sortable: false
+              }
             }
-        }
+        ]
       }
     },
     created: function () {

@@ -29,10 +29,7 @@
         :fields="fields"
         :sort-by="sortBy"
       >
-        <template
-          slot="Confidence"
-          slot-scope="data"
-        >
+        <template v-slot:cell(Confidence)="data">
           {{ (data.item.Confidence * 1).toFixed(2) }}
         </template>
       </b-table>

@@ -4,16 +4,16 @@
       <Header :is-collection-active="true" />
       <b-container fluid>
         <b-alert
-            v-model="showElasticSearchAlert"
-            variant="danger"
-            dismissible
+          v-model="showElasticSearchAlert"
+          variant="danger"
+          dismissible
         >
           Elasticsearch server denied access. Please check its access policy.
         </b-alert>
         <b-alert
-            v-model="showDataplaneAlert"
-            variant="danger"
-            dismissible
+          v-model="showDataplaneAlert"
+          variant="danger"
+          dismissible
         >
           Failed to connect to dataplane. Please check access control policy in API Gateway.
         </b-alert>
@@ -403,6 +403,7 @@
             })
           })
         ).catch(error => {
+          console.log(error);
           this.showDataplaneAlert = true
         })
       },

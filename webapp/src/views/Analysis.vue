@@ -91,7 +91,7 @@
         </b-col>
         <b-col>
           <div v-if="mediaType === 'image/jpg'">
-            <img width=90% v-bind:src=this.videoOptions.sources[0].src>
+            <img width="90%" :src="videoOptions.sources[0].src">
           </div>
           <div v-else>
             <div v-if="videoOptions.sources[0].src === ''">

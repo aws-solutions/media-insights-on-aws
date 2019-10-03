@@ -44,6 +44,13 @@ Parameters:
     AllowedValues:
       - Yes
       - No
+  DeployRekognitionWorkflow:
+    Description: Deploy Rekognition Workflows which takes a video as input and transcribes, translates and creates an audio file in the new language
+    Type: String
+    Default: No
+    AllowedValues:
+      - Yes
+      - No
   DeployComprehendWorkflow:
     Description: Deploy a Comprehend Workflow which takes text as input and identifies key entities and phrases
     Type: String
@@ -101,6 +108,8 @@ Metadata:
         Parameters:
           - DeployTestWorkflow
           - DeployInstantTranslateWorkflow
+          - DeployRekognitionWorkflow
+#          - DeployTranscribeWorkflow
           - DeployComprehendWorkflow
           - DeployKitchenSinkWorkflow
           - Label:
@@ -118,12 +127,21 @@ Metadata:
         default: Enable Test Workflow Deployment
       InstantTranslateWorkflow:
         default: Enable Instant Translate Workflow Deployment
+      #      TranscribeWorkflow:
+      #        default: Enable Transcribe Workflow Deployment
+      RekognitionWorkflow:
+        default: Enable Rekognition Workflow Deployment
+      
 
 Conditions:
   DeployOperatorLibraryCondition: !Equals [!Ref DeployOperatorLibrary, Yes]
   DeployTestWorkflowCondition: !Equals [!Ref DeployTestWorkflow, Yes]
   DeployInstantTranslateWorkflowCondition:
     !Equals [!Ref DeployInstantTranslateWorkflow, Yes]
+  #  DeployTranscribeWorkflowCondition:
+  #  !Equals [!Ref DeployTranscribeWorkflow, Yes]
+  DeployRekognitionWorkflowCondition:
+    !Equals [!Ref DeployRekognitionWorkflow, Yes]
   DeployComprehendWorkflowCondition:
     !Equals [!Ref DeployComprehendWorkflow, Yes]
   DeployKitchenSinkWorkflowCondition:
@@ -1018,7 +1036,32 @@ Resources:
 #            - Outputs.WorkflowCustomResourceArn
 #        OperatorLibraryStack: !GetAtt OperatorLibrary.Outputs.StackName
 
-  ComprehendWorkflow:
+  RekognitionWorkflow:
+    Condition: DeployRekognitionWorkflowCondition
+    DependsOn:
+      - MediaInsightsWorkflowApi
+      - MediaInsightsDataplaneApiStack
+      - OperatorLibrary
+    Type: "AWS::CloudFormation::Stack"
+    Properties:
+      TemplateURL:
+        !Join [
+          "/",
+          [
+            "https://s3.amazonaws.com",
+            !FindInMap ["SourceCode", "General", "S3Bucket"],
+            !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
+            "rekognition.template",
+          ],
+        ]
+      Parameters:
+        WorkflowCustomResourceArn:
+          Fn::GetAtt:
+            - MediaInsightsWorkflowApi
+            - Outputs.WorkflowCustomResourceArn
+        OperatorLibraryStack: !GetAtt OperatorLibrary.Outputs.StackName
+  
+        ComprehendWorkflow:
     Condition: DeployComprehendWorkflowCondition
     DependsOn:
       - MediaInsightsWorkflowApi

@@ -137,7 +137,7 @@ export default {
       {text: 'Polly', value: 'Polly'},
       {text: 'Translate', value: 'Translate'},
     ],
-    faceCollectionId: "undefined",
+    faceCollectionId: "",
     transcribeLanguage: "en-US",
     transcribeLanguages: [
       {text: 'US English', value: 'en-US'},
@@ -200,6 +200,10 @@ export default {
       thumbnailWidth: 200,
       addRemoveLinks: true,
       autoProcessQueue: false,
+      // disable network timeouts (important for large uploads)
+      timeout: 0,
+      // limit max upload file size (in MB)
+      maxFilesize: 500
     },
     awss3: {
       signingURL: '',
@@ -271,7 +275,7 @@ export default {
             },
             "faceSearch": {
               "Enabled": this.enabledOperators.includes("faceSearch"),
-              "CollectionId": this.faceCollectionId
+              "CollectionId": this.faceCollectionId==="" ? "undefined" : this.faceCollectionId
             }
 
           },
@@ -331,21 +335,23 @@ export default {
         data = {
           "Name": "ParallelRekognitionWorkflowImage",
           "Configuration": {
-            "faceSearchImage": {
-              "Enabled": this.enabledOperators.includes("faceSearch"),
-              "CollectionId": this.faceCollectionId
-            },
-            "labelDetectionImage": {
-              "Enabled": this.enabledOperators.includes("labelDetection"),
-            },
-            "celebrityRecognitionImage": {
-              "Enabled": this.enabledOperators.includes("celebrityRecognition"),
-            },
-            "contentModerationImage": {
-              "Enabled": this.enabledOperators.includes("contentModeration"),
-            },
-            "faceDetectionImage": {
-              "Enabled": this.enabledOperators.includes("faceDetection"),
+            "parallelRekognitionStageImage": {
+              "faceSearchImage": {
+                "Enabled": this.enabledOperators.includes("faceSearch"),
+                "CollectionId": this.faceCollectionId === "" ? "undefined" : this.faceCollectionId
+              },
+              "labelDetectionImage": {
+                "Enabled": this.enabledOperators.includes("labelDetection"),
+              },
+              "celebrityRecognitionImage": {
+                "Enabled": this.enabledOperators.includes("celebrityRecognition"),
+              },
+              "contentModerationImage": {
+                "Enabled": this.enabledOperators.includes("contentModeration"),
+              },
+              "faceDetectionImage": {
+                "Enabled": this.enabledOperators.includes("faceDetection"),
+              }
             }
           },
           "Input": {

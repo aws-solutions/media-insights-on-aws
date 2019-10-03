@@ -159,7 +159,6 @@ export default {
     })
 
     this.dropzone.on('sending', function(file, xhr, formData) {
-      xhr.timeout = 99999999;
       if (vm.isS3) {
         if (vm.isS3OverridesServerPropagation) {
           let signature = file.s3Signature;

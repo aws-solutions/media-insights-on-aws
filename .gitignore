@@ -1,7 +1,7 @@
 deployment/media-analysis-dataplane-api-stack.yaml
 webapp/public/
 venv/
-./dist/
+**/dist
 package/
 node_modules/
 source/web_site/build/
@@ -35,3 +35,7 @@ doc/sphinx/output/
 
 # explicitly named "private" files
 **/private*webapp/README.md
+
+# LambdaHelper builds
+lib/MediaInsightsEngineLambdaHelper/Media_Insights_Engine_Lambda_Helper.egg-info
+lib/MediaInsightsEngineLambdaHelper/build

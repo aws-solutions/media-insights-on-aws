@@ -5,6 +5,7 @@ from chalice import Chalice
 from chalice import NotFoundError, BadRequestError, ChaliceViewError, Response, ConflictError
 from botocore.client import ClientError
 from decimal import Decimal
+from botocore.config import Config
 
 import boto3
 import os
@@ -120,7 +121,7 @@ def build_cursor_object(next_object, remaining):
     cursor = {
         "next": next_object,
         "remaining": remaining
-     }
+    }
     return cursor
 
 
@@ -168,7 +169,8 @@ def upload():
         ChaliceViewError - 500
     """
     print('/upload request: '+app.current_request.raw_body.decode())
-    s3 = boto3.client('s3')
+    region = os.environ['AWS_REGION']
+    s3 = boto3.client('s3', region_name=region, config = Config(signature_version = 's3v4', s3={'addressing_style': 'virtual'}))
     # limit uploads to 5GB
     max_upload_size = 5368709120
     try:
@@ -187,6 +189,7 @@ def upload():
         raise ChaliceViewError(
             "Unable to generate pre-signed S3 URL for uploading media: {error}".format(error=e))
     else:
+        print("presigned url generated: ", response)
         return response
 
 # TODO: Change the name of this method - "download" is too vague

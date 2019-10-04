@@ -5,7 +5,7 @@ Parameters:
   DeployOperatorLibrary:
     Description: Deploy operator library
     Type: String
-    Default: No
+    Default: Yes
     AllowedValues:
       - Yes
       - No
@@ -23,30 +23,30 @@ Parameters:
     AllowedValues:
       - Yes
       - No
-#  DeployTranscribeWorkflow:
-#    Description: Deploy Transcribe Workflow which takes a video as input and transcribes
-#    Type: String
-#    Default: No
-#    AllowedValues:
-#      - Yes
-#      - No
-  DeployRekognitionWorkflow:
-    Description: Deploy Rekognition Workflows which takes a video as input and transcribes, translates and creates an audio file in the new language
-    Type: String
-    Default: No
-    AllowedValues:
-      - Yes
-      - No
+  #  DeployTranscribeWorkflow:
+  #    Description: Deploy Transcribe Workflow which takes a video as input and transcribes
+  #    Type: String
+  #    Default: No
+  #    AllowedValues:
+  #      - Yes
+  #      - No
   DeployAnalyticsPipeline:
     Type: String
     Description: Deploy a metadata streaming pipeline that can be consumed by downstream analytics plaforms
-    Default: No
+    Default: Yes
     AllowedValues:
       - Yes
       - No
   DeployDemoSite:
     Type: String
     Description: Deploy a front end application to explore extracted metadata
+    Default: Yes
+    AllowedValues:
+      - Yes
+      - No
+  DeployRekognitionWorkflow:
+    Description: Deploy Rekognition Workflows which takes a video as input and transcribes, translates and creates an audio file in the new language
+    Type: String
     Default: No
     AllowedValues:
       - Yes
@@ -61,7 +61,7 @@ Parameters:
   DeployKitchenSinkWorkflow:
     Description: Deploy the Kitchen Sink Workflow which contains all MIE operators.
     Type: String
-    Default: No
+    Default: Yes
     AllowedValues:
       - Yes
       - No
@@ -70,18 +70,19 @@ Parameters:
     Description: Maximum number of workflows to run concurrently.  When the maximum is reached, additional workflows are added to a wait queue.
     Default: 10
     MinValue: 1
-#  TranscriberApp:
-#    Type: String
-#    Description: Deploy a front end transcriber application that takes custom inputs from the user
-#    Default: No
-#    AllowedValues:
-#      - Yes
-#      - No
-  ApiIpList: 
+  #  TranscriberApp:
+  #    Type: String
+  #    Description: Deploy a front end transcriber application that takes custom inputs from the user
+  #    Default: No
+  #    AllowedValues:
+  #      - Yes
+  #      - No
+  ApiIpList:
     Type: String
-    Description: CIDR block string.  Indicates which internet addresses can access the MIE APIs. 
-        For example, 192.168.100.14/24 represents the IPv4 address 192.168.100.14 and its associated routing prefix 
-        192.168.100.0, while the CIDR block 0.0.0.0/0 indicates the APIs are open to requests from all internet addresses.
+    Description:
+      CIDR block string.  Indicates which internet addresses can access the MIE APIs.
+      For example, 192.168.100.14/24 represents the IPv4 address 192.168.100.14 and its associated routing prefix
+      192.168.100.0, while the CIDR block 0.0.0.0/0 indicates the APIs are open to requests from all internet addresses.
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -98,7 +99,7 @@ Metadata:
           default: System Configuration
         Parameters:
           - MaxConcurrentWorkflows
-          - ApiIpList 
+          - ApiIpList
       - Label:
           default: Operators
         Parameters:
@@ -109,7 +110,7 @@ Metadata:
           - DeployTestWorkflow
           - DeployInstantTranslateWorkflow
           - DeployRekognitionWorkflow
-#          - DeployTranscribeWorkflow
+          #          - DeployTranscribeWorkflow
           - DeployComprehendWorkflow
           - DeployKitchenSinkWorkflow
           - Label:
@@ -127,8 +128,8 @@ Metadata:
         default: Enable Test Workflow Deployment
       InstantTranslateWorkflow:
         default: Enable Instant Translate Workflow Deployment
-#      TranscribeWorkflow:
-#        default: Enable Transcribe Workflow Deployment
+      #      TranscribeWorkflow:
+      #        default: Enable Transcribe Workflow Deployment
       RekognitionWorkflow:
         default: Enable Rekognition Workflow Deployment
 
@@ -137,8 +138,8 @@ Conditions:
   DeployTestWorkflowCondition: !Equals [!Ref DeployTestWorkflow, Yes]
   DeployInstantTranslateWorkflowCondition:
     !Equals [!Ref DeployInstantTranslateWorkflow, Yes]
-#  DeployTranscribeWorkflowCondition:
-#    !Equals [!Ref DeployTranscribeWorkflow, Yes]
+  #  DeployTranscribeWorkflowCondition:
+  #  !Equals [!Ref DeployTranscribeWorkflow, Yes]
   DeployRekognitionWorkflowCondition:
     !Equals [!Ref DeployRekognitionWorkflow, Yes]
   DeployComprehendWorkflowCondition:
@@ -245,7 +246,7 @@ Resources:
                         ":",
                         Ref: "AWS::AccountId",
                         ":table/",
-                        Ref: "WorkflowTable"
+                        Ref: "WorkflowTable",
                       ],
                     ]
                   - !Join [
@@ -269,7 +270,7 @@ Resources:
                         ":table/",
                         Ref: "WorkflowExecutionTable",
                         "/index/",
-                        "*"
+                        "*",
                       ],
                     ]
                   - !Join [
@@ -369,7 +370,7 @@ Resources:
                         ":",
                         Ref: "AWS::AccountId",
                         ":table/",
-                        Ref: "WorkflowTable"
+                        Ref: "WorkflowTable",
                       ],
                     ]
                   - !Join [
@@ -393,7 +394,7 @@ Resources:
                         ":table/",
                         Ref: "WorkflowExecutionTable",
                         "/index/",
-                        "*"
+                        "*",
                       ],
                     ]
                   - !Join [
@@ -444,7 +445,6 @@ Resources:
                   - "Fn::GetAtt":
                       - WorkflowSchedulerLambda
                       - Arn
-
 
   StepFunctionRole:
     Type: "AWS::IAM::Role"
@@ -570,14 +570,14 @@ Resources:
       GlobalSecondaryIndexes:
         - IndexName: WorkflowExecutionStatus
           KeySchema:
-          - AttributeName: Status
-            KeyType: HASH
+            - AttributeName: Status
+              KeyType: HASH
           Projection:
             ProjectionType: ALL
         - IndexName: WorkflowExecutionAssetId
           KeySchema:
-          - AttributeName: AssetId
-            KeyType: HASH
+            - AttributeName: AssetId
+              KeyType: HASH
           Projection:
             ProjectionType: ALL
       TableName: !Join ["", [Ref: "AWS::StackName", "WorkflowExecution"]]
@@ -601,6 +601,13 @@ Resources:
   DataplaneBucket:
     Type: "AWS::S3::Bucket"
     DeletionPolicy: Retain
+    Properties:
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ["*"]
+            AllowedMethods: ["GET", "POST"]
+            AllowedOrigins: ["*"]
+            Id: AllowUploadsFromWebApp
 
   # Services - SQS
 
@@ -696,9 +703,9 @@ Resources:
   LambdaSchedulePermission:
     Type: "AWS::Lambda::Permission"
     Properties:
-      Action: 'lambda:InvokeFunction'
+      Action: "lambda:InvokeFunction"
       FunctionName: !Sub ${WorkflowSchedulerLambda.Arn}
-      Principal: 'events.amazonaws.com'
+      Principal: "events.amazonaws.com"
       SourceArn: !Sub ${LambdaSchedule.Arn}
 
   WorkflowSchedulerLambda:
@@ -735,8 +742,8 @@ Resources:
       DeadLetterConfig:
         TargetArn:
           Fn::GetAtt:
-          - WorkflowExecutionLambdaDeadLetterQueue
-          - Arn
+            - WorkflowExecutionLambdaDeadLetterQueue
+            - Arn
     Type: AWS::Lambda::Function
 
   CompleteStageLambda:
@@ -753,9 +760,9 @@ Resources:
           WORKFLOW_TABLE_NAME: !Ref WorkflowTable
           SYSTEM_TABLE_NAME: !Ref SystemTable
           WORKFLOW_SCHEDULER_LAMBDA_ARN:
-              Fn::GetAtt:
-                - WorkflowSchedulerLambda
-                - Arn
+            Fn::GetAtt:
+              - WorkflowSchedulerLambda
+              - Arn
       Handler: app.complete_stage_execution_lambda
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -819,8 +826,8 @@ Resources:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "operator_failed.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "operator_failed.zip",
             ],
           ]
       Runtime: "python3.7"
@@ -1004,29 +1011,29 @@ Resources:
             - Outputs.WorkflowCustomResourceArn
         OperatorLibraryStack: !GetAtt OperatorLibrary.Outputs.StackName
 
-#  TranscribeWorkflow:
-#    Condition: DeployTranscribeWorkflowCondition
-#    DependsOn:
-#      - MediaInsightsWorkflowApi
-#      - MediaInsightsDataplaneApiStack
-#    Type: "AWS::CloudFormation::Stack"
-#    Properties:
-#      TemplateURL:
-#        !Join [
-#          "/",
-#          [
-#            "https://s3.amazonaws.com",
-#            !FindInMap ["SourceCode", "General", "S3Bucket"],
-#            !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
-#            "transcribe.template",
-#          ],
-#        ]
-#      Parameters:
-#        WorkflowCustomResourceArn:
-#          Fn::GetAtt:
-#            - MediaInsightsWorkflowApi
-#            - Outputs.WorkflowCustomResourceArn
-#        OperatorLibraryStack: !GetAtt OperatorLibrary.Outputs.StackName
+  #  TranscribeWorkflow:
+  #    Condition: DeployTranscribeWorkflowCondition
+  #    DependsOn:
+  #      - MediaInsightsWorkflowApi
+  #      - MediaInsightsDataplaneApiStack
+  #    Type: "AWS::CloudFormation::Stack"
+  #    Properties:
+  #      TemplateURL:
+  #        !Join [
+  #          "/",
+  #          [
+  #            "https://s3.amazonaws.com",
+  #            !FindInMap ["SourceCode", "General", "S3Bucket"],
+  #            !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
+  #            "transcribe.template",
+  #          ],
+  #        ]
+  #      Parameters:
+  #        WorkflowCustomResourceArn:
+  #          Fn::GetAtt:
+  #            - MediaInsightsWorkflowApi
+  #            - Outputs.WorkflowCustomResourceArn
+  #        OperatorLibraryStack: !GetAtt OperatorLibrary.Outputs.StackName
 
   RekognitionWorkflow:
     Condition: DeployRekognitionWorkflowCondition

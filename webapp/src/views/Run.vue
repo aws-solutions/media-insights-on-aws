@@ -11,8 +11,16 @@
         <b-col>
           <div>
             Select a workflow to run:
-            <div v-for="workflow in workflows" v-bind:key="workflow">
-              <input type="radio" v-model="selected_workflow" name="selected_workflow" :value="workflow"> {{ workflow }}
+            <div
+              v-for="workflow in workflows"
+              :key="workflow"
+            >
+              <input
+                v-model="selected_workflow"
+                type="radio"
+                name="selected_workflow"
+                :value="workflow"
+              > {{ workflow }}
             </div>
             <br>
             You chose {{ selected_workflow }}
@@ -28,11 +36,17 @@
 
   export default {
     name: "Run",
+    components: {
+      Header
+    },
     data: function () {
       return {
         workflows: [],
         selected_workflow: ""
       }
+    },
+    mounted: function () {
+      this.fetchWorkflows();
     },
     methods: {
       fetchWorkflows() {
@@ -51,12 +65,6 @@
         );
         this.workflows = workflow_list;
       },
-    },
-    mounted: function () {
-      this.fetchWorkflows();
-    },
-    components: {
-      Header
     }
   }
 </script>

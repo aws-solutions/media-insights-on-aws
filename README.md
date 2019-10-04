@@ -46,11 +46,36 @@ Stores metadata for an asset that can be retrieved as a single block or pages of
 A lambda function that consumes data from the data plane pipeline and stores it (or acts on it) in another downstream data store.  Data can be stored in different kind of data stores to fit the data management and query needs of the application.  There can be 0 or more pipeline consumers in a MIE application. 
 
 # Installation / Deployment
-Deploy the demo architecture and application in your AWS account and start exploring your media.
+Deploy the demo architecture and application in your AWS account and start exploring your media.  
 
 Region| Launch
 ------|-----
-US East (N. Virginia) | [![Launch in us-east-1](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-east-1.s3.amazonaws.com/media-insights-solution/v0.1.0/cf/media-insights-stack.template)
+US East (N. Virginia) | [![Launch in us-east-1](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-east-1.s3.amazonaws.com/media-insights-solution/v0.1.1/cf/media-insights-stack.template)
+US West (Oregon) | [![Launch in us-west-2](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-west-2.s3.amazonaws.com/media-insights-solution/v0.1.1/cf/media-insights-stack.template)
+
+The default settings for the template are configured to deploy the sample web application and all the back-end components it requires.  In addition, you must set the required parameter below.
+
+## Required parameters
+
+**ApiIpList**  A CIDR block that indicates which internet addresses can access the MIE APIs and Elasticsearch UI, Kibana. For example, 192.168.100.14/24 represents the IPv4 address 192.168.100.14 and its associated routing prefix 192.168.100.0, while the CIDR block 0.0.0.0/0 indicates the APIs are open to requests from all internet addresses. 
+
+## Outputs
+
+After the stack successfully deploys, you can find important interface resources in the **Outputs** tab of the CloudFormation stack.
+
+**DataplaneApiEndpoint** is the endpoint for accessing dataplane APIs to create, update, delete and retrieve media assets
+
+**DataplaneBucket** is the S3 bucket used to store derived media (_derived assets_) and raw analysis metadata created by MIE workflows.
+
+**ElasticsearchEndpoint** is the endpoint of the Elasticsearch cluster used to store analysis metadata for search
+
+**MediaInsightsEnginePython37Layer** is a lambda layer required to build new operator lambdas
+
+**WebAppCloudfrontUrl** is the Url for the sample Media Insights web application
+
+**WorkflowApiEndpoint** is the endpoint for accessing the Workflow APIs to create, update, delete and execute MIE workflows.
+
+**WorkflowCustomResourceArn** is the custom resource that can be used to create MIE workflows in CloudFormation scripts
 
 # Usage
 

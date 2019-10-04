@@ -51,7 +51,6 @@ Deploy the demo architecture and application in your AWS account and start explo
 Region| Launch
 ------|-----
 US East (N. Virginia) | [![Launch in us-east-1](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-east-1.s3.amazonaws.com/media-insights-solution/v0.1.1/cf/media-insights-stack.template)
-
 US West (Oregon) | [![Launch in us-west-2](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-west-2.s3.amazonaws.com/media-insights-solution/v0.1.1/cf/media-insights-stack.template)
 
 The default settings for the template are configured to deploy the sample web application and all the back-end components it requires.  In addition, you must set the required parameter below.

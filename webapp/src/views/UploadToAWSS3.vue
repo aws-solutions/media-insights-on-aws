@@ -21,10 +21,10 @@
         :options="dropzoneOptions"
         @vdropzone-s3-upload-error="s3UploadError"
         @vdropzone-success="s3UploadComplete"
+        @vdropzone-sending="upload_in_progress=true"
+        @vdropzone-queue-complete="upload_in_progress=false"
       />
       <br>
-      <label>Upload destination:</label>
-      <span class="note"> {{ s3_destination }} </span><br>
       <b-button v-b-toggle.collapse-2 class="m-1">
         Configure Workflow
       </b-button>
@@ -35,6 +35,7 @@
         Start Upload and Run Workflow
       </b-button>
       <br>
+      <span v-if="upload_in_progress" class="text-secondary">Upload in progress</span>
       <br>
       <b-collapse id="collapse-2">
         <b-container class="text-left">
@@ -119,98 +120,99 @@ export default {
   },
   data() {
     return {
-    enabledOperators: ['labelDetection', 'celebrityRecognition', 'contentModeration', 'faceDetection', 'Transcribe', 'Translate', 'ComprehendKeyPhrases', 'ComprehendEntities'],
-    videoOperators: [
-      {text: 'Object Detection', value: 'labelDetection'},
-      {text: 'Celebrity Recognition', value: 'celebrityRecognition'},
-      {text: 'Content Moderation', value: 'contentModeration'},
-      {text: 'Face Detection', value: 'faceDetection'},
-      {text: 'Person Tracking', value: 'personTracking'},
-      {text: 'Face Search', value: 'faceSearch'},
-    ],
-    audioOperators: [
-      {text: 'Transcribe', value: 'Transcribe'},
-    ],
-    textOperators: [
-      {text: 'Comprehend Key Phrases', value: 'ComprehendKeyPhrases'},
-      {text: 'Comprehend Entities', value: 'ComprehendEntities'},
-      {text: 'Polly', value: 'Polly'},
-      {text: 'Translate', value: 'Translate'},
-    ],
-    faceCollectionId: "",
-    transcribeLanguage: "en-US",
-    transcribeLanguages: [
-      {text: 'US English', value: 'en-US'},
-      {text: 'British English', value: 'en-GB'},
-      {text: 'Australian English', value: 'en-AU'},
-      {text: 'French', value: 'fr-FR'},
-      {text: 'Canadian French', value: 'fr-CA'},
-      {text: 'US Spanish', value: 'es-US'},
-      {text: 'ES Spanish', value: 'es-ES'},
-      {text: 'Italian', value: 'it-IT'},
-      {text: 'Brazilian Portuguese', value: 'pt-BR'},
-      {text: 'German', value: 'de-DE'},
-      {text: 'Korean', value: 'ko-KR'},
-      {text: 'Hindi', value: 'hi-IN'},
-      {text: 'Indian-accented English', value: 'en-IN'},
-      {text: 'Modern Standard Arabic', value: 'ar-SA'},
-      {text: 'Russian', value: 'ru-RU'},
-      {text: 'Chinese', value: 'zh-CN'},
-    ],
-    translateLanguages: [
-      {text: 'Arabic', value: 'ar'},
-      {text: 'Chinese (Simplified)', value: 'zh'},
-      {text: 'Chinese (Traditional)', value: 'zh-TW'},
-      {text: 'Czech', value: 'cs'},
-      {text: 'Danish', value: 'da'},
-      {text: 'Dutch', value: 'nl'},
-      {text: 'English', value: 'en'},
-      {text: 'Finnish', value: 'fi'},
-      {text: 'French', value: 'fr'},
-      {text: 'German', value: 'de'},
-      {text: 'Hebrew', value: 'he'},
-      {text: 'Hindi', value: 'hi'},
-      {text: 'Indonesian', value: 'id'},
-      {text: 'Italian', value: 'it'},
-      {text: 'Japanese', value: 'ja'},
-      {text: 'Korean', value: 'ko'},
-      {text: 'Malay', value: 'ms'},
-      {text: 'Norwegian', value: 'no'},
-      {text: 'Persian', value: 'fa'},
-      {text: 'Polish', value: 'pl'},
-      {text: 'Portuguese', value: 'pt'},
-      {text: 'Russian', value: 'ru'},
-      {text: 'Spanish', value: 'es'},
-      {text: 'Swedish', value: 'sv'},
-      {text: 'Turkish', value: 'tr'},
-    ],
-    sourceLanguageCode: "en",
-    targetLanguageCode: "ru",
-    uploadErrorMessage: "",
-    dismissSecs: 8,
-    dismissCountDown: 0,
-    executed_assets: [],
-    workflow_status_polling: null,
-    description: "Click start to begin. Media analysis status will be shown after upload completes.",
-    signurl: process.env.VUE_APP_DATAPLANE_API_ENDPOINT + '/upload',
-    s3_destination: 's3://' + process.env.VUE_APP_DATAPLANE_BUCKET,
-    dropzoneOptions: {
-      // TODO: initialize this url with the url returned by get_presigned_url(). For now, we'll set this in vue-dropzone.vue.
-      url: 'https://' + process.env.VUE_APP_DATAPLANE_BUCKET + '.s3.amazonaws.com',
-      thumbnailWidth: 200,
-      addRemoveLinks: true,
-      autoProcessQueue: false,
-      // disable network timeouts (important for large uploads)
-      timeout: 0,
-      // limit max upload file size (in MB)
-      maxFilesize: 500
-    },
-    awss3: {
-      signingURL: '',
-      headers: {},
-      params: {}
+      upload_in_progress: false,
+      enabledOperators: ['labelDetection', 'celebrityRecognition', 'contentModeration', 'faceDetection', 'Transcribe', 'Translate', 'ComprehendKeyPhrases', 'ComprehendEntities'],
+      videoOperators: [
+        {text: 'Object Detection', value: 'labelDetection'},
+        {text: 'Celebrity Recognition', value: 'celebrityRecognition'},
+        {text: 'Content Moderation', value: 'contentModeration'},
+        {text: 'Face Detection', value: 'faceDetection'},
+        {text: 'Person Tracking', value: 'personTracking'},
+        {text: 'Face Search', value: 'faceSearch'},
+      ],
+      audioOperators: [
+        {text: 'Transcribe', value: 'Transcribe'},
+      ],
+      textOperators: [
+        {text: 'Comprehend Key Phrases', value: 'ComprehendKeyPhrases'},
+        {text: 'Comprehend Entities', value: 'ComprehendEntities'},
+        {text: 'Polly', value: 'Polly'},
+        {text: 'Translate', value: 'Translate'},
+      ],
+      faceCollectionId: "",
+      transcribeLanguage: "en-US",
+      transcribeLanguages: [
+        {text: 'US English', value: 'en-US'},
+        {text: 'British English', value: 'en-GB'},
+        {text: 'Australian English', value: 'en-AU'},
+        {text: 'French', value: 'fr-FR'},
+        {text: 'Canadian French', value: 'fr-CA'},
+        {text: 'US Spanish', value: 'es-US'},
+        {text: 'ES Spanish', value: 'es-ES'},
+        {text: 'Italian', value: 'it-IT'},
+        {text: 'Brazilian Portuguese', value: 'pt-BR'},
+        {text: 'German', value: 'de-DE'},
+        {text: 'Korean', value: 'ko-KR'},
+        {text: 'Hindi', value: 'hi-IN'},
+        {text: 'Indian-accented English', value: 'en-IN'},
+        {text: 'Modern Standard Arabic', value: 'ar-SA'},
+        {text: 'Russian', value: 'ru-RU'},
+        {text: 'Chinese', value: 'zh-CN'},
+      ],
+      translateLanguages: [
+        {text: 'Arabic', value: 'ar'},
+        {text: 'Chinese (Simplified)', value: 'zh'},
+        {text: 'Chinese (Traditional)', value: 'zh-TW'},
+        {text: 'Czech', value: 'cs'},
+        {text: 'Danish', value: 'da'},
+        {text: 'Dutch', value: 'nl'},
+        {text: 'English', value: 'en'},
+        {text: 'Finnish', value: 'fi'},
+        {text: 'French', value: 'fr'},
+        {text: 'German', value: 'de'},
+        {text: 'Hebrew', value: 'he'},
+        {text: 'Hindi', value: 'hi'},
+        {text: 'Indonesian', value: 'id'},
+        {text: 'Italian', value: 'it'},
+        {text: 'Japanese', value: 'ja'},
+        {text: 'Korean', value: 'ko'},
+        {text: 'Malay', value: 'ms'},
+        {text: 'Norwegian', value: 'no'},
+        {text: 'Persian', value: 'fa'},
+        {text: 'Polish', value: 'pl'},
+        {text: 'Portuguese', value: 'pt'},
+        {text: 'Russian', value: 'ru'},
+        {text: 'Spanish', value: 'es'},
+        {text: 'Swedish', value: 'sv'},
+        {text: 'Turkish', value: 'tr'},
+      ],
+      sourceLanguageCode: "en",
+      targetLanguageCode: "ru",
+      uploadErrorMessage: "",
+      dismissSecs: 8,
+      dismissCountDown: 0,
+      executed_assets: [],
+      workflow_status_polling: null,
+      description: "Click start to begin. Media analysis status will be shown after upload completes.",
+      signurl: process.env.VUE_APP_DATAPLANE_API_ENDPOINT + '/upload',
+      s3_destination: 's3://' + process.env.VUE_APP_DATAPLANE_BUCKET,
+      dropzoneOptions: {
+        // TODO: initialize this url with the url returned by get_presigned_url(). For now, we'll set this in vue-dropzone.vue.
+        url: 'https://' + process.env.VUE_APP_DATAPLANE_BUCKET + '.s3.amazonaws.com',
+        thumbnailWidth: 200,
+        addRemoveLinks: true,
+        autoProcessQueue: false,
+        // disable network timeouts (important for large uploads)
+        timeout: 0,
+        // limit max upload file size (in MB)
+        maxFilesize: 500
+      },
+      awss3: {
+        signingURL: '',
+        headers: {},
+        params: {}
+      }
     }
-  }
   },
   computed: {
     textFormError() {
@@ -441,14 +443,10 @@ export default {
       }, poll_frequency)
     },
     uploadFiles() {
-      if (this.signurl) {
-        this.$refs.myVueDropzone.setAWSSigningURL(this.signurl);
-        this.$refs.myVueDropzone.processQueue();
-      }
-      else {
-        this.$refs.urlsigner.focus();
-        alert("Enter your signing URL");
-      }
+      console.log("Uploading to " + this.s3_destination);
+      console.log("Presigning URL endpoint: " + this.signurl);
+      this.$refs.myVueDropzone.setAWSSigningURL(this.signurl);
+      this.$refs.myVueDropzone.processQueue();
     }
   }
 }

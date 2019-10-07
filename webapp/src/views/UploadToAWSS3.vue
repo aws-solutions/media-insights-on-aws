@@ -197,7 +197,6 @@ export default {
       signurl: process.env.VUE_APP_DATAPLANE_API_ENDPOINT + '/upload',
       s3_destination: 's3://' + process.env.VUE_APP_DATAPLANE_BUCKET,
       dropzoneOptions: {
-        // TODO: initialize this url with the url returned by get_presigned_url(). For now, we'll set this in vue-dropzone.vue.
         url: 'https://' + process.env.VUE_APP_DATAPLANE_BUCKET + '.s3.amazonaws.com',
         thumbnailWidth: 200,
         addRemoveLinks: true,

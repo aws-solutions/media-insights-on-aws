@@ -27,6 +27,7 @@ from botocore.exceptions import ClientError
 import re
 import os
 import time
+import subprocess
 
 # DEFAULT test environment.
 # Override these with environment variables at runtime.
@@ -34,6 +35,7 @@ SAMPLE_IMAGE = "test-media/sample-image.jpg"
 SAMPLE_VIDEO = "test-media/sample-video.mp4"
 SAMPLE_AUDIO = "test-media/sample-audio.m4a"
 SAMPLE_TEXT = "test-media/sample-text.txt"
+SAMPLE_JSON = "test-media/sample-data.json"
 SAMPLE_FACE_IMAGE = "test-media/sample-face.jpg"
 BUCKET_NAME = "mie-testing-bucket-" + str(int(round(time.time())))
 FACE_COLLECTION_ID = "temporary_face_collection"
@@ -47,6 +49,8 @@ if 'SAMPLE_AUDIO' in os.environ:
     SAMPLE_AUDIO = str(os.environ['SAMPLE_AUDIO'])
 if 'SAMPLE_TEXT' in os.environ:
     SAMPLE_TEXT = str(os.environ['SAMPLE_TEXT'])
+if 'SAMPLE_JSON' in os.environ:
+    SAMPLE_JSON = str(os.environ['SAMPLE_JSON'])
 if 'SAMPLE_FACE_IMAGE' in os.environ:
     SAMPLE_FACE_IMAGE = str(os.environ['SAMPLE_FACE_IMAGE'])
 if 'BUCKET_NAME' in os.environ:
@@ -81,6 +85,7 @@ print("\tSAMPLE_IMAGE: "+SAMPLE_IMAGE)
 print("\tSAMPLE_VIDEO: "+SAMPLE_VIDEO)
 print("\tSAMPLE_AUDIO: "+SAMPLE_AUDIO)
 print("\tSAMPLE_TEXT: "+SAMPLE_TEXT)
+print("\tSAMPLE_JSON: "+SAMPLE_JSON)
 print("\tSAMPLE_FACE_IMAGE: "+SAMPLE_FACE_IMAGE)
 print("\tFACE_COLLECTION_ID: "+FACE_COLLECTION_ID)
 print("\tBUCKET_NAME: "+BUCKET_NAME)
@@ -99,17 +104,18 @@ def uploaded_media():
         else:
           # This workaround is needed to avoid an InvalidLocationConstraint error when region is us-east-1
           # see: https://github.com/boto/boto3/issues/125
-          import subprocess
           subprocess.run(["aws", "s3", "mb", "s3://"+BUCKET_NAME, "--region", REGION])
     except ClientError as e:
         logging.error(e)
         return False
     # Upload test media files
     s3.upload_file(SAMPLE_TEXT, BUCKET_NAME, SAMPLE_TEXT)
+    s3.upload_file(SAMPLE_JSON, BUCKET_NAME, SAMPLE_JSON)
     s3.upload_file(SAMPLE_AUDIO, BUCKET_NAME, SAMPLE_AUDIO)
     s3.upload_file(SAMPLE_IMAGE, BUCKET_NAME, SAMPLE_IMAGE)
     s3.upload_file(SAMPLE_FACE_IMAGE, BUCKET_NAME, SAMPLE_FACE_IMAGE)
     s3.upload_file(SAMPLE_VIDEO, BUCKET_NAME, SAMPLE_VIDEO)
+    subprocess.run(["aws", "s3", "ls", "s3://"+BUCKET_NAME, "--region", REGION])
     # Wait for fixture to go out of scope:
     yield uploaded_media
     # Delete the bucket
@@ -178,9 +184,16 @@ def test_api_endpoints():
 @pytest.fixture
 def workflow_configs(create_face_collection):
     return [
+        # Test image processing workflow with all operators disabled
         ('{"Name":"ParallelRekognitionWorkflowImage","Configuration": {"parallelRekognitionStageImage": {"faceSearchImage": {"MediaType": "Image","Enabled": false, "CollectionId": "' + FACE_COLLECTION_ID + '"},"labelDetectionImage": {"MediaType": "Image","Enabled": false},"celebrityRecognitionImage": {"MediaType": "Image","Enabled": false},"contentModerationImage": {"MediaType": "Image","Enabled": false},"faceDetectionImage": {"MediaType": "Image","Enabled": false}}},"Input": {"Media": {"Image": {"S3Bucket":"' + BUCKET_NAME +'","S3Key":"' + SAMPLE_IMAGE + '"}}}}'),
+        # Test image processing workflow with all operators enabled
         ('{"Name":"ParallelRekognitionWorkflowImage","Configuration": {"parallelRekognitionStageImage": {"faceSearchImage": {"MediaType": "Image","Enabled": true, "CollectionId": "' + FACE_COLLECTION_ID + '"},"labelDetectionImage": {"MediaType": "Image","Enabled": true},"celebrityRecognitionImage": {"MediaType": "Image","Enabled": true},"contentModerationImage": {"MediaType": "Image","Enabled": true},"faceDetectionImage": {"MediaType": "Image","Enabled": true}}},"Input": {"Media": {"Image": {"S3Bucket":"' + BUCKET_NAME +'","S3Key":"' + SAMPLE_IMAGE + '"}}}}'),
-        ('{"Name":"ParallelRekognitionWorkflow","Configuration": {"parallelRekognitionStage": {"faceSearch": {"CollectionId":"'+ FACE_COLLECTION_ID + '","MediaType": "Video","Enabled": true},"labelDetection": {"MediaType": "Video","Enabled": true},"celebrityRecognition": {"MediaType": "Video","Enabled": true},"contentModeration": {"MediaType": "Video","Enabled": true},"faceDetection": {"MediaType": "Video","Enabled": true},"personTracking": {"MediaType": "Video","Enabled": true}}},"Input": {"Media": {"Video": {"S3Bucket":"' + BUCKET_NAME +'","S3Key":"' + SAMPLE_VIDEO + '"}}}}'),
+        # Test video processing workflow with all operators disabled
+        ('{"Name":"MieCompleteWorkflow","Configuration":{"defaultVideoStage":{"faceDetection":{"Enabled":false},"celebrityRecognition":{"Enabled":false},"GenericDataLookup":{"Enabled":false},"labelDetection":{"Enabled":false},"personTracking":{"Enabled":false},"Mediaconvert":{"Enabled":false},"contentModeration":{"Enabled":false},"faceSearch":{"Enabled":false}}},"Input": {"Media": {"Video": {"S3Bucket":"' + BUCKET_NAME +'","S3Key":"' + SAMPLE_VIDEO + '"}}}}'),
+        # Test generic data processing operator separately since it's not part of AWS Rekognition
+        ('{"Name":"MieCompleteWorkflow","Configuration":{"defaultVideoStage":{"faceDetection":{"Enabled":false},"celebrityRecognition":{"Enabled":false},"GenericDataLookup":{"Enabled":true, "Bucket":"' + BUCKET_NAME + '","Key":"' + SAMPLE_JSON + '"},"labelDetection":{"Enabled":false},"personTracking":{"Enabled":false},"Mediaconvert":{"Enabled":false},"contentModeration":{"Enabled":false},"faceSearch":{"Enabled":false}}},"Input": {"Media": {"Video": {"S3Bucket":"' + BUCKET_NAME +'","S3Key":"' + SAMPLE_VIDEO + '"}}}}'),
+        # Test video processing workflow with all operators enabled
+        ('{"Name":"MieCompleteWorkflow","Configuration": {"defaultVideoStage": {"GenericDataLookup":{"Enabled":false},"faceSearch": {"CollectionId":"'+ FACE_COLLECTION_ID + '","MediaType": "Video","Enabled": true},"labelDetection": {"MediaType": "Video","Enabled": true},"celebrityRecognition": {"MediaType": "Video","Enabled": true},"contentModeration": {"MediaType": "Video","Enabled": true},"faceDetection": {"MediaType": "Video","Enabled": true},"personTracking": {"MediaType": "Video","Enabled": true}}},"Input": {"Media": {"Video": {"S3Bucket":"' + BUCKET_NAME +'","S3Key":"' + SAMPLE_VIDEO + '"}}}}'),
     ]
 
 # Parameterized test for Rekognition workflow

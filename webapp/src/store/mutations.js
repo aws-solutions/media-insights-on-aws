@@ -7,5 +7,5 @@ export default {
   },
   updatePlayer (state, player) {
     state.player = player
-  },
+  }
 }

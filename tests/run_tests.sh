@@ -19,6 +19,15 @@ export REGION='us-east-1'
 export MIE_STACK_NAME="mie"
 export BUCKET_NAME="mie-testing-bucket-"$(date +%s)
 export TEST="test_operation_crud.py"
+export MIE_CLIENT_ID=''
+export MIE_POOL_ID=''
+
+echo "Enter your MIE Username"
+read username
+export MIE_USERNAME=$username
+echo "Enter your MIE Password"
+read password
+export MIE_PASSWORD=$password
 
 # Create and activate a temporary Python environment for this script.
 echo "------------------------------------------------------------------------------"

@@ -3,7 +3,8 @@
   "app_name": "dataplaneapi",
   "environment_variables": {
     "DATAPLANE_TABLE_NAME": "",
-    "DATAPLANE_BUCKET": ""
+    "DATAPLANE_BUCKET": "",
+    "USER_POOL_ARN": ""
   },
   "stages": {
     "dev": {

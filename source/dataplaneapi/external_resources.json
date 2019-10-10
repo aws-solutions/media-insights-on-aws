@@ -1,0 +1,131 @@
+{
+  "Parameters": {
+    "ApiIpList": {
+      "Type": "String",
+      "Description": "List of IPs that can access MIE APIs"
+    },
+    "DataplaneTableName": {
+      "Type": "String",
+      "Description": "Table used for storing asset metadata"
+    },
+    "DataplaneBucketName": {
+      "Type": "String",
+      "Description": "Bucket used to store asset media"
+    },
+    "UserPoolArn": {
+      "Type": "String",
+      "Description": "Arn of the Mie Cognito user pool"
+    },
+    "DeploymentPackageBucket": {
+      "Type": "String",
+      "Description": "Bucket that contains the dataplane deployment package"
+    },
+    "DeploymentPackageKey": {
+      "Type": "String",
+      "Description": "S3 Key of the dataplane deployment package"
+    }
+  },
+  "Resources": {
+    "ApiHandlerRole": {
+      "Properties": {
+        "Policies": [
+          {
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:*"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": "dynamodb:*",
+                  "Resource": {"Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${DataplaneTableName}"}
+                },
+                {
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": "*",
+                  "Effect": "Allow",
+                  "Sid": "Logging"
+                }
+              ]
+            },
+            "PolicyName": "MieDataplaneApiHandlerRolePolicy"
+          }
+        ]
+      }
+    },
+    "APIHandler": {
+      "Properties": {
+        "Environment": {
+          "Variables": {
+            "DATAPLANE_TABLE_NAME": {
+                "Ref": "DataplaneTableName"
+            },
+            "DATAPLANE_BUCKET": {
+                "Ref": "DataplaneBucketName"
+            },
+            "USER_POOL_ARN": {
+                "Ref": "UserPoolArn"
+            }
+          }
+        },
+        "CodeUri": {"Bucket":  {"Ref": "DeploymentPackageBucket"}, "Key":  {"Ref": "DeploymentPackageKey"}}
+      }
+    },
+    "RestAPI": {
+      "Properties": {
+        "DefinitionBody": {
+            "x-amazon-apigateway-policy": {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Effect": "Allow",
+                "Principal": "*",
+                "Action": "execute-api:Invoke",
+                "Resource": [
+                  {
+                    "Fn::Sub": "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:*/*/*/*"
+                  }
+                ]
+              },
+              {
+                "Effect": "Deny",
+                "Principal": "*",
+                "Action": "execute-api:Invoke",
+                "Resource": [
+                  {
+                    "Fn::Sub": "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:*/*/*/*"
+                  }
+                ],
+                "Condition": {
+                  "NotIpAddress": {
+                    "aws:SourceIp": [
+                      {
+                        "Fn::Sub": "${ApiIpList}"
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          "securityDefinitions": {
+            "MieUserPool": {
+              "x-amazon-apigateway-authorizer": {
+              "providerARNs": [{"Ref":  "UserPoolArn"}]
+            }
+          }
+        }
+        }
+      }
+    }
+  }
+}

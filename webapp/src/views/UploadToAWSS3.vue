@@ -41,7 +41,7 @@ export default {
       signurl: process.env.VUE_APP_DATAPLANE_API_ENDPOINT+'/upload',
       s3_destination: 's3://'+process.env.VUE_APP_DATAPLANE_BUCKET,
       dropzoneOptions: {
-        url: 'https://'+process.env.VUE_APP_DATAPLANE_BUCKET+'.s3.amazonaws.com',
+        url: 'https://'+process.env.VUE_APP_DATAPLANE_BUCKET+'.s3-us-west-2.amazonaws.com',
         thumbnailWidth: 200,
         addRemoveLinks: true,
         autoProcessQueue: false,

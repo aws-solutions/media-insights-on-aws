@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from chalice import Chalice
-from chalice import NotFoundError, BadRequestError, ChaliceViewError, Response, ConflictError
+from chalice import NotFoundError, BadRequestError, ChaliceViewError, Response, ConflictError, CognitoUserPoolAuthorizer
 import boto3
 from boto3 import resource
 from botocore.client import ClientError
@@ -80,6 +80,14 @@ IAM_RESOURCE = boto3.resource('iam')
 LAMBDA_CLIENT = boto3.client("lambda")
 # Helper class to convert a DynamoDB item to JSON.
 
+# cognito
+cognito_user_pool_arn = os.environ['USER_POOL_ARN']
+
+authorizer = CognitoUserPoolAuthorizer(
+    'MieUserPool', header='Authorization',
+    provider_arns=[cognito_user_pool_arn])
+
+
 
 class DecimalEncoder(json.JSONEncoder):
     def default(self, o):
@@ -119,7 +127,7 @@ def index():
 #         |___/                                             |_|    
 #
 ##############################################################################
-@app.route('/system/configuration', cors=True, methods=['POST'])
+@app.route('/system/configuration', cors=True, methods=['POST'], authorizer=authorizer)
 def create_system_configuration_api():
     """ Add a new system configuration parameter
     
@@ -175,7 +183,7 @@ def create_system_configuration_api():
 
     return {}
 
-@app.route('/system/configuration', cors=True, methods=['GET'])
+@app.route('/system/configuration', cors=True, methods=['GET'], authorizer=authorizer)
 def get_system_configuration_api():
     """ Get the current MIE system configuration
     
@@ -221,7 +229,7 @@ def get_system_configuration_api():
 #
 ##############################################################################
 
-@app.route('/workflow/operation', cors=True, methods=['POST'])
+@app.route('/workflow/operation', cors=True, methods=['POST'], authorizer=authorizer)
 def create_operation_api():
     """ Create a new operation
     
@@ -643,7 +651,7 @@ SYNC_OPERATION_ASL = {
 }
 
 
-@app.route('/workflow/operation', cors=True, methods=['PUT'])
+@app.route('/workflow/operation', cors=True, methods=['PUT'], authorizer=authorizer)
 def update_operation():
     """ Update operation NOT IMPLEMENTED 
 
@@ -652,7 +660,7 @@ def update_operation():
     return operation
 
 
-@app.route('/workflow/operation', cors=True, methods=['GET'])
+@app.route('/workflow/operation', cors=True, methods=['GET'], authorizer=authorizer)
 def list_operations():
     """ List all defined operators
 
@@ -675,7 +683,7 @@ def list_operations():
     return operations
 
 
-@app.route('/workflow/operation/{Name}', cors=True, methods=['GET'])
+@app.route('/workflow/operation/{Name}', cors=True, methods=['GET'], authorizer=authorizer)
 def get_operation_by_name(Name):
     """ Get an operation definition by name
 
@@ -703,7 +711,7 @@ def get_operation_by_name(Name):
     return operation
 
 
-@app.route('/workflow/operation/{Name}', cors=True, methods=['DELETE'])
+@app.route('/workflow/operation/{Name}', cors=True, methods=['DELETE'], authorizer=authorizer)
 def delete_operation_api(Name):
     """ Delete a an operation
 
@@ -820,7 +828,7 @@ def flag_operation_dependent_workflows(OperationName):
 #
 ################################################################################################
 
-@app.route('/workflow/stage', cors=True, methods=['POST'])
+@app.route('/workflow/stage', cors=True, methods=['POST'], authorizer=authorizer)
 def create_stage_api():
     """ Create a stage state machine from a list of existing operations.  
     
@@ -989,7 +997,7 @@ def create_stage(stage):
     return stage
 
 
-@app.route('/workflow/stage', cors=True, methods=['PUT'])
+@app.route('/workflow/stage', cors=True, methods=['PUT'], authorizer=authorizer)
 def update_stage():
     """ Update a stage NOT IMPLEMENTED 
 
@@ -1000,7 +1008,7 @@ def update_stage():
     return stage
 
 
-@app.route('/workflow/stage', cors=True, methods=['GET'])
+@app.route('/workflow/stage', cors=True, methods=['GET'], authorizer=authorizer)
 def list_stages():
     """ List all stage defintions
 
@@ -1023,7 +1031,7 @@ def list_stages():
     return stages
 
 
-@app.route('/workflow/stage/{Name}', cors=True, methods=['GET'])
+@app.route('/workflow/stage/{Name}', cors=True, methods=['GET'], authorizer=authorizer)
 def get_stage_by_name(Name):
     """ Get a stage definition by name
 
@@ -1051,7 +1059,7 @@ def get_stage_by_name(Name):
     return stage
 
 
-@app.route('/workflow/stage/{Name}', cors=True, methods=['DELETE'])
+@app.route('/workflow/stage/{Name}', cors=True, methods=['DELETE'], authorizer=authorizer)
 def delete_stage_api(Name):
     """ Delete a stage
 
@@ -1166,7 +1174,7 @@ def flag_stage_dependent_workflows(StageName):
 #
 ###############################################################################
 
-@app.route('/workflow', cors=True, methods=['POST'])
+@app.route('/workflow', cors=True, methods=['POST'], authorizer=authorizer)
 def create_workflow_api():
     """ Create a workflow from a list of existing stages.  
     
@@ -1392,7 +1400,7 @@ def build_workflow(workflow):
 
     return workflow
 
-@app.route('/workflow', cors=True, methods=['PUT'])
+@app.route('/workflow', cors=True, methods=['PUT'], authorizer=authorizer)
 def update_workflow_api():
     """ Update a workflow from a list of existing stages.  
     
@@ -1529,7 +1537,7 @@ def update_workflow(trigger, new_workflow):
     return workflow
 
 
-@app.route('/workflow', cors=True, methods=['GET'])
+@app.route('/workflow', cors=True, methods=['GET'], authorizer=authorizer)
 def list_workflows():
     """ List all workflow defintions
 
@@ -1551,7 +1559,7 @@ def list_workflows():
 
     return workflows
 
-@app.route('/workflow/list/operation/{OperatorName}', cors=True, methods=['GET'])
+@app.route('/workflow/list/operation/{OperatorName}', cors=True, methods=['GET'], authorizer=authorizer)
 def list_workflows_by_operator(OperatorName):
     """ List all workflow defintions that contain an operator
 
@@ -1576,7 +1584,7 @@ def list_workflows_by_operator(OperatorName):
 
     return workflows
 
-@app.route('/workflow/list/stage/{StageName}', cors=True, methods=['GET'])
+@app.route('/workflow/list/stage/{StageName}', cors=True, methods=['GET'], authorizer=authorizer)
 def list_workflows_by_stage(StageName):
     """ List all workflow defintions that contain a stage
 
@@ -1603,7 +1611,7 @@ def list_workflows_by_stage(StageName):
 
 
 
-@app.route('/workflow/{Name}', cors=True, methods=['GET'])
+@app.route('/workflow/{Name}', cors=True, methods=['GET'], authorizer=authorizer)
 def get_workflow_by_name(Name):
     """ Get a workflow definition by name
 
@@ -1631,7 +1639,7 @@ def get_workflow_by_name(Name):
     return workflow
 
 
-@app.route('/workflow/configuration/{Name}', cors=True, methods=['GET'])
+@app.route('/workflow/configuration/{Name}', cors=True, methods=['GET'], authorizer=authorizer)
 def get_workflow_configuration_by_name(Name):
     """ Get a workflow configruation object by name
 
@@ -1663,7 +1671,7 @@ def get_workflow_configuration_by_name(Name):
     return Configuration
 
 
-@app.route('/workflow/{Name}', cors=True, methods=['DELETE'])
+@app.route('/workflow/{Name}', cors=True, methods=['DELETE'], authorizer=authorizer)
 def delete_workflow_api(Name):
     """ Delete a workflow
 
@@ -1730,7 +1738,7 @@ def find(key, dictionary):
             return v
 
 
-@app.route('/workflow/execution', cors=True, methods=['POST'])
+@app.route('/workflow/execution', cors=True, methods=['POST'], authorizer=authorizer)
 def create_workflow_execution_api():
     """ Execute a workflow.  
     
@@ -1971,7 +1979,7 @@ def initialize_workflow_execution(trigger, Name, input, Configuration, asset_id)
     return workflow_execution
 
 
-@app.route('/workflow/execution', cors=True, methods=['PUT'])
+@app.route('/workflow/execution', cors=True, methods=['PUT'], authorizer=authorizer)
 def update_workflow_execution():
     """ Update a workflow execution NOT IMPLEMENTED 
 
@@ -1982,7 +1990,7 @@ def update_workflow_execution():
     return stage
 
 
-@app.route('/workflow/execution', cors=True, methods=['GET'])
+@app.route('/workflow/execution', cors=True, methods=['GET'], authorizer=authorizer)
 def list_workflow_executions():
     """ List all workflow executions
 
@@ -2004,7 +2012,7 @@ def list_workflow_executions():
 
     return workflow_executions
 
-@app.route('/workflow/execution/status/{Status}', cors=True, methods=['GET'])
+@app.route('/workflow/execution/status/{Status}', cors=True, methods=['GET'], authorizer=authorizer)
 def list_workflow_executions_by_status(Status):
     """ Get all workflow executions with the specified status
 
@@ -2039,7 +2047,7 @@ def list_workflow_executions_by_status(Status):
 
     return workflow_executions
 
-@app.route('/workflow/execution/asset/{AssetId}', cors=True, methods=['GET'])
+@app.route('/workflow/execution/asset/{AssetId}', cors=True, methods=['GET'], authorizer=authorizer)
 def list_workflow_executions_by_assetid(AssetId):
     """ Get workflow executions by AssetId
 
@@ -2075,7 +2083,7 @@ def list_workflow_executions_by_assetid(AssetId):
 
     return workflow_executions
 
-@app.route('/workflow/execution/{Id}', cors=True, methods=['GET'])
+@app.route('/workflow/execution/{Id}', cors=True, methods=['GET'], authorizer=authorizer)
 def get_workflow_execution_by_id(Id):
     """ Get a workflow execution by id
 
@@ -2104,7 +2112,7 @@ def get_workflow_execution_by_id(Id):
     return workflow_execution
 
 
-@app.route('/workflow/execution/{Id}', cors=True, methods=['DELETE'])
+@app.route('/workflow/execution/{Id}', cors=True, methods=['DELETE'], authorizer=authorizer)
 def delete_workflow_execution(Id):
     """ Delete a workflow executions
 

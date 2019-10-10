@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from chalice import Chalice
-from chalice import NotFoundError, BadRequestError, ChaliceViewError, Response, ConflictError
+from chalice import NotFoundError, BadRequestError, ChaliceViewError, CognitoUserPoolAuthorizer
 from botocore.client import ClientError
 from decimal import Decimal
 
@@ -39,11 +39,19 @@ dynamo_resource = boto3.resource('dynamodb')
 # S3 resources
 dataplane_s3_bucket = os.environ['DATAPLANE_BUCKET']
 
+# Cognito resources
+# From cloudformation stack
+cognito_user_pool_arn = os.environ['USER_POOL_ARN']
+
 # TODO: Should we add a variable for the upload bucket?
 
 base_s3_uri = 'private/assets/'
 s3_client = boto3.client('s3')
 s3_resource = boto3.resource('s3')
+
+authorizer = CognitoUserPoolAuthorizer(
+    'MieUserPool', header='Authorization',
+    provider_arns=[cognito_user_pool_arn])
 
 
 class DecimalEncoder(json.JSONEncoder):
@@ -150,6 +158,10 @@ def next_page_valid(metadata, page_num):
         return False
 
 
+# @app.lambda_function()
+# def hello_world_function():
+#     return {"Message": "Hello World!"}
+
 @app.route('/')
 def index():
     return {'hello': 'world'}
@@ -157,7 +169,7 @@ def index():
 
 # TODO: Change the name of this method - "upload" is too vague
 
-@app.route('/upload', cors=True, methods=['POST'], content_types=['application/json'])
+@app.route('/upload', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
 def upload():
     """
     Generate a pre-signed URL that can be used to upload media files to S3 from a web application
@@ -192,7 +204,7 @@ def upload():
 # TODO: Change the name of this method - "download" is too vague
 
 
-@app.route('/download', cors=True, methods=['POST'], content_types=['application/json'])
+@app.route('/download', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
 def download():
     """
     Generate a pre-signed URL that can be used to download media files from S3.
@@ -224,7 +236,7 @@ def download():
 # TODO: Change the name of this method
 
 
-@app.route('/mediapath/{asset_id}/{workflow_id}', cors=True, methods=['GET'])
+@app.route('/mediapath/{asset_id}/{workflow_id}', cors=True, methods=['GET'], authorizer=authorizer)
 def media_upload_path(asset_id, workflow_id):
     """
     Generate a media storage path in the dataplane S3 bucket.
@@ -248,7 +260,7 @@ def media_upload_path(asset_id, workflow_id):
         return response
 
 
-@app.route('/create', cors=True, methods=['POST'])
+@app.route('/create', cors=True, methods=['POST'], authorizer=authorizer)
 def create_asset():
     """
     Create an asset in the dataplane from a json input composed of the input key and bucket of the object.
@@ -365,7 +377,7 @@ def create_asset():
         return {"AssetId": asset_id, "S3Bucket": dataplane_s3_bucket, "S3Key": new_key}
 
 
-@app.route('/metadata/{asset_id}', cors=True, methods=['POST'])
+@app.route('/metadata/{asset_id}', cors=True, methods=['POST'], authorizer=authorizer)
 def put_asset_metadata(asset_id):
     """
     Adds operation metadata for an asset.
@@ -579,7 +591,7 @@ def put_asset_metadata(asset_id):
         return {"Status": "Failed"}
 
 
-@app.route('/metadata/{asset_id}', cors=True, methods=['GET'])
+@app.route('/metadata/{asset_id}', cors=True, methods=['GET'], authorizer=authorizer)
 def get_asset_metadata(asset_id):
     """
     Retrieves all of the metadata for a specified asset.
@@ -729,7 +741,7 @@ def get_asset_metadata(asset_id):
 
 
 # TODO: I need to do some bugfixing, this method works but I think I'm sending the last page back twice
-@app.route('/metadata/{asset_id}/{operator_name}', cors=True, methods=['GET'])
+@app.route('/metadata/{asset_id}/{operator_name}', cors=True, methods=['GET'], authorizer=authorizer)
 def get_asset_metadata_operator(asset_id, operator_name):
     """
     Retrieves specified operator metadata for a given asset.
@@ -845,7 +857,7 @@ def get_asset_metadata_operator(asset_id, operator_name):
         return response
 
 
-@app.route('/metadata', cors=True, methods=['GET'])
+@app.route('/metadata', cors=True, methods=['GET'], authorizer=authorizer)
 def list_all_assets():
     """
     Returns:
@@ -892,7 +904,7 @@ def list_all_assets():
             return response
 
 
-@app.route('/metadata/{asset_id}/{operator_name}', cors=True, methods=['DELETE'])
+@app.route('/metadata/{asset_id}/{operator_name}', cors=True, methods=['DELETE'], authorizer=authorizer)
 def delete_operator_metadata(asset_id, operator_name):
     """
     Deletes the specified operator metadata from an asset.
@@ -959,7 +971,7 @@ def delete_operator_metadata(asset_id, operator_name):
                 raise ChaliceViewError("Unable to delete metadata: {error}".format(error=delete["Message"]))
 
 
-@app.route('/metadata/{asset_id}', cors=True, methods=['DELETE'])
+@app.route('/metadata/{asset_id}', cors=True, methods=['DELETE'], authorizer=authorizer)
 def delete_asset(asset_id):
     """
     Deletes an asset and all metadata from the dataplane.

@@ -16,6 +16,7 @@ import json
 import os
 import boto3
 from docopt import docopt
+import functools
 
 from samtranslator.public.translator import ManagedPolicyLoader
 from samtranslator.translator.transform import transform
@@ -34,8 +35,8 @@ cwd = os.getcwd()
 
 def main():
     print(cwd)
-    input_file_path = cwd+'/dist/dataplaneapi_sam.yaml'
-    output_file_path = cwd+'/dist/dataplaneapi.yaml'
+    input_file_path = cwd+'/dist/sam.json'
+    output_file_path = cwd+'/dist/dataplaneapi.json'
 
     print(input_file_path)
 
@@ -53,7 +54,7 @@ def main():
 
         print('Wrote transformed CloudFormation template to: ' + output_file_path)
     except InvalidDocumentException as e:
-        errorMessage = reduce(lambda message, error: message + ' ' + error.message, e.causes, e.message)
+        errorMessage = functools.reduce(lambda message, error: message + ' ' + error.message, e.causes, e.message)
         print(errorMessage)
         errors = map(lambda cause: cause.message, e.causes)
         print(errors)

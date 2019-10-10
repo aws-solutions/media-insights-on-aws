@@ -1,0 +1,331 @@
+{
+  "Parameters": {
+    "DeploymentPackageBucket": {
+      "Type": "String",
+      "Description": "Bucket that contains the dataplane deployment package"
+    },
+    "DeploymentPackageKey": {
+      "Type": "String",
+      "Description": "S3 Key of the dataplane deployment package"
+    },
+    "ApiIpList": {
+      "Type": "String",
+      "Description": "List of IPs that can access MIE APIs"
+    },
+    "SystemTableName": {
+      "Type": "String",
+      "Description": "Table used to store system configuration"
+    },
+    "WorkflowTableName": {
+      "Type": "String",
+      "Description": "Table used to store workflow definitions"
+    },
+    "UserPoolArn": {
+      "Type": "String",
+      "Description": "Arn of the Mie Cognito user pool"
+    },
+    "StageTableName": {
+      "Type": "String",
+      "Description": "Table used to store stage definitions"
+    },
+    "WorkflowExecutionTableName": {
+      "Type": "String",
+      "Description": "Table used to monitor Workflow executions"
+    },
+    "HistoryTableName": {
+      "Type": "String",
+      "Description": "Table used to store workflow resource history"
+    },
+    "StageExecutionQueueUrl": {
+        "Type": "String",
+        "Description": "Queue used to post stage executions for processing"
+    },
+    "StageExecutionRole": {
+        "Type": "String",
+        "Description": "ARN of the role used to execute a stage state machine"
+    },
+    "OperationTableName": {
+        "Type": "String",
+        "Description": "Table used to store operations"
+    },
+    "CompleteStageLambdaArn": {
+        "Type": "String",
+        "Description": "Lambda that completes execution of a stage"
+    },
+    "FilterOperationLambdaArn": {
+        "Type": "String",
+        "Description": "Lambda that checks if an operation should execute"
+    },
+    "WorkflowSchedulerLambdaArn": {
+            "Type": "String",
+            "Description": "Lambda that schedules workflows from the work queue"
+            },
+    "DataplaneEndpoint": {
+        "Type": "String",
+        "Description": "Rest endpoint for the dataplane"
+    },
+    "DataplaneHandlerArn": {
+        "Type": "String",
+        "Description": "Arn for the dataplane lambda handler"
+    },
+    "DataPlaneBucket": {
+        "Type": "String",
+        "Description": "S3 bucket of the dataplane"
+    },
+    "OperatorFailedHandlerLambdaArn": {
+        "Type": "String",
+        "Description": "Lambda that handles failed operator states"
+    },
+    "SqsQueueArn": {
+      "Type": "String",
+      "Description": "Arn of the MIE workflow queue"
+    }
+  },
+  "Resources": {
+    "ApiHandlerRole": {
+      "Properties": {
+        "Policies": [
+          {
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:*"
+                  ],
+                  "Resource": [
+                    {"Fn::Sub": "arn:aws:s3:::${DataPlaneBucket}"},
+                    {"Fn::Sub": "arn:aws:s3:::${DataPlaneBucket}/*"}
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "sqs:*"
+                  ],
+                  "Resource": {"Ref": "SqsQueueArn"}
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "states:*"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "iam:PassRole"
+                  ],
+                  "Resource": {"Ref": "StageExecutionRole"}
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "lambda:InvokeFunction"
+                  ],
+                  "Resource": [
+                    {"Ref": "WorkflowSchedulerLambdaArn"},
+                    {"Ref": "FilterOperationLambdaArn"},
+                    {"Ref": "CompleteStageLambdaArn"},
+                    {"Ref": "OperatorFailedHandlerLambdaArn"},
+                    {"Ref": "DataplaneHandlerArn"}
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": "dynamodb:*",
+                  "Resource": [
+                    {"Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${SystemTableName}"},
+                    {"Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${WorkflowTableName}"},
+                    {"Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${WorkflowExecutionTableName}"},
+                    {"Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${WorkflowExecutionTableName}/*"},
+                    {"Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${HistoryTableName}"},
+                    {"Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${OperationTableName}"}
+                  ]
+                },
+                {
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": "*",
+                  "Effect": "Allow",
+                  "Sid": "Logging"
+                }
+              ]
+            },
+            "PolicyName": "MieWorkflowApiHandlerRolePolicy"
+          }
+        ]
+      }
+    },
+    "WorkflowCustomResource": {
+      "Properties": {
+        "Environment": {
+          "Variables": {
+                "SYSTEM_TABLE_NAME": {
+                        "Ref":"SystemTableName"
+                },
+                "WORKFLOW_TABLE_NAME": {
+                        "Ref":"WorkflowTableName"
+                },
+                "WORKFLOW_EXECUTION_TABLE_NAME": {
+                        "Ref":"WorkflowExecutionTableName"
+                },
+                "HISTORY_TABLE_NAME": {
+                        "Ref":"HistoryTableName"
+                },
+                "STAGE_TABLE_NAME": {
+                        "Ref":"StageTableName"
+                },
+                "STAGE_EXECUTION_QUEUE_URL": {
+                        "Ref":"StageExecutionQueueUrl"
+                },
+                "OPERATION_TABLE_NAME": {
+                        "Ref":"OperationTableName"
+                },
+                "COMPLETE_STAGE_LAMBDA_ARN": {
+                        "Ref":"CompleteStageLambdaArn"
+                },
+                "FILTER_OPERATION_LAMBDA_ARN": {
+                        "Ref":"FilterOperationLambdaArn"
+                },
+                "WORKFLOW_SCHEDULER_LAMBDA_ARN": {
+                        "Ref":"WorkflowSchedulerLambdaArn"
+                },
+                "STAGE_EXECUTION_ROLE": {
+                        "Ref" : "StageExecutionRole"
+                },
+                "DataplaneEndpoint": {
+                    "Ref": "DataplaneEndpoint"
+                },
+                "DATAPLANE_BUCKET": {
+                    "Ref": "DataPlaneBucket"
+                },
+                "OPERATOR_FAILED_LAMBDA_ARN": {
+                    "Ref": "OperatorFailedHandlerLambdaArn"
+                },
+                "USER_POOL_ARN": {
+                    "Ref": "UserPoolArn"
+                }
+            }
+        },
+        "CodeUri": {"Bucket":  {"Ref": "DeploymentPackageBucket"}, "Key":  {"Ref": "DeploymentPackageKey"}}
+      }
+    },
+    "APIHandler": {
+      "Properties": {
+        "Environment": {
+          "Variables": {
+                "SYSTEM_TABLE_NAME": {
+                        "Ref":"SystemTableName"
+                },
+                "WORKFLOW_TABLE_NAME": {
+                        "Ref":"WorkflowTableName"
+                },
+                "WORKFLOW_EXECUTION_TABLE_NAME": {
+                        "Ref":"WorkflowExecutionTableName"
+                },
+                "HISTORY_TABLE_NAME": {
+                        "Ref":"HistoryTableName"
+                },
+                "STAGE_TABLE_NAME": {
+                        "Ref":"StageTableName"
+                },
+                "STAGE_EXECUTION_QUEUE_URL": {
+                        "Ref":"StageExecutionQueueUrl"
+                },
+                "OPERATION_TABLE_NAME": {
+                        "Ref":"OperationTableName"
+                },
+                "COMPLETE_STAGE_LAMBDA_ARN": {
+                        "Ref":"CompleteStageLambdaArn"
+                },
+                "FILTER_OPERATION_LAMBDA_ARN": {
+                        "Ref":"FilterOperationLambdaArn"
+                },
+                "WORKFLOW_SCHEDULER_LAMBDA_ARN": {
+                        "Ref":"WorkflowSchedulerLambdaArn"
+                },
+                "STAGE_EXECUTION_ROLE": {
+                        "Ref" : "StageExecutionRole"
+                },
+                "DataplaneEndpoint": {
+                    "Ref": "DataplaneEndpoint"
+                },
+                "DATAPLANE_BUCKET": {
+                    "Ref": "DataPlaneBucket"
+                },
+                "OPERATOR_FAILED_LAMBDA_ARN": {
+                    "Ref": "OperatorFailedHandlerLambdaArn"
+                },
+                "USER_POOL_ARN": {
+                    "Ref": "UserPoolArn"
+                }
+            }
+        },
+        "CodeUri": {"Bucket":  {"Ref": "DeploymentPackageBucket"}, "Key":  {"Ref": "DeploymentPackageKey"}}
+      }
+    },
+    "RestAPI": {
+      "Properties": {
+        "DefinitionBody": {
+            "x-amazon-apigateway-policy": {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Effect": "Allow",
+                "Principal": "*",
+                "Action": "execute-api:Invoke",
+                "Resource": [
+                  {
+                    "Fn::Sub": "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:*/*/*/*"
+                  }
+                ]
+              },
+              {
+                "Effect": "Deny",
+                "Principal": "*",
+                "Action": "execute-api:Invoke",
+                "Resource": [
+                  {
+                    "Fn::Sub": "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:*/*/*/*"
+                  }
+                ],
+                "Condition": {
+                  "NotIpAddress": {
+                    "aws:SourceIp": [
+                      {
+                        "Fn::Sub": "${ApiIpList}"
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          "securityDefinitions": {
+            "MieUserPool": {
+              "x-amazon-apigateway-authorizer": {
+              "providerARNs": [{"Ref":  "UserPoolArn"}]
+            }
+          }
+        }
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "WorkflowCustomResourceArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "WorkflowCustomResource",
+          "Arn"
+        ]
+      }
+    }
+  }
+}

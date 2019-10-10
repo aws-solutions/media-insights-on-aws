@@ -28,8 +28,6 @@ Mappings:
       WebsitePrefix: "media-insights-solution/%%VERSION%%/code/website"
 
 Resources:
-    # TODO: Best Practice - Enable access logging
-    # TODO: Best Practice - S3 Bucket should have encryption option set
     MediaInsightsWebsiteBucket:
       Type: AWS::S3::Bucket
       DeletionPolicy: Retain
@@ -56,7 +54,6 @@ Resources:
           - PolicyName: !Sub "${AWS::StackName}-WebsiteHelperS3Access"
             PolicyDocument:
               Statement:
-                # TODO: Security - Scope this down
                 - Effect: Allow
                   Action:
                     - "s3:*"
@@ -64,7 +61,6 @@ Resources:
                     - arn:aws:s3:::${code}/*
                     - code:
                         Fn::FindInMap: ["SourceCode", "General", "S3Bucket"]
-                # TODO: Security - Scope this down
                 - Effect: Allow
                   Action:
                     - "s3:*"
@@ -131,7 +127,6 @@ Resources:
           Ref: "MediaInsightsWebsiteBucket"
         PolicyDocument:
           Statement:
-            # TODO: Security - Scope this down
             - Effect: "Allow"
               Action:
                 - "s3:*"
@@ -140,7 +135,6 @@ Resources:
               Principal:
                 CanonicalUser: !GetAtt MediaInsightsOriginAccessIdentity.S3CanonicalUserId
 
-    # TODO: Best Practice - Enable access logging
     MediaInsightsWebsiteDistribution:
       Type: AWS::CloudFront::Distribution
       Properties:

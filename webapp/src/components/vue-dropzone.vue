@@ -159,7 +159,6 @@ export default {
     })
 
     this.dropzone.on('sending', function(file, xhr, formData) {
-      xhr.timeout = 99999999;
       if (vm.isS3) {
         if (vm.isS3OverridesServerPropagation) {
           let signature = file.s3Signature;
@@ -366,6 +365,8 @@ export default {
           promise.then((response) => {
             if (response.success) {
               file.s3ObjectLocation = response.message
+              // set dropzone url option to the URL in the get_presigned_url() response
+              this.dropzone.options.url = response.message.url
               setTimeout(() => this.dropzone.processFile(file))
               this.$emit('vdropzone-s3-upload-success', response.message);
             } else {

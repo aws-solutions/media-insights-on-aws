@@ -168,10 +168,13 @@ Resources:
                   - "es:ESHttpPut"
                   - "es:ESHttpDelete"
                   - "es:ESHttpGet"
+                Resource: !Join ["", [!GetAtt ESDomain.DomainArn, "/*"]]
+              - Effect: Allow
+                Action:
                   - "es:DescribeElasticsearchDomain"
                   - "es:GetCompatibleElasticsearchVersions"
                   - "es:DescribeElasticsearchDomains"
-                Resource: !GetAtt ESDomain.Arn
+                Resource: !GetAtt ESDomain.DomainArn
               - Effect: Allow
                 Action:
                   - "s3:GetObject"

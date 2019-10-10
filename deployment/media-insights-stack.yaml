@@ -88,12 +88,8 @@ Parameters:
   #      - No
   ApiIpList:
     Type: String
-<<<<<<< HEAD
-    Description: CIDR block string.  Indicates which internet addresses can access the MIE APIs.
-=======
     Description:
       CIDR block string.  Indicates which internet addresses can access the MIE APIs.
->>>>>>> a62baa00091e0c99dda4b77f4fa1cf186b507dc9
       For example, 192.168.100.14/24 represents the IPv4 address 192.168.100.14 and its associated routing prefix
       192.168.100.0, while the CIDR block 0.0.0.0/0 indicates the APIs are open to requests from all internet addresses.
 
@@ -153,11 +149,7 @@ Conditions:
   DeployInstantTranslateWorkflowCondition:
     !Equals [!Ref DeployInstantTranslateWorkflow, Yes]
   #  DeployTranscribeWorkflowCondition:
-<<<<<<< HEAD
-  #    !Equals [!Ref DeployTranscribeWorkflow, Yes]
-=======
   #  !Equals [!Ref DeployTranscribeWorkflow, Yes]
->>>>>>> a62baa00091e0c99dda4b77f4fa1cf186b507dc9
   DeployRekognitionWorkflowCondition:
     !Equals [!Ref DeployRekognitionWorkflow, Yes]
   DeployComprehendWorkflowCondition:
@@ -257,18 +249,6 @@ Resources:
                   - "dynamodb:BatchWriteItem"
                 Resource:
                   - !Join [
-<<<<<<< HEAD
-                    "",
-                    [
-                      "arn:aws:dynamodb:",
-                      Ref: "AWS::Region",
-                      ":",
-                      Ref: "AWS::AccountId",
-                      ":table/",
-                      Ref: "WorkflowTable"
-                    ],
-                  ]
-=======
                       "",
                       [
                         "arn:aws:dynamodb:",
@@ -279,7 +259,6 @@ Resources:
                         Ref: "WorkflowTable",
                       ],
                     ]
->>>>>>> a62baa00091e0c99dda4b77f4fa1cf186b507dc9
                   - !Join [
                     "",
                     [
@@ -292,20 +271,6 @@ Resources:
                     ],
                   ]
                   - !Join [
-<<<<<<< HEAD
-                    "",
-                    [
-                      "arn:aws:dynamodb:",
-                      Ref: "AWS::Region",
-                      ":",
-                      Ref: "AWS::AccountId",
-                      ":table/",
-                      Ref: "WorkflowExecutionTable",
-                      "/index/",
-                      "*"
-                    ],
-                  ]
-=======
                       "",
                       [
                         "arn:aws:dynamodb:",
@@ -318,7 +283,6 @@ Resources:
                         "*",
                       ],
                     ]
->>>>>>> a62baa00091e0c99dda4b77f4fa1cf186b507dc9
                   - !Join [
                     "",
                     [
@@ -409,18 +373,6 @@ Resources:
                   - "dynamodb:BatchWriteItem"
                 Resource:
                   - !Join [
-<<<<<<< HEAD
-                    "",
-                    [
-                      "arn:aws:dynamodb:",
-                      Ref: "AWS::Region",
-                      ":",
-                      Ref: "AWS::AccountId",
-                      ":table/",
-                      Ref: "WorkflowTable"
-                    ],
-                  ]
-=======
                       "",
                       [
                         "arn:aws:dynamodb:",
@@ -431,7 +383,6 @@ Resources:
                         Ref: "WorkflowTable",
                       ],
                     ]
->>>>>>> a62baa00091e0c99dda4b77f4fa1cf186b507dc9
                   - !Join [
                     "",
                     [
@@ -444,20 +395,6 @@ Resources:
                     ],
                   ]
                   - !Join [
-<<<<<<< HEAD
-                    "",
-                    [
-                      "arn:aws:dynamodb:",
-                      Ref: "AWS::Region",
-                      ":",
-                      Ref: "AWS::AccountId",
-                      ":table/",
-                      Ref: "WorkflowExecutionTable",
-                      "/index/",
-                      "*"
-                    ],
-                  ]
-=======
                       "",
                       [
                         "arn:aws:dynamodb:",
@@ -470,7 +407,6 @@ Resources:
                         "*",
                       ],
                     ]
->>>>>>> a62baa00091e0c99dda4b77f4fa1cf186b507dc9
                   - !Join [
                     "",
                     [

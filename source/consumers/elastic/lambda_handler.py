@@ -13,8 +13,8 @@ dataplane_bucket = os.environ['DataplaneBucket']
 
 s3 = boto3.client('s3')
 
-supported_operators = ["transcribe", "translate", "labeldetection", "celebrityrecognition", "facesearch",
-                       "contentmoderation", "facedetection", "key_phrases", "entities", "key_phrases"]
+# These names are the lowercase version of OPERATOR_NAME defined in /source/operators/operator-library.yaml
+supported_operators = ["transcribe", "translate", "genericdatalookup", "labeldetection", "celebrityrecognition", "facesearch", "contentmoderation", "facedetection", "key_phrases", "entities", "key_phrases"]
 
 
 def normalize_confidence(confidence_value):
@@ -274,6 +274,60 @@ def process_face_detection(asset, workflow, results):
                     print("Item: " + json.dumps(item))
     bulk_index(es, asset, "face_detection", extracted_items)
 
+def process_generic_data(asset, workflow, results):
+    # This function puts logo detection data in Elasticsearch.
+    metadata = json.loads(results)
+    es = connect_es(es_endpoint)
+    extracted_items = []
+    # We can tell if json results are paged by checking to see if the json results are an instance of the list type.
+    if isinstance(metadata, list):
+        # handle paged results
+        for page in metadata:
+            if "Logos" in page:
+                for item in page["Logos"]:
+                    try:
+                        item["Operator"] = "logo_detection"
+                        item["Workflow"] = workflow
+                        if "Logo" in item:
+                            # Flatten the inner Logo array
+                            item["Confidence"] = item["Logo"]["Confidence"]
+                            item["Name"] = item["Logo"]["Name"]
+                            item["Instances"] = ''
+                            if 'Instances' in item["Logo"]:
+                                item["Instances"] = item["Logo"]["Instances"]
+                            item["Parents"] = ''
+                            if 'Parents' in item["Logo"]:
+                                item["Parents"] = item["Logo"]["Parents"]
+                            # Delete the flattened array
+                            del item["Logo"]
+                        extracted_items.append(item)
+                    except KeyError as e:
+                        print("KeyError: " + str(e))
+                        print("Item: " + json.dumps(item))
+    else:
+        # these results are not paged
+        if "Logos" in metadata:
+            for item in metadata["Logos"]:
+                try:
+                    item["Operator"] = "logo_detection"
+                    item["Workflow"] = workflow
+                    if "Logo" in item:
+                        # Flatten the inner Logo array
+                        item["Confidence"] = item["Logo"]["Confidence"]
+                        item["Name"] = item["Logo"]["Name"]
+                        item["Instances"] = ''
+                        if 'Instances' in item["Logo"]:
+                            item["Instances"] = item["Logo"]["Instances"]
+                        item["Parents"] = ''
+                        if 'Parents' in item["Logo"]:
+                            item["Parents"] = item["Logo"]["Parents"]
+                        # Delete the flattened array
+                        del item["Logo"]
+                    extracted_items.append(item)
+                except KeyError as e:
+                    print("KeyError: " + str(e))
+                    print("Item: " + json.dumps(item))
+    bulk_index(es, asset, "logos", extracted_items)
 
 def process_label_detection(asset, workflow, results):
     # Rekognition label detection puts labels on an inner array in its JSON result, but for ease of search in Elasticsearch we need those results as a top level json array. So this function does that.
@@ -548,12 +602,15 @@ def lambda_handler(event, context):
                 if metadata["Status"] == "Success":
                     print("Retrieved {operator} metadata from s3, inserting into Elasticsearch".format(operator=operator))
                     operator = operator.lower()
-                    # route event to process method based on the operator type in the event
+                    # Route event to process method based on the operator type in the event.
+                    # These names are the lowercase version of OPERATOR_NAME defined in /source/operators/operator-library.yaml
                     if operator in supported_operators:
                         if operator == "transcribe":
                             process_transcribe(asset_id, workflow, metadata["Results"])
                         if operator == "translate":
                             process_translate(asset_id, workflow, metadata["Results"])
+                        if operator == "genericdatalookup":
+                            process_generic_data(asset_id, workflow, metadata["Results"])
                         if operator == "labeldetection":
                             process_label_detection(asset_id, workflow, metadata["Results"])
                         if operator == "celebrityrecognition":

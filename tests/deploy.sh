@@ -16,8 +16,8 @@
 #   Then run `./deploy.sh`
 #
 ###############################################################################
-MIE_STACK_NAME=mie02
-REGION=us-east-1
+MIE_STACK_NAME=mie03
+# REGION=us-west-2
 DIST_OUTPUT_BUCKET=media-insights-engine
 PROFILE=default
 
@@ -26,6 +26,10 @@ PROFILE=default
 VERSION=1.0.1
 DATETIME=$(date '+%s')
 DIST_OUTPUT_BUCKET=$DIST_OUTPUT_BUCKET-$DATETIME
+# shortcut for REGION naming
+if [ $MIE_STACK_NAME == "mie01" ]; then REGION="us-east-1"; fi
+if [ $MIE_STACK_NAME == "mie02" ]; then REGION="us-east-2"; fi
+if [ $MIE_STACK_NAME == "mie03" ]; then REGION="us-west-2"; fi
 echo "Deploying stack name: "$MIE_STACK_NAME
 echo "Using output bucket: "$DIST_OUTPUT_BUCKET"-"$REGION
 sleep 2
@@ -69,14 +73,14 @@ echo "--------------------------------------------------------------------------
 aws cloudformation create-stack --stack-name $MIE_STACK_NAME --template-url  https://s3.amazonaws.com/$DIST_OUTPUT_BUCKET-$REGION/media-insights-solution/$VERSION/cf/media-insights-stack.template --region $REGION --parameters \
 ParameterKey=DeployOperatorLibrary,ParameterValue=true \
 ParameterKey=DeployRekognitionWorkflow,ParameterValue=true \
-ParameterKey=DeployInstantTranslateWorkflow,ParameterValue=true \
-ParameterKey=DeployTestWorkflow,ParameterValue=true \
+ParameterKey=DeployInstantTranslateWorkflow,ParameterValue=false \
+ParameterKey=DeployTestWorkflow,ParameterValue=false \
 ParameterKey=MaxConcurrentWorkflows,ParameterValue=10 \
-ParameterKey=DeployComprehendWorkflow,ParameterValue=true \
+ParameterKey=DeployComprehendWorkflow,ParameterValue=false \
 ParameterKey=DeployKitchenSinkWorkflow,ParameterValue=true \
 ParameterKey=DeployAnalyticsPipeline,ParameterValue=true \
-ParameterKey=DeployDemoSite,ParameterValue=true \
-ParameterKey=ApiIpList,ParameterValue="0.0.0.0/0" \
+ParameterKey=DeployDemoSite,ParameterValue=false \
+ParameterKey=ApiIpList,ParameterValue="72.21.198.64/32" \
 --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --profile $PROFILE --disable-rollback
 
 # Tell bash to stop echoing

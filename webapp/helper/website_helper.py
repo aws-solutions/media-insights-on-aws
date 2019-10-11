@@ -73,7 +73,7 @@ def perform_variable_replacement(event, context, old_variables, new_variables, b
     for k, v in old_variables.items():
         LOGGER.info("Searching for the following variable: {k}".format(k=k))
         if v in file_to_search:
-            LOGGER.info("Replacing in: {k}".format(k=key))
+            LOGGER.info("Replacing {k}: {ov}  with: {nv}".format(k=key, ov=v, nv=new_variables[k]))
             file_to_search = file_to_search.replace(v, new_variables[k])
             write_to_s3(event, context, bucket, key, file_to_search)
         else:

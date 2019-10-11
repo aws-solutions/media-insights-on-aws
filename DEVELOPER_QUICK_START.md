@@ -5,9 +5,6 @@ This document will show you how to build, distribute, and deploy Media Insights 
 1. [Prerequisites](#prerequisites)
 2. [Building MIE from source code](#building-mie-from-source-code)
 3. [Implementing a new MIE Operator](#implementing-a-new-operator-in-mie)
-   1. [Write your Lambda functions](#write-your-lambdas)
-   2. [Automate the deployment of your operator](#automate-the-deployment-of-your-operator)
-   3. [Update build-s3-dist.sh](#update-build-s3-distsh)
 
 ## Prerequisites
 
@@ -41,166 +38,232 @@ From your S3 bucket, navigate to `media-insights-solution/main/cf/media-insights
 
 ## Implementing a new Operator in MIE
 
-MIE generates workflows using [AWS Step Functions service](https://aws.amazon.com/step-functions/) state machines.  Operators are created by implementing resources (e.g. Lambda) that can plug in to MIE state machines as tasks and registering them as operators using the MIE API.  MIE currently only supports Lambda Operator resources.
+Operators are Lambda functions that 
 
-Operators can be _synchronous_ (Sync) or _asynchronous_ (Async).  Synchronous operators complete before return control to the invoker while asynchronous operators return control to the invoker when the operation is successfully initiated, but not complete.  Asynchronous operators require an additional monitoring task to check the status of the operation.
+* derive new media objects from input media and/or 
+* generate metadata by analyzing input media. 
 
-The `MediaInsightsEngineLambdaHelper` Python package helps to implement Lambda operators by managing inputs and outputs your Lambda functions have the correct JSON interfaces expected by MIE.  The code for the helper is located [here](./lib/MediaInsightsEngineLambdaHelper/MediaInsightsEngineLambdaHelper/__init__.py).  
+In order to implement a new operator you need to do the following:
 
-Operator inputs include a list of Media, Metadata and the operator Configuration plus ids for the workflow execution the operator is part of and the asset the operator is processing.
+1. Write operator Lambda functions
+2. Add your operator to the MIE operator library
+3. Add your operator to a workflow
+4. Add your operator to the Elasticsearch consumer
+5. Update the build script to deploy your operator to AWS Lambda
+ 
+Background: 
+ 
+* Operators run as part of an MIE workflow. Workflows are [AWS Step Functions](https://aws.amazon.com/step-functions/) that define the order in which operators run. 
 
-Operator outputs include the execution status, media and metadata locators that will be passed along to other stages of the workflow.
+* Operators can be _synchronous_ or _asynchronous_.  Synchronous operators start an  analysis (or transformation) job and get its result in a single Lambda function. Async operators use seperate Lambda functions to start jobs and get their results. Typically, async operators run for several minutes.
 
-Operators can interact with the MIE data persistence layer via the data plane API.  The data plane support storage and retrieval of media and metadata produced by operators in the workflow.
+* Operator inputs can include a list of media, metadata and the user-defined workflow and/or operator configurations.
 
-### Write your Lambda functions
+* Operator outputs include the execution status, and S3 locators for the newly derived media and metadata objects saved in S3. These outputs get passed to other operators in downstream workflow stages.
 
-The Operator library Lambda functions are found under source/operators.  Create a new folder for your new Operator(s) there. 
+* Operators should interact with the MIE data persistence layer via the `MediaInsightsEngineLambdaHelper`, which is located under [lib/MediaInsightsEngineLambdaHelper/](./lib/MediaInsightsEngineLambdaHelper/MediaInsightsEngineLambdaHelper/__init__.py).  
 
-Use the MIE Helper to interact with the control plane and data plane as follows.
+### Step 1: Write operator Lambda functions
+***(Difficulty: >1 hour)***
 
-#### Use the MediaInsightsEngineLambdaHelper to load the operator input from the workflow context:
+*TL;DR - Copy `source/operators/rekognition/generic_data_lookup.py` to a new directory and change it to do what you want.*
 
-    helper = MediaInsightsOperationHelper(event)
+Operators live under `source/operators`.  Create a new folder there for your new operator. 
 
-##### Get Asset/Workflow ID
-    
-    asset_id = helper.asset_id
-    workflow_id = helper.workflow_execution_id
+The MIE Helper library should be used inside an operator to interact with the control plane and data plane. This library lives under `lib/MediaInsightsEngineLambdaHelper/`.
 
-##### Get input Media Objects
+#### Using the MIE Helper library:
 
-Input media objects are passed using their location in S3.  Use the `boto3` S3 client access them from S3:
+Instantiate the helper like this:
 
-    bucket = helper.input["Media"]["Text"]["S3Bucket"]
-    key = helper.input["Media"]["Text"]["S3Key"]
-    s3_media = S3Client.get_object(Bucket=bucket, Key=key)
+```
+from MediaInsightsEngineLambdaHelper import OutputHelper
+output_object = OutputHelper("my_operator_name")
+```
 
-##### Get input workflow metadata
+##### How to get Asset and Workflow IDs:
 
-Input workflow metadata are passed as key-value pairs.
+Get the Workflow and Asset ID from the Lambda entrypoint's event object:
 
-    value = key = helper.input["Metadata"]["Key"]
+```
+# Lambda function entrypoint:
+def lambda_handler(event, context):
+    workflow_id = str(event["WorkflowExecutionId"])
+    asset_id = event['AssetId']
+```
 
-##### Store asset metadata to the data plane
+##### How to get input Media Objects:
 
-**JSON:**
+Media objects are passed using their location in S3.  Use the `boto3` S3 client access them from S3 using the locations specified in the Lambda entrypoint's event object:
 
-Use the data plane API's POST `/metadata/{asset_id}` route using the request body below.
+```
+def lambda_handler(event, context):
+    if "Video" in event["Input"]["Media"]:
+        s3bucket = event["Input"]["Media"]["Video"]["S3Bucket"]
+        s3key = event["Input"]["Media"]["Video"]["S3Key"]
+    elif "Image" in event["Input"]["Media"]:
+        s3bucket = event["Input"]["Media"]["Image"]["S3Bucket"]
+        s3key = event["Input"]["Media"]["Image"]["S3Key"]
+```
 
-**Paginated Inputs:**
+##### How to get operator configuration input:
 
-For JSON arrays, use the data plane API's POST `/metadata/{asset_id}?paginated=true` route and make a POST request for each element of the array.
+Operator configurations can be accessed from the Lambda entrypoint's event object:
 
-On the last element of the array, make a POST request to the data plane api's `/metadata/{asset_id}?paginated=true&end=true` route to indicate the end of the paginated JSON.
+```
+collection_id = event["Configuration"]["CollectionId"]
+```
 
-**DataPlane POST /metadata/{asset_id} body:**
-        
-    {
-        "OperatorName": "{some_operator}",
-        "Results": "{json_formatted_results}",
-        "WorkflowId": "{workflow-id}"
-    }
+##### How to get metadata output from other operators:
 
-Pass your JSON object in the `Results` field of the request body. The `OperatorName` can be an arbitrary string, this is used to name your JSON file and can be used for metadata retrieval.
+Metadata is always passed as input to the next stage in a workflow. Metadata that was output by upstream operators can be accessed from the Lambda entrypoint's event object:
+
+```
+job_id = event["MetaData"]["FaceSearchJobId"]
+```
+
+##### How to store media metadata to the data plane:
+
+Use `store_asset_metadata()` to store results. For paged results, call that function for each page.
+
+```
+from MediaInsightsEngineLambdaHelper import DataPlane
+dataplane = DataPlane()
+metadata_upload = dataplane.store_asset_metadata(asset_id, operator_name, workflow_id, response)
+```
 
 ##### Store media objects to the data plane S3 bucket
 
-1. To add media objects to the data plane, use the data plane API's GET `/mediapath/{asset_id}/{workflow_id}` route to get an S3 bucket and key in the MIE data plane to upload your media to. Add the file name for your media to the S3 key
+Operators can derive new media objects. For example, the Transcribe operator derives a new text object from an input audio object. Save new media objects with `add_media_object()`, like this:
 
-2. Upload media to the S3 bucket using the `boto3` S3 client
+```
+from MediaInsightsEngineLambdaHelper import MediaInsightsOperationHelper
+operator_object = MediaInsightsOperationHelper(event)
+operator_object.add_media_object(my_media_type, bucket, key)
+```
 
-3. Use the data plane API's POST `/metadata/{asset_id}` route to store a dictionary containing the S3 bucket and key of your media object to the data plane
-
-For example:
-
-    "Results": {
-            "S3Bucket": "mie-dataplanebucket-1ho3ukz2hs0vz",
-            "S3Key": "private/assets/bdc25687-aa10-4df5-ac65-f2ff058680ea/workflows/3de6fe88-0eca-4baf-879f-edfc1d08062f/Captions.srt"
-        }
+The my_media_type variable should be "Video", "Audio", or "Text".
 
 ##### Retrieve media objects from the data plane
 
-- Use the data plane API's GET `/metadata/{asset_id}` route to retrieve the dictionary containing the S3 bucket and key of your media object
+```
+from MediaInsightsEngineLambdaHelper import MediaInsightsOperationHelper
+operator_object = MediaInsightsOperationHelper(event)
+bucket = operator_object.input["Media"][my_media_type]["S3Bucket"]
+key = operator_object.input["Media"][my_media_type]["S3Key"]
+s3_response = s3.get_object(Bucket=bucket, Key=key)
+```
 
-- Metadata is also passed as input to the next stage in the workflow. So if you are trying to retrieve metadata from a previous stage of the workflow, you can also get it from the helper's input field
+The my_media_type variable should be "Video", "Audio", or "Text".
 
-      metadata = helper.input["MetaData"]
+### Step 2: Add your operator to the MIE operator library 
+***(Difficulty: 30 minutes)***
 
-##### Retrieve asset metadata from the data plane
+*TL;DR - Edit `source/operators/operator-library.yaml` and add new entries for your operator under the `# Lambda Functions`, `# IAM Roles`, `# Register as operators in the control plane`, `# Export operator names as outputs` sections.*
 
-- Use the data plane API's GET `/metadata/{asset_id}/{operator_name}` route to retrieve the metadata for a specific operator where `operator_name` is the arbitrary string used to store the metadata
+This step invovles editing the CloudFormation script for deploying the MIE operator library, located at [`source/operators/operator-library.yaml`](source/operators/operator-library.yaml).
 
-- Use the data plane API's GET `/metadata/{asset_id}` route to retrieve all the metadata and media objects for your operator as a sequence of paginated results (see below)
-
-Paginated Results:
-
-A `cursor` is passed back in the response if there are more elements in the response object. Continue passing the cursor back as a query parameter by making a GET request to the data plane API's `/metadata/{asset_id}?cursor={cursor}` route to retrieve subsequent elements of the response metadata.
-
-### Automate the deployment of your Operator 
-
-The CloudFormation script for deploying the MIE operator library to AWS is located in [`source/operators/operator-library.yaml`](source/operators/operator-library.yaml)
-
-MIE operators, stages and workflows can be deployed to AWS using the MIE Workflow API or using the MIE CloudFormation custom resources.  This section will walk through the CloudFormation method.  
-
-##### Create IAM Role resource
+#### Create the IAM Role resource
 
 Create a CloudFormation IAM resource that will be used to give your Lambda function the appropriate permissions. MIE operators need `AWSLambdaBasicExecutionRole` plus policies for any other AWS resource and services accessed by the Lambda function. 
 
-###### Create Lambda Function resource
+#### Create Lambda Function resource
 
 Create a CloudFormation `Lambda::Function` resource for your Operator Lambda function.  If your Operator is _Async_, make sure to also register your monitoring Lambda function.
 
-###### Create the MIE Operator resource using your Lambda function(s)
+#### Create the MIE Operator resource using your Lambda function(s)
 
 The MIE Operator custom resource has the following attributes:
 
-*Operator*
+```
+Type: Custom:CustomResource
+Properties:
+  ServiceToken: !Ref WorkflowCustomResourceArn
+  ResourceType:
+    ResourceType
+  Name: 
+    Name
+  Type:
+    Type
+  Configuration: 
+    Configuration
+  StartLambdaArn:
+    StartLambdaArn
+  MonitorLambdaArn:
+    MonitorLambdaArn
+  StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+```
 
-    Type: Custom:CustomResource
-    Properties:
-      ServiceToken: !Ref WorkflowCustomResourceArn
-      ResourceType:
-        ResourceType
-      Name: 
-        Name
-      Type:
-        Type
-      Configuration: 
-        Configuration
-      StartLambdaArn:
-        StartLambdaArn
-      MonitorLambdaArn:
-        MonitorLambdaArn
-      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+***ResourceType***
 
-*ResourceType*
+* Specify the type of resource: `"Operator"`, `"Workflow"`, or `"Stage"`
 
-> Specify the type of resource: `"Operator"`, `"Workflow"`, or `"Stage"`
+***Name***
 
-*Name*
+* Specify the name of your Operator
 
-> Specify the name of your Operator
+***Type***
 
-*Type*
+* Specify whether your operator is `Sync` or `Async`
 
-> Specify whether your operator is `Sync` or `Async`
-
-*Configuration*
+***Configuration***
  
- > Specify the `MediaType` and `Enabled` fields and add any other configurations needed
+* Specify the `MediaType` and `Enabled` fields and add any other configurations needed
 
-*StartLambdaArn*
+***StartLambdaArn***
 
-> Specify the ARN of the Lambda function to start your Operator
+* Specify the ARN of the Lambda function to start your Operator
 
-*MonitorLambdaArn*
+***MonitorLambdaArn***
 
-> If your operator is _Async_, specify the ARN of the monitoring Lambda function
+* If your operator is _Async_, specify the ARN of the monitoring Lambda function
 
-##### Export your Operator name as output in the CloudFormation `OperatorLibrary` stack
+#### Export your Operator name as an output
 
-#### Update [`build-s3-dist.sh`](deployment/build-s3-dist.sh)
+Export your operator as an output like this:
+```
+  MyOperation:
+    Description: "Operation name of MyOperation"
+    Value: !GetAtt MyOperation.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", MyOperation]]
+```
 
-1. Create the Lambda package
-2. Zip the Lambda function(s) into the `deployment/dist` directory
+### Step 3: Add your operator to a workflow 
+***(Difficulty: 10 minutes)***
+
+*TL;DR - Edit `source/workflows/MieCompleteWorkflow.yaml` and add your operator under `Resources --> defaultVideoStage --> Operations`*
+
+It's easiest to create a new workflow by copying end editing `MieCompleteWorkflow.yaml`. If you're creating a new workflow, you'll need to know that operators in the same stage will run at the same time (i.e. "in parallel") and stages run sequentially.
+
+### Step 4: Add your operator to the Elasticsearch consumer
+***(Difficulty: 30 minutes)***
+
+Edit `source/consumers/elastic/lambda_handler.py`. Add your operator name to the list of `supported_operators`. Define a method to flatten your JSON metadata into Elasticsearch records. Call that method from the `lambda_handler()` entrypoint. 
+
+### Step 5: Update the build script to deploy your operator to AWS Lambda
+***(Difficulty: 5 minutes)***
+
+Update the `# Make lambda package` section in [`build-s3-dist.sh`](deployment/build-s3-dist.sh) to zip your operator's Lambda function(s) into the `deployment/dist` directory, like this:
+
+```
+zip -r9 my_operator.zip my_operator.py
+```
+
+### Step 6: Test your operator
+
+Start a workflow that includes your operator. For example, here's how to start the MieCompleteWorkflow with only `MyOperator` enabled:
+
+```
+curl -k -X POST -H "Content-Type: application/json" --data '{"Name":"MieCompleteWorkflow","Configuration":{"defaultVideoStage":{"faceDetection":{"Enabled":false},"celebrityRecognition":{"Enabled":false},"MyOperator":{"Enabled":true},"labelDetection":{"Enabled":false},"personTracking":{"Enabled":false},"Mediaconvert":{"Enabled":false},"contentModeration":{"Enabled":false},"faceSearch":{"Enabled":false}}},"Input":{"Media":{"Video":{"S3Bucket":"'$DATAPLANE_BUCKET'","S3Key":"my_input.mp4"}}}}'  $WORKFLOW_API_ENDPOINT/workflow/execution | jq
+```
+
+Then monitor the workflow sequentially processing through the following logs:
+
+1. Your operator lambda. To find this log, search the Lambda functions for your operator name.
+2. The dataplane API lambda. To find this log, search Lambda functions for "MediaInsightsDataplaneApiStack".
+3. The Elasticsearch consumer lambda. To find this log, search Lambda functions for "ElasticsearchConsumer".
+ 
+ 
+
+

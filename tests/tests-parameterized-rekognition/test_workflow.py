@@ -61,55 +61,15 @@ else:
     print("ERROR: Stack name must be in MIE_STACK_NAME environment variable.")
     logging.error("ERROR: Stack name must be in MIE_STACK_NAME environment variable.")
     exit(1)
-
-if 'MIE_CLIENT_ID' in os.environ:
-    MIE_CLIENT_ID = str(os.environ['MIE_CLIENT_ID'])
+if 'MIE_ACCESS_TOKEN' in os.environ:
+    token = str(os.environ['MIE_ACCESS_TOKEN'])
 else:
-    print("ERROR: Cognito Client Id must be in MIE_CLIENT_ID environment variable.")
-    logging.error("ERROR: Stack name must be in MIE_CLIENT_ID environment variable.")
+    print("ERROR: Stack name must be in MIE_STACK_NAME environment variable.")
+    logging.error("ERROR: Stack name must be in MIE_STACK_NAME environment variable.")
     exit(1)
-
-if 'MIE_POOL_ID' in os.environ:
-    MIE_POOL_ID = str(os.environ['MIE_POOL_ID'])
-else:
-    print("ERROR: Cognito Pool Id must be in MIE_POOL_ID environment variable.")
-    logging.error("ERROR: Stack name must be in MIE_POOL_ID environment variable.")
-    exit(1)
-
-if 'MIE_USERNAME' in os.environ:
-    MIE_USERNAME = str(os.environ['MIE_USERNAME'])
-else:
-    print("ERROR: Username must be in MIE_USERNAME environment variable.")
-    logging.error("ERROR: Stack name must be in MIE_USERNAME environment variable.")
-    exit(1)
-
-if 'MIE_PASSWORD' in os.environ:
-    MIE_PASSWORD = str(os.environ['MIE_PASSWORD'])
-else:
-    print("ERROR: Password must be in MIE_PASSWORD environment variable.")
-    logging.error("ERROR: Stack name must be in MIE_PASSWORD environment variable.")
-    exit(1)
-
 
 if 'FACE_COLLECTION_ID' in os.environ:
     FACE_COLLECTION_ID = str(os.environ['FACE_COLLECTION_ID'])
-
-cognito = boto3.client('cognito-idp')
-
-cognito_response = cognito.admin_initiate_auth(
-    AuthFlow='ADMIN_NO_SRP_AUTH',
-    AuthParameters={
-        'USERNAME': MIE_USERNAME,
-        'PASSWORD': MIE_PASSWORD
-    },
-    ClientId=MIE_CLIENT_ID,
-    UserPoolId=MIE_POOL_ID
-)
-
-try:
-    token = cognito_response['AuthenticationResult']['IdToken']
-except KeyError as e:
-    raise Exception('Missing token in auth response, check username / password and verify cognito client / pool id')
 
 print("ENVIRONMENT VARIABLES:")
 print("\tREGION: "+REGION)
@@ -121,8 +81,6 @@ print("\tSAMPLE_FACE_IMAGE: "+SAMPLE_FACE_IMAGE)
 print("\tFACE_COLLECTION_ID: "+FACE_COLLECTION_ID)
 print("\tBUCKET_NAME: "+BUCKET_NAME)
 print("\tMIE_STACK_NAME: "+MIE_STACK_NAME)
-
-
 
 
 # This fixture creates a temporary S3 bucket with media objects for testing.
@@ -231,7 +189,7 @@ def test_rekognition_workflow_execution(uploaded_media, test_api_endpoints, work
         print('------------------------------------------')
         print('Test config: ' + workflow_config)
         workflow_api_endpoint = test_api_endpoints["workflow_api_endpoint"]
-        headers = {"Content-Type": "application/json"}
+        headers = {"Content-Type": "application/json", "Authorization": token}
         start_request = requests.post(workflow_api_endpoint+'/workflow/execution', headers=headers, data=workflow_config, verify=False)
         assert start_request.status_code == 200
         assert start_request.json()['Status'] == 'Queued'

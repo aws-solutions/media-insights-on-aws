@@ -10,7 +10,7 @@
     },
     "ApiIpList": {
       "Type": "String",
-      "Description": "List of IPs that can access MIE APIs"
+      "Description": "Deprecated parameter - used for declaring an IP based resource policy"
     },
     "SystemTableName": {
       "Type": "String",
@@ -273,40 +273,6 @@
     "RestAPI": {
       "Properties": {
         "DefinitionBody": {
-            "x-amazon-apigateway-policy": {
-            "Version": "2012-10-17",
-            "Statement": [
-              {
-                "Effect": "Allow",
-                "Principal": "*",
-                "Action": "execute-api:Invoke",
-                "Resource": [
-                  {
-                    "Fn::Sub": "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:*/*/*/*"
-                  }
-                ]
-              },
-              {
-                "Effect": "Deny",
-                "Principal": "*",
-                "Action": "execute-api:Invoke",
-                "Resource": [
-                  {
-                    "Fn::Sub": "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:*/*/*/*"
-                  }
-                ],
-                "Condition": {
-                  "NotIpAddress": {
-                    "aws:SourceIp": [
-                      {
-                        "Fn::Sub": "${ApiIpList}"
-                      }
-                    ]
-                  }
-                }
-              }
-            ]
-          },
           "securityDefinitions": {
             "MieUserPool": {
               "x-amazon-apigateway-authorizer": {

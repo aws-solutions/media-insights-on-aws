@@ -64,6 +64,7 @@ Resources:
                 - Effect: Allow
                   Action:
                     - "s3:*"
+                  # TODO: Security - Scope this down
                   Resource: "*"
                 - Effect: Allow
                   Action:

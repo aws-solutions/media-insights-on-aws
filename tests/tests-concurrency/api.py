@@ -21,10 +21,11 @@ VIDEO_FILENAME = os.environ['VIDEO_FILENAME']
 IMAGE_FILENAME = os.environ['IMAGE_FILENAME']
 AUDIO_FILENAME = os.environ['AUDIO_FILENAME']
 TEXT_FILENAME = os.environ['TEXT_FILENAME']
+token = os.environ["MIE_ACCESS_TOKEN"]
 
 def set_max_concurrent_request(stack_resources, max_concurrent):
 
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json", "Authorization": token}
     body = {
         "Name":"MaxConcurrentWorkflows",
         "Value": max_concurrent
@@ -45,7 +46,7 @@ def create_operation_request(config, stack_resources):
     
     start_lambda = config["Input"]+config["Type"]+config["Status"]+"Lambda"
     
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json", "Authorization": token}
     body = {
         "StartLambdaArn": stack_resources[start_lambda],
         "Configuration": {
@@ -90,7 +91,7 @@ def delete_operation_request(operation, stack_resources):
 
 def create_operation_workflow_request(operation, stack_resources):
 
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json", "Authorization": token}
     body = {
         "Name":"_testoperation"+operation["Name"],
         "StartAt": operation["StageName"],
@@ -118,7 +119,7 @@ def delete_operation_workflow_request(workflow, stack_resources):
 
 def create_workflow_execution_request(workflow, config, stack_resources):
     
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json", "Authorization": token}
     
     body = {
         "Name": workflow["Name"],
@@ -184,7 +185,7 @@ def wait_for_workflow_execution(workflow_execution, stack_resources, wait_second
 
 def create_stage_request(config, stack_resources):
     
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json", "Authorization": token}
     body = {
         "Name": config["Name"],
         "Operations": config["Operations"]
@@ -212,7 +213,7 @@ def delete_stage_request(stage, stack_resources):
 
 def create_stage_workflow_request(stage, stack_resources):
 
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json", "Authorization": token}
     body = {
         "Name":"_teststage"+stage["Name"],
         "StartAt": stage["Name"],
@@ -232,7 +233,7 @@ def create_stage_workflow_request(stage, stack_resources):
 def create_workflow_request(workflow_config, stack_resources):
 
     stages = workflow_config["Stages"]
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json", "Authorization": token}
     body = {
         "Name": workflow_config["Name"],
         "StartAt": stages[0],
@@ -276,7 +277,7 @@ def delete_stage_workflow_request(workflow, stack_resources):
 
 
 def create_asset(stack_resources, bucket, key):
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json", "Authorization": token}
     body = {
         "Input": {
             "S3Bucket": bucket,
@@ -298,7 +299,7 @@ def post_metadata(stack_resources, asset_id, metadata, paginate=False, end=False
     else:
         url = stack_resources["DataplaneApiEndpoint"] + 'metadata/' + asset_id
 
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json", "Authorization": token}
     body = metadata
     print("POST /metadata/{asset}".format(asset=asset_id))
     nonpaginated_metadata_response = requests.post(url, headers=headers, json=body, verify=False)
@@ -310,7 +311,7 @@ def get_all_metadata(stack_resources, asset_id, cursor=None):
         url = stack_resources["DataplaneApiEndpoint"] + 'metadata/' + asset_id
     else:
         url = stack_resources["DataplaneApiEndpoint"] + 'metadata/' + asset_id + "?cursor=" + cursor
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json", "Authorization": token}
     print("GET /metadata/{asset}".format(asset=asset_id))
     metadata_response = requests.get(url, headers=headers, verify=False)
     return metadata_response
@@ -319,7 +320,7 @@ def get_all_metadata(stack_resources, asset_id, cursor=None):
 def get_single_metadata_field(stack_resources, asset_id, operator):
     metadata_field = operator["OperatorName"]
     url = stack_resources["DataplaneApiEndpoint"] + 'metadata/' + asset_id + "/" + metadata_field
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json", "Authorization": token}
     print("GET /metadata/{asset}/{operator}".format(asset=asset_id, operator=operator["OperatorName"]))
     single_metadata_response = requests.get(url, headers=headers, verify=False)
     return single_metadata_response
@@ -328,7 +329,7 @@ def get_single_metadata_field(stack_resources, asset_id, operator):
 def delete_single_metadata_field(stack_resources, asset_id, operator):
     metadata_field = operator["OperatorName"]
     url = stack_resources["DataplaneApiEndpoint"] + 'metadata/' + asset_id + "/" + metadata_field
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json", "Authorization": token}
     print("DELETE /metadata/{asset}/{operator}".format(asset=asset_id, operator=operator["OperatorName"]))
     delete_single_metadata_response = requests.delete(url, headers=headers, verify=False)
     return delete_single_metadata_response
@@ -336,7 +337,7 @@ def delete_single_metadata_field(stack_resources, asset_id, operator):
 
 def delete_asset(stack_resources, asset_id):
     url = stack_resources["DataplaneApiEndpoint"] + 'metadata/' + asset_id
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json", "Authorization": token}
     print("DELETE /metadata/{asset}".format(asset=asset_id))
     delete_asset_response = requests.delete(url, headers=headers, verify=False)
     return delete_asset_response

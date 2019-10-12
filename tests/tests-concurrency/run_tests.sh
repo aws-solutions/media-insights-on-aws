@@ -1,4 +1,8 @@
 #!/bin/bash
+
+# Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 ###############################################################################
 # PURPOSE: This script runs our pytest regression test suite.
 #
@@ -11,9 +15,33 @@
 #
 ###############################################################################
 # User-defined environment variables
-export REGION='us-west-2'
-export MIE_STACK_NAME="mieor"
+# User-defined environment variables
+echo "What region is your MIE Stack in?"
+read region
+export REGION=$region
+
+echo "What is the name of your MIE Stack?"
+read stackname
+export MIE_STACK_NAME=$stackname
+
+echo "Enter the MIE User pool id (stack outputs)"
+read pool_id
+export MIE_POOL_ID=$pool_id
+
+echo "Enter the MIE Admin Client id (stack outputs)"
+read client_id
+export MIE_CLIENT_ID=$client_id
+
+echo "Enter your MIE Admin Username"
+read username
+export MIE_USERNAME=$username
+echo "Enter your Password (enter temp password if your account is unverified)"
+read password
+export MIE_PASSWORD=$password
+
 export TEST="test_concurrency.py"
+
+python3 '../getAccessToken.py'
 #################### Nothing for users to change below here ####################
 # Create and activate a temporary Python environment for this script.
 echo "------------------------------------------------------------------------------"

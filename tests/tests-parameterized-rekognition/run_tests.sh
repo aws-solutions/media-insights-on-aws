@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
@@ -7,18 +6,43 @@
 # PURPOSE: This script runs our pytest regression test suite.
 #
 # PRELIMINARY:
-#  You must have a functioning MIE deployment. The `./deploy.sh` script may
-#  help you do that easily.
+#   You must have a functioning MIE deployment. The `./deploy.sh` script may
+#   help you do that easily.
 #
 # USAGE:
-#  ./run_tests.sh
+#   Set the REGION and MIE_STACK_NAME env variables to the region and stack
+#   that you've already deployed and want to test. Then run `./run_tests.sh`.
 #
 ###############################################################################
-# User-defined environment variables
-export REGION='us-west-2'
-export MIE_STACK_NAME="mieor"
-export TEST="test_concurrency.py"
-#################### Nothing for users to change below here ####################
+# Test environment variables
+echo "What region is your MIE Stack in?"
+read region
+export REGION=$region
+
+echo "What is the name of your MIE Stack?"
+read stackname
+export MIE_STACK_NAME=$stackname
+
+export BUCKET_NAME="mie-testing-bucket-"$(date +%s)
+export TEST="test_operation_crud.py"
+
+echo "Enter the MIE User pool id (stack outputs)"
+read pool_id
+export MIE_POOL_ID=$pool_id
+
+echo "Enter the MIE Admin Client id (stack outputs)"
+read client_id
+export MIE_CLIENT_ID=$client_id
+
+echo "Enter your MIE Admin Username"
+read username
+export MIE_USERNAME=$username
+echo "Enter your Password (enter temp password if your account is unverified)"
+read password
+export MIE_PASSWORD=$password
+
+python3 '../getAccessToken.py'
+
 # Create and activate a temporary Python environment for this script.
 echo "------------------------------------------------------------------------------"
 echo "Creating a temporary Python virtualenv for this script"
@@ -43,20 +67,8 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "------------------------------------------------------------------------------"
-echo "Setup test environment variables"
-# FIXME - these should be inputs to the test script
-export BUCKET_NAME="burkleaa-files"
-export IMAGE_FILENAME="test-media/sample-image.jpg"
-export VIDEO_FILENAME="test-media/sample-video.mp4"
-export VIDEO_WITH_AUDIO_FILENAME="test-media/polly_example.mp4"
-export AUDIO_FILENAME="test-media/sample-audio.m4a"
-export TEXT_FILENAME="test-media/sample-text.txt"
-
-
-echo "------------------------------------------------------------------------------"
 echo "Running tests"
-pytest -s -W ignore::DeprecationWarning -p no:cacheprovider
-#python -m py.test -s -W ignore::DeprecationWarning -p no:cacheprovider
+pytest -s -W ignore::DeprecationWarning -p no:cacheprovider -c pytest.ini
 
 echo "------------------------------------------------------------------------------"
 echo "Cleaning up"

@@ -28,7 +28,7 @@ const router = new VueRouter({
       path: '/analysis/:asset_id',
       name: 'analysis',
       component: Analysis,
-      meta: { requiresAuth: false }
+      meta: { requiresAuth: true }
     },
     {
       path: '/run/:asset_id',

@@ -142,7 +142,8 @@
                     {"Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${WorkflowExecutionTableName}"},
                     {"Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${WorkflowExecutionTableName}/*"},
                     {"Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${HistoryTableName}"},
-                    {"Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${OperationTableName}"}
+                    {"Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${OperationTableName}"},
+                    {"Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${StageTableName}"}
                   ]
                 },
                 {

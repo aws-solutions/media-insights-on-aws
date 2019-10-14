@@ -22,7 +22,7 @@ MIE_STACK_NAME = os.environ['MIE_STACK_NAME']
 @pytest.fixture(scope='session')
 def api_schema():
 
-    schema_dir = "../source/workflowapi/chalicelib/apischema"
+    schema_dir = "../../source/workflowapi/chalicelib/apischema"
     
     schemata = {}
     for f in os.listdir(schema_dir):

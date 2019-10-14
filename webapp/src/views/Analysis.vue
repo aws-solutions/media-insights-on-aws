@@ -3,9 +3,9 @@
     <Header />
     <b-container fluid>
       <b-alert
-        v-model="showElasticSearchAlert"
-        variant="danger"
-        dismissible
+          v-model="showElasticSearchAlert"
+          variant="danger"
+          dismissible
       >
         Elasticsearch server denied access. Please check its access policy.
       </b-alert>
@@ -14,37 +14,41 @@
           <div>
             <b-row align-h="center">
               <b-tabs
-                content-class="mt-3"
-                fill
+                  content-class="mt-3"
+                  fill
               >
                 <b-tab
-                  title="ML Vision"
-                  active
-                  @click="currentView = 'LabelObjects'; mlTabs = 0"
+                    title="ML Vision"
+                    active
+                    @click="currentView = 'LabelObjects'; mlTabs = 0"
                 >
                   <b-container fluid>
                     <b-row>
                       <div>
                         <b-tabs
-                          v-model="mlTabs"
-                          content-class="mt-3"
-                          fill
+                            v-model="mlTabs"
+                            content-class="mt-3"
+                            fill
                         >
                           <b-tab
-                            title="Objects"
-                            @click="currentView = 'LabelObjects'"
+                              title="Objects"
+                              @click="currentView = 'LabelObjects'"
                           />
                           <b-tab
-                            title="Celebrities"
-                            @click="currentView = 'Celebrities'"
+                              title="Celebrities"
+                              @click="currentView = 'Celebrities'"
                           />
                           <b-tab
-                            title="Moderation"
-                            @click="currentView = 'ContentModeration'"
+                              title="Moderation"
+                              @click="currentView = 'ContentModeration'"
                           />
                           <b-tab
-                            title="Faces"
-                            @click="currentView = 'FaceDetection'"
+                              title="Faces"
+                              @click="currentView = 'FaceDetection'"
+                          />
+                          <b-tab
+                              title="Logos"
+                              @click="currentView = 'Logos'"
                           />
                         </b-tabs>
                       </div>
@@ -52,29 +56,29 @@
                   </b-container>
                 </b-tab>
                 <b-tab
-                  title="Speech Recognition"
-                  @click="currentView = 'Transcript'; speechTabs = 0"
+                    title="Speech Recognition"
+                    @click="currentView = 'Transcript'; speechTabs = 0"
                 >
                   <b-tabs
-                    v-model="speechTabs"
-                    content-class="mt-3"
-                    fill
+                      v-model="speechTabs"
+                      content-class="mt-3"
+                      fill
                   >
                     <b-tab
-                      title="Transcript"
-                      @click="currentView = 'Transcript'"
+                        title="Transcript"
+                        @click="currentView = 'Transcript'"
                     />
                     <b-tab
-                      title="Translation"
-                      @click="currentView = 'Translation'"
+                        title="Translation"
+                        @click="currentView = 'Translation'"
                     />
                     <b-tab
-                      title="KeyPhrases"
-                      @click="currentView = 'KeyPhrases'"
+                        title="KeyPhrases"
+                        @click="currentView = 'KeyPhrases'"
                     />
                     <b-tab
-                      title="Entities"
-                      @click="currentView = 'Entities'"
+                        title="Entities"
+                        @click="currentView = 'Entities'"
                     />
                   </b-tabs>
                 </b-tab>
@@ -105,9 +109,9 @@
           <div>
             <b-row class="mediaSummary">
               <MediaSummaryBox
-                :s3Uri="s3_uri"
-                :filename="filename"
-                :videoUrl="videoOptions.sources[0].src"
+                  :s3Uri="s3_uri"
+                  :filename="filename"
+                  :videoUrl="videoOptions.sources[0].src"
               />
             </b-row>
           </div>
@@ -139,16 +143,23 @@
         component: new Promise(function(resolve) {
           setTimeout(function() {
             resolve(import('@/components/LabelObjects.vue'));
-        }, 1000);
+          }, 1000);
         }),
         loading: Loading
       }),
-
+      Logos: () => ({
+        component: new Promise(function(resolve) {
+          setTimeout(function() {
+            resolve(import('@/components/Logos.vue'));
+          }, 1000);
+        }),
+        loading: Loading
+      }),
       Celebrities: () => ({
         component: new Promise(function(resolve) {
           setTimeout(function() {
             resolve(import('@/components/Celebrities.vue'));
-        }, 1000);
+          }, 1000);
         }),
         loading: Loading,
       }),
@@ -157,7 +168,7 @@
         component: new Promise(function(resolve) {
           setTimeout(function() {
             resolve(import('@/components/ContentModeration.vue'));
-        }, 1000);
+          }, 1000);
         }),
         loading: Loading,
       }),
@@ -165,7 +176,7 @@
         component: new Promise(function(resolve) {
           setTimeout(function() {
             resolve(import('@/components/Transcript.vue'));
-        }, 1000);
+          }, 1000);
         }),
         loading: Loading,
       }),
@@ -173,7 +184,7 @@
         component: new Promise(function(resolve) {
           setTimeout(function() {
             resolve(import('@/components/Translation.vue'));
-        }, 1000);
+          }, 1000);
         }),
         loading: Loading,
       }),
@@ -181,7 +192,7 @@
         component: new Promise(function(resolve) {
           setTimeout(function() {
             resolve(import('@/components/FaceDetection.vue'));
-        }, 1000);
+          }, 1000);
         }),
         loading: Loading,
       }),
@@ -189,7 +200,7 @@
         component: new Promise(function(resolve) {
           setTimeout(function() {
             resolve(import('@/components/ComprehendEntities.vue'));
-        }, 1000);
+          }, 1000);
         }),
         loading: Loading,
       }),
@@ -197,7 +208,7 @@
         component: new Promise(function(resolve) {
           setTimeout(function() {
             resolve(import('@/components/ComprehendKeyPhrases.vue'));
-        }, 1000);
+          }, 1000);
         }),
         loading: Loading,
         error: ComponentLoadingError
@@ -229,28 +240,28 @@
       ...mapState(['Confidence'])
     },
     created() {
-          this.checkServerAccess();
-          var asset_id = this.$route.params.asset_id;
-          fetch(process.env.VUE_APP_DATAPLANE_API_ENDPOINT+'/metadata/'+asset_id, {
-            method: 'get'
-          }).then(response => {
-            response.json().then(data => ({
-                data: data,
-              })
-            ).then(res => {
-              this.s3_uri = 's3://'+res.data.results.S3Bucket+'/'+res.data.results.S3Key
-              this.filename = this.s3_uri.split("/").pop();
-              if (this.filename.substring(this.filename.lastIndexOf(".")) === ".jpg") {
-                this.mediaType = "image/jpg"
-              }
-              if (this.filename.substring(this.filename.lastIndexOf(".")) === ".mp4") {
-                this.mediaType = "video/mp4"
-              }
-              this.getVideoUrl()
-            })
-          });
-          this.updateAssetId();
-      },
+      this.checkServerAccess();
+      var asset_id = this.$route.params.asset_id;
+      fetch(process.env.VUE_APP_DATAPLANE_API_ENDPOINT+'/metadata/'+asset_id, {
+        method: 'get'
+      }).then(response => {
+        response.json().then(data => ({
+            data: data,
+          })
+        ).then(res => {
+          this.s3_uri = 's3://'+res.data.results.S3Bucket+'/'+res.data.results.S3Key
+          this.filename = this.s3_uri.split("/").pop();
+          if (this.filename.substring(this.filename.lastIndexOf(".")) === ".jpg") {
+            this.mediaType = "image/jpg"
+          }
+          if (this.filename.substring(this.filename.lastIndexOf(".")) === ".mp4") {
+            this.mediaType = "video/mp4"
+          }
+          this.getVideoUrl()
+        })
+      });
+      this.updateAssetId();
+    },
     methods: {
       getVideoUrl() {
         // This function gets the video URL then initializes the video player
@@ -265,9 +276,9 @@
           },
           body: JSON.stringify({"S3Bucket": bucket, "S3Key": key})
         }).then(data => {
-            data.text().then((data) => {
+          data.text().then((data) => {
             this.videoOptions.sources[0].src = data
-        }).catch(err => console.error(err));
+          }).catch(err => console.error(err));
         })
       },
       updateAssetId () {
@@ -303,9 +314,9 @@
   }
 
   @media screen and (max-width: 800px) {
-  .dataColumns {
-    flex-direction: column-reverse;
+    .dataColumns {
+      flex-direction: column-reverse;
+    }
   }
-}
 
 </style>

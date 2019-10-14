@@ -127,7 +127,6 @@ export default {
         {text: 'Celebrity Recognition', value: 'celebrityRecognition'},
         {text: 'Content Moderation', value: 'contentModeration'},
         {text: 'Face Detection', value: 'faceDetection'},
-        {text: 'Person Tracking', value: 'personTracking'},
         {text: 'Face Search', value: 'faceSearch'},
       ],
       audioOperators: [
@@ -216,8 +215,11 @@ export default {
   computed: {
     textFormError() {
       // Validate translated text is en, ru, es, or fr if Polly is enabled
+      if (this.enabledOperators.includes('Polly') && !(this.enabledOperators.includes('Translate'))) {
+        return "Polly requires Translate to be enabled.";
+      }
       if (this.enabledOperators.includes('Polly') && this.targetLanguageCode !== "en" && this.targetLanguageCode !== "ru" && this.targetLanguageCode !== "es" && this.targetLanguageCode !== "fr") {
-        return "Polly is only available when translation target is English, Russian, Spanish, or French.";
+        return "Polly requires translation target to be English, Russian, Spanish, or French.";
       }
       return "";
     },
@@ -264,9 +266,6 @@ export default {
             },
             "labelDetection": {
               "Enabled": this.enabledOperators.includes("labelDetection"),
-            },
-            "personTracking": {
-              "Enabled": this.enabledOperators.includes("personTracking"),
             },
             "Mediaconvert": {
               "Enabled": (this.enabledOperators.includes("Mediaconvert") || this.enabledOperators.includes("Transcribe") || this.enabledOperators.includes("Translate") || this.enabledOperators.includes("ComprehendEntities") || this.enabledOperators.includes("ComprehendKeyPhrases") || this.enabledOperators.includes("Polly")),

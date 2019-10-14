@@ -125,7 +125,6 @@ export default {
       {text: 'Celebrity Recognition', value: 'celebrityRecognition'},
       {text: 'Content Moderation', value: 'contentModeration'},
       {text: 'Face Detection', value: 'faceDetection'},
-      {text: 'Person Tracking', value: 'personTracking'},
       {text: 'Face Search', value: 'faceSearch'},
     ],
     audioOperators: [
@@ -263,9 +262,6 @@ export default {
             },
             "labelDetection": {
               "Enabled": this.enabledOperators.includes("labelDetection"),
-            },
-            "personTracking": {
-              "Enabled": this.enabledOperators.includes("personTracking"),
             },
             "Mediaconvert": {
               "Enabled": (this.enabledOperators.includes("Mediaconvert") || this.enabledOperators.includes("Transcribe") || this.enabledOperators.includes("Translate") || this.enabledOperators.includes("ComprehendEntities") || this.enabledOperators.includes("ComprehendKeyPhrases") || this.enabledOperators.includes("Polly")),

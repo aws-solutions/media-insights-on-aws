@@ -274,8 +274,10 @@ def process_face_detection(asset, workflow, results):
                     print("Item: " + json.dumps(item))
     bulk_index(es, asset, "face_detection", extracted_items)
 
-def process_generic_data(asset, workflow, results):
+def process_logo_detection(asset, workflow, results):
     # This function puts logo detection data in Elasticsearch.
+    # The logo detection raw data was in inconsistent with Confidence and BoundingBox fields in Rekognition.
+    # So, those fields are modified in this function, accordingly.
     metadata = json.loads(results)
     es = connect_es(es_endpoint)
     extracted_items = []
@@ -290,10 +292,16 @@ def process_generic_data(asset, workflow, results):
                         item["Workflow"] = workflow
                         if "Logo" in item:
                             # Flatten the inner Logo array
-                            item["Confidence"] = item["Logo"]["Confidence"]
+                            item["Confidence"] = float(item["Logo"]["Confidence"])*100
                             item["Name"] = item["Logo"]["Name"]
                             item["Instances"] = ''
                             if 'Instances' in item["Logo"]:
+                                for box in item["Logo"]["Instances"]:
+                                    box["BoundingBox"]["Height"] = float(box["BoundingBox"]["Height"]) / 720
+                                    box["BoundingBox"]["Top"] = float(box["BoundingBox"]["Top"]) / 720
+                                    box["BoundingBox"]["Left"] = float(box["BoundingBox"]["Left"]) / 1280
+                                    box["BoundingBox"]["Width"] = float(box["BoundingBox"]["Width"]) / 1280
+                                    box["Confidence"] = float(box["Confidence"])*100
                                 item["Instances"] = item["Logo"]["Instances"]
                             item["Parents"] = ''
                             if 'Parents' in item["Logo"]:
@@ -313,10 +321,16 @@ def process_generic_data(asset, workflow, results):
                     item["Workflow"] = workflow
                     if "Logo" in item:
                         # Flatten the inner Logo array
-                        item["Confidence"] = item["Logo"]["Confidence"]
+                        item["Confidence"] = float(item["Logo"]["Confidence"])*100
                         item["Name"] = item["Logo"]["Name"]
                         item["Instances"] = ''
                         if 'Instances' in item["Logo"]:
+                            for box in item["Logo"]["Instances"]:
+                                box["BoundingBox"]["Height"] = float(box["BoundingBox"]["Height"]) / 720
+                                box["BoundingBox"]["Top"] = float(box["BoundingBox"]["Top"]) / 720
+                                box["BoundingBox"]["Left"] = float(box["BoundingBox"]["Left"]) / 1280
+                                box["BoundingBox"]["Width"] = float(box["BoundingBox"]["Width"]) / 1280
+                                box["Confidence"] = float(box["Confidence"])*100
                             item["Instances"] = item["Logo"]["Instances"]
                         item["Parents"] = ''
                         if 'Parents' in item["Logo"]:
@@ -610,7 +624,7 @@ def lambda_handler(event, context):
                         if operator == "translate":
                             process_translate(asset_id, workflow, metadata["Results"])
                         if operator == "genericdatalookup":
-                            process_generic_data(asset_id, workflow, metadata["Results"])
+                            process_logo_detection(asset_id, workflow, metadata["Results"])
                         if operator == "labeldetection":
                             process_label_detection(asset_id, workflow, metadata["Results"])
                         if operator == "celebrityrecognition":

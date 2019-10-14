@@ -214,8 +214,11 @@ export default {
   computed: {
     textFormError() {
       // Validate translated text is en, ru, es, or fr if Polly is enabled
+      if (this.enabledOperators.includes('Polly') && !(this.enabledOperators.includes('Translate'))) {
+        return "Polly requires Translate to be enabled.";
+      }
       if (this.enabledOperators.includes('Polly') && this.targetLanguageCode !== "en" && this.targetLanguageCode !== "ru" && this.targetLanguageCode !== "es" && this.targetLanguageCode !== "fr") {
-        return "Polly is only available when translation target is English, Russian, Spanish, or French.";
+        return "Polly requires translation target to be English, Russian, Spanish, or French.";
       }
       return "";
     },

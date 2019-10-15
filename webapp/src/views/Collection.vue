@@ -126,9 +126,7 @@
   import Header from '@/components/Header.vue'
   import VideoThumbnail from '@/components/VideoThumbnail.vue'
   import Loading from '@/components/Loading.vue'
-  import store from '../store'
-  import router from '../router'
-  
+
   export default {
     name: "Run",
     components: {
@@ -360,7 +358,7 @@
           headers: {
             'Authorization': token
           }
-        }).then(response => 
+        }).then(response =>
             response.json().then(data => ({
               data: data,
               status: response.status

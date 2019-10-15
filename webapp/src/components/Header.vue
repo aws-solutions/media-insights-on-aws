@@ -40,11 +40,13 @@
           >
             Help
           </b-nav-item>
-          <b-nav-item 
-            @click='signOut()' 
+          <b-nav-item
             v-if="signedIn"
+            @click="signOut()"
           >
-            <p id=signOutBtn>Sign Out</p>
+            <p id="signOutBtn">
+              Sign Out
+            </p>
           </b-nav-item>
         </b-navbar-nav>
       </b-collapse>
@@ -55,7 +57,6 @@
 
 <script>
 import { AmplifyEventBus } from "aws-amplify-vue";
-import { async } from 'q';
 
 export default {
   name: 'Header',
@@ -64,13 +65,6 @@ export default {
     return {
       elasticsearch_endpoint: process.env.VUE_APP_ELASTICSEARCH_ENDPOINT,
       signedIn: false
-    }
-  },
-  methods: {
-    signOut() {
-      this.$Amplify.Auth.signOut()
-          .then(data => this.$router.push({name: "Login"}))
-          .catch(err => console.log(err));
     }
   },
   async beforeCreate() {
@@ -85,10 +79,17 @@ export default {
     });
   },
   async mounted() {
-      AmplifyEventBus.$on("authState", info => {
+    AmplifyEventBus.$on("authState", info => {
       this.signedIn = info === "signedOut";
       this.$router.push({name: 'Login'})
     });
+  },
+  methods: {
+    signOut() {
+      this.$Amplify.Auth.signOut()
+          .then(() => this.$router.push({name: "Login"}))
+          .catch(err => console.log(err));
+    }
   }
 }
 </script>

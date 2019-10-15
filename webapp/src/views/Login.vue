@@ -11,18 +11,6 @@ export default {
   data() {
     return {};
   },
-  methods: {
-  getLoginStatus () {
-    const currentSession = this.$Amplify.Auth.currentSession().then(data =>{
-    this.session = data
-    if (this.session == null) {
-      console.log('user must login')
-    } else {
-      this.$router.push({name: "collection"})
-    }
-    })
-    }
-  },
   mounted() {
     AmplifyEventBus.$on("authState", eventInfo => {
       if (eventInfo === "signedIn") {
@@ -34,6 +22,18 @@ export default {
   },
   created() {
     this.getLoginStatus()
+  },
+  methods: {
+    getLoginStatus () {
+      this.$Amplify.Auth.currentSession().then(data => {
+        this.session = data;
+        if (this.session == null) {
+          console.log('user must login')
+        } else {
+          this.$router.push({name: "collection"})
+        }
+      })
+    }
   }
 };
 </script>

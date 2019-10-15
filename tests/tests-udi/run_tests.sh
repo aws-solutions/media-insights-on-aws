@@ -32,11 +32,17 @@ export MIE_CLIENT_ID=$client_id
 echo "Enter your MIE Admin Username"
 read username
 export MIE_USERNAME=$username
-echo "Enter your Password (enter temp password if your account is unverified)"
-read password
+read -p "Enter your password (enter temp password if your account is unverified)" -s password
 export MIE_PASSWORD=$password
 
-python3 '../getAccessToken.py'
+token=$(python3 '../getAccessToken.py')
+
+if [ $? -eq 0 ]; then
+    export MIE_ACCESS_TOKEN=$token
+else
+    echo "ERROR: Unable to authenticate";
+    exit 1;
+fi
 
 #################### Nothing for users to change below here ####################
 # Create and activate a temporary Python environment for this script.

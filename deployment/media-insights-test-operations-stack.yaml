@@ -14,6 +14,9 @@ Parameters:
   DataPlaneBucket:
     Type: "String"
     Description: "Bucket for the dataplane"
+  StepfunctionRole:
+    Type: String
+    Description: "Arn of the MIE stepfunction execution role"
 
 Mappings:
     SourceCode:
@@ -369,27 +372,6 @@ Resources:
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
     Type: AWS::Lambda::Function
 
-# IAM Roles:
-  StepFunctionRole:
-    Type: "AWS::IAM::Role"
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Action: "sts:AssumeRole"
-            Effect: "Allow"
-            Principal:
-              Service: "states.amazonaws.com"
-      Policies:
-        - PolicyName: "TestSFNLambdaAccess"
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Action: "lambda:InvokeFunction"
-                # TODO: Security - Scope this down (no good answer for limiting lambda invocations yet)
-                Resource: "arn:aws:lambda:*:*:function:*"
-                Effect: "Allow"
-
 # Build Operations
   
   VideoSyncOperationCustomResource:
@@ -405,7 +387,7 @@ Resources:
             "Enabled": true
           }
       StartLambdaArn: !GetAtt VideoSyncOKLambda.Arn
-      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+      StateMachineExecutionRoleArn: !Ref StepfunctionRole
 
   VideoAsyncOperationCustomResource:
     Type: Custom::CustomResource
@@ -421,7 +403,7 @@ Resources:
           }
       StartLambdaArn: !GetAtt VideoAsyncOKLambda.Arn
       MonitorLambdaArn: !GetAtt VideoAsyncOKMonitorLambda.Arn
-      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+      StateMachineExecutionRoleArn: !Ref StepfunctionRole
 
   AudioAsyncOperationCustomResource:
     Type: Custom::CustomResource
@@ -437,7 +419,7 @@ Resources:
           }
       StartLambdaArn: !GetAtt AudioAsyncOKLambda.Arn
       MonitorLambdaArn: !GetAtt AudioAsyncOKMonitorLambda.Arn
-      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+      StateMachineExecutionRoleArn: !Ref StepfunctionRole
 
   # Build stages
 
@@ -561,7 +543,7 @@ Outputs:
   TextAsyncOKMonitorLambda:
     Value: !GetAtt TextAsyncOKMonitorLambda.Arn
   StepFunctionRole:
-     Value: !GetAtt StepFunctionRole.Arn
+     Value: !Ref StepfunctionRole
   VideoSyncOperation:
     Value: !GetAtt VideoSyncOperationCustomResource.Name
   VideoAsyncOperation:

@@ -10,7 +10,7 @@
           <input
             type="range"
             value="90"
-            min="55"
+            min="40"
             max="99"
             step="1"
             @click="updateConfidence"
@@ -262,7 +262,7 @@
         }
         // Look for and draw bounding boxes every 100ms
         const interval_ms = 100;
-        const erase_on_iteration = 2;
+        const erase_on_iteration = 5;
         var i = 0;
         this.canvasRefreshInterval = setInterval(function () {
           i++;
@@ -294,7 +294,7 @@
               // Prevent overlapping boxes by drawing only the box
               // with the highest confidence.
               if (drawMe) {
-                ctx.rect(drawMe.x, drawMe.y, drawMe.width, drawMe.height);
+                ctx.rect(drawMe.x, drawMe.y-drawMe.height, drawMe.width, drawMe.height);
                 // Draw object name and confidence score
                 ctx.fillText(drawMe.name + " (" + drawMe.confidence + "%)", (drawMe.x + drawMe.width / 2), drawMe.y - 10);
               }

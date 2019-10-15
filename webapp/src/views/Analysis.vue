@@ -230,9 +230,20 @@
     },
     created() {
           this.checkServerAccess();
+          this.getAssetMetadata();
+      },
+    methods: {
+      async getAssetMetadata () {
+          const token = await this.$Amplify.Auth.currentSession().then(data =>{
+            var accessToken = data.getIdToken().getJwtToken()
+            return accessToken
+          })
           var asset_id = this.$route.params.asset_id;
           fetch(process.env.VUE_APP_DATAPLANE_API_ENDPOINT+'/metadata/'+asset_id, {
-            method: 'get'
+            method: 'get',
+            headers: {
+              'Authorization': token
+            }
           }).then(response => {
             response.json().then(data => ({
                 data: data,
@@ -251,9 +262,12 @@
           });
           this.updateAssetId();
       },
-    methods: {
-      getVideoUrl() {
+      async getVideoUrl() {
         // This function gets the video URL then initializes the video player
+        const token = await this.$Amplify.Auth.currentSession().then(data =>{
+          var accessToken = data.getIdToken().getJwtToken()
+          return accessToken
+        })
         var bucket = this.s3_uri.split("/")[2];
         var key = this.s3_uri.split(this.s3_uri.split("/")[2] + '/')[1];
         // get URL to video file in S3
@@ -261,7 +275,8 @@
           method: 'POST',
           mode: 'cors',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Authorization': token
           },
           body: JSON.stringify({"S3Bucket": bucket, "S3Key": key})
         }).then(data => {

@@ -21,10 +21,13 @@ VIDEO_FILENAME = os.environ['VIDEO_FILENAME']
 IMAGE_FILENAME = os.environ['IMAGE_FILENAME']
 AUDIO_FILENAME = os.environ['AUDIO_FILENAME']
 TEXT_FILENAME = os.environ['TEXT_FILENAME']
+token = os.environ["MIE_ACCESS_TOKEN"]
+
+print(token)
 
 def set_max_concurrent_request(stack_resources, max_concurrent):
 
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json", "Authorization": token}
     body = {
         "Name":"MaxConcurrentWorkflows",
         "Value": max_concurrent
@@ -36,8 +39,9 @@ def set_max_concurrent_request(stack_resources, max_concurrent):
     return set_configuration_response
 
 def get_configuration_request(stack_resources):
+    headers = {"Authorization": token}
     
-    get_configuration_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/system/configuration', verify=False)
+    get_configuration_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/system/configuration', verify=False, headers=headers)
 
     return get_configuration_response
 
@@ -45,7 +49,7 @@ def create_operation_request(config, stack_resources):
     
     start_lambda = config["Input"]+config["Type"]+config["Status"]+"Lambda"
     
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json", "Authorization": token}
     body = {
         "StartLambdaArn": stack_resources[start_lambda],
         "Configuration": {
@@ -75,22 +79,22 @@ def create_operation_request(config, stack_resources):
 
 
 def get_operation_request(operation, stack_resources):
-    
-    get_operation_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/workflow/operation/'+operation["Name"], verify=False)
+    headers = {"Authorization": token}
+    get_operation_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/workflow/operation/'+operation["Name"], verify=False, headers=headers)
 
     return get_operation_response
 
 
 def delete_operation_request(operation, stack_resources):
-    
-    delete_operation_response = requests.delete(stack_resources["WorkflowApiEndpoint"]+'/workflow/operation/'+operation["Name"], verify=False)
+    headers = {"Authorization": token}
+    delete_operation_response = requests.delete(stack_resources["WorkflowApiEndpoint"]+'/workflow/operation/'+operation["Name"], verify=False, headers=headers)
 
     return delete_operation_response
 
 
 def create_operation_workflow_request(operation, stack_resources):
 
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json", "Authorization": token}
     body = {
         "Name":"_testoperation"+operation["Name"],
         "StartAt": operation["StageName"],
@@ -110,15 +114,15 @@ def create_operation_workflow_request(operation, stack_resources):
 
 
 def delete_operation_workflow_request(workflow, stack_resources):
-    
-    delete_workflow_response = requests.delete(stack_resources["WorkflowApiEndpoint"]+'/workflow/'+workflow["Name"], verify=False)
+    headers = {"Authorization": token}
+    delete_workflow_response = requests.delete(stack_resources["WorkflowApiEndpoint"]+'/workflow/'+workflow["Name"], verify=False, headers=headers)
 
     return delete_workflow_response
 
 
 def create_workflow_execution_request(workflow, config, stack_resources):
     
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json", "Authorization": token}
     
     body = {
         "Name": workflow["Name"],
@@ -158,6 +162,7 @@ def create_workflow_execution_request(workflow, config, stack_resources):
 
 
 def wait_for_workflow_execution(workflow_execution, stack_resources, wait_seconds):
+    headers = {"Authorization": token}
     
     # disable unsigned HTTPS certificate warnings
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -168,11 +173,11 @@ def wait_for_workflow_execution(workflow_execution, stack_resources, wait_second
     # before giving up
     retries=0
     # FIXME retry_limit = ceil(wait_seconds/5)
-    retry_limit = (wait_seconds//5)+1
+    retry_limit = 20
     while(retries<retry_limit):
         retries+=1
         print("Checking workflow execution status for workflow {}".format(workflow_id))
-        workflow_execution_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/'+workflow_id, verify=False)
+        workflow_execution_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/'+workflow_id, verify=False, headers=headers)
         workflow_execution = workflow_execution_response.json()
         assert workflow_execution_response.status_code == 200
         if workflow_execution["Status"] in ["Complete", "Error"]:
@@ -184,7 +189,7 @@ def wait_for_workflow_execution(workflow_execution, stack_resources, wait_second
 
 def create_stage_request(config, stack_resources):
     
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json", "Authorization": token}
     body = {
         "Name": config["Name"],
         "Operations": config["Operations"]
@@ -197,22 +202,24 @@ def create_stage_request(config, stack_resources):
 
 
 def get_stage_request(stage, stack_resources):
+    headers = {"Authorization": token}
     
-    get_stage_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/workflow/stage/'+stage["Name"], verify=False)
+    get_stage_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/workflow/stage/'+stage["Name"], verify=False, headers=headers)
 
     return get_stage_response
 
 
 def delete_stage_request(stage, stack_resources):
+    headers = {"Authorization": token}
     
-    delete_stage_response = requests.delete(stack_resources["WorkflowApiEndpoint"]+'/workflow/stage/'+stage["Name"], verify=False)
+    delete_stage_response = requests.delete(stack_resources["WorkflowApiEndpoint"]+'/workflow/stage/'+stage["Name"], verify=False, headers=headers)
 
     return delete_stage_response
 
 
 def create_stage_workflow_request(stage, stack_resources):
 
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json", "Authorization": token}
     body = {
         "Name":"_teststage"+stage["Name"],
         "StartAt": stage["Name"],
@@ -232,7 +239,7 @@ def create_stage_workflow_request(stage, stack_resources):
 def create_workflow_request(workflow_config, stack_resources):
 
     stages = workflow_config["Stages"]
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json", "Authorization": token}
     body = {
         "Name": workflow_config["Name"],
         "StartAt": stages[0],
@@ -260,15 +267,17 @@ def create_workflow_request(workflow_config, stack_resources):
     return create_workflow_response
 
 def get_workflow_configuration_request(workflow, stack_resources):
+    headers = {"Authorization": token}
     
-    get_workflow_configuration_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/workflow/configuration/'+workflow["Name"], verify=False)
+    get_workflow_configuration_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/workflow/configuration/'+workflow["Name"], verify=False, headers=headers)
 
     return get_workflow_configuration_response
 
 
 def delete_stage_workflow_request(workflow, stack_resources):
+    headers = {"Authorization": token}
     
-    delete_workflow_response = requests.delete(stack_resources["WorkflowApiEndpoint"]+'/workflow/'+workflow["Name"], verify=False)
+    delete_workflow_response = requests.delete(stack_resources["WorkflowApiEndpoint"]+'/workflow/'+workflow["Name"], verify=False, headers=headers)
 
     return delete_workflow_response
 
@@ -276,7 +285,7 @@ def delete_stage_workflow_request(workflow, stack_resources):
 
 
 def create_asset(stack_resources, bucket, key):
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json", "Authorization": token}
     body = {
         "Input": {
             "S3Bucket": bucket,
@@ -298,7 +307,7 @@ def post_metadata(stack_resources, asset_id, metadata, paginate=False, end=False
     else:
         url = stack_resources["DataplaneApiEndpoint"] + 'metadata/' + asset_id
 
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json", "Authorization": token}
     body = metadata
     print("POST /metadata/{asset}".format(asset=asset_id))
     nonpaginated_metadata_response = requests.post(url, headers=headers, json=body, verify=False)
@@ -310,7 +319,7 @@ def get_all_metadata(stack_resources, asset_id, cursor=None):
         url = stack_resources["DataplaneApiEndpoint"] + 'metadata/' + asset_id
     else:
         url = stack_resources["DataplaneApiEndpoint"] + 'metadata/' + asset_id + "?cursor=" + cursor
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json", "Authorization": token}
     print("GET /metadata/{asset}".format(asset=asset_id))
     metadata_response = requests.get(url, headers=headers, verify=False)
     return metadata_response
@@ -319,7 +328,7 @@ def get_all_metadata(stack_resources, asset_id, cursor=None):
 def get_single_metadata_field(stack_resources, asset_id, operator):
     metadata_field = operator["OperatorName"]
     url = stack_resources["DataplaneApiEndpoint"] + 'metadata/' + asset_id + "/" + metadata_field
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json", "Authorization": token}
     print("GET /metadata/{asset}/{operator}".format(asset=asset_id, operator=operator["OperatorName"]))
     single_metadata_response = requests.get(url, headers=headers, verify=False)
     return single_metadata_response
@@ -328,7 +337,7 @@ def get_single_metadata_field(stack_resources, asset_id, operator):
 def delete_single_metadata_field(stack_resources, asset_id, operator):
     metadata_field = operator["OperatorName"]
     url = stack_resources["DataplaneApiEndpoint"] + 'metadata/' + asset_id + "/" + metadata_field
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json", "Authorization": token}
     print("DELETE /metadata/{asset}/{operator}".format(asset=asset_id, operator=operator["OperatorName"]))
     delete_single_metadata_response = requests.delete(url, headers=headers, verify=False)
     return delete_single_metadata_response
@@ -336,7 +345,7 @@ def delete_single_metadata_field(stack_resources, asset_id, operator):
 
 def delete_asset(stack_resources, asset_id):
     url = stack_resources["DataplaneApiEndpoint"] + 'metadata/' + asset_id
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json", "Authorization": token}
     print("DELETE /metadata/{asset}".format(asset=asset_id))
     delete_asset_response = requests.delete(url, headers=headers, verify=False)
     return delete_asset_response

@@ -49,10 +49,17 @@
       this.fetchWorkflows();
     },
     methods: {
-      fetchWorkflows() {
+      async fetchWorkflows() {
+      const token = await this.$Amplify.Auth.currentSession().then(data =>{
+        var accessToken = data.getIdToken().getJwtToken()
+        return accessToken
+        })
         let workflow_list = [];
         fetch(process.env.VUE_APP_WORKFLOW_API_ENDPOINT+'/workflow', {
-          method: 'get'
+          method: 'get',
+          headers: {
+            'Authorization': token
+          }
         }).then(response =>
           response.json().then(data => ({
               data: data,

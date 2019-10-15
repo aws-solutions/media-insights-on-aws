@@ -40,6 +40,12 @@
           >
             Help
           </b-nav-item>
+          <b-nav-item 
+            @click='signOut()' 
+            v-if="signedIn"
+          >
+            <p id=signOutBtn>Sign Out</p>
+          </b-nav-item>
         </b-navbar-nav>
       </b-collapse>
     </b-navbar>
@@ -48,17 +54,49 @@
 </template>
 
 <script>
+import { AmplifyEventBus } from "aws-amplify-vue";
+import { async } from 'q';
+
 export default {
   name: 'Header',
   props: ['isCollectionActive', 'isUploadActive'],
   data() {
     return {
-      elasticsearch_endpoint: process.env.VUE_APP_ELASTICSEARCH_ENDPOINT
+      elasticsearch_endpoint: process.env.VUE_APP_ELASTICSEARCH_ENDPOINT,
+      signedIn: false
     }
+  },
+  methods: {
+    signOut() {
+      this.$Amplify.Auth.signOut()
+          .then(data => this.$router.push({name: "Login"}))
+          .catch(err => console.log(err));
+    }
+  },
+  async beforeCreate() {
+    try {
+      await this.$Amplify.Auth.currentAuthenticatedUser();
+      this.signedIn = true;
+    } catch (err) {
+      this.signedIn = false;
+    }
+    AmplifyEventBus.$on("authState", info => {
+      this.signedIn = info === "signedIn";
+    });
+  },
+  async mounted() {
+      AmplifyEventBus.$on("authState", info => {
+      this.signedIn = info === "signedOut";
+      this.$router.push({name: 'Login'})
+    });
   }
 }
 </script>
 
-<style scoped>
+<style>
+
+#signOutBtn {
+color: #ED900E;
+}
 
 </style>

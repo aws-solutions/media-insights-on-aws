@@ -322,7 +322,11 @@ export default {
       this.uploadErrorMessage = error;
       this.dismissCountDown = this.dismissSecs;
     },
-    s3UploadComplete: function (location) {
+    s3UploadComplete: async function (location) {
+      const token = await this.$Amplify.Auth.currentSession().then(data =>{
+        var accessToken = data.getIdToken().getJwtToken()
+        return accessToken
+        })
       var vm = this;
       var s3_uri = location.s3ObjectLocation.url + location.s3ObjectLocation.fields.key
       var media_type = location.type;
@@ -378,7 +382,7 @@ export default {
       fetch(process.env.VUE_APP_WORKFLOW_API_ENDPOINT + 'workflow/execution', {
         method: 'post',
         body: JSON.stringify(data),
-        headers: {'Content-Type': 'application/json'}
+        headers: {'Content-Type': 'application/json', 'Authorization': token}
       }).then(response =>
         response.json().then(data => ({
             data: data,
@@ -405,10 +409,17 @@ export default {
         })
       )
     },
-    getWorkflowStatus(asset_id) {
+    async getWorkflowStatus(asset_id) {
+      const token = await this.$Amplify.Auth.currentSession().then(data =>{
+        var accessToken = data.getIdToken().getJwtToken()
+        return accessToken
+        })
       var vm = this;
       fetch(process.env.VUE_APP_WORKFLOW_API_ENDPOINT+'workflow/execution/asset/'+asset_id, {
         method: 'get',
+        headers: {
+          'Authorization': token
+        }
       }).then(response =>
         response.json().then(data => ({
             data: data,

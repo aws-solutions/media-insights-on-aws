@@ -10,6 +10,14 @@ Parameters:
     Type: String
   DataplaneBucket:
     Type: String
+  UserPoolId:
+    Type: String
+  IdentityPoolId:
+    Type: String
+  AwsRegion:
+    Type: String
+  PoolClientId:
+    Type: String
 
 Mappings:
   SourceCode:
@@ -56,6 +64,7 @@ Resources:
                 - Effect: Allow
                   Action:
                     - "s3:*"
+                  # TODO: Security - Scope this down
                   Resource: "*"
                 - Effect: Allow
                   Action:
@@ -88,7 +97,10 @@ Resources:
             WorkflowEndpoint: !Ref WorkflowEndpoint
             ElasticEndpoint: !Ref ElasticEndpoint
             DataplaneBucket: !Ref DataplaneBucket
-
+            UserPoolId: !Ref UserPoolId
+            IdentityPoolId: !Ref IdentityPoolId
+            AwsRegion: !Ref AwsRegion
+            PoolClientId: !Ref PoolClientId
     CopyWebSource:
       DependsOn: MediaInsightsWebsiteBucket
       Type: Custom::WebsiteDeployHelper

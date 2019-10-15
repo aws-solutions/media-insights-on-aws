@@ -10,6 +10,15 @@
 #   to be added to Elasticsearch so it can be searched and rendered on the MIE
 #   front-end.
 #
+# USAGE:
+#   JSON datasets must have the same filename as the associated video file. For
+#   example, "Demo Video 01.mp4" must have data file "Demo Video 01.json".
+#   Upload both files to the MIE dataplane bucket then add
+#   '"GenericDataLookup":{"Enabled":true}' to workflow configuration, like
+#   this:
+#
+#   curl -k -X POST -H "Content-Type: application/json" --data '{"Name":"MieCompleteWorkflow","Configuration":{"defaultVideoStage":{"GenericDataLookup":{"Enabled":true}}},"Input":{"Media":{"Video":{"S3Bucket":"'$DATAPLANE_BUCKET'","S3Key":"My Video.mp4"}}}}'  $WORKFLOW_API_ENDPOINT/workflow/execution
+#
 ###############################################################################
 
 import os

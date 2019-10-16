@@ -39,6 +39,7 @@ VIDEO_FILENAME = os.environ['VIDEO_FILENAME']
 IMAGE_FILENAME = os.environ['IMAGE_FILENAME']
 AUDIO_FILENAME = os.environ['AUDIO_FILENAME']
 TEXT_FILENAME = os.environ['TEXT_FILENAME']
+token = os.environ["MIE_ACCESS_TOKEN"]
 
 
 def test_duplicate_operation(operations,stack_resources, api_schema):
@@ -62,7 +63,7 @@ def test_schema_errors(operations, stack_resources, api_schema):
 
     config = operations[0]
     start_lambda = config["Input"]+config["Type"]+config["Status"]+"Lambda"
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json", "Authorization": token}
     body = {
         "StartLambdaArn": stack_resources[start_lambda],
         "Configuration": {

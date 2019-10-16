@@ -40,6 +40,7 @@ VIDEO_WITH_AUDIO_FILENAME=os.environ['VIDEO_WITH_AUDIO_FILENAME']
 IMAGE_FILENAME = os.environ['IMAGE_FILENAME']
 AUDIO_FILENAME = os.environ['AUDIO_FILENAME']
 TEXT_FILENAME = os.environ['TEXT_FILENAME']
+token = os.environ["MIE_ACCESS_TOKEN"]
 
 def test_instant_translate(stack_resources, api_schema):
 
@@ -47,7 +48,7 @@ def test_instant_translate(stack_resources, api_schema):
 
     # InstantTranslate workflow must be deployed
     
-    print("Testing InstantTranslate workflow")
+    print("Testing InstantTranslate workflow.  BUCKET_NAME = "+BUCKET_NAME+" VIDEO_WITH_AUDIO_FILENAME = "+ VIDEO_WITH_AUDIO_FILENAME)
 
     body = {
         "Name":"InstantTranslateWorkflow",
@@ -66,7 +67,7 @@ def test_instant_translate(stack_resources, api_schema):
     configuration = get_workflow_configuration_response.json()
     print("Default Workflow Configuration = {}".format(configuration))
 
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json", "Authorization": token}
     start_request = requests.post(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution', headers=headers, json=body, verify=False)
     assert start_request.status_code == 200
     assert start_request.json()['Status'] == 'Queued'

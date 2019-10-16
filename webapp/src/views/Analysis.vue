@@ -3,9 +3,9 @@
     <Header />
     <b-container fluid>
       <b-alert
-          v-model="showElasticSearchAlert"
-          variant="danger"
-          dismissible
+        v-model="showElasticSearchAlert"
+        variant="danger"
+        dismissible
       >
         Elasticsearch server denied access. Please check its access policy.
       </b-alert>
@@ -14,41 +14,41 @@
           <div>
             <b-row align-h="center">
               <b-tabs
-                  content-class="mt-3"
-                  fill
+                content-class="mt-3"
+                fill
               >
                 <b-tab
-                    title="ML Vision"
-                    active
-                    @click="currentView = 'LabelObjects'; mlTabs = 0"
+                  title="ML Vision"
+                  active
+                  @click="currentView = 'LabelObjects'; mlTabs = 0"
                 >
                   <b-container fluid>
                     <b-row>
                       <div>
                         <b-tabs
-                            v-model="mlTabs"
-                            content-class="mt-3"
-                            fill
+                          v-model="mlTabs"
+                          content-class="mt-3"
+                          fill
                         >
                           <b-tab
-                              title="Objects"
-                              @click="currentView = 'LabelObjects'"
+                            title="Objects"
+                            @click="currentView = 'LabelObjects'"
                           />
                           <b-tab
-                              title="Celebrities"
-                              @click="currentView = 'Celebrities'"
+                            title="Celebrities"
+                            @click="currentView = 'Celebrities'"
                           />
                           <b-tab
-                              title="Moderation"
-                              @click="currentView = 'ContentModeration'"
+                            title="Moderation"
+                            @click="currentView = 'ContentModeration'"
                           />
                           <b-tab
-                              title="Faces"
-                              @click="currentView = 'FaceDetection'"
+                            title="Faces"
+                            @click="currentView = 'FaceDetection'"
                           />
                           <b-tab
-                              title="Logos"
-                              @click="currentView = 'Logos'"
+                            title="Logos"
+                            @click="currentView = 'Logos'"
                           />
                         </b-tabs>
                       </div>
@@ -56,29 +56,29 @@
                   </b-container>
                 </b-tab>
                 <b-tab
-                    title="Speech Recognition"
-                    @click="currentView = 'Transcript'; speechTabs = 0"
+                  title="Speech Recognition"
+                  @click="currentView = 'Transcript'; speechTabs = 0"
                 >
                   <b-tabs
-                      v-model="speechTabs"
-                      content-class="mt-3"
-                      fill
+                    v-model="speechTabs"
+                    content-class="mt-3"
+                    fill
                   >
                     <b-tab
-                        title="Transcript"
-                        @click="currentView = 'Transcript'"
+                      title="Transcript"
+                      @click="currentView = 'Transcript'"
                     />
                     <b-tab
-                        title="Translation"
-                        @click="currentView = 'Translation'"
+                      title="Translation"
+                      @click="currentView = 'Translation'"
                     />
                     <b-tab
-                        title="KeyPhrases"
-                        @click="currentView = 'KeyPhrases'"
+                      title="KeyPhrases"
+                      @click="currentView = 'KeyPhrases'"
                     />
                     <b-tab
-                        title="Entities"
-                        @click="currentView = 'Entities'"
+                      title="Entities"
+                      @click="currentView = 'Entities'"
                     />
                   </b-tabs>
                 </b-tab>
@@ -109,9 +109,9 @@
           <div>
             <b-row class="mediaSummary">
               <MediaSummaryBox
-                  :s3Uri="s3_uri"
-                  :filename="filename"
-                  :videoUrl="videoOptions.sources[0].src"
+                :s3Uri="s3_uri"
+                :filename="filename"
+                :videoUrl="videoOptions.sources[0].src"
               />
             </b-row>
           </div>
@@ -240,31 +240,45 @@
       ...mapState(['Confidence'])
     },
     created() {
-      this.checkServerAccess();
-      var asset_id = this.$route.params.asset_id;
-      fetch(process.env.VUE_APP_DATAPLANE_API_ENDPOINT+'/metadata/'+asset_id, {
-        method: 'get'
-      }).then(response => {
-        response.json().then(data => ({
-            data: data,
-          })
-        ).then(res => {
-          this.s3_uri = 's3://'+res.data.results.S3Bucket+'/'+res.data.results.S3Key
-          this.filename = this.s3_uri.split("/").pop();
-          if (this.filename.substring(this.filename.lastIndexOf(".")) === ".jpg") {
-            this.mediaType = "image/jpg"
-          }
-          if (this.filename.substring(this.filename.lastIndexOf(".")) === ".mp4") {
-            this.mediaType = "video/mp4"
-          }
-          this.getVideoUrl()
-        })
-      });
-      this.updateAssetId();
-    },
+          this.checkServerAccess();
+          this.getAssetMetadata();
+      },
     methods: {
-      getVideoUrl() {
+      async getAssetMetadata () {
+          const token = await this.$Amplify.Auth.currentSession().then(data =>{
+            var accessToken = data.getIdToken().getJwtToken()
+            return accessToken
+          })
+          var asset_id = this.$route.params.asset_id;
+          fetch(process.env.VUE_APP_DATAPLANE_API_ENDPOINT+'/metadata/'+asset_id, {
+            method: 'get',
+            headers: {
+              'Authorization': token
+            }
+          }).then(response => {
+            response.json().then(data => ({
+                data: data,
+              })
+            ).then(res => {
+              this.s3_uri = 's3://'+res.data.results.S3Bucket+'/'+res.data.results.S3Key
+              this.filename = this.s3_uri.split("/").pop();
+              if (this.filename.substring(this.filename.lastIndexOf(".")) === ".jpg") {
+                this.mediaType = "image/jpg"
+              }
+              if (this.filename.substring(this.filename.lastIndexOf(".")) === ".mp4") {
+                this.mediaType = "video/mp4"
+              }
+              this.getVideoUrl()
+            })
+          });
+          this.updateAssetId();
+      },
+      async getVideoUrl() {
         // This function gets the video URL then initializes the video player
+        const token = await this.$Amplify.Auth.currentSession().then(data =>{
+          var accessToken = data.getIdToken().getJwtToken()
+          return accessToken
+        })
         var bucket = this.s3_uri.split("/")[2];
         var key = this.s3_uri.split(this.s3_uri.split("/")[2] + '/')[1];
         // get URL to video file in S3
@@ -272,11 +286,12 @@
           method: 'POST',
           mode: 'cors',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Authorization': token
           },
           body: JSON.stringify({"S3Bucket": bucket, "S3Key": key})
         }).then(data => {
-          data.text().then((data) => {
+            data.text().then((data) => {
             this.videoOptions.sources[0].src = data
           }).catch(err => console.error(err));
         })

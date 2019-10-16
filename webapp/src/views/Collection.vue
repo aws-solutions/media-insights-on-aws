@@ -195,11 +195,18 @@
       this.fetchAssetList();
     },
     methods: {
-      deleteAsset(asset_id) {
+      async deleteAsset(asset_id) {
+        const token = await this.$Amplify.Auth.currentSession().then(data =>{
+          var accessToken = data.getIdToken().getJwtToken()
+          return accessToken
+        })
         const vm = this;
         console.log("Deleting asset_id " + asset_id)
         fetch(process.env.VUE_APP_DATAPLANE_API_ENDPOINT+'/metadata/'+asset_id, {
-          method: 'delete'
+          method: 'delete',
+          headers: {
+            'Authorization': token
+          }
         }).then(response => {
           response.text().then(data => ({
               data: data,
@@ -211,7 +218,11 @@
           });
         })
       },
-      elasticsearchQuery() {
+      async elasticsearchQuery() {
+        const token = await this.$Amplify.Auth.currentSession().then(data =>{
+          var accessToken = data.getIdToken().getJwtToken()
+          return accessToken
+        })
         // This function gets the list of assets that contain metadata matching a user-specified search query.
         // Then it updates the display to only show those matching assets.
         var vm = this;
@@ -258,7 +269,10 @@
                 // Display only the matching assets in the collection view.
                 var assetid = item.key
                 fetch(process.env.VUE_APP_DATAPLANE_API_ENDPOINT+'/metadata/'+assetid, {
-                  method: 'get'
+                  method: 'get',
+                  headers: {
+                    'Authorization': token
+                  }
                 }).then(response2 => {
                   response2.json().then(data2 => ({
                       data2: data2,
@@ -277,7 +291,8 @@
                       method: 'POST',
                       mode: 'cors',
                       headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Authorization': token
                       },
                       body: JSON.stringify({"S3Bucket": res2.data2.results.S3Bucket, "S3Key": thumbnail_s3_key})
                     }).then(response =>
@@ -286,6 +301,10 @@
                       // get workflow status for each asset
                       fetch(process.env.VUE_APP_WORKFLOW_API_ENDPOINT+'workflow/execution/asset/'+assetid, {
                         method: 'get',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'Authorization': token
+                        },
                       }).then(response =>
                         response.json().then(data => ({
                             data: data,
@@ -325,15 +344,23 @@
           })
         )
       },
-      fetchAssetList () {
+      async fetchAssetList () {
+        const token = await this.$Amplify.Auth.currentSession().then(data =>{
+          var accessToken = data.getIdToken().getJwtToken()
+          return accessToken
+        })
+        console.log(token)
         this.isBusy = true;
         // This function gets the list of assets and their file location in S3
         var vm = this;
         // Get the list of assets from the dataplane
         fetch(process.env.VUE_APP_DATAPLANE_API_ENDPOINT+'/metadata', {
-          method: 'get'
+          method: 'get',
+          headers: {
+            'Authorization': token
+          }
         }).then(response =>
-          response.json().then(data => ({
+            response.json().then(data => ({
               data: data,
               status: response.status
             })
@@ -342,10 +369,14 @@
             if (res.data.assets.length === 0) {
               vm.isBusy = false;
             }
+
             res.data.assets.forEach( function (assetid) {
               // For each asset make another request to the dataplane to get its file location in S3
               fetch(process.env.VUE_APP_DATAPLANE_API_ENDPOINT+'/metadata/'+assetid, {
-                method: 'get'
+                method: 'get',
+                headers: {
+                  'Authorization': token
+                }
               }).then(response2 => {
                 response2.json().then(data2 => ({
                   data2: data2,
@@ -364,7 +395,8 @@
                     method: 'POST',
                     mode: 'cors',
                     headers: {
-                      'Content-Type': 'application/json'
+                      'Content-Type': 'application/json',
+                      'Authorization': token
                     },
                     body: JSON.stringify({"S3Bucket": res2.data2.results.S3Bucket, "S3Key": thumbnail_s3_key})
                   }).then(response =>
@@ -373,6 +405,9 @@
                     // get workflow status for each asset
                     fetch(process.env.VUE_APP_WORKFLOW_API_ENDPOINT+'workflow/execution/asset/'+assetid, {
                       method: 'get',
+                      headers: {
+                      'Authorization': token
+                    }
                     }).then(response =>
                       response.json().then(data => ({
                           data: data,

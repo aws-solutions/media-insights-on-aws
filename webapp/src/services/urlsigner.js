@@ -2,11 +2,14 @@ export default {
   getSignedURL(file, config) {
     return new Promise((resolve, reject) => {
       // var fd = new FormData();
+      const token = config.token
       let request = new XMLHttpRequest(),
           signingURL = (typeof config.signingURL === "function") ?  config.signingURL(file) : config.signingURL;
       console.log('signing URL: ', signingURL)
       request.open("POST", signingURL);
       request.setRequestHeader("Content-Type", "application/json");
+      request.setRequestHeader("Authorization", token);
+      console.log(token )
       request.onload = function () {
         if (request.status == 200) {
           resolve(JSON.parse(request.response));

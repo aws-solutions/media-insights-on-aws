@@ -25,7 +25,7 @@ MIE_STACK_NAME = os.environ['MIE_STACK_NAME']
 @pytest.fixture(scope='session')
 def api_schema():
 
-    schema_dir = "../source/workflowapi/chalicelib/apischema"
+    schema_dir = "../../source/workflowapi/chalicelib/apischema"
     
     schemata = {}
     for f in os.listdir(schema_dir):
@@ -92,8 +92,6 @@ def operation_configs():
     {"Name":"video-test-sync-fail-a","Input":"Video", "Type":"Sync", "Status":"Fail"}
     ]
 
-
-
 # This fixture is used for testing various operation configurations.
 # Returns an array of values for the parameterized test.
 @pytest.fixture(scope='session')
@@ -120,8 +118,6 @@ def stage_configs():
     {"Name":"no-op","Input":"Audio", "Operations": ["text-test-sync-as", "video-test-sync-as"], "ExecutedOperations": [], "Outputs":[], "Status":"OK"}
     ]
 
-
-
 # This fixture is used for testing various operation configurations.
 # Returns an array of values for the parameterized test.
 @pytest.fixture(scope='session')
@@ -135,7 +131,7 @@ def session_stage_configs():
     {"Name":"no-op-s","Input":"Audio", "Operations": ["text-test-sync-as", "video-test-sync-as"], "ExecutedOperations": [], "Outputs":[], "Status":"OK"}
     ]
 
-# This fixture is used for testing various workflow configurations.
+# This fixture is used for testing various operation configurations.
 # Returns an array of values for the parameterized test.
 @pytest.fixture(scope='session')
 def workflow_configs():
@@ -145,8 +141,6 @@ def workflow_configs():
     {"Name":"2-stage","Input":"Audio", "Stages": ["many-op-as", "2-op-as"], "Outputs":["Audio"], "Status":"OK"}
     ]
 
-
-
 @pytest.fixture(scope='session')
 def operations(session_operation_configs, stack_resources, api_schema):
 
@@ -155,6 +149,8 @@ def operations(session_operation_configs, stack_resources, api_schema):
     print("Creating test operations")
     for config in session_operation_configs:
 
+        
+        
         print("\nOPERATION CONFIGURATION: {}".format(config))
 
         # Create the operation

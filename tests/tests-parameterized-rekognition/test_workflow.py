@@ -30,19 +30,15 @@ import time
 
 # DEFAULT test environment.
 # Override these with environment variables at runtime.
-REGION = 'us-west-2'
-SAMPLE_IMAGE = "sample-image.jpg"
-SAMPLE_VIDEO = "sample-video.mp4"
-SAMPLE_AUDIO = "sample-audio.m4a"
-SAMPLE_TEXT = "sample-text.txt"
-SAMPLE_FACE_IMAGE = "sample-face.jpg"
+SAMPLE_IMAGE = "test-media/sample-image.jpg"
+SAMPLE_VIDEO = "test-media/sample-video.mp4"
+SAMPLE_AUDIO = "test-media/sample-audio.m4a"
+SAMPLE_TEXT = "test-media/sample-text.txt"
+SAMPLE_FACE_IMAGE = "test-media/sample-face.jpg"
 BUCKET_NAME = "mie-testing-bucket-" + str(int(round(time.time())))
-MIE_STACK_NAME = ""
 FACE_COLLECTION_ID = "temporary_face_collection"
 
 # override default test env with the vars specified in pytest.ini
-if 'REGION' in os.environ:
-    REGION = str(os.environ['REGION'])
 if 'SAMPLE_IMAGE' in os.environ:
     SAMPLE_IMAGE = str(os.environ['SAMPLE_IMAGE'])
 if 'SAMPLE_VIDEO' in os.environ:
@@ -55,12 +51,27 @@ if 'SAMPLE_FACE_IMAGE' in os.environ:
     SAMPLE_FACE_IMAGE = str(os.environ['SAMPLE_FACE_IMAGE'])
 if 'BUCKET_NAME' in os.environ:
     BUCKET_NAME = str(os.environ['BUCKET_NAME'])
-if 'MIE_STACK_NAME' in os.environ:
-    MIE_STACK_NAME = str(os.environ['MIE_STACK_NAME'])
-else:
-    print("ERROR: Stack name must be in MIE_STACK_NAME environment variable.")
+
+try:
+    REGION = str(os.environ['REGION'])
+except KeyError as e:
+    logging.error("ERROR: Region must be defined in REGION environment variable.")
+    raise Exception(e)
+
+try:
+    MIE_STACK_NAME = os.environ['MIE_STACK_NAME']
+except KeyError as e:
     logging.error("ERROR: Stack name must be in MIE_STACK_NAME environment variable.")
-    exit(1)
+    raise Exception(e)
+
+try:
+    token = os.environ["MIE_ACCESS_TOKEN"]
+    print("Developer token: \n ", token)
+except KeyError as e:
+    logging.error("ERROR: token must be in MIE_ACCESS_TOKEN environment variable.")
+    raise Exception(e)
+
+
 if 'FACE_COLLECTION_ID' in os.environ:
     FACE_COLLECTION_ID = str(os.environ['FACE_COLLECTION_ID'])
 
@@ -74,6 +85,7 @@ print("\tSAMPLE_FACE_IMAGE: "+SAMPLE_FACE_IMAGE)
 print("\tFACE_COLLECTION_ID: "+FACE_COLLECTION_ID)
 print("\tBUCKET_NAME: "+BUCKET_NAME)
 print("\tMIE_STACK_NAME: "+MIE_STACK_NAME)
+
 
 # This fixture creates a temporary S3 bucket with media objects for testing.
 # When pytest completes this removes said bucket and media objects.
@@ -181,7 +193,7 @@ def test_rekognition_workflow_execution(uploaded_media, test_api_endpoints, work
         print('------------------------------------------')
         print('Test config: ' + workflow_config)
         workflow_api_endpoint = test_api_endpoints["workflow_api_endpoint"]
-        headers = {"Content-Type": "application/json"}
+        headers = {"Content-Type": "application/json", "Authorization": token}
         start_request = requests.post(workflow_api_endpoint+'/workflow/execution', headers=headers, data=workflow_config, verify=False)
         assert start_request.status_code == 200
         assert start_request.json()['Status'] == 'Queued'

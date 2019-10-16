@@ -9,6 +9,7 @@
 
 import os
 import json
+from botocore import config
 import urllib
 import boto3
 from MediaInsightsEngineLambdaHelper import OutputHelper
@@ -18,10 +19,13 @@ from MediaInsightsEngineLambdaHelper import DataPlane
 operator_name = os.environ['OPERATOR_NAME']
 output_object = OutputHelper(operator_name)
 
+mie_config = json.loads(os.environ['botoConfig'])
+config = config.Config(**mie_config)
+rek = boto3.client('rekognition', config=config)
+
 
 # Matches faces in an image with known faces in a Rekognition collection
 def search_faces_by_image(bucket, key, collection_id):
-    rek = boto3.client('rekognition')
     try:
         response = rek.search_faces_by_image(CollectionId=collection_id, Image={'S3Object':{'Bucket':bucket, 'Name':key}})
     except Exception as e:
@@ -33,7 +37,6 @@ def search_faces_by_image(bucket, key, collection_id):
 
 # Matches faces in a video with known faces in a Rekognition collection
 def start_face_search(bucket, key, collection_id):
-    rek = boto3.client('rekognition')
     try:
         # First make sure we can access the face collection
         rek.describe_collection(CollectionId=collection_id)

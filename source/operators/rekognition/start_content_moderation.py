@@ -9,6 +9,7 @@
 
 import os
 import json
+from botocore import config
 import urllib
 import boto3
 from MediaInsightsEngineLambdaHelper import OutputHelper
@@ -18,6 +19,10 @@ from MediaInsightsEngineLambdaHelper import DataPlane
 
 operator_name = os.environ['OPERATOR_NAME']
 output_object = OutputHelper(operator_name)
+
+mie_config = json.loads(os.environ['botoConfig'])
+config = config.Config(**mie_config)
+rek = boto3.client('rekognition', config=config)
 
 
 # Detect explicit or suggestive adult content in an image

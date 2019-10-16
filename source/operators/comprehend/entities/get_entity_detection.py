@@ -4,12 +4,16 @@
 import boto3
 import tarfile
 import os
+from botocore import config
+import json
 from io import BytesIO
 from MediaInsightsEngineLambdaHelper import MediaInsightsOperationHelper
 from MediaInsightsEngineLambdaHelper import MasExecutionError
 from MediaInsightsEngineLambdaHelper import DataPlane
 
-comprehend = boto3.client('comprehend')
+mie_config = json.loads(os.environ['botoConfig'])
+config = config.Config(**mie_config)
+comprehend = boto3.client('comprehend', config=config)
 s3_client = boto3.client('s3')
 headers = {"Content-Type": "application/json"}
 

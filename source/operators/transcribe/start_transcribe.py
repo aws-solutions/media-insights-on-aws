@@ -3,12 +3,16 @@
 
 import os
 import boto3
-
-region = os.environ['AWS_REGION']
-transcribe = boto3.client("transcribe")
-
+import json
+from botocore import config
 from MediaInsightsEngineLambdaHelper import MediaInsightsOperationHelper
 from MediaInsightsEngineLambdaHelper import MasExecutionError
+
+region = os.environ['AWS_REGION']
+
+mie_config = json.loads(os.environ['botoConfig'])
+config = config.Config(**mie_config)
+transcribe = boto3.client("transcribe", config=config)
 
 # TODO: More advanced exception handling, e.g. using boto clienterrors and narrowing exception scopes
 

@@ -40,14 +40,6 @@ export MIE_PASSWORD=$password
 
 export TEST="test_concurrency.py"
 
-token=$(python3 '../getAccessToken.py')
-
-if [ $? -eq 0 ]; then
-    export MIE_ACCESS_TOKEN=$token
-else
-    echo "ERROR: Unable to authenticate";
-    exit 1;
-fi
 
 #################### Nothing for users to change below here ####################
 # Create and activate a temporary Python environment for this script.
@@ -71,6 +63,15 @@ pip install -r requirements.txt
 if [ $? -ne 0 ]; then
     echo "ERROR: Failed to install required Python libraries."
     exit 1
+fi
+
+# Authenticate with Cognito
+token=$(python3 '../getAccessToken.py')
+if [ $? -eq 0 ]; then
+    export MIE_ACCESS_TOKEN=$token
+else
+    echo "ERROR: Unable to authenticate";
+    exit 1;
 fi
 
 echo "------------------------------------------------------------------------------"

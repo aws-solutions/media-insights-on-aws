@@ -128,6 +128,7 @@ export default {
         {text: 'Content Moderation', value: 'contentModeration'},
         {text: 'Face Detection', value: 'faceDetection'},
         {text: 'Face Search', value: 'faceSearch'},
+        {text: 'Logo Detection', value: 'logoDetection'},
       ],
       audioOperators: [
         {text: 'Transcribe', value: 'Transcribe'},
@@ -276,8 +277,14 @@ export default {
             "faceSearch": {
               "Enabled": this.enabledOperators.includes("faceSearch"),
               "CollectionId": this.faceCollectionId==="" ? "undefined" : this.faceCollectionId
+            },
+            "personTracking": {
+              // TODO: enable this operator after it has been added to front-end
+              "Enabled": false,
+            },
+            "GenericDataLookup": {
+              "Enabled": this.enabledOperators.includes("logoDetection"),
             }
-
           },
           "defaultAudioStage": {
             "Transcribe": {

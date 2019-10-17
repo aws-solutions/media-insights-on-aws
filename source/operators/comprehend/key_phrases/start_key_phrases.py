@@ -9,8 +9,10 @@ from MediaInsightsEngineLambdaHelper import MediaInsightsOperationHelper
 from MediaInsightsEngineLambdaHelper import MasExecutionError
 from MediaInsightsEngineLambdaHelper import DataPlane
 
-mie_config = config.Config(json.loads(os.environ['botoConfig']))
-comprehend = boto3.client('comprehend', config=mie_config)
+mie_config = json.loads(os.environ['botoConfig'])
+config = config.Config(**mie_config)
+comprehend = boto3.client('comprehend', config=config)
+
 s3 = boto3.client('s3')
 comprehend_role = os.environ['comprehendRole']
 region = os.environ['AWS_REGION']

@@ -89,9 +89,9 @@ Parameters:
   ApiIpList:
     Type: String
     Description:
-      CIDR block string.  Indicates which internet addresses can access Elastichsearch.
+      CIDR block string.  Indicates which internet addresses can access the MIE APIs.
       For example, 192.168.100.14/24 represents the IPv4 address 192.168.100.14 and its associated routing prefix
-      192.168.100.0, while the CIDR block 0.0.0.0/0 indicates that Elasticsearch is open to requests from all internet addresses.
+      192.168.100.0, while the CIDR block 0.0.0.0/0 indicates the APIs are open to requests from all internet addresses.
 
 Metadata:
   AWS::CloudFormation::Interface:

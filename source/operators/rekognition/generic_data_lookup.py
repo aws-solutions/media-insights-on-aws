@@ -69,7 +69,12 @@ def lambda_handler(event, context):
     if file_type in valid_file_types:
         # Getting labels from S3 is a synchronous operation.
         response = lookup_labels(s3bucket, urllib.parse.unquote_plus(s3key))
-        print("lookup response: " + str(response))
+        print("lookup response: " + str(response)[0:200] + "...")
+        if (type(response) != dict):
+            output_object.update_workflow_status("Error")
+            output_object.add_workflow_metadata(
+                DataLookupError="Metadata must be of type dict. Found " + str(type(response)) + " instead.")
+            raise MasExecutionError(output_object.return_output_object())
         output_object.add_workflow_metadata(AssetId=asset_id,WorkflowExecutionId=workflow_id)
         dataplane = DataPlane()
         metadata_upload = dataplane.store_asset_metadata(asset_id, operator_name, workflow_id, response)

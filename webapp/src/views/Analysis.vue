@@ -46,10 +46,6 @@
                             title="Faces"
                             @click="currentView = 'FaceDetection'"
                           />
-                          <b-tab
-                            title="Logos"
-                            @click="currentView = 'Logos'"
-                          />
                         </b-tabs>
                       </div>
                     </b-row>
@@ -143,14 +139,6 @@
         component: new Promise(function(resolve) {
           setTimeout(function() {
             resolve(import('@/components/LabelObjects.vue'));
-          }, 1000);
-        }),
-        loading: Loading
-      }),
-      Logos: () => ({
-        component: new Promise(function(resolve) {
-          setTimeout(function() {
-            resolve(import('@/components/Logos.vue'));
           }, 1000);
         }),
         loading: Loading

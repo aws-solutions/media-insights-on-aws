@@ -9,7 +9,7 @@
           Confidence Threshold<br>
           <input
             type="range"
-            value="90"
+            value="40"
             min="40"
             max="99"
             step="1"
@@ -96,7 +96,7 @@
     },
     data() {
       return {
-        Confidence: 90,
+        Confidence: 40,
         high_confidence_data: [],
         elasticsearch_data: [],
         boxes_available: [],
@@ -294,7 +294,7 @@
               // Prevent overlapping boxes by drawing only the box
               // with the highest confidence.
               if (drawMe) {
-                ctx.rect(drawMe.x, drawMe.y-drawMe.height, drawMe.width, drawMe.height);
+                ctx.rect(drawMe.x, drawMe.y, drawMe.width, drawMe.height);
                 // Draw object name and confidence score
                 ctx.fillText(drawMe.name + " (" + drawMe.confidence + "%)", (drawMe.x + drawMe.width / 2), drawMe.y - 10);
               }

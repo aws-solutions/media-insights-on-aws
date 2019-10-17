@@ -37,7 +37,7 @@ output_object = OutputHelper(operator_name)
 def lookup_labels(bucket, key):
     s3 = boto3.client('s3')
     try:
-        # response = rek.detect_labels(Image={'S3Object':{'Bucket':bucket, 'Name':key}})
+        # TODO: Use an operator configuration parameter to pass in s3uri for JSON data
         media_filename = key.split("/")[-1]
         data_filename = '.'.join(media_filename.split(".")[:-1])+".json"
         print("Getting data from s3://"+bucket+"/"+data_filename)

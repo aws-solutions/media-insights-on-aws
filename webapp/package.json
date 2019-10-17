@@ -5,19 +5,25 @@
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint",
+    "lint": "vue-cli-service lint --no-fix",
     "deploy": "aws s3 sync --acl public-read --profile mie --delete dist/ s3://[your_website_bucket]"
   },
   "dependencies": {
+    "aws-amplify": "^1.1.40",
+    "aws-amplify-vue": "^0.3.2",
+    "bad-words": "^3.0.3",
     "bootstrap": "^4.3.1",
-    "bootstrap-vue": "^2.0.0-rc.28",
+    "bootstrap-vue": "^2.0.2",
+    "chart.js": "^2.8.0",
     "core-js": "^2.6.5",
     "dropzone": "^5.5.1",
-    "lodash": "^4.17.11",
+    "jwt-decode": "^2.2.0",
+    "lodash": "^4.17.15",
     "marked": "^0.7.0",
     "register-service-worker": "^1.6.2",
     "video.js": "^6.13.0",
     "videojs-flash": "2.1.0",
+    "videojs-hotkeys": "^0.2.25",
     "videojs-markers": "^1.0.1",
     "vue": "^2.6.10",
     "vue-router": "^2.8.1",
@@ -35,21 +41,32 @@
     "vue-template-compiler": "^2.6.10"
   },
   "eslintConfig": {
-    "root": true,
+    "root": false,
     "env": {
-      "node": true
+      "node": false
     },
     "extends": [
+      "plugin:vue/recommended",
       "plugin:vue/essential",
       "eslint:recommended"
     ],
     "rules": {
-      "no-console": 0
+      "no-console": "off",
+      "no-undef": "off",
+      "vue/require-prop-types": "off",
+      "vue/attribute-hyphenation": "off",
+      "vue/valid-v-for": "off",
+      "vue/max-attributes-per-line": "off",
+      "vue/html-self-closing": "off"
     },
     "parserOptions": {
       "parser": "babel-eslint"
     }
   },
+  "eslintIgnore": [
+    "src/dist/*.js",
+    "src/dist/min/*.js"
+  ],
   "postcss": {
     "plugins": {
       "autoprefixer": {}

@@ -9,6 +9,8 @@
 
 import os
 import urllib
+import json
+from botocore import config
 import boto3
 from MediaInsightsEngineLambdaHelper import OutputHelper
 from MediaInsightsEngineLambdaHelper import MasExecutionError
@@ -16,10 +18,13 @@ from MediaInsightsEngineLambdaHelper import MasExecutionError
 operator_name = os.environ['OPERATOR_NAME']
 output_object = OutputHelper(operator_name)
 
+mie_config = json.loads(os.environ['botoConfig'])
+config = config.Config(**mie_config)
+rek = boto3.client('rekognition', config=config)
+
 
 # Detects persons in a video
 def start_person_tracking(bucket, key):
-    rek = boto3.client('rekognition')
     try:
         response = rek.start_person_tracking(
             Video={

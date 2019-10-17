@@ -1,44 +1,108 @@
 <template>
   <div>
     <div class="headerTextBackground">
-    <Header v-bind:isCollectionActive=true></Header>
-    <b-container fluid>
-      <b-row align-h="center">
-        <h1>Media Collection</h1>
-      </b-row>
-      <b-row align-h="center" class="tagline">
-        <b>Discover insights in your media by searching for keywords, objects, or even people.</b>
-      </b-row>
-      <b-row class="my-1" align-v="center" align-h="center">
-        <b-col sm="5">
-          <input type="text" v-model="user_defined_query" placeholder="Search Collection..." v-on:keyup.enter="elasticsearchQuery"/>
+      <Header :is-collection-active="true" />
+      <b-container fluid>
+        <b-alert
+          v-model="showElasticSearchAlert"
+          variant="danger"
+          dismissible
+        >
+          Elasticsearch server denied access. Please check its access policy.
+        </b-alert>
+        <b-alert
+          v-model="showDataplaneAlert"
+          variant="danger"
+          dismissible
+        >
+          Failed to connect to dataplane. Please check access control policy in API Gateway.
+        </b-alert>
+        <b-row align-h="center">
+          <h1>Media Collection</h1>
+        </b-row>
+        <b-row
+          align-h="center"
+          class="tagline"
+        >
+          <b>Discover insights in your media by searching for keywords, objects, or even people.</b>
+        </b-row>
+        <b-row
+          class="my-1"
+          align-v="center"
+          align-h="center"
+        >
+          <b-col sm="5">
+            <input
+              v-model="user_defined_query"
+              type="text"
+              placeholder="Search Collection..."
+              @keyup.enter="elasticsearchQuery"
+            >
           </b-col>
-        <b-col sm="1">
-          <b-button size="lg" v-on:click="elasticsearchQuery">Search</b-button>
-        </b-col>
-    </b-row>
-    </b-container>
+          <b-col sm="1">
+            <b-button
+              size="lg"
+              @click="elasticsearchQuery"
+            >
+              Search
+            </b-button>
+          </b-col>
+        </b-row>
+      </b-container>
     </div>
-    <b-container fluid class="resultsTable">
+    <b-container
+      fluid
+      class="resultsTable"
+    >
       <b-row>
         <b-col>
           <div>
             <div class="column">
               <b-row class="my-1">
                 <b-col>
-                  <b-table striped hover fixed responsive :fields="fields" :items="asset_list" :sort-by.sync="sortBy" :sort-desc.sync="sortDesc" :current-page="currentPage" :per-page="perPage">
-                    <template slot="Thumbnail" slot-scope="data">
-                      <VideoThumbnail :ThumbnailID="data.item.ThumbnailID" :signed_url="data.item.signed_url"></VideoThumbnail>
+                  <b-table
+                    striped
+                    hover
+                    fixed
+                    responsive
+                    :fields="fields"
+                    :items="asset_list"
+                    :sort-by.sync="sortBy"
+                    :sort-desc.sync="sortDesc"
+                    :current-page="currentPage"
+                    :per-page="perPage"
+                  >
+                    <template v-slot:cell(Thumbnail)="data">
+                      <VideoThumbnail
+                        :thumbnail-i-d="data.item.thumbnailID"
+                        :signed-url="data.item.signedUrl"
+                      />
                     </template>
-                    <template slot="Actions" slot-scope="data">
-                      <b-button variant="orange" @click="$router.push(`/analysis/${data.item.asset_id}`)">Analyze</b-button>
+                    <template v-slot:cell(Actions)="data">
+                      <b-button
+                        variant="orange"
+                        @click="$router.push(`/analysis/${data.item.asset_id}`)"
+                      >
+                        Analyze
+                      </b-button>
                       &nbsp;
-                      <b-button :pressed="false" variant="red" @click="deleteAsset(`${data.item.asset_id}`)">Delete</b-button>
+                      <b-button
+                        :pressed="false"
+                        variant="red"
+                        @click="deleteAsset(`${data.item.asset_id}`)"
+                      >
+                        Delete
+                      </b-button>
                     </template>
                   </b-table>
-                  <div v-if="this.isBusy" class="wrapper">
-                    <Loading v-if="this.isBusy" />
-                    <p class="text-muted">(Loading...)</p>
+                  <div
+                    v-if="isBusy"
+                    class="wrapper"
+                  >
+                    <Loading v-if="isBusy" />
+                    <p class="text-muted">
+                      (Loading...)
+                    </p>
                   </div>
                 </b-col>
               </b-row>
@@ -47,15 +111,14 @@
                   v-model="currentPage"
                   :total-rows="totalRows"
                   :per-page="perPage"
-                  class="my-0">
-                </b-pagination>
+                  class="my-0"
+                />
               </b-row>
             </div>
           </div>
         </b-col>
       </b-row>
     </b-container>
-
   </div>
 </template>
 
@@ -66,8 +129,15 @@
 
   export default {
     name: "Run",
+    components: {
+      Header,
+      Loading,
+      VideoThumbnail
+    },
     data() {
       return {
+        showElasticSearchAlert: false,
+        showDataplaneAlert: false,
         totalRows: 1,
         currentPage: 1,
         perPage: 10,
@@ -76,49 +146,66 @@
         asset_list: [],
         sortBy: 'Created',
         sortDesc: true,
-        fields: {
-            'Thumbnail': {
+        fields: [
+            {
+              'Thumbnail': {
               label: "Thumbnail",
               sortable: false
+              }
             },
-            'Filename': {
+            {
+              'Filename': {
               label: "File Name",
               sortable: true,
               tdClass: ["tableWordWrap"]
+              }
             },
-            'status': {
+            {
+              'status': {
               label: "Status",
               sortable: true,
               tdClass: ["tableWordWrap"]
+              }
             },
+            {
             'asset_id': {
               label: 'Asset ID',
               sortable: false,
               tdClass: ["tableWordWrap"]
+              }
             },
-            'Created': {
+            {
+              'Created': {
               label: "Created",
               sortable: true,
               tdClass: ["tableWordWrap"]
+              }
             },
-            'Actions': {
+            {
+              'Actions': {
               label: 'Actions',
               sortable: false
+              }
             }
-        }
+        ]
       }
     },
-    components: {
-      Header,
-      Loading,
-      VideoThumbnail
+    created: function () {
+      this.fetchAssetList();
     },
     methods: {
-      deleteAsset(asset_id) {
+      async deleteAsset(asset_id) {
+        const token = await this.$Amplify.Auth.currentSession().then(data =>{
+          var accessToken = data.getIdToken().getJwtToken()
+          return accessToken
+        })
         const vm = this;
         console.log("Deleting asset_id " + asset_id)
         fetch(process.env.VUE_APP_DATAPLANE_API_ENDPOINT+'/metadata/'+asset_id, {
-          method: 'delete'
+          method: 'delete',
+          headers: {
+            'Authorization': token
+          }
         }).then(response => {
           response.text().then(data => ({
               data: data,
@@ -130,14 +217,22 @@
           });
         })
       },
-      elasticsearchQuery() {
+      async elasticsearchQuery() {
+        const token = await this.$Amplify.Auth.currentSession().then(data =>{
+          var accessToken = data.getIdToken().getJwtToken()
+          return accessToken
+        })
         // This function gets the list of assets that contain metadata matching a user-specified search query.
         // Then it updates the display to only show those matching assets.
         var vm = this;
         vm.isBusy = true;
         var user_defined_query = vm.user_defined_query;
+        // if search is empty string then get asset list from dataplane instead of Elasticsearch.
         if (user_defined_query === "") {
-          user_defined_query = "*"
+          this.showElasticSearchAlert = false;
+          vm.asset_list = [];
+          this.fetchAssetList();
+          return;
         }
         // Get the list of assets that contain metadata matching the user-specified search query.
         var data = {
@@ -160,6 +255,9 @@
               status: response.status
             })
           ).then(res => {
+            if (res.status == 403) {
+              this.showElasticSearchAlert = true
+            }
             var filtered_asset_list = [];
             if (!res.data.aggregations) {
               // the search returned no data
@@ -170,7 +268,10 @@
                 // Display only the matching assets in the collection view.
                 var assetid = item.key
                 fetch(process.env.VUE_APP_DATAPLANE_API_ENDPOINT+'/metadata/'+assetid, {
-                  method: 'get'
+                  method: 'get',
+                  headers: {
+                    'Authorization': token
+                  }
                 }).then(response2 => {
                   response2.json().then(data2 => ({
                       data2: data2,
@@ -180,13 +281,17 @@
                     datetime.setUTCSeconds(res2.data2.results.Created);
                     var s3_uri = 's3://'+res2.data2.results.S3Bucket+'/'+res2.data2.results.S3Key;
                     var filename = res2.data2.results.S3Key.split("/").pop()
-                    var thumbnail_s3_key = 'private/assets/' + assetid + '/' + filename.substring(0,filename.lastIndexOf(".")) + '_thumbnail.0000001.jpg'
+                    var thumbnail_s3_key = 'private/assets/' + assetid + '/input/' + filename;
+                    if (filename.substring(filename.lastIndexOf(".")) === ".mp4") {
+                      thumbnail_s3_key = 'private/assets/' + assetid + '/' + filename.substring(0, filename.lastIndexOf(".")) + '_thumbnail.0000001.jpg';
+                    }
                     // get URL to thumbnail file in S3
                     fetch(process.env.VUE_APP_DATAPLANE_API_ENDPOINT + '/download', {
                       method: 'POST',
                       mode: 'cors',
                       headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Authorization': token
                       },
                       body: JSON.stringify({"S3Bucket": res2.data2.results.S3Bucket, "S3Key": thumbnail_s3_key})
                     }).then(response =>
@@ -195,6 +300,10 @@
                       // get workflow status for each asset
                       fetch(process.env.VUE_APP_WORKFLOW_API_ENDPOINT+'workflow/execution/asset/'+assetid, {
                         method: 'get',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'Authorization': token
+                        },
                       }).then(response =>
                         response.json().then(data => ({
                             data: data,
@@ -214,8 +323,8 @@
                               Filename: filename,
                               status: status,
                               s3_uri: s3_uri,
-                              signed_url: signed_url,
-                              ThumbnailID: '_' + assetid,
+                              signedUrl: signed_url,
+                              thumbnailID: '_' + assetid,
                               Thumbnail: '',
                               Actions: 'Run'
                             })
@@ -234,26 +343,39 @@
           })
         )
       },
-      fetchAssetList () {
+      async fetchAssetList () {
+        const token = await this.$Amplify.Auth.currentSession().then(data =>{
+          var accessToken = data.getIdToken().getJwtToken()
+          return accessToken
+        })
+        console.log(token)
         this.isBusy = true;
         // This function gets the list of assets and their file location in S3
         var vm = this;
         // Get the list of assets from the dataplane
         fetch(process.env.VUE_APP_DATAPLANE_API_ENDPOINT+'/metadata', {
-          method: 'get'
+          method: 'get',
+          headers: {
+            'Authorization': token
+          }
         }).then(response =>
-          response.json().then(data => ({
+            response.json().then(data => ({
               data: data,
               status: response.status
             })
           ).then(res => {
+             this.showDataplaneAlert = false
             if (res.data.assets.length === 0) {
               vm.isBusy = false;
             }
+
             res.data.assets.forEach( function (assetid) {
               // For each asset make another request to the dataplane to get its file location in S3
               fetch(process.env.VUE_APP_DATAPLANE_API_ENDPOINT+'/metadata/'+assetid, {
-                method: 'get'
+                method: 'get',
+                headers: {
+                  'Authorization': token
+                }
               }).then(response2 => {
                 response2.json().then(data2 => ({
                   data2: data2,
@@ -263,13 +385,17 @@
                   datetime.setUTCSeconds(res2.data2.results.Created);
                   var s3_uri = 's3://'+res2.data2.results.S3Bucket+'/'+res2.data2.results.S3Key;
                   var filename = res2.data2.results.S3Key.split("/").pop()
-                  var thumbnail_s3_key = 'private/assets/' + assetid + '/' + filename.substring(0,filename.lastIndexOf(".")) + '_thumbnail.0000001.jpg'
+                  var thumbnail_s3_key = 'private/assets/' + assetid + '/input/' + filename;
+                  if (filename.substring(filename.lastIndexOf(".")) === ".mp4") {
+                    thumbnail_s3_key = 'private/assets/' + assetid + '/' + filename.substring(0, filename.lastIndexOf(".")) + '_thumbnail.0000001.jpg';
+                  }
                   // get URL to thumbnail file in S3
                   fetch(process.env.VUE_APP_DATAPLANE_API_ENDPOINT + '/download', {
                     method: 'POST',
                     mode: 'cors',
                     headers: {
-                      'Content-Type': 'application/json'
+                      'Content-Type': 'application/json',
+                      'Authorization': token
                     },
                     body: JSON.stringify({"S3Bucket": res2.data2.results.S3Bucket, "S3Key": thumbnail_s3_key})
                   }).then(response =>
@@ -278,16 +404,20 @@
                     // get workflow status for each asset
                     fetch(process.env.VUE_APP_WORKFLOW_API_ENDPOINT+'workflow/execution/asset/'+assetid, {
                       method: 'get',
+                      headers: {
+                      'Authorization': token
+                    }
                     }).then(response =>
                       response.json().then(data => ({
                           data: data,
                           status: response.status
                         })
                       ).then(res => {
-                        if (res.status != 200) {
-                          console.log("ERROR: Failed to get workflow status")
+                        if (res.status != 200 || res == undefined || res.data[0] == undefined) {
+                          console.log("ERROR: Failed to get workflow status for asset " + assetid)
                         } else {
                           var status = res.data[0].Status;
+                          console.log("Got workflow status " + status + " for asset " + assetid)
                           const signed_url = data;
                           // media_type = res2.data2.results.S3Key.split('.').pop();
                           // console.log('media type: ' + media_type)
@@ -297,8 +427,8 @@
                             Filename: filename,
                             status: status,
                             s3_uri: s3_uri,
-                            signed_url: signed_url,
-                            ThumbnailID: '_' + assetid,
+                            signedUrl: signed_url,
+                            thumbnailID: '_' + assetid,
                             Thumbnail: '',
                             Actions: 'Run'
                           })
@@ -313,11 +443,11 @@
               })
             })
           })
-        )
+        ).catch(error => {
+          console.log(error);
+          this.showDataplaneAlert = true
+        })
       },
-    },
-    created: function () {
-      this.fetchAssetList();
     }
   }
 </script>

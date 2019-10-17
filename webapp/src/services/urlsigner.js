@@ -2,11 +2,14 @@ export default {
   getSignedURL(file, config) {
     return new Promise((resolve, reject) => {
       // var fd = new FormData();
+      const token = config.token
       let request = new XMLHttpRequest(),
           signingURL = (typeof config.signingURL === "function") ?  config.signingURL(file) : config.signingURL;
       console.log('signing URL: ', signingURL)
       request.open("POST", signingURL);
       request.setRequestHeader("Content-Type", "application/json");
+      request.setRequestHeader("Authorization", token);
+      console.log(token )
       request.onload = function () {
         if (request.status == 200) {
           resolve(JSON.parse(request.response));
@@ -24,12 +27,7 @@ export default {
       request.send("{\"S3Bucket\":\""+process.env.VUE_APP_DATAPLANE_BUCKET+"\",\"S3Key\":\""+file.name+"\"}");
     });
   },
-  sendFile(file, config, is_sending_s3) {
-    // var handler = (is_sending_s3) ? this.setResponseHandler : this.sendS3Handler;
-
-    // return this.getSignedURL(file, config)
-    //   .then((response) => {return handler(response, file)})
-    //   .catch((error) => { return error; });
+  sendFile(file, config) {
     return this.getSignedURL(file, config)
       .then((response) => {return ({'success': true, 'message': response})});
   },

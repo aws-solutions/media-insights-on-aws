@@ -159,7 +159,6 @@ export default {
     })
 
     this.dropzone.on('sending', function(file, xhr, formData) {
-      xhr.timeout = 99999999;
       if (vm.isS3) {
         if (vm.isS3OverridesServerPropagation) {
           let signature = file.s3Signature;
@@ -360,12 +359,19 @@ export default {
     getActiveFiles: function() {
       return this.dropzone.getActiveFiles()
     },
-    getSignedAndUploadToS3(file) {
-      var promise = awsEndpoint.sendFile(file, this.awss3, this.isS3OverridesServerPropagation);
+    async getSignedAndUploadToS3(file) {
+      const token = await this.$Amplify.Auth.currentSession().then(data =>{
+        var accessToken = data.getIdToken().getJwtToken()
+        return accessToken
+      })
+      this.awss3.token = token
+      var promise = awsEndpoint.sendFile(file, this.awss3, token, this.isS3OverridesServerPropagation);
         if (!this.isS3OverridesServerPropagation) {
           promise.then((response) => {
             if (response.success) {
               file.s3ObjectLocation = response.message
+              // set dropzone url option to the URL in the get_presigned_url() response
+              this.dropzone.options.url = response.message.url
               setTimeout(() => this.dropzone.processFile(file))
               this.$emit('vdropzone-s3-upload-success', response.message);
             } else {

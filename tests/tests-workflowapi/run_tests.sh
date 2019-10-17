@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
@@ -15,9 +14,30 @@
 #
 ###############################################################################
 # User-defined environment variables
-export REGION='us-west-2'
-export MIE_STACK_NAME="mieor"
-export TEST="test_concurrency.py"
+echo "What region is your MIE Stack in?"
+read region
+export REGION=$region
+
+echo "What is the name of your MIE Stack?"
+read stackname
+export MIE_STACK_NAME=$stackname
+
+export TEST="test_operation_crud.py"
+
+echo "Enter the MIE User pool id (stack outputs)"
+read pool_id
+export MIE_POOL_ID=$pool_id
+
+echo "Enter the MIE Admin Client id (stack outputs)"
+read client_id
+export MIE_CLIENT_ID=$client_id
+
+echo "Enter your MIE Admin Username"
+read username
+export MIE_USERNAME=$username
+read -p "Enter your password (enter temp password if your account is unverified): " -s password
+export MIE_PASSWORD=$password
+
 #################### Nothing for users to change below here ####################
 # Create and activate a temporary Python environment for this script.
 echo "------------------------------------------------------------------------------"
@@ -42,6 +62,15 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+# Authenticate with Cognito
+token=$(python3 '../getAccessToken.py')
+if [ $? -eq 0 ]; then
+    export MIE_ACCESS_TOKEN=$token
+else
+    echo "ERROR: Unable to authenticate";
+    exit 1;
+fi
+
 echo "------------------------------------------------------------------------------"
 echo "Setup test environment variables"
 # FIXME - these should be inputs to the test script
@@ -51,7 +80,6 @@ export VIDEO_FILENAME="test-media/sample-video.mp4"
 export VIDEO_WITH_AUDIO_FILENAME="test-media/polly_example.mp4"
 export AUDIO_FILENAME="test-media/sample-audio.m4a"
 export TEXT_FILENAME="test-media/sample-text.txt"
-
 
 echo "------------------------------------------------------------------------------"
 echo "Running tests"

@@ -1,6 +1,7 @@
 .DS_Store
 node_modules
-/dist
+deployment/dist
+webapp/helper/dist/
 
 # local env files
 .env.local

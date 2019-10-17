@@ -1,5 +1,5 @@
 <template>
-    <p>Uh oh, we were unable to retrieve all the selected data in time :( </p>
+  <p>Uh oh, we were unable to retrieve all the selected data in time :( </p>
 </template>
 
 <script>

@@ -73,7 +73,7 @@ def perform_variable_replacement(event, context, old_variables, new_variables, b
     for k, v in old_variables.items():
         LOGGER.info("Searching for the following variable: {k}".format(k=k))
         if v in file_to_search:
-            LOGGER.info("Replacing in: {k}".format(k=key))
+            LOGGER.info("Replacing {k}: {ov}  with: {nv}".format(k=key, ov=v, nv=new_variables[k]))
             file_to_search = file_to_search.replace(v, new_variables[k])
             write_to_s3(event, context, bucket, key, file_to_search)
         else:
@@ -116,11 +116,15 @@ def copy_source(event, context):
                 dataplane = os.environ['DataplaneEndpoint']
                 workflow = os.environ['WorkflowEndpoint']
                 dataplane_bucket = os.environ['DataplaneBucket']
+                user_pool_id = os.environ['UserPoolId']
+                region = os.environ['AwsRegion']
+                client_id = os.environ['PoolClientId']
+                identity_id = os.environ['IdentityPoolId']
             except KeyError:
                 replace_env_variables = False
             else:
                 new_variables = {"VUE_APP_ELASTICSEARCH_ENDPOINT": elastic, "VUE_APP_WORKFLOW_API_ENDPOINT": workflow,
-                                 "VUE_APP_DATAPLANE_API_ENDPOINT": dataplane, "VUE_APP_DATAPLANE_BUCKET": dataplane_bucket}
+                                 "VUE_APP_DATAPLANE_API_ENDPOINT": dataplane, "VUE_APP_DATAPLANE_BUCKET": dataplane_bucket, "VUE_APP_AWS_REGION": region, "VUE_APP_USER_POOL_ID": user_pool_id, "VUE_APP_USER_POOL_CLIENT_ID": client_id, "VUE_APP_IDENTITY_POOL_ID": identity_id}
                 old_variables = retrieve_compiled_env_variables(event, context, source_bucket, source_key)
                 replace_env_variables = True
                 LOGGER.info(

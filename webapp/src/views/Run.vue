@@ -11,8 +11,16 @@
         <b-col>
           <div>
             Select a workflow to run:
-            <div v-for="workflow in workflows" v-bind:key="workflow">
-              <input type="radio" v-model="selected_workflow" name="selected_workflow" :value="workflow"> {{ workflow }}
+            <div
+              v-for="workflow in workflows"
+              :key="workflow"
+            >
+              <input
+                v-model="selected_workflow"
+                type="radio"
+                name="selected_workflow"
+                :value="workflow"
+              > {{ workflow }}
             </div>
             <br>
             You chose {{ selected_workflow }}
@@ -28,17 +36,30 @@
 
   export default {
     name: "Run",
+    components: {
+      Header
+    },
     data: function () {
       return {
         workflows: [],
         selected_workflow: ""
       }
     },
+    mounted: function () {
+      this.fetchWorkflows();
+    },
     methods: {
-      fetchWorkflows() {
+      async fetchWorkflows() {
+      const token = await this.$Amplify.Auth.currentSession().then(data =>{
+        var accessToken = data.getIdToken().getJwtToken()
+        return accessToken
+        })
         let workflow_list = [];
         fetch(process.env.VUE_APP_WORKFLOW_API_ENDPOINT+'/workflow', {
-          method: 'get'
+          method: 'get',
+          headers: {
+            'Authorization': token
+          }
         }).then(response =>
           response.json().then(data => ({
               data: data,
@@ -51,12 +72,6 @@
         );
         this.workflows = workflow_list;
       },
-    },
-    mounted: function () {
-      this.fetchWorkflows();
-    },
-    components: {
-      Header
     }
   }
 </script>

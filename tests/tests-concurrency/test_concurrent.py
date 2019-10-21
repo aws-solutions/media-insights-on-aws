@@ -41,6 +41,7 @@ VIDEO_FILENAME = os.environ['VIDEO_FILENAME']
 IMAGE_FILENAME = os.environ['IMAGE_FILENAME']
 AUDIO_FILENAME = os.environ['AUDIO_FILENAME']
 TEXT_FILENAME = os.environ['TEXT_FILENAME']
+token = os.environ["MIE_ACCESS_TOKEN"]
 
 def start_frame_workflows(nframes, stack_resources):
     print("starting {} workflows".format(nframes))
@@ -68,27 +69,29 @@ def start_frame_workflows(nframes, stack_resources):
 
     # Start nframe workflows
     for i in range(1,nframes):
-        headers = {"Content-Type": "application/json"}
+        headers = {"Content-Type": "application/json", "Authorization": token}
         start_request = requests.post(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution', headers=headers, json=body, verify=False)
         assert start_request.status_code == 200
         assert start_request.json()['Status'] == 'Queued'
 
 def test_concurreny(stack_resources, api_schema):
 
+    headers = {"Content-Type": "application/json", "Authorization": token}
+
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
     # Check the number of Error worklfow at start - we'll check again at the end to make sure
     # our workflows are sucessful
-    get_workflows_by_status_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/status/Error', verify=False)
+    get_workflows_by_status_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/status/Error', headers=headers, verify=False)
     assert get_workflows_by_status_response.status_code == 200
     start_errors = len(get_workflows_by_status_response.json())
 
     # Make sure no workflows are running
-    get_workflows_by_status_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/status/Started', verify=False)
+    get_workflows_by_status_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/status/Started', headers=headers, verify=False)
     num_started = len(get_workflows_by_status_response.json())
     while num_started > 0:
-        get_workflows_by_status_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/status/Started', verify=False)
+        get_workflows_by_status_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/status/Started', headers=headers, verify=False)
         num_started = len(get_workflows_by_status_response.json())
         print("Wait for 0 workflows running: {}/{}".format(num_started, 0))
         assert get_workflows_by_status_response.status_code == 200
@@ -111,7 +114,7 @@ def test_concurreny(stack_resources, api_schema):
         start_frame_workflows(20, stack_resources)
 
         # At most "max" workflow should run at a time
-        get_workflows_by_status_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/status/Started', verify=False)
+        get_workflows_by_status_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/status/Started', headers=headers, verify=False)
         print(get_workflows_by_status_response.json())
         num_started = len(get_workflows_by_status_response.json())
         print("{} or less workflows should be running now: {}/{}".format(max, num_started, max))
@@ -119,7 +122,7 @@ def test_concurreny(stack_resources, api_schema):
         assert num_started <= max
 
         while num_started > 0:
-            get_workflows_by_status_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/status/Started', verify=False)
+            get_workflows_by_status_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/status/Started', headers=headers, verify=False)
             num_started = len(get_workflows_by_status_response.json())
             print("{} or less workflows should be running now: {}/{}".format(max, num_started, max))
             assert get_workflows_by_status_response.status_code == 200
@@ -130,7 +133,7 @@ def test_concurreny(stack_resources, api_schema):
     # check is not detrministic since the worklfow counts from the status API is eventually consistent.
     # The number of error reported may not be up to date.  Issue a printed warning as a clue if there are
     # other failures
-    get_workflows_by_status_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/status/Error', verify=False)
+    get_workflows_by_status_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/status/Error', headers=headers, verify=False)
     assert get_workflows_by_status_response.status_code == 200
     end_errors = len(get_workflows_by_status_response.json())
 
@@ -141,6 +144,8 @@ def test_concurreny(stack_resources, api_schema):
 
 def test_frame_flood(stack_resources, api_schema):
 
+    headers = {"Content-Type": "application/json", "Authorization": token}
+
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     # Maximum concurrent for this test
@@ -148,15 +153,15 @@ def test_frame_flood(stack_resources, api_schema):
 
     # Check the number of Error worklfow at start - we'll check again at the end to make sure
     # our workflows are sucessful
-    get_workflows_by_status_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/status/Error', verify=False)
+    get_workflows_by_status_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/status/Error', headers=headers, verify=False)
     assert get_workflows_by_status_response.status_code == 200
     start_errors = len(get_workflows_by_status_response.json())
 
     # Make sure no workflows are running
-    get_workflows_by_status_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/status/Started', verify=False)
+    get_workflows_by_status_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/status/Started', headers=headers, verify=False)
     num_started = len(get_workflows_by_status_response.json())
     while num_started > 0:
-        get_workflows_by_status_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/status/Started', verify=False)
+        get_workflows_by_status_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/status/Started', headers=headers, verify=False)
         num_started = len(get_workflows_by_status_response.json())
         print("Wait for 0 workflows running: {}/{}".format(num_started, max))
         assert get_workflows_by_status_response.status_code == 200
@@ -185,7 +190,7 @@ def test_frame_flood(stack_resources, api_schema):
             t.start()
 
         # At most "max" workflow sshould run at a time
-        get_workflows_by_status_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/status/Started', verify=False)
+        get_workflows_by_status_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/status/Started', headers=headers, verify=False)
         print(get_workflows_by_status_response.json())
         num_started = len(get_workflows_by_status_response.json())
         print("{} or less workflows should be running now: {}/{}".format(max, num_started, max))
@@ -193,7 +198,7 @@ def test_frame_flood(stack_resources, api_schema):
         assert num_started <= max
 
         while num_started > 0:
-            get_workflows_by_status_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/status/Started', verify=False)
+            get_workflows_by_status_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/status/Started', headers=headers, verify=False)
             num_started = len(get_workflows_by_status_response.json())
             print("{} or less workflows should be running now: {}/{}".format(max, num_started, max))
             assert get_workflows_by_status_response.status_code == 200
@@ -202,7 +207,7 @@ def test_frame_flood(stack_resources, api_schema):
 
 
     # Check the number of Error worklfow at end and compare to the start
-    get_workflows_by_status_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/status/Error', verify=False)
+    get_workflows_by_status_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/status/Error', headers=headers, verify=False)
     assert get_workflows_by_status_response.status_code == 200
     end_errors = len(get_workflows_by_status_response.json())
     assert start_errors == end_errors

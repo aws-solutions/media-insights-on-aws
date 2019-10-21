@@ -3,11 +3,17 @@ import BootstrapVue from 'bootstrap-vue'
 
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
-import '@/dist/min/dropzone.min.css'
+import 'dropzone/dist/min/dropzone.min.css'
 
 import App from './App.vue'
 import store from './store'
 import router from './router.js'
+
+import Amplify, * as AmplifyModules from "aws-amplify";
+import { AmplifyPlugin } from "aws-amplify-vue";
+import awsauth from "@/aws-exports";
+
+Amplify.configure(awsauth);
 
 Vue.config.productionTip = false
 
@@ -21,6 +27,7 @@ Vue.mixin({
   }
 });
 
+Vue.use(AmplifyPlugin, AmplifyModules);
 Vue.use(BootstrapVue)
 
 new Vue({

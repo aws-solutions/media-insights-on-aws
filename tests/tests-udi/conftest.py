@@ -1,6 +1,3 @@
-# Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-# SPDX-License-Identifier: Apache-2.0
-
 import pytest
 #import fixtures.setup as setup
 
@@ -25,7 +22,7 @@ MIE_STACK_NAME = os.environ['MIE_STACK_NAME']
 @pytest.fixture(scope='session')
 def api_schema():
 
-    schema_dir = "../source/workflowapi/chalicelib/apischema"
+    schema_dir = "../../source/workflowapi/chalicelib/apischema"
     
     schemata = {}
     for f in os.listdir(schema_dir):
@@ -106,6 +103,17 @@ def session_operation_configs():
     {"Name":"video-to-text", "Input":"Video", "Type":"Async", "Status":"OK", "OutputMediaType":"Text"}
     ]
 
+# This fixture is used for testing updating and deleting operations.
+# Returns an array of values for the parameterized test.
+@pytest.fixture(scope='session')
+def udi_operation_configs():
+    return [
+    {"Name":"udi-video-to-video1", "Input":"Video", "Type":"Async", "Status":"OK", "OutputMediaType":"Video"},
+    {"Name":"udi-video-to-video2", "Input":"Video", "Type":"Async", "Status":"OK", "OutputMediaType":"Video"},
+    {"Name":"udi-video-to-video3", "Input":"Video", "Type":"Async", "Status":"OK", "OutputMediaType":"Video"},
+    {"Name":"udi-video-to-text1", "Input":"Video", "Type":"Async", "Status":"OK", "OutputMediaType":"Text"}
+    ]
+
 # This fixture is used for testing various operation configurations.
 # Returns an array of values for the parameterized test.
 @pytest.fixture(scope='session')
@@ -129,6 +137,17 @@ def session_stage_configs():
     {"Name":"2-op-as", "Input":"Audio", "Operations": ["audio-test-async-as", "text-test-sync-as"], "Outputs":["Audio"], "Status":"OK"},
     {"Name":"many-op-as", "Input":"Audio", "Operations": ["audio-test-async-as", "text-test-sync-as", "video-test-sync-as"], "Outputs":["Audio"], "Status":"OK"},
     {"Name":"no-op-s","Input":"Audio", "Operations": ["text-test-sync-as", "video-test-sync-as"], "ExecutedOperations": [], "Outputs":[], "Status":"OK"}
+    ]
+
+# This fixture is used for testing various stage configurations.
+# Returns an array of values for the parameterized test.
+@pytest.fixture(scope='session')
+def udi_stage_configs():
+    return [
+    {"Name":"udi_stage1", "Input":"Video", "Operations": ["udi-video-to-video1", ], "Outputs":["Video"], "Status":"OK"},
+    {"Name":"udi_stage2", "Input":"Video", "Operations": ["udi-video-to-video2" ], "Outputs":["Video"], "Status":"OK"},
+    {"Name":"udi_stage3", "Input":"Audio", "Operations": ["udi-video-to-video2"], "Outputs":["Video"], "Status":"OK"},
+    {"Name":"udi_stage4", "Input":"Audio", "Operations": ["udi-video-to-video3", "udi-video-to-text1"], "Outputs":["Video", "Text"], "Status":"OK"}
     ]
 
 # This fixture is used for testing various operation configurations.
@@ -199,6 +218,34 @@ def stages(operations, session_stage_configs, stack_resources, api_schema):
         assert delete_stage_response.status_code == 200
 
 @pytest.fixture(scope='session')
+def udi_operations(udi_operation_configs, stack_resources, api_schema):
+
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+    print("Creating update/delete test operations")
+    for config in udi_operation_configs:
+        
+        print("\nOPERATION CONFIGURATION: {}".format(config))
+
+        # Create the operation
+        create_operation_response = api.create_operation_request(config, stack_resources)
+        operation = create_operation_response.json()
+        
+        assert create_operation_response.status_code == 200
+        #validation.schema(operation, api_schema["create_operation_response"])
+        validation.schema(operation, api_schema["create_operation_response"])
+
+    yield udi_operation_configs
+
+    for config in udi_operation_configs:    
+        #Delete the operation
+        operation = {}
+        operation["Name"] = config["Name"]
+        
+        delete_operation_response = api.delete_operation_request(operation, stack_resources)
+        assert delete_operation_response.status_code == 200
+
+@pytest.fixture(scope='session')
 def session_nonpaginated_results():
     return {
         "OperatorName": "samplenonpagresults",
@@ -230,10 +277,10 @@ def session_paginated_results():
 
 
 @pytest.fixture(scope="session", autouse=True)
-def cleanup(request, session_operation_configs, operation_configs, session_stage_configs, stage_configs, stack_resources):
+def cleanup(request, session_operation_configs, operation_configs, udi_operation_configs, session_stage_configs, stage_configs, udi_stage_configs, stack_resources):
     """Cleanup any created resources"""
     def remove_operation_configs():
-        configs = operation_configs+session_operation_configs
+        configs = operation_configs+session_operation_configs+udi_operation_configs
         for config in configs:
             workflow = {}
             workflow["Name"] = "_testoperation"+config["Name"]
@@ -242,7 +289,7 @@ def cleanup(request, session_operation_configs, operation_configs, session_stage
             operation["Name"] = config["Name"]
             api.delete_operation_request(operation, stack_resources)
     def remove_stage_configs():
-        configs = stage_configs+session_stage_configs
+        configs = stage_configs+session_stage_configs+udi_stage_configs
         for config in configs:
             workflow = {}
             workflow["Name"] = "_teststage"+config["Name"]

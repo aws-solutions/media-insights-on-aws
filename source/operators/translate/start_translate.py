@@ -4,12 +4,15 @@
 import boto3
 import os
 import json
+from botocore import config
 
 from MediaInsightsEngineLambdaHelper import DataPlane
 from MediaInsightsEngineLambdaHelper import MediaInsightsOperationHelper
 from MediaInsightsEngineLambdaHelper import MasExecutionError
 
-translate_client = boto3.client('translate')
+mie_config = json.loads(os.environ['botoConfig'])
+config = config.Config(**mie_config)
+translate_client = boto3.client('translate', config=config)
 s3 = boto3.client('s3')
 
 

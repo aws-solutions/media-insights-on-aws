@@ -2,6 +2,15 @@ AWSTemplateFormatVersion: "2010-09-09"
 Description: Media Insights Engine - Base AWS CloudFormation template that provisions the core Media Insights Engine services and provides parameters for enabling additional functionality.
 
 Parameters:
+  AdminEmail:
+    Description: Email address for the MIE Administrator
+    Type: String
+
+  DevGroupName:
+    Type: String
+    Description: Name of the developer group
+    Default: MieDevelopersGroup
+
   DeployOperatorLibrary:
     Description: Deploy operator library
     Type: String
@@ -98,6 +107,7 @@ Metadata:
       - Label:
           default: System Configuration
         Parameters:
+          - AdminEmail
           - MaxConcurrentWorkflows
           - ApiIpList
       - Label:
@@ -180,16 +190,16 @@ Resources:
                   - lambda:InvokeFunction
                 Resource:
                   - !Join [
-                      "",
-                      [
-                        "arn:aws:lambda:",
-                        Ref: "AWS::Region",
-                        ":",
-                        Ref: "AWS::AccountId",
-                        ":",
-                        "function:*",
-                      ],
-                    ]
+                    "",
+                    [
+                      "arn:aws:lambda:",
+                      Ref: "AWS::Region",
+                      ":",
+                      Ref: "AWS::AccountId",
+                      ":",
+                      "function:*",
+                    ],
+                  ]
 
   StageExecutionRole:
     Type: AWS::IAM::Role
@@ -214,16 +224,16 @@ Resources:
                 # since we are only giving start execution access)
                 Resource:
                   - !Join [
-                      "",
-                      [
-                        "arn:aws:states:",
-                        Ref: "AWS::Region",
-                        ":",
-                        Ref: "AWS::AccountId",
-                        ":stateMachine:",
-                        "*",
-                      ],
-                    ]
+                    "",
+                    [
+                      "arn:aws:states:",
+                      Ref: "AWS::Region",
+                      ":",
+                      Ref: "AWS::AccountId",
+                      ":stateMachine:",
+                      "*",
+                    ],
+                  ]
               - Effect: Allow
                 Action:
                   - "dynamodb:GetItem"
@@ -250,16 +260,16 @@ Resources:
                       ],
                     ]
                   - !Join [
-                      "",
-                      [
-                        "arn:aws:dynamodb:",
-                        Ref: "AWS::Region",
-                        ":",
-                        Ref: "AWS::AccountId",
-                        ":table/",
-                        Ref: "WorkflowExecutionTable",
-                      ],
-                    ]
+                    "",
+                    [
+                      "arn:aws:dynamodb:",
+                      Ref: "AWS::Region",
+                      ":",
+                      Ref: "AWS::AccountId",
+                      ":table/",
+                      Ref: "WorkflowExecutionTable",
+                    ],
+                  ]
                   - !Join [
                       "",
                       [
@@ -274,16 +284,16 @@ Resources:
                       ],
                     ]
                   - !Join [
-                      "",
-                      [
-                        "arn:aws:dynamodb:",
-                        Ref: "AWS::Region",
-                        ":",
-                        Ref: "AWS::AccountId",
-                        ":table/",
-                        Ref: "SystemTable",
-                      ],
-                    ]
+                    "",
+                    [
+                      "arn:aws:dynamodb:",
+                      Ref: "AWS::Region",
+                      ":",
+                      Ref: "AWS::AccountId",
+                      ":table/",
+                      Ref: "SystemTable",
+                    ],
+                  ]
               - Effect: Allow
                 Action:
                   - logs:CreateLogGroup
@@ -291,15 +301,15 @@ Resources:
                   - logs:PutLogEvents
                 Resource:
                   - !Join [
-                      "",
-                      [
-                        "arn:aws:logs:",
-                        Ref: "AWS::Region",
-                        ":",
-                        Ref: "AWS::AccountId",
-                        ":log-group:/aws/lambda/*",
-                      ],
-                    ]
+                    "",
+                    [
+                      "arn:aws:logs:",
+                      Ref: "AWS::Region",
+                      ":",
+                      Ref: "AWS::AccountId",
+                      ":log-group:/aws/lambda/*",
+                    ],
+                  ]
               - Effect: Allow
                 Action:
                   - sqs:DeleteMessage
@@ -338,16 +348,16 @@ Resources:
                   - states:StartExecution
                 Resource:
                   - !Join [
-                      "",
-                      [
-                        "arn:aws:states:",
-                        Ref: "AWS::Region",
-                        ":",
-                        Ref: "AWS::AccountId",
-                        ":stateMachine:",
-                        "*",
-                      ],
-                    ]
+                    "",
+                    [
+                      "arn:aws:states:",
+                      Ref: "AWS::Region",
+                      ":",
+                      Ref: "AWS::AccountId",
+                      ":stateMachine:",
+                      "*",
+                    ],
+                  ]
               - Effect: Allow
                 Action:
                   - "dynamodb:GetItem"
@@ -374,16 +384,16 @@ Resources:
                       ],
                     ]
                   - !Join [
-                      "",
-                      [
-                        "arn:aws:dynamodb:",
-                        Ref: "AWS::Region",
-                        ":",
-                        Ref: "AWS::AccountId",
-                        ":table/",
-                        Ref: "WorkflowExecutionTable",
-                      ],
-                    ]
+                    "",
+                    [
+                      "arn:aws:dynamodb:",
+                      Ref: "AWS::Region",
+                      ":",
+                      Ref: "AWS::AccountId",
+                      ":table/",
+                      Ref: "WorkflowExecutionTable",
+                    ],
+                  ]
                   - !Join [
                       "",
                       [
@@ -398,16 +408,16 @@ Resources:
                       ],
                     ]
                   - !Join [
-                      "",
-                      [
-                        "arn:aws:dynamodb:",
-                        Ref: "AWS::Region",
-                        ":",
-                        Ref: "AWS::AccountId",
-                        ":table/",
-                        Ref: "SystemTable",
-                      ],
-                    ]
+                    "",
+                    [
+                      "arn:aws:dynamodb:",
+                      Ref: "AWS::Region",
+                      ":",
+                      Ref: "AWS::AccountId",
+                      ":table/",
+                      Ref: "SystemTable",
+                    ],
+                  ]
               - Effect: Allow
                 Action:
                   - logs:CreateLogGroup
@@ -415,15 +425,15 @@ Resources:
                   - logs:PutLogEvents
                 Resource:
                   - !Join [
-                      "",
-                      [
-                        "arn:aws:logs:",
-                        Ref: "AWS::Region",
-                        ":",
-                        Ref: "AWS::AccountId",
-                        ":log-group:/aws/lambda/*",
-                      ],
-                    ]
+                    "",
+                    [
+                      "arn:aws:logs:",
+                      Ref: "AWS::Region",
+                      ":",
+                      Ref: "AWS::AccountId",
+                      ":log-group:/aws/lambda/*",
+                    ],
+                  ]
               - Effect: Allow
                 Action:
                   - sqs:DeleteMessage
@@ -609,6 +619,229 @@ Resources:
             AllowedOrigins: ["*"]
             Id: AllowUploadsFromWebApp
 
+  # Service - cognito / security infrastructure
+
+  # Super hacky lambda for formatting cognito role mapping since cognito is severely lacking in CF support
+  # https://forums.aws.amazon.com/message.jspa?messageID=790437#790437
+  # https://stackoverflow.com/questions/53131052/aws-cloudformation-can-not-create-stack-when-awscognitoidentitypoolroleattac
+
+  CognitoRoleMappingTransformer:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        ZipFile: |
+          import json
+          import cfnresponse
+
+
+          def handler(event, context):
+              print("Event: %s" % json.dumps(event))
+              resourceProperties = event["ResourceProperties"]
+              responseData = {
+                  "RoleMapping": {
+                      resourceProperties["IdentityProvider"]: {
+                          "Type": resourceProperties["Type"]
+                      }
+                  }
+              }
+              if resourceProperties["AmbiguousRoleResolution"]:
+                  responseData["RoleMapping"][resourceProperties["IdentityProvider"]]["AmbiguousRoleResolution"] = \
+                  resourceProperties["AmbiguousRoleResolution"]
+
+              print(responseData)
+              cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)
+      Handler: !Join
+        - ''
+        - - index
+          - .handler
+      Role: !GetAtt CognitoRoleMapperLambdaExecutionRole.Arn
+      Runtime: python3.7
+      Timeout: 30
+
+  CognitoRoleMapperLambdaExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: 'arn:aws:logs:*:*:*'
+  MieUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      AdminCreateUserConfig:
+          AllowAdminCreateUserOnly: True
+      UsernameAttributes: ['email']
+      EmailConfiguration:
+        EmailSendingAccount: 'COGNITO_DEFAULT'
+      AutoVerifiedAttributes: ['email']
+
+  MieAdminClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref MieUserPool
+      ExplicitAuthFlows: ['ADMIN_NO_SRP_AUTH']
+
+  MieAppClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref MieUserPool
+
+  MieIdentityPool:
+    Type: AWS::Cognito::IdentityPool
+    Properties:
+      AllowUnauthenticatedIdentities: False
+      CognitoIdentityProviders:
+        - ClientId: !Ref MieAppClient
+          ProviderName: !GetAtt MieUserPool.ProviderName
+
+  # More hacky cfn for getting the role mapping
+  TransformedRoleMapping:
+    Type: Custom::TransformedRoleMapping
+    Properties:
+      ServiceToken: !GetAtt CognitoRoleMappingTransformer.Arn
+      Type: Token
+      AmbiguousRoleResolution: Deny
+      IdentityProvider:
+        'Fn::Join':
+          - ':'
+          - - 'Fn::GetAtt':
+                - MieUserPool
+                - ProviderName
+            - Ref: MieAppClient
+
+  CognitStandardAuthDefaultRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Federated: "cognito-identity.amazonaws.com"
+            Action:
+              - "sts:AssumeRoleWithWebIdentity"
+            Condition:
+              StringEquals:
+                "cognito-identity.amazonaws.com:aud": !Ref MieIdentityPool
+              "ForAnyValue:StringEquals":
+                "cognito-identity.amazonaws.com:amr": authenticated
+      Policies:
+        - PolicyName: "MieCognitoAuthNoGroup"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action: "*"
+                Resource: "*"
+                Effect: "Deny"
+
+  CognitStandardUnauthDefaultRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Federated: "cognito-identity.amazonaws.com"
+            Action:
+              - "sts:AssumeRoleWithWebIdentity"
+            Condition:
+              StringEquals:
+                "cognito-identity.amazonaws.com:aud": !Ref MieIdentityPool
+              "ForAnyValue:StringEquals":
+                "cognito-identity.amazonaws.com:amr": unauthenticated
+
+  MieIdentityPoolRoleMapping:
+    Type: AWS::Cognito::IdentityPoolRoleAttachment
+    Properties:
+      IdentityPoolId: !Ref MieIdentityPool
+      RoleMappings: !GetAtt TransformedRoleMapping.RoleMapping
+      Roles:
+        authenticated: !GetAtt CognitStandardAuthDefaultRole.Arn
+        unauthenticated: !GetAtt CognitStandardUnauthDefaultRole.Arn
+
+  MieDeveloperGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      Description: 'User group for developers'
+      RoleArn: !GetAtt MieDeveloperRole.Arn
+      UserPoolId: !Ref MieUserPool
+      GroupName: !Ref DevGroupName
+
+  MieDefaultDeveloperAccount:
+    Type: AWS::Cognito::UserPoolUser
+    Properties:
+      DesiredDeliveryMediums:
+        - EMAIL
+      UserAttributes: [{"Name": "email", "Value": !Ref AdminEmail}]
+      Username: !Ref AdminEmail
+      UserPoolId: !Ref MieUserPool
+
+  MieDeveloperRole:
+    DependsOn: [MediaInsightsWorkflowApi, MediaInsightsDataplaneApiStack]
+    Type: "AWS::IAM::Role"
+    Properties:
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: "Allow"
+              Principal:
+                Federated: "cognito-identity.amazonaws.com"
+              Action:
+                - "sts:AssumeRoleWithWebIdentity"
+              Condition:
+                StringEquals:
+                  "cognito-identity.amazonaws.com:aud": !Ref MieIdentityPool
+                "ForAnyValue:StringEquals":
+                  "cognito-identity.amazonaws.com:amr": authenticated
+        Policies:
+          - PolicyName: "MieDeveloporCognitoPolicy"
+            PolicyDocument: !Sub
+              - |-
+                {
+                  "Version": "2012-10-17",
+                  "Statement": [
+                    {
+                      "Action": [
+                        "execute-api:Invoke"
+                      ],
+                      "Effect": "Allow",
+                      "Resource": ["arn:aws:execute-api:${region}:${account}:${wfapi}/*/", "arn:aws:execute-api:${region}:${account}:${dataapi}/*/"]
+                    }
+                  ]
+                }
+              - {
+                region: !Ref "AWS::Region",
+                account: !Ref "AWS::AccountId",
+                wfapi: !GetAtt MediaInsightsWorkflowApi.Outputs.RestAPIId,
+                dataapi: !GetAtt MediaInsightsDataplaneApiStack.Outputs.RestAPIId
+              }
+
+  MieAddDevUserToGroup:
+    DependsOn: MieDefaultDeveloperAccount
+    Type: AWS::Cognito::UserPoolUserToGroupAttachment
+    Properties:
+      GroupName: !Ref MieDeveloperGroup
+      Username: !Ref AdminEmail
+      UserPoolId: !Ref MieUserPool
+
   # Services - SQS
 
   WorkflowExecutionLambdaDeadLetterQueue:
@@ -650,8 +883,8 @@ Resources:
           !Join [
             "/",
             [
-              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-              "media_insights_engine_lambda_layer_python3.7.zip",
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+            "media_insights_engine_lambda_layer_python3.7.zip",
             ],
           ]
       Description: Boto3 and MediaInsightsEngineLambdaHelper packages for Python 3.7
@@ -670,8 +903,8 @@ Resources:
           !Join [
             "/",
             [
-              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-              "media_insights_engine_lambda_layer_python3.6.zip",
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+            "media_insights_engine_lambda_layer_python3.6.zip",
             ],
           ]
       Description: Boto3 and MediaInsightsEngineLambdaHelper packages for Python 3.6
@@ -727,8 +960,8 @@ Resources:
           !Join [
             "/",
             [
-              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-              "workflow.zip",
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+            "workflow.zip",
             ],
           ]
       MemorySize: 256
@@ -770,8 +1003,8 @@ Resources:
           !Join [
             "/",
             [
-              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-              "workflow.zip",
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+            "workflow.zip",
             ],
           ]
       MemorySize: 256
@@ -800,8 +1033,8 @@ Resources:
           !Join [
             "/",
             [
-              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-              "workflow.zip",
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+            "workflow.zip",
             ],
           ]
       MemorySize: 256
@@ -834,6 +1067,7 @@ Resources:
 
   # DataPlane API Stack
   MediaInsightsDataplaneApiStack:
+    DependsOn: MieUserPool
     Type: "AWS::CloudFormation::Stack"
     Properties:
       TemplateURL:
@@ -850,6 +1084,16 @@ Resources:
         ApiIpList: !Ref ApiIpList
         DataplaneTableName: !Ref DataplaneTable
         DataplaneBucketName: !Ref DataplaneBucket
+        UserPoolArn: !GetAtt MieUserPool.Arn
+        DeploymentPackageBucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        DeploymentPackageKey:
+          !Join [
+            "/",
+            [
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "dataplaneapi.zip",
+            ],
+          ]
 
   Analytics:
     Type: "AWS::CloudFormation::Stack"
@@ -889,11 +1133,12 @@ Resources:
             "https://s3.amazonaws.com",
             !FindInMap ["SourceCode", "General", "S3Bucket"],
             !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
-            "media-insights-workflow-api-stack.template",
+            "media-insights-workflowapi-stack.template",
           ],
         ]
       Parameters:
         ApiIpList: !Ref ApiIpList
+        UserPoolArn: !GetAtt MieUserPool.Arn
         StageExecutionQueueUrl: !Ref StageExecutionQueue
         StageExecutionRole: !GetAtt StepFunctionRole.Arn
         OperationTableName: !Ref OperationTable
@@ -902,6 +1147,7 @@ Resources:
         WorkflowTableName: !Ref WorkflowTable
         HistoryTableName: !Ref HistoryTable
         SystemTableName: !Ref SystemTable
+        SqsQueueArn: !GetAtt StageExecutionQueue.Arn
         CompleteStageLambdaArn:
           Fn::GetAtt:
             - CompleteStageLambda
@@ -918,8 +1164,21 @@ Resources:
           Fn::GetAtt:
             - MediaInsightsDataplaneApiStack
             - Outputs.APIHandlerName
+        DataplaneHandlerArn:
+          Fn::GetAtt:
+            - MediaInsightsDataplaneApiStack
+            - Outputs.APIHandlerArn
         DataPlaneBucket: !Ref DataplaneBucket
         OperatorFailedHandlerLambdaArn: !GetAtt OperatorFailedLambda.Arn
+        DeploymentPackageBucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        DeploymentPackageKey:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+            "workflowapi.zip",
+            ],
+          ]
 
   # LambdaFunctionEventSourceMapping:
   #   Type: AWS::Lambda::EventSourceMapping
@@ -985,6 +1244,7 @@ Resources:
             - Outputs.APIHandlerName
         DataPlaneBucket: !Ref DataplaneBucket
         MediaInsightsEnginePython37Layer: !Ref MediaInsightsEnginePython37Layer
+        StepfunctionRole: !GetAtt StepFunctionRole.Arn
 
   InstantTranslateWorkflow:
     Condition: DeployInstantTranslateWorkflowCondition
@@ -1135,6 +1395,10 @@ Resources:
         WorkflowEndpoint: !GetAtt MediaInsightsWorkflowApi.Outputs.EndpointURL
         ElasticEndpoint: !GetAtt Analytics.Outputs.ElasticUrl
         DataplaneBucket: !Ref DataplaneBucket
+        UserPoolId: !Ref MieUserPool
+        IdentityPoolId: !Ref MieIdentityPool
+        AwsRegion: !Ref "AWS::Region"
+        PoolClientId: !Ref MieAppClient
 
 #  TranscriberWebApp:
 #    Condition: DeployTranscriberApp
@@ -1201,3 +1465,12 @@ Outputs:
   TestStack:
     Condition: DeployTestWorkflowCondition
     Value: !Ref TestWorkflow
+  UserPoolId:
+    Description: ID of the MIE Cognito User Pool
+    Value: !Ref MieUserPool
+  AdminClientId:
+    Description: ID of the Admin Cognito Client
+    Value: !Ref MieAdminClient
+  AdminUsername:
+    Description: Username of the default MIE admin
+    Value: !Ref AdminEmail

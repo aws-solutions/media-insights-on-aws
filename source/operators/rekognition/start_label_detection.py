@@ -11,6 +11,8 @@ import os
 import json
 import urllib
 import boto3
+from botocore import config
+
 from MediaInsightsEngineLambdaHelper import OutputHelper
 from MediaInsightsEngineLambdaHelper import MasExecutionError
 from MediaInsightsEngineLambdaHelper import DataPlane
@@ -19,9 +21,13 @@ operator_name = os.environ['OPERATOR_NAME']
 output_object = OutputHelper(operator_name)
 
 
+mie_config = json.loads(os.environ['botoConfig'])
+config = config.Config(**mie_config)
+rek = boto3.client('rekognition', config=config)
+
+
 # Recognizes labels in an image
 def detect_labels(bucket, key):
-    rek = boto3.client('rekognition')
     try:
         response = rek.detect_labels(Image={'S3Object':{'Bucket':bucket, 'Name':key}})
     except Exception as e:
@@ -33,7 +39,6 @@ def detect_labels(bucket, key):
 
 # Recognizes labels in a video
 def start_label_detection(bucket, key):
-    rek = boto3.client('rekognition')
     try:
         response = rek.start_label_detection(
             Video={

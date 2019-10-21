@@ -1097,19 +1097,18 @@ if ! [ -x "$(command -v chalice)" ]; then
 fi
 
 
-chalice package dist
-./chalice-fix-inputs.py
-aws cloudformation package --template-file dist/sam.json --s3-bucket $bucket --s3-prefix $prefix --output-template-file "dist/workflowapi_sam.yaml" --profile $profile
+chalice package --merge-template external_resources.json dist
+#./chalice-fix-inputs.py
+#aws cloudformation package --template-file dist/sam.json --s3-bucket $bucket --s3-prefix $prefix --output-template-file "dist/workflowapi_sam.yaml" --profile $profile
 
 # Need to add something here to ensure docopt and aws-sam-translator are present
 ./sam-translate.py --profile=$profile
 
+echo "cp ./dist/workflowapi.json $dist_dir/media-insights-workflowapi-stack.template"
+cp dist/workflowapi.json $dist_dir/media-insights-workflowapi-stack.template
 
-echo "cp ./dist/workflowapi.yaml $template_dir/media-insights-workflow-api-stack.yaml"
-cp dist/workflowapi.yaml $template_dir/media-insights-workflow-api-stack.yaml
-
-echo "cp $template_dir/media-insights-workflowapi-stack.yaml $dist_dir/media-insights-workflow-api-stack.template"
-cp $template_dir/media-insights-workflow-api-stack.yaml $dist_dir/media-insights-workflow-api-stack.template
+echo "cp ./dist/deployment.zip $dist_dir/workflowapi.zip"
+cp ./dist/deployment.zip $dist_dir/workflowapi.zip
 
 
 echo "------------------------------------------------------------------------------"
@@ -1129,19 +1128,20 @@ if ! [ -x "$(command -v chalice)" ]; then
 fi
 
 
-chalice package dist
-./chalice-fix-inputs.py
-aws cloudformation package --template-file dist/sam.json --s3-bucket $bucket --s3-prefix $prefix --output-template-file "dist/dataplaneapi_sam.yaml" --profile $profile
+chalice package --merge-template external_resources.json dist
+#./chalice-fix-inputs.py
+#aws cloudformation package --template-file dist/transformed_sam.json --s3-bucket $bucket --s3-prefix $prefix --output-template-file "dist/dataplaneapi_sam.yaml" --profile $profile
 
 # Need to add something here to ensure docopt and aws-sam-translator are present
 ./sam-translate.py --profile=$profile
 
 
-echo "cp ./dist/dataplaneapi.yaml $template_dir/media-insights-dataplane-api-stack.yaml"
-cp dist/dataplaneapi.yaml $template_dir/media-insights-dataplane-api-stack.yaml
+echo "cp ./dist/dataplaneapi.json $dist_dir/media-insights-dataplane-api-stack.template"
+cp dist/dataplaneapi.json $dist_dir/media-insights-dataplane-api-stack.template
 
-echo "cp $template_dir/media-insights-dataplane-api-stack.yaml $dist_dir/media-insights-dataplane-api-stack.template"
-cp $template_dir/media-insights-dataplane-api-stack.yaml $dist_dir/media-insights-dataplane-api-stack.template
+
+echo "cp ./dist/deployment.zip $dist_dir/dataplaneapi.zip"
+cp ./dist/deployment.zip $dist_dir/dataplaneapi.zip
 
 
 echo "------------------------------------------------------------------------------"

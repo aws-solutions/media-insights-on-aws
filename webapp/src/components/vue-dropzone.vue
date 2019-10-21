@@ -359,8 +359,13 @@ export default {
     getActiveFiles: function() {
       return this.dropzone.getActiveFiles()
     },
-    getSignedAndUploadToS3(file) {
-      var promise = awsEndpoint.sendFile(file, this.awss3, this.isS3OverridesServerPropagation);
+    async getSignedAndUploadToS3(file) {
+      const token = await this.$Amplify.Auth.currentSession().then(data =>{
+        var accessToken = data.getIdToken().getJwtToken()
+        return accessToken
+      })
+      this.awss3.token = token
+      var promise = awsEndpoint.sendFile(file, this.awss3, token, this.isS3OverridesServerPropagation);
         if (!this.isS3OverridesServerPropagation) {
           promise.then((response) => {
             if (response.success) {

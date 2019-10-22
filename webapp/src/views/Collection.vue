@@ -215,6 +215,7 @@
       }
     },
     created: function () {
+      this.isBusy = true
       this.retrieveAndFormatAsssets()
     },
     methods: {

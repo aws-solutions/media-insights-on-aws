@@ -140,7 +140,6 @@
       },
     },
     deactivated: function () {
-      console.log('deactivated component:', this.operator);
       this.boxes_available = [];
       this.selectedLabel = '';
       clearInterval(this.canvasRefreshInterval);
@@ -149,7 +148,6 @@
       if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
     },
     activated: function () {
-      console.log('activated component:', this.operator);
       this.fetchAssetData();
     },
     beforeDestroy: function () {
@@ -234,23 +232,43 @@
         this.player.markers.removeAll();
         this.player.markers.add(markers);
       },
-      fetchAssetData () {
-        fetch(process.env.VUE_APP_ELASTICSEARCH_ENDPOINT+'/_search?q=AssetId:'+this.$route.params.asset_id+' Confidence:>'+this.Confidence+' Operator:'+this.operator+'&default_operator=AND&size=10000', {
-          method: 'get'
-        }).then(response =>
-          response.json().then(data => ({
-              data: data,
-              status: response.status
-            })
-          ).then(res => {
-            var es_data = [];
-            res.data.hits.hits.forEach(function (item) {
+        //       fetch(process.env.VUE_APP_ELASTICSEARCH_ENDPOINT+'/_search?q=AssetId:'+this.$route.params.asset_id+' Confidence:>'+this.Confidence+' Operator:'+this.operator+'&default_operator=AND&size=10000', {
+        //   method: 'get'
+        // }).then(response =>
+        //   response.json().then(data => ({
+        //       data: data,
+        //       status: response.status
+        //     })
+        //   ).then(res => {
+        //     var es_data = [];
+        //     res.data.hits.hits.forEach(function (item) {
+        //       es_data.push(item._source)
+        //     });
+        //     this.elasticsearch_data = JSON.parse(JSON.stringify( es_data ))
+        //     this.isBusy = false
+        //   })
+        // );
+      async fetchAssetData () {
+          let query = 'AssetId:'+this.$route.params.asset_id+' Confidence:>'+this.Confidence+' Operator:'+this.operator
+          let apiName = 'mieElasticsearch';
+          let path = '/_search';
+          let apiParams = {
+            headers: {'Content-Type': 'application/json'},
+            queryStringParameters: {'q': query, 'default_operator': 'AND', 'size': 10000}
+          }
+          let response = await this.$Amplify.API.get(apiName, path, apiParams)
+          if (!response) {
+            this.showElasticSearchAlert = true
+          }
+          else {
+            let es_data = []
+            let result = await response
+            result.hits.hits.forEach(function (item) {
               es_data.push(item._source)
-            });
-            this.elasticsearch_data = JSON.parse(JSON.stringify( es_data ))
+            })
+            this.elasticsearch_data = JSON.parse(JSON.stringify(es_data))
             this.isBusy = false
-          })
-        );
+        }
       },
       drawBoxes: function(boxMap) {
         var canvas = document.getElementById('canvas');

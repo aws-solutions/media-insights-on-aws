@@ -229,7 +229,6 @@
       ...mapState(['Confidence'])
     },
     created() {
-          this.checkServerAccess();
           this.getAssetMetadata();
       },
     methods: {
@@ -287,21 +286,6 @@
       },
       updateAssetId () {
         this.$store.commit('updateAssetId', this.$route.params.asset_id);
-      },
-      checkServerAccess () {
-        fetch(process.env.VUE_APP_ELASTICSEARCH_ENDPOINT, {
-          method: 'get'
-        }).then(response =>
-          response.json().then(data => ({
-              data: data,
-              status: response.status
-            })
-          ).then(res => {
-            if (res.status == 403) {
-              this.showElasticSearchAlert = true
-            }
-          })
-        );
       }
     }
   }

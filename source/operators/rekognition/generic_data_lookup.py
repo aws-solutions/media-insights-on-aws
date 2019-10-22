@@ -11,23 +11,14 @@
 #   front-end.
 #
 # USAGE:
-#   Users can use operator configuration parameter "Filename" to specify the
-#   metadata filename. Otherwise this operator will expect to find metadata in
-#   same filename as the associated media file but with a json extension. For
-#   example, "Demo Video 01.mp4" must have data file "Demo Video 01.json".
-#   Both the media file and the metadata file need to be in the root of the MIE
-#   dataplane bucket.
+#   Users must use operator configuration parameters "Bucket" and "Key" to
+#   the S3 location of the data file.
 #
-#   To run this operator add '"GenericDataLookup":{"Enabled":true}' to the
-#   workflow configuration, like this:
+#   To run this operator add
+#   '"GenericDataLookup":{"Bucket": "myBucket", "Key":"test-media/My Video.json", "Enabled":true}'
+#   to the workflow configuration, like this:
 #
-#   curl -k -X POST -H "Content-Type: application/json" --data '{"Name":"MieCompleteWorkflow","Configuration":{"defaultVideoStage":{"GenericDataLookup":{"Enabled":true}}},"Input":{"Media":{"Video":{"S3Bucket":"'$DATAPLANE_BUCKET'","S3Key":"My Video.mp4"}}}}'  $WORKFLOW_API_ENDPOINT/workflow/execution
-#
-#   To specify a user-defined metadata filename, use
-#   '"GenericDataLookup":{"Filename":"My Video.json","Enabled":true}'
-#   in the workflow configuration, like this:
-#
-#   curl -k -X POST -H "Content-Type: application/json" --data '{"Name":"MieCompleteWorkflow","Configuration":{"defaultVideoStage":{"GenericDataLookup":{"Filename":"My Video.json","Enabled":true}}},"Input":{"Media":{"Video":{"S3Bucket":"'$DATAPLANE_BUCKET'","S3Key":"My Video.mp4"}}}}'  $WORKFLOW_API_ENDPOINT/workflow/execution
+#   curl -k -X POST -H "Content-Type: application/json" --data '{"Name":"MieCompleteWorkflow","Configuration":{"defaultVideoStage":{"GenericDataLookup":{"Bucket": "myBucket", "Key":"test-media/My Video.json","Enabled":true}}},"Input":{"Media":{"Video":{"S3Bucket":"'$DATAPLANE_BUCKET'","S3Key":"My Video.mp4"}}}}'  $WORKFLOW_API_ENDPOINT/workflow/execution
 #
 ###############################################################################
 
@@ -67,18 +58,27 @@ def lambda_handler(event, context):
 
     # Get the metadata filename
     print("Looking up metadata for s3://"+bucket+"/"+key)
-    # Use user-defined metadata filename if it exists
-    if "Filename" in operator_object.configuration:
-        metadata_filename = operator_object.configuration["Filename"]
+    # Get user-defined location for generic data file
+    if "Key" in operator_object.configuration:
+        metadata_filename = operator_object.configuration["Key"]
     else:
-        media_filename = key.split("/")[-1]
-        metadata_filename = '.'.join(media_filename.split(".")[:-1])+".json"
+        operator_object.add_workflow_metadata(
+            GenericDataLookupError="Missing S3 key for data file.")
+        operator_object.update_workflow_status("Error")
+        raise MasExecutionError(operator_object.return_output_object())
+    if "Bucket" in operator_object.configuration:
+        metadata_bucket = operator_object.configuration["Bucket"]
+    else:
+        operator_object.add_workflow_metadata(
+            GenericDataLookupError="Missing S3 bucket for data file.")
+        operator_object.update_workflow_status("Error")
+        raise MasExecutionError(operator_object.return_output_object())
 
     # Get metadata
     s3 = boto3.client('s3')
     try:
-        print("Getting data from s3://"+bucket+"/"+metadata_filename)
-        data = s3.get_object(Bucket=bucket, Key=metadata_filename)
+        print("Getting data from s3://"+metadata_bucket+"/"+metadata_filename)
+        data = s3.get_object(Bucket=metadata_bucket, Key=metadata_filename)
         metadata_json = json.loads(data['Body'].read().decode('utf-8'))
     except Exception as e:
         operator_object.update_workflow_status("Error")

@@ -234,28 +234,27 @@
         }
       },
       async elasticsearchQuery (query) {
-            const data = {
-              aggs: {
-                distinct_assets: {
-                  terms: {
-                    field: "AssetId.keyword",
-                    size: 10000
-                  }
+            let apiName = 'mieElasticsearch';
+            let path = '/_search';
+            let apiParams = {
+              headers: {'Content-Type': 'application/json'},
+              body: {
+              "aggs" : {
+                "distinct_assets" : {
+                  "terms" : { "field" : "AssetId.keyword", "size" : 10000 }
                 }
-              }
+                }
+              },
+              queryStringParameters: {'q': query, '_source': 'AssetId'}
             }
-          let response = await fetch(process.env.VUE_APP_ELASTICSEARCH_ENDPOINT+'/_search?q='+query+'&_source=AssetId', {
-            method: 'post',
-            body: JSON.stringify(data),
-            headers: {'Content-Type': 'application/json'}
-          })
-          if (response.status === 200) {
-            let result = await response.json()
-            return result
-          }
-          else {
-            this.showElasticSearchAlert = true
-          }
+            let response = await this.$Amplify.API.post(apiName, path, apiParams)
+            if (!response) {
+              this.showElasticSearchAlert = true
+            }
+            else {
+              let result = await response
+              return result
+        }
       },
       async searchCollection () {
           this.isBusy = true
@@ -276,7 +275,7 @@
               this.asset_list = []
               this.noSearchResults = true
               this.isBusy = false;
-            } 
+            }
             else {
               this.asset_list = []
               this.noSearchResults = false
@@ -285,19 +284,24 @@
               for (var i = 0, len = buckets.length; i < len; i++) {
                 let assetId = buckets[i].key
                 let assetInfo = await this.getAssetInformation(token, assetId)
-                let created = new Date(0);
-                created.setUTCSeconds(assetInfo.results.Created)
-                let bucket = assetInfo.results.S3Bucket
-                let s3Key = assetInfo.results.S3Key
-                let s3Uri = 's3://'+ bucket+'/'+ s3Key
-                let filename = s3Key.split("/").pop()
-                let thumbnailS3Key = 'private/assets/' + assetId + '/input/' + filename
-                if (filename.substring(filename.lastIndexOf(".")) === ".mp4") {
-                    thumbnailS3Key = 'private/assets/' + assetId + '/' + filename.substring(0, filename.lastIndexOf(".")) + '_thumbnail.0000001.jpg'
+                if (assetInfo === null) {
+                  continue
                 }
-                let thumbnail = await this.getAssetThumbNail(token, bucket, thumbnailS3Key)
-                let workflowStatus = await this.getAssetWorkflowStatus(token, assetId)
-                this.pushAssetToTable(assetId, created, filename, workflowStatus[0].Status, s3Uri, thumbnail, 'Run')
+                else {
+                  let created = new Date(0);
+                  created.setUTCSeconds(assetInfo.results.Created)
+                  let bucket = assetInfo.results.S3Bucket
+                  let s3Key = assetInfo.results.S3Key
+                  let s3Uri = 's3://'+ bucket+'/'+ s3Key
+                  let filename = s3Key.split("/").pop()
+                  let thumbnailS3Key = 'private/assets/' + assetId + '/input/' + filename
+                  if (filename.substring(filename.lastIndexOf(".")) === ".mp4") {
+                      thumbnailS3Key = 'private/assets/' + assetId + '/' + filename.substring(0, filename.lastIndexOf(".")) + '_thumbnail.0000001.jpg'
+                  }
+                  let thumbnail = await this.getAssetThumbNail(token, bucket, thumbnailS3Key)
+                  let workflowStatus = await this.getAssetWorkflowStatus(token, assetId)
+                  this.pushAssetToTable(assetId, created, filename, workflowStatus[0].Status, s3Uri, thumbnail, 'Run')
+                }
               }
               this.totalRows = this.asset_list.length
               this.isBusy = false

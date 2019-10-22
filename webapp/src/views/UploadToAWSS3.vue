@@ -36,6 +36,9 @@
       </b-button>
       <br>
       <span v-if="upload_in_progress" class="text-secondary">Upload in progress</span>
+      <b-container v-if="upload_in_progress">
+        <b-spinner label="upload_in_progress" />
+      </b-container>
       <br>
       <b-collapse id="collapse-2">
         <b-container class="text-left">
@@ -301,7 +304,8 @@ export default {
             },
             "GenericDataLookup": {
               "Enabled": this.enabledOperators.includes("genericDataLookup"),
-              "Filename": this.genericDataFilename==="" ? "undefined" : this.genericDataFilename
+              "Bucket": process.env.VUE_APP_DATAPLANE_BUCKET,
+              "Key": this.genericDataFilename==="" ? "undefined" : this.genericDataFilename
             },
           },
           "defaultAudioStage": {

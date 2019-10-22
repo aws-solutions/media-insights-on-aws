@@ -255,11 +255,13 @@
               this.showElasticSearchAlert = true
             }
             else {
+              this.noAssets = false
               let result = await response
               return result
         }
       },
       async searchCollection () {
+          this.noSearchResults = false
           this.isBusy = true
           let query = this.user_defined_query
           // if search is empty string then get asset list from dataplane instead of Elasticsearch.
@@ -280,6 +282,7 @@
               this.isBusy = false;
             }
             else {
+              let assets = []
               this.asset_list = []
               this.noSearchResults = false
               let token = await this.getAccessToken()
@@ -291,23 +294,18 @@
                   continue
                 }
                 else {
-                  let created = new Date(0);
-                  created.setUTCSeconds(assetInfo.results.Created)
-                  let bucket = assetInfo.results.S3Bucket
-                  let s3Key = assetInfo.results.S3Key
-                  let s3Uri = 's3://'+ bucket+'/'+ s3Key
-                  let filename = s3Key.split("/").pop()
-                  let thumbnailS3Key = 'private/assets/' + assetId + '/input/' + filename
-                  if (filename.substring(filename.lastIndexOf(".")) === ".mp4") {
-                      thumbnailS3Key = 'private/assets/' + assetId + '/' + filename.substring(0, filename.lastIndexOf(".")) + '_thumbnail.0000001.jpg'
-                  }
-                  let thumbnail = await this.getAssetThumbNail(token, bucket, thumbnailS3Key)
-                  let workflowStatus = await this.getAssetWorkflowStatus(token, assetId)
-                  this.pushAssetToTable(assetId, created, filename, workflowStatus[0].Status, s3Uri, thumbnail, 'Run')
+                  assets.push(assetInfo)
                 }
-              }
+            }
+            if (assets.length === 0) {
+              this.noSearchResults = true
+              this.isBusy = false
+            }
+            else {
+              this.pushAssetsToTable(assets)
               this.totalRows = this.asset_list.length
               this.isBusy = false
+            }
           }
         }
       },
@@ -375,18 +373,41 @@
           let result = await response.getIdToken().getJwtToken()
           return result
       },
-      pushAssetToTable(assetId, created, filename, status, s3_uri, signed_url, action) {
-        this.asset_list.push({
-          asset_id: assetId,
-          Created: created.toLocaleDateString(),
-          Filename: filename,
-          status: status,
-          s3_uri: s3_uri,
-          signedUrl: signed_url,
-          thumbnailID: '_' + assetId,
-          Thumbnail: '',
-          Actions: action
-        })
+      async pushAssetsToTable(assets) {
+        let token = await this.getAccessToken()
+        for (var i = 0, len = assets.length; i < len; i++) {
+          // check if from search collection or retrieve and format
+          if (typeof assets[i] === 'object') {
+            var assetId = assets[i].asset_id
+            }
+          else {
+            var assetId = assets[i]
+          }
+          let assetInfo = await this.getAssetInformation(token, assetId)
+          let created = new Date(0);
+          created.setUTCSeconds(assetInfo.results.Created)
+          let bucket = assetInfo.results.S3Bucket
+          let s3Key = assetInfo.results.S3Key
+          let s3Uri = 's3://'+ bucket+'/'+ s3Key
+          let filename = s3Key.split("/").pop()
+          let thumbnailS3Key = 'private/assets/' + assetId + '/input/' + filename
+          if (filename.substring(filename.lastIndexOf(".")) === ".mp4") {
+              thumbnailS3Key = 'private/assets/' + assetId + '/' + filename.substring(0, filename.lastIndexOf(".")) + '_thumbnail.0000001.jpg'
+          let thumbnail = await this.getAssetThumbNail(token, bucket, thumbnailS3Key)
+          let workflowStatus = await this.getAssetWorkflowStatus(token, assetId)
+          this.asset_list.push({
+            asset_id: assetId,
+            Created: created.toLocaleDateString(),
+            Filename: filename,
+            status: workflowStatus[0].Status,
+            s3_uri: s3Uri,
+            signedUrl: thumbnail,
+            thumbnailID: '_' + assetId,
+            Thumbnail: '',
+            Actions: 'Run'
+            })
+          }
+        }
       },
       async retrieveAndFormatAsssets () {
         let token = await this.getAccessToken()
@@ -394,28 +415,12 @@
         let assets = data.assets
         if (assets.length === 0) {
           this.noAssets = true
+          this.noSearchResults = false
           this.isBusy = false;
-          }
+        }
         else {
           this.noAssets = false
-          for (var i = 0, len = assets.length; i < len; i++) {
-              let assetId = assets[i]
-              let assetInfo = await this.getAssetInformation(token, assetId)
-              let created = new Date(0);
-              created.setUTCSeconds(assetInfo.results.Created)
-              let bucket = assetInfo.results.S3Bucket
-              let s3Key = assetInfo.results.S3Key
-              let s3Uri = 's3://'+ bucket+'/'+ s3Key
-              let filename = s3Key.split("/").pop()
-              let thumbnailS3Key = 'private/assets/' + assetId + '/input/' + filename
-              if (filename.substring(filename.lastIndexOf(".")) === ".mp4") {
-                  thumbnailS3Key = 'private/assets/' + assetId + '/' + filename.substring(0, filename.lastIndexOf(".")) + '_thumbnail.0000001.jpg'
-              }
-              let thumbnail = await this.getAssetThumbNail(token, bucket, thumbnailS3Key)
-              let workflowStatus = await this.getAssetWorkflowStatus(token, assetId)
-              this.pushAssetToTable(assetId, created, filename, workflowStatus[0].Status, s3Uri, thumbnail, 'Run')
-              this.totalRows = this.asset_list.length
-          }
+          this.pushAssetsToTable(assets)
           this.totalRows = this.asset_list.length
           this.isBusy = false
         }

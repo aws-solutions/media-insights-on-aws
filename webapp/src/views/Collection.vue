@@ -191,7 +191,7 @@
       }
     },
     created: function () {
-      this.fetchAssetList();
+      this.retrieveAndFormatAsssets()
     },
     methods: {
       async deleteAsset(asset_id) {
@@ -343,111 +343,112 @@
           })
         )
       },
-      async fetchAssetList () {
-        const token = await this.$Amplify.Auth.currentSession().then(data =>{
-          var accessToken = data.getIdToken().getJwtToken()
-          return accessToken
-        })
-        console.log(token)
-        this.isBusy = true;
-        // This function gets the list of assets and their file location in S3
-        var vm = this;
-        // Get the list of assets from the dataplane
-        fetch(process.env.VUE_APP_DATAPLANE_API_ENDPOINT+'/metadata', {
-          method: 'get',
-          headers: {
-            'Authorization': token
+      async getAssetWorkflowStatus (token, assetId) {
+        let response = await fetch(process.env.VUE_APP_WORKFLOW_API_ENDPOINT+'workflow/execution/asset/'+assetId, {
+            method: 'get',
+            headers: {
+              'Authorization': token
           }
-        }).then(response =>
-            response.json().then(data => ({
-              data: data,
-              status: response.status
-            })
-          ).then(res => {
-             this.showDataplaneAlert = false
-            if (res.data.assets.length === 0) {
-              vm.isBusy = false;
-            }
-
-            res.data.assets.forEach( function (assetid) {
-              // For each asset make another request to the dataplane to get its file location in S3
-              fetch(process.env.VUE_APP_DATAPLANE_API_ENDPOINT+'/metadata/'+assetid, {
-                method: 'get',
-                headers: {
-                  'Authorization': token
-                }
-              }).then(response2 => {
-                response2.json().then(data2 => ({
-                  data2: data2,
-                })
-                ).then(res2 => {
-                  const datetime = new Date(0);
-                  datetime.setUTCSeconds(res2.data2.results.Created);
-                  var s3_uri = 's3://'+res2.data2.results.S3Bucket+'/'+res2.data2.results.S3Key;
-                  var filename = res2.data2.results.S3Key.split("/").pop()
-                  var thumbnail_s3_key = 'private/assets/' + assetid + '/input/' + filename;
-                  if (filename.substring(filename.lastIndexOf(".")) === ".mp4") {
-                    thumbnail_s3_key = 'private/assets/' + assetid + '/' + filename.substring(0, filename.lastIndexOf(".")) + '_thumbnail.0000001.jpg';
-                  }
-                  // get URL to thumbnail file in S3
-                  fetch(process.env.VUE_APP_DATAPLANE_API_ENDPOINT + '/download', {
-                    method: 'POST',
-                    mode: 'cors',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'Authorization': token
-                    },
-                    body: JSON.stringify({"S3Bucket": res2.data2.results.S3Bucket, "S3Key": thumbnail_s3_key})
-                  }).then(response =>
-                    response.text()).then((data) => {
-
-                    // get workflow status for each asset
-                    fetch(process.env.VUE_APP_WORKFLOW_API_ENDPOINT+'workflow/execution/asset/'+assetid, {
-                      method: 'get',
-                      headers: {
-                      'Authorization': token
-                    }
-                    }).then(response =>
-                      response.json().then(data => ({
-                          data: data,
-                          status: response.status
-                        })
-                      ).then(res => {
-                        if (res.status != 200 || res == undefined || res.data[0] == undefined) {
-                          console.log("ERROR: Failed to get workflow status for asset " + assetid)
-                        } else {
-                          var status = res.data[0].Status;
-                          console.log("Got workflow status " + status + " for asset " + assetid)
-                          const signed_url = data;
-                          // media_type = res2.data2.results.S3Key.split('.').pop();
-                          // console.log('media type: ' + media_type)
-                          vm.asset_list.push({
-                            asset_id: assetid,
-                            Created: datetime.toISOString(),
-                            Filename: filename,
-                            status: status,
-                            s3_uri: s3_uri,
-                            signedUrl: signed_url,
-                            thumbnailID: '_' + assetid,
-                            Thumbnail: '',
-                            Actions: 'Run'
-                          })
-                        }
-                        // Trigger pagination to update the number of buttons/pages
-                        vm.totalRows = vm.asset_list.length;
-                        vm.isBusy = false;
-                      })
-                    );
-                  });
-                })
-              })
-            })
+        })
+        let result = await response.json()
+        return result
+      },
+      async getAssetThumbNail (token, bucket, s3Key) {
+        const data = { "S3Bucket": bucket, "S3Key": s3Key }
+        console.log(data)
+        console.log('getting thumbnail')
+        let response = await fetch(process.env.VUE_APP_DATAPLANE_API_ENDPOINT + '/download', {
+            method: 'POST',
+            mode: 'cors',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': token
+            },
+            body: JSON.stringify(data)
           })
-        ).catch(error => {
-          console.log(error);
+        if (response.status === 200) {
+          let result = await response.text()
+          return result
+        }
+        else {
           this.showDataplaneAlert = true
+        }
+      },
+      async getAssetInformation (token, assetId) {
+        let response = await fetch(process.env.VUE_APP_DATAPLANE_API_ENDPOINT+'/metadata/'+assetId, {
+            method: 'get',
+            headers: {
+              'Authorization': token
+          }
+        })
+        if (response.status === 200) {
+          let result = await response.json()
+          return result
+        }
+        else {
+          this.showDataplaneAlert = true
+        }
+      },
+      async fetchAssets (token) {
+        let response = await fetch(process.env.VUE_APP_DATAPLANE_API_ENDPOINT+'/metadata', {
+            method: 'get',
+            headers: {
+              'Authorization': token
+          }
+        })
+        if (response.status === 200) {
+          let result = await response.json()
+          return result
+        }
+        else {
+          this.showDataplaneAlert = true
+        }
+      },
+      async getAccessToken () {
+          let response = await this.$Amplify.Auth.currentSession()
+          let result = await response.getIdToken().getJwtToken()
+          return result
+      },
+      pushAssetToTable(assetId, created, filename, status, s3_uri, signed_url, action) {
+        this.asset_list.push({
+          asset_id: assetId,
+          Created: created.toLocaleDateString(),
+          Filename: filename,
+          status: status,
+          s3_uri: s3_uri,
+          signedUrl: signed_url,
+          thumbnailID: '_' + assetId,
+          Thumbnail: '',
+          Actions: action
         })
       },
+      async retrieveAndFormatAsssets () {
+        let token = await this.getAccessToken()
+        let data = await this.fetchAssets(token)
+        let assets = data.assets
+        if (assets.length === 0) {
+          vm.isBusy = false;
+          }
+        for (var i = 0, len = assets.length; i < len; i++) {
+            let assetId = assets[i]
+            let assetInfo = await this.getAssetInformation(token, assetId)
+            let created = new Date(0);
+            created.setUTCSeconds(assetInfo.results.Created)
+            let bucket = assetInfo.results.S3Bucket
+            let s3Key = assetInfo.results.S3Key
+            let s3Uri = 's3://'+ bucket+'/'+ s3Key
+            let filename = s3Key.split("/").pop()
+            let thumbnailS3Key = 'private/assets/' + assetId + '/input/' + filename
+            if (filename.substring(filename.lastIndexOf(".")) === ".mp4") {
+                thumbnailS3Key = 'private/assets/' + assetId + '/' + filename.substring(0, filename.lastIndexOf(".")) + '_thumbnail.0000001.jpg'
+            }
+            let thumbnail = await this.getAssetThumbNail(token, bucket, thumbnailS3Key)
+            let workflowStatus = await this.getAssetWorkflowStatus(token, assetId)
+            this.pushAssetToTable(assetId, created, filename, workflowStatus[0].Status, s3Uri, thumbnail, 'Run')
+            this.totalRows = this.asset_list.length
+            this.isBusy = false
+        }
+      }
     }
   }
 </script>

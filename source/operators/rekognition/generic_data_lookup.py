@@ -11,90 +11,106 @@
 #   front-end.
 #
 # USAGE:
-#   JSON datasets must have the same filename as the associated video file. For
+#   Users can use operator configuration parameter "Filename" to specify the
+#   metadata filename. Otherwise this operator will expect to find metadata in
+#   same filename as the associated media file but with a json extension. For
 #   example, "Demo Video 01.mp4" must have data file "Demo Video 01.json".
-#   Upload both files to the MIE dataplane bucket then add
-#   '"GenericDataLookup":{"Enabled":true}' to workflow configuration, like
-#   this:
+#   Both the media file and the metadata file need to be in the root of the MIE
+#   dataplane bucket.
+#
+#   To run this operator add '"GenericDataLookup":{"Enabled":true}' to the
+#   workflow configuration, like this:
 #
 #   curl -k -X POST -H "Content-Type: application/json" --data '{"Name":"MieCompleteWorkflow","Configuration":{"defaultVideoStage":{"GenericDataLookup":{"Enabled":true}}},"Input":{"Media":{"Video":{"S3Bucket":"'$DATAPLANE_BUCKET'","S3Key":"My Video.mp4"}}}}'  $WORKFLOW_API_ENDPOINT/workflow/execution
 #
+#   To specify a user-defined metadata filename, use
+#   '"GenericDataLookup":{"Filename":"My Video.json","Enabled":true}'
+#   in the workflow configuration, like this:
+#
+#   curl -k -X POST -H "Content-Type: application/json" --data '{"Name":"MieCompleteWorkflow","Configuration":{"defaultVideoStage":{"GenericDataLookup":{"Filename":"My Video.json","Enabled":true}}},"Input":{"Media":{"Video":{"S3Bucket":"'$DATAPLANE_BUCKET'","S3Key":"My Video.mp4"}}}}'  $WORKFLOW_API_ENDPOINT/workflow/execution
+#
 ###############################################################################
 
-import os
 import json
-import urllib
 import boto3
-from MediaInsightsEngineLambdaHelper import OutputHelper
+from MediaInsightsEngineLambdaHelper import MediaInsightsOperationHelper
 from MediaInsightsEngineLambdaHelper import MasExecutionError
 from MediaInsightsEngineLambdaHelper import DataPlane
 
-operator_name = os.environ['OPERATOR_NAME']
-output_object = OutputHelper(operator_name)
-
-
-# Lookup labels from data file in S3
-def lookup_labels(bucket, key):
-    s3 = boto3.client('s3')
-    try:
-        # TODO: Use an operator configuration parameter to pass in s3uri for JSON data
-        media_filename = key.split("/")[-1]
-        data_filename = '.'.join(media_filename.split(".")[:-1])+".json"
-        print("Getting data from s3://"+bucket+"/"+data_filename)
-        data = s3.get_object(Bucket=bucket, Key=data_filename)
-        return json.loads(data['Body'].read().decode('utf-8'))
-    except Exception as e:
-        output_object.update_workflow_status("Error")
-        output_object.add_workflow_metadata(DataLookupError=str(e))
-        raise MasExecutionError(output_object.return_output_object())
-
 # Lambda function entrypoint:
 def lambda_handler(event, context):
+    operator_object = MediaInsightsOperationHelper(event)
+    # Get operator parameters
     try:
-        if "Video" in event["Input"]["Media"]:
-            s3bucket = event["Input"]["Media"]["Video"]["S3Bucket"]
-            s3key = event["Input"]["Media"]["Video"]["S3Key"]
-        elif "Image" in event["Input"]["Media"]:
-            s3bucket = event["Input"]["Media"]["Image"]["S3Bucket"]
-            s3key = event["Input"]["Media"]["Image"]["S3Key"]
         workflow_id = str(event["WorkflowExecutionId"])
         asset_id = event['AssetId']
+        if "Video" in operator_object.input["Media"]:
+            bucket = operator_object.input["Media"]["Video"]["S3Bucket"]
+            key = operator_object.input["Media"]["Video"]["S3Key"]
+            file_type = key.split('.')[-1]
+        elif "Audio" in operator_object.input["Media"]:
+            bucket = operator_object.input["Media"]["Audio"]["S3Bucket"]
+            key = operator_object.input["Media"]["Audio"]["S3Key"]
+            file_type = key.split('.')[-1]
+        elif "Image" in operator_object.input["Media"]:
+            bucket = operator_object.input["Media"]["Image"]["S3Bucket"]
+            key = operator_object.input["Media"]["Image"]["S3Key"]
+            file_type = key.split('.')[-1]
+        elif "Text" in operator_object.input["Media"]:
+            bucket = operator_object.input["Media"]["Text"]["S3Bucket"]
+            key = operator_object.input["Media"]["Text"]["S3Key"]
+            file_type = key.split('.')[-1]
     except Exception:
-        output_object.update_workflow_status("Error")
-        output_object.add_workflow_metadata(DataLookupError="No valid inputs")
-        raise MasExecutionError(output_object.return_output_object())
-    print("Processing s3://"+s3bucket+"/"+s3key)
-    valid_file_types = [".avi", ".mp4", ".mov", ".png", ".jpg", ".jpeg"]
-    file_type = os.path.splitext(s3key)[1]
-    if file_type in valid_file_types:
-        # Getting labels from S3 is a synchronous operation.
-        response = lookup_labels(s3bucket, urllib.parse.unquote_plus(s3key))
-        print("lookup response: " + str(response)[0:200] + "...")
-        if (type(response) != dict):
-            output_object.update_workflow_status("Error")
-            output_object.add_workflow_metadata(
-                DataLookupError="Metadata must be of type dict. Found " + str(type(response)) + " instead.")
-            raise MasExecutionError(output_object.return_output_object())
-        output_object.add_workflow_metadata(AssetId=asset_id,WorkflowExecutionId=workflow_id)
-        dataplane = DataPlane()
-        metadata_upload = dataplane.store_asset_metadata(asset_id, operator_name, workflow_id, response)
-        if "Status" not in metadata_upload:
-            output_object.update_workflow_status("Error")
-            output_object.add_workflow_metadata(
-                DataLookupError="Unable to upload metadata for asset: {asset}".format(asset=asset_id))
-            raise MasExecutionError(output_object.return_output_object())
+        operator_object.update_workflow_status("Error")
+        operator_object.add_workflow_metadata(GenericDataLookupError="No valid inputs")
+        raise MasExecutionError(operator_object.return_output_object())
+
+    # Get the metadata filename
+    print("Looking up metadata for s3://"+bucket+"/"+key)
+    # Use user-defined metadata filename if it exists
+    if "Filename" in operator_object.configuration:
+        metadata_filename = operator_object.configuration["Filename"]
+    else:
+        media_filename = key.split("/")[-1]
+        metadata_filename = '.'.join(media_filename.split(".")[:-1])+".json"
+
+    # Get metadata
+    s3 = boto3.client('s3')
+    try:
+        print("Getting data from s3://"+bucket+"/"+metadata_filename)
+        data = s3.get_object(Bucket=bucket, Key=metadata_filename)
+        metadata_json = json.loads(data['Body'].read().decode('utf-8'))
+    except Exception as e:
+        operator_object.update_workflow_status("Error")
+        operator_object.add_workflow_metadata(GenericDataLookupError="Unable read datafile. " + str(e))
+        raise MasExecutionError(operator_object.return_output_object())
+
+    # Verify that the metadata is a dict, as required by the dataplane
+    if (type(metadata_json) != dict):
+        operator_object.update_workflow_status("Error")
+        operator_object.add_workflow_metadata(
+            GenericDataLookupError="Metadata must be of type dict. Found " + str(type(metadata_json)) + " instead.")
+        raise MasExecutionError(operator_object.return_output_object())
+
+    # Save metadata to dataplane
+    operator_object.add_workflow_metadata(AssetId=asset_id,WorkflowExecutionId=workflow_id)
+    dataplane = DataPlane()
+    metadata_upload = dataplane.store_asset_metadata(asset_id, operator_object.name, workflow_id, metadata_json)
+
+    # Validate that the metadata was saved to the dataplane
+    if "Status" not in metadata_upload:
+        operator_object.add_workflow_metadata(
+            GenericDataLookupError="Unable to upload metadata for asset: {asset}".format(asset=asset_id))
+        operator_object.update_workflow_status("Error")
+        raise MasExecutionError(operator_object.return_output_object())
+    else:
+        # Update the workflow status
+        if metadata_upload["Status"] == "Success":
+            print("Uploaded metadata for asset: {asset}".format(asset=asset_id))
+            operator_object.update_workflow_status("Complete")
+            return operator_object.return_output_object()
         else:
-            if metadata_upload["Status"] == "Success":
-                print("Uploaded metadata for asset: {asset}".format(asset=asset_id))
-                output_object.update_workflow_status("Complete")
-                return output_object.return_output_object()
-            elif metadata_upload["Status"] == "Failed":
-                output_object.update_workflow_status("Error")
-                output_object.add_workflow_metadata(
-                    DataLookupError="Unable to upload metadata for asset: {asset}".format(asset=asset_id))
-                raise MasExecutionError(output_object.return_output_object())
-            else:
-                output_object.update_workflow_status("Error")
-                output_object.add_workflow_metadata(
-                    DataLookupError="Unable to upload metadata for asset: {asset}".format(asset=asset_id))
-                raise MasExecutionError(output_object.return_output_object())
+            operator_object.add_workflow_metadata(
+                GenericDataLookupError="Unable to upload metadata for asset: {asset}".format(asset=asset_id))
+            operator_object.update_workflow_status("Error")
+            raise MasExecutionError(operator_object.return_output_object())

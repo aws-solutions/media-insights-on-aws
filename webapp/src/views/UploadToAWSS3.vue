@@ -50,6 +50,8 @@
                 ></b-form-checkbox-group>
                 <b-form-input v-if="enabledOperators.includes('faceSearch')" v-model="faceCollectionId" placeholder="Enter face collection id"></b-form-input>
               </b-form-group>
+              <b-form-input v-if="enabledOperators.includes('genericDataLookup')" v-model="genericDataFilename" placeholder="Enter data filename"></b-form-input>
+              </b-form-group>
               <div v-if="videoFormError" style="color:red">
                 {{ videoFormError }}
               </div>
@@ -128,7 +130,7 @@ export default {
         {text: 'Content Moderation', value: 'contentModeration'},
         {text: 'Face Detection', value: 'faceDetection'},
         {text: 'Face Search', value: 'faceSearch'},
-        {text: 'Logo Detection', value: 'logoDetection'},
+        {text: 'Generic Data Lookup', value: 'genericDataLookup'},
       ],
       audioOperators: [
         {text: 'Transcribe', value: 'Transcribe'},
@@ -140,6 +142,7 @@ export default {
         {text: 'Translate', value: 'Translate'},
       ],
       faceCollectionId: "",
+      genericDataFilename: "",
       transcribeLanguage: "en-US",
       transcribeLanguages: [
         {text: 'US English', value: 'en-US'},
@@ -244,7 +247,21 @@ export default {
         }
         // Validate that the collection ID is not too long
         else if (this.faceCollectionId.length > 255) {
-          return "Face collection name have fewer than 255 characters.";
+          return "Face collection name must have fewer than 255 characters.";
+        }
+      }
+      if (this.enabledOperators.includes("genericDataLookup")) {
+        // Validate that the collection ID is defined
+        if (this.genericDataFilename === "") {
+          return "Data filename is required.";
+        }
+        // Validate that the collection ID matches required regex
+        else if (!(new RegExp('^.+\.json$')).test(this.genericDataFilename)) {
+          return "Data filename must have .json extension.";
+        }
+        // Validate that the data filename is not too long
+        else if (this.genericDataFilename.length > 255) {
+          return "Data filename must have fewer than 255 characters.";
         }
       }
       return "";
@@ -283,8 +300,9 @@ export default {
               "Enabled": false,
             },
             "GenericDataLookup": {
-              "Enabled": this.enabledOperators.includes("logoDetection"),
-            }
+              "Enabled": this.enabledOperators.includes("genericDataLookup"),
+              "Filename": this.genericDataFilename==="" ? "undefined" : this.genericDataFilename
+            },
           },
           "defaultAudioStage": {
             "Transcribe": {
@@ -332,14 +350,14 @@ export default {
     },
     s3UploadComplete: async function (location) {
       const token = await this.$Amplify.Auth.currentSession().then(data =>{
-        var accessToken = data.getIdToken().getJwtToken()
+        var accessToken = data.getIdToken().getJwtToken();
         return accessToken
-        })
+        });
       var vm = this;
-      var s3_uri = location.s3ObjectLocation.url + location.s3ObjectLocation.fields.key
+      var s3_uri = location.s3ObjectLocation.url + location.s3ObjectLocation.fields.key;
       var media_type = location.type;
-      console.log('media type: ' + media_type)
-      console.log('s3UploadComplete: ')
+      console.log('media type: ' + media_type);
+      console.log('s3UploadComplete: ');
       console.log(s3_uri)
       var data = {}
       if (media_type == 'image/jpeg') {
@@ -384,6 +402,11 @@ export default {
               }
             }
           };
+      } else if (media_type == 'application/json') {
+        // JSON files may be uploaded for the genericDataLookup operator, but
+        // we won't run a workflow for json file types.
+        console.log("Data file has been uploaded to s3://" + location.s3ObjectLocation.fields.key)
+        return;
       } else {
         vm.s3UploadError("Unsupported media type, " + media_type + ". Please upload a jpg or mp4.")
       }
@@ -460,7 +483,7 @@ export default {
     },
     uploadFiles() {
       console.log("Uploading to " + this.s3_destination);
-      console.log("Presigning URL endpoint: " + this.signurl);
+      // console.log("Presigning URL endpoint: " + this.signurl);
       this.$refs.myVueDropzone.setAWSSigningURL(this.signurl);
       this.$refs.myVueDropzone.processQueue();
     }

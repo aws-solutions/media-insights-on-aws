@@ -8,14 +8,14 @@
           variant="danger"
           dismissible
         >
-          Elasticsearch server denied access. Please check its access policy.
+          Elasticsearch error. Please check browser and elasticsearch access logs.
         </b-alert>
         <b-alert
           v-model="showDataplaneAlert"
           variant="danger"
           dismissible
         >
-          Failed to connect to dataplane. Please check access control policy in API Gateway.
+          Dataplane Error. Please check browser and dataplane logs.
         </b-alert>
         <b-alert
           v-model="showDeletedAlert"
@@ -228,6 +228,8 @@
         })
         if (response.status === 200) {
             this.showDeletedAlert = true
+            this.asset_list = []
+            this.retrieveAndFormatAsssets()
         }
         else {
             this.showDataplaneAlert = true

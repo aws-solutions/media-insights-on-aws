@@ -1,5 +1,8 @@
 <template>
   <div>
+    <div v-if='noTranscript === true'>
+        No transcript found for this asset
+    </div>
     <div v-if="isBusy">
       <b-spinner
         variant="secondary"
@@ -28,6 +31,7 @@ export default {
       transcript: "",
       isBusy: false,
       operator: "transcript",
+      noTranscript: false
     }
   },
   computed: {
@@ -49,23 +53,32 @@ export default {
       this.transcript = ''
   },
   methods: {
-    fetchAssetData () {
-      const vm = this;
-      vm.isBusy = true;
-      fetch(process.env.VUE_APP_ELASTICSEARCH_ENDPOINT+'/_search?q=AssetId:'+this.$route.params.asset_id+' _index:mietranscript&default_operator=AND&size=10000', {
-        method: 'get'
-      }).then(response =>
-        response.json().then(data => ({
-            data: data,
-            status: response.status
-          })
-        ).then(res => {
-          res.data.hits.hits.forEach(function (item) {
-            vm.transcript = item._source.transcript
-          });
-          vm.isBusy = false
-        })
-      );
+    async fetchAssetData () {
+      let query = 'AssetId:'+this.$route.params.asset_id+' Confidence:>'+this.Confidence+' Operator:'+this.operator
+      let apiName = 'mieElasticsearch';
+      let path = '/_search';
+      let apiParams = {
+        headers: {'Content-Type': 'application/json'},
+        queryStringParameters: {'q': query, 'default_operator': 'AND', 'size': 10000}
+      }
+      let response = await this.$Amplify.API.get(apiName, path, apiParams)
+      if (!response) {
+        this.showElasticSearchAlert = true
+      }
+      else {
+        let result = await response
+        let data = result.hits.hits
+        if (data.length === 0) {
+          this.noTranscript = true
+        }
+        else {
+          this.noTranscript = false
+          for (var i = 0, len = data.length; i < len; i++) {
+            this.transcript = data[i]._source.transcript
+          }
+        }
+        this.isBusy = false
+      }
     }
   }
 }

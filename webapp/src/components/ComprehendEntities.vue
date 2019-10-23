@@ -79,22 +79,26 @@ export default {
       this.Confidence = event.target.value;
       this.fetchAssetData()
     },
-    fetchAssetData () {
-      const vm = this;
-      fetch(process.env.VUE_APP_ELASTICSEARCH_ENDPOINT+'/_search?q=AssetId:'+this.$route.params.asset_id+' Confidence:>'+this.Confidence+' _index:mieentities&default_operator=AND&size=100', {
-        method: 'get'
-      }).then(response =>
-        response.json().then(data => ({
-            data: data,
-            status: response.status
-          })
-        ).then(res => {
-          res.data.hits.hits.forEach(function (item) {
-            vm.entities.push({ "EntityText": item._source.EntityText, "EntityType": item._source.EntityType, "Confidence": item._source.Confidence, "BeginOffset": item._source.BeginOffset, "EndOffset": item._source.EndOffset})
-          });
-          vm.isBusy = false
-        })
-      );
+    async fetchAssetData () {
+      let query = 'AssetId:'+this.$route.params.asset_id+' Confidence:>'+this.Confidence+' Operator:'+this.operator
+      let apiName = 'mieElasticsearch';
+      let path = '/_search';
+      let apiParams = {
+        headers: {'Content-Type': 'application/json'},
+        queryStringParameters: {'q': query, 'default_operator': 'AND', 'size': 10000}
+      }
+      let response = await this.$Amplify.API.get(apiName, path, apiParams)
+      if (!response) {
+        this.showElasticSearchAlert = true
+      }
+      else {
+        let result = await response
+        let data = result.hits.hits
+        for (var i = 0, len = data.length; i < len; i++) {
+          this.entities.push({ "EntityText": data[i]._source.EntityText, "EntityType": data[i]._source.EntityType, "Confidence": data[i]._source.Confidence, "BeginOffset": data[i]._source.BeginOffset, "EndOffset": data[i]._source.EndOffset})
+        }
+        this.isBusy = false
+      }
     }
   }
 }

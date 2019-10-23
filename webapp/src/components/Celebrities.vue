@@ -18,6 +18,9 @@
           {{ Confidence }}%<br>
         </div>
       </b-row>
+      <div v-if='lowerConfidence === true'>
+        {{ lowerConfidenceMessage }}
+      </div>
       <div
         v-if="isBusy"
         class="wrapper"
@@ -107,7 +110,9 @@
         operator: 'celebrity_detection',
         canvasRefreshInterval: undefined,
         timeseries: new Map(),
-        selectedLabel: ''
+        selectedLabel: '',
+        noResults: false,
+        lowerConfidenceMessage: 'Try lowering confidence threshold'
       }
     },
     computed: {
@@ -225,23 +230,36 @@
         this.player.markers.removeAll();
         this.player.markers.add(markers);
       },
-      fetchAssetData () {
-        fetch(process.env.VUE_APP_ELASTICSEARCH_ENDPOINT+'/_search?q=AssetId:'+this.$route.params.asset_id+' Confidence:>'+this.Confidence+' Operator:'+this.operator+'&default_operator=AND&size=10000', {
-          method: 'get'
-        }).then(response =>
-          response.json().then(data => ({
-              data: data,
-              status: response.status
-            })
-          ).then(res => {
-            var es_data = [];
-            res.data.hits.hits.forEach(function (item) {
-              es_data.push(item._source)
-            });
-            this.elasticsearch_data = JSON.parse(JSON.stringify( es_data ))
-            this.isBusy = false
-          })
-        );
+      async fetchAssetData () {
+        let query = 'AssetId:'+this.$route.params.asset_id+' Confidence:>'+this.Confidence+' Operator:'+this.operator
+        let apiName = 'mieElasticsearch';
+        let path = '/_search';
+        let apiParams = {
+          headers: {'Content-Type': 'application/json'},
+          queryStringParameters: {'q': query, 'default_operator': 'AND', 'size': 10000}
+        }
+        let response = await this.$Amplify.API.get(apiName, path, apiParams)
+        if (!response) {
+          this.showElasticSearchAlert = true
+        }
+        else {
+          let es_data = []
+          let result = await response
+          let data = result.hits.hits
+          if (data.length === 0 && this.Confidence > 55) {
+            this.lowerConfidence = true
+            this.lowerConfidenceMessage = 'Try lowering confidence threshold'
+          }
+          else {
+            this.lowerConfidence = false
+            this.noResults = false
+            for (var i = 0, len = data.length; i < len; i++) {
+              es_data.push(data[i]._source)
+            }
+          }
+          this.elasticsearch_data = JSON.parse(JSON.stringify(es_data))
+          this.isBusy = false
+        }
       },
       drawBoxes: function(boxMap) {
         var canvas = document.getElementById('canvas');

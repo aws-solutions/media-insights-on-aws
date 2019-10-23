@@ -27,6 +27,7 @@ from botocore.exceptions import ClientError
 import re
 import os
 import time
+import subprocess
 
 # DEFAULT test environment.
 # Override these with environment variables at runtime.
@@ -103,7 +104,6 @@ def uploaded_media():
         else:
           # This workaround is needed to avoid an InvalidLocationConstraint error when region is us-east-1
           # see: https://github.com/boto/boto3/issues/125
-          import subprocess
           subprocess.run(["aws", "s3", "mb", "s3://"+BUCKET_NAME, "--region", REGION])
     except ClientError as e:
         logging.error(e)

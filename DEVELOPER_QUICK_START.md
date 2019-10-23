@@ -277,12 +277,7 @@ export WORKFLOW_API_ENDPOINT=$(aws cloudformation describe-stacks --stack-name $
 
 Get the token like this:
 ```
-VENV=$(mktemp -d); python3 -m venv $VENV; source $VENV/bin/activate; pip install boto3; python3 $MIE_DEVELOPMENT_HOME/tests/getAccessToken.py; deactivate; rm -rf $VENV
-```
-
-Copy the token shown at the bottom of the output from that command to an environment variable:
-```
-export MIE_ACCESS_TOKEN=" paste token here"
+export MIE_ACCESS_TOKEN=$(VENV=$(mktemp -d); python3 -m venv $VENV; source $VENV/bin/activate; pip --disable-pip-version-check install -q boto3; python3 $MIE_DEVELOPMENT_HOME/tests/getAccessToken.py | tail -n 1; deactivate; rm -rf $VENV)
 ```
 
 Now you can `curl` MIE APIs with the `-H "Authorization: $MIE_ACCESS_TOKEN"` option.  

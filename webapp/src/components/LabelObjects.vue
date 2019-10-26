@@ -91,6 +91,9 @@
 
   export default {
     name: "LabelObjects",
+    props: {
+      mediaType: "",
+    },
     components: {
       Loading
     },
@@ -214,14 +217,28 @@
               for (let i=0; i<record.Instances.length; i++) {
                 const item = record.Instances[i];
                 // Use time resolution of 0.1 second
-                const timestamp = Math.round(record.Timestamp/100);
-                const boxinfo = {'instance':i, 'timestamp':Math.ceil(record.Timestamp/100), 'name':record.Name, 'confidence':(record.Confidence * 1).toFixed(2), 'x':item.BoundingBox.Left*canvas.width, 'y':item.BoundingBox.Top*canvas.height, 'width':item.BoundingBox.Width*canvas.width, 'height':item.BoundingBox.Height*canvas.height};
-                // If there are multiple bounding boxes for this instance at this
-                // timestamp, then save them together in an array.
-                if (boxMap.has(timestamp)) {
-                  boxMap.get(timestamp).push(boxinfo)
+                if (this.mediaType === "image/jpg") {
+                  const timestamp = i
+                  const boxinfo = {
+                    'instance': i,
+                    'name': record.Name,
+                    'confidence': (record.Confidence * 1).toFixed(2),
+                    'x': item.BoundingBox.Left * canvas.width,
+                    'y': item.BoundingBox.Top * canvas.height,
+                    'width': item.BoundingBox.Width * canvas.width,
+                    'height': item.BoundingBox.Height * canvas.height
+                  };
+                  boxMap.set(i, [boxinfo])
                 } else {
-                  boxMap.set(timestamp, [boxinfo])
+                  const timestamp = Math.round(record.Timestamp/100);
+                  const boxinfo = {'instance':i, 'timestamp':Math.ceil(record.Timestamp/100), 'name':record.Name, 'confidence':(record.Confidence * 1).toFixed(2), 'x':item.BoundingBox.Left*canvas.width, 'y':item.BoundingBox.Top*canvas.height, 'width':item.BoundingBox.Width*canvas.width, 'height':item.BoundingBox.Height*canvas.height};
+                  // If there are multiple bounding boxes for this instance at this
+                  // timestamp, then save them together in an array.
+                  if (boxMap.has(timestamp)) {
+                    boxMap.get(timestamp).push(boxinfo)
+                  } else {
+                    boxMap.set(timestamp, [boxinfo])
+                  }
                 }
               }
             }
@@ -230,9 +247,12 @@
         if (boxMap.size > 0) {
           this.drawBoxes(boxMap);
         }
-        // redraw markers on video timeline
-        this.player.markers.removeAll();
-        this.player.markers.add(markers);
+        // TODO: add mediaType filtering throughout this file
+        if (this.mediaType === "video/mp4") {
+          // redraw markers on video timeline
+          this.player.markers.removeAll();
+          this.player.markers.add(markers);
+        }
       },
       fetchAssetData () {
         fetch(process.env.VUE_APP_ELASTICSEARCH_ENDPOINT+'/_search?q=AssetId:'+this.$route.params.asset_id+' Confidence:>'+this.Confidence+' Operator:'+this.operator+'&default_operator=AND&size=10000', {
@@ -255,6 +275,26 @@
       drawBoxes: function(boxMap) {
         var canvas = document.getElementById('canvas');
         var ctx = canvas.getContext('2d');
+        if (this.mediaType === "image/jpg") {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.beginPath();
+          ctx.strokeStyle = "red";
+          ctx.font = "15px Arial";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillStyle = "red";
+          // For each box instance...
+          boxMap.forEach( i => {
+            var drawMe = i[0];
+            if (drawMe) {
+              ctx.rect(drawMe.x, drawMe.y, drawMe.width, drawMe.height);
+              // Draw object name and confidence score
+              ctx.fillText(drawMe.name + " (" + drawMe.confidence + "%)", (drawMe.x + drawMe.width / 2), drawMe.y - 10);
+              ctx.stroke();
+            }
+          });
+          return
+        }
         // If user just clicked a new label...
         if (this.canvasRefreshInterval != undefined) {
           // ...then reset the old canvas refresh interval.

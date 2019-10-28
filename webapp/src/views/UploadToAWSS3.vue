@@ -52,8 +52,7 @@
                   name="flavour-1"
                 ></b-form-checkbox-group>
                 <b-form-input v-if="enabledOperators.includes('faceSearch')" v-model="faceCollectionId" placeholder="Enter face collection id"></b-form-input>
-              </b-form-group>
-              <b-form-input v-if="enabledOperators.includes('genericDataLookup')" v-model="genericDataFilename" placeholder="Enter data filename"></b-form-input>
+                <b-form-input v-if="enabledOperators.includes('genericDataLookup')" v-model="genericDataFilename" placeholder="Enter data filename"></b-form-input>
               </b-form-group>
               <div v-if="videoFormError" style="color:red">
                 {{ videoFormError }}

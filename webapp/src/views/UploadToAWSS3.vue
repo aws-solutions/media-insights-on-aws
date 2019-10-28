@@ -4,25 +4,25 @@
     <br>
     <b-container>
       <b-alert
-          :show="dismissCountDown"
-          dismissible
-          variant="danger"
-          @dismissed="dismissCountDown=0"
-          @dismiss-count-down="countDownChanged"
+        :show="dismissCountDown"
+        dismissible
+        variant="danger"
+        @dismissed="dismissCountDown=0"
+        @dismiss-count-down="countDownChanged"
       >
         {{ uploadErrorMessage }}
       </b-alert>
       <h1>Upload Videos</h1>
       <p>{{ description }}</p>
       <vue-dropzone
-          id="dropzone"
-          ref="myVueDropzone"
-          :awss3="awss3"
-          :options="dropzoneOptions"
-          @vdropzone-s3-upload-error="s3UploadError"
-          @vdropzone-success="s3UploadComplete"
-          @vdropzone-sending="upload_in_progress=true"
-          @vdropzone-queue-complete="upload_in_progress=false"
+        id="dropzone"
+        ref="myVueDropzone"
+        :awss3="awss3"
+        :options="dropzoneOptions"
+        @vdropzone-s3-upload-error="s3UploadError"
+        @vdropzone-success="s3UploadComplete"
+        @vdropzone-sending="upload_in_progress=true"
+        @vdropzone-queue-complete="upload_in_progress=false"
       />
       <br>
       <b-button v-b-toggle.collapse-2 class="m-1">
@@ -46,10 +46,10 @@
             <b-card header="Video Operators">
               <b-form-group>
                 <b-form-checkbox-group
-                    id="checkbox-group-1"
-                    v-model="enabledOperators"
-                    :options="videoOperators"
-                    name="flavour-1"
+                  id="checkbox-group-1"
+                  v-model="enabledOperators"
+                  :options="videoOperators"
+                  name="flavour-1"
                 ></b-form-checkbox-group>
                 <b-form-input v-if="enabledOperators.includes('faceSearch')" v-model="faceCollectionId" placeholder="Enter face collection id"></b-form-input>
               </b-form-group>
@@ -62,10 +62,10 @@
             <b-card header="Audio Operators">
               <b-form-group>
                 <b-form-checkbox-group
-                    id="checkbox-group-2"
-                    v-model="enabledOperators"
-                    :options="audioOperators"
-                    name="flavour-2"
+                  id="checkbox-group-2"
+                  v-model="enabledOperators"
+                  :options="audioOperators"
+                  name="flavour-2"
                 ></b-form-checkbox-group>
                 <div v-if="enabledOperators.includes('Transcribe')">
                   <label>Source Language</label>
@@ -79,10 +79,10 @@
             <b-card header="Text Operators">
               <b-form-group>
                 <b-form-checkbox-group
-                    id="checkbox-group-3"
-                    v-model="enabledOperators"
-                    :options="textOperators"
-                    name="flavour-3"
+                  id="checkbox-group-3"
+                  v-model="enabledOperators"
+                  :options="textOperators"
+                  name="flavour-3"
                 ></b-form-checkbox-group>
                 <div v-if="enabledOperators.includes('Translate')">
                   <label>Translation Source Language</label>
@@ -102,13 +102,13 @@
     <br>
     <b-container class="bv-example-row">
       <b-table
-          striped
-          bordered
-          hover
-          small
-          responsive
-          fixed
-          :items="executed_assets"
+        striped
+        bordered
+        hover
+        small
+        responsive
+        fixed
+        :items="executed_assets"
       />
     </b-container>
   </div>
@@ -259,7 +259,7 @@
             return "Data filename is required.";
           }
           // Validate that the collection ID matches required regex
-          else if (!(new RegExp('^.+\.json$')).test(this.genericDataFilename)) {
+          else if (!(new RegExp('^.+\\.json$')).test(this.genericDataFilename)) {
             return "Data filename must have .json extension.";
           }
           // Validate that the data filename is not too long

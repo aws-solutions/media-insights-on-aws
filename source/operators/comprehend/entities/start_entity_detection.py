@@ -3,12 +3,15 @@
 
 import os
 import boto3
+from botocore import config
 import json
 from MediaInsightsEngineLambdaHelper import MediaInsightsOperationHelper
 from MediaInsightsEngineLambdaHelper import MasExecutionError
 from MediaInsightsEngineLambdaHelper import DataPlane
 
-comprehend = boto3.client('comprehend')
+mie_config = json.loads(os.environ['botoConfig'])
+config = config.Config(**mie_config)
+comprehend = boto3.client('comprehend', config=config)
 s3 = boto3.client('s3')
 comprehend_role = os.environ['comprehendRole']
 region = os.environ['AWS_REGION']

@@ -11,6 +11,8 @@
 
 import os
 import boto3
+import json
+from botocore import config
 from MediaInsightsEngineLambdaHelper import OutputHelper
 from MediaInsightsEngineLambdaHelper import MasExecutionError
 from MediaInsightsEngineLambdaHelper import DataPlane
@@ -18,6 +20,9 @@ from MediaInsightsEngineLambdaHelper import DataPlane
 operator_name = os.environ['OPERATOR_NAME']
 output_object = OutputHelper(operator_name)
 
+mie_config = json.loads(os.environ['botoConfig'])
+config = config.Config(**mie_config)
+rek = boto3.client('rekognition', config=config)
 
 def lambda_handler(event, context):
     try:
@@ -42,7 +47,6 @@ def lambda_handler(event, context):
         raise MasExecutionError(output_object.return_output_object())
 
     # Check rekognition job status:
-    rek = boto3.client('rekognition')
     dataplane = DataPlane()
     max_results = 1000
     pagination_token = ''

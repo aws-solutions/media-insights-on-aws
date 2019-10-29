@@ -9,6 +9,7 @@
 
 import os
 import json
+from botocore import config
 import urllib
 import boto3
 from MediaInsightsEngineLambdaHelper import OutputHelper
@@ -19,10 +20,13 @@ from MediaInsightsEngineLambdaHelper import DataPlane
 operator_name = os.environ['OPERATOR_NAME']
 output_object = OutputHelper(operator_name)
 
+mie_config = json.loads(os.environ['botoConfig'])
+config = config.Config(**mie_config)
+rek = boto3.client('rekognition', config=config)
+
 
 # Detect faces in an image
 def detect_faces(bucket, key):
-    rek = boto3.client('rekognition')
     try:
         response = rek.detect_moderation_labels(Image={'S3Object':{'Bucket':bucket, 'Name':key}})
     except Exception as e:
@@ -34,7 +38,6 @@ def detect_faces(bucket, key):
 
 # Detects faces in a video
 def start_face_detection(bucket, key):
-    rek = boto3.client('rekognition')
     try:
         response = rek.start_face_detection(
             Video={

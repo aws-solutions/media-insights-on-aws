@@ -3,10 +3,14 @@
 
 import boto3
 import json
+import os
+from botocore import config
 from MediaInsightsEngineLambdaHelper import MediaInsightsOperationHelper
 from MediaInsightsEngineLambdaHelper import MasExecutionError
 
-polly = boto3.client('polly')
+mie_config = json.loads(os.environ['botoConfig'])
+config = config.Config(**mie_config)
+polly = boto3.client('polly', config=config)
 s3 = boto3.client('s3')
 
 # TODO: Move voiceid to a user configurable variable

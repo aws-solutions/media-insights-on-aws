@@ -513,6 +513,7 @@ Resources:
           OPERATOR_NAME: "comprehendStartKeyPhrases"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           comprehendRole: !GetAtt comprehendS3Role.Arn
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
 
   getKeyPhrases:
     Type: "AWS::Lambda::Function"
@@ -538,6 +539,7 @@ Resources:
           OPERATOR_NAME: "comprehendGetKeyPhrases"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           comprehendRole: !GetAtt comprehendS3Role.Arn
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
 
   startEntityDetection:
     Type: "AWS::Lambda::Function"
@@ -563,6 +565,7 @@ Resources:
           OPERATOR_NAME: "comprehendStartEntityDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           comprehendRole: !GetAtt comprehendS3Role.Arn
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
 
   getEntityDetection:
     Type: "AWS::Lambda::Function"
@@ -588,6 +591,7 @@ Resources:
           OPERATOR_NAME: "comprehendEntityDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           comprehendRole: !GetAtt comprehendS3Role.Arn
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
 
 
   # Rekognition
@@ -618,6 +622,7 @@ Resources:
           OPERATOR_NAME: "celebrityRecognition"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
 
   checkCelebrityRecognition:
     Type: "AWS::Lambda::Function"
@@ -644,6 +649,7 @@ Resources:
           OPERATOR_NAME: "celebrityRecognition"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
 
   startContentModeration:
     Type: "AWS::Lambda::Function"
@@ -671,6 +677,7 @@ Resources:
           OPERATOR_NAME: "contentModeration"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
 
   checkContentModeration:
     Type: "AWS::Lambda::Function"
@@ -697,6 +704,7 @@ Resources:
           OPERATOR_NAME: "contentModeration"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
 
   startFaceDetection:
     Type: "AWS::Lambda::Function"
@@ -724,6 +732,7 @@ Resources:
           OPERATOR_NAME: "faceDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
 
   checkFaceDetection:
     Type: "AWS::Lambda::Function"
@@ -750,6 +759,7 @@ Resources:
           OPERATOR_NAME: "faceDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
 
   startFaceSearch:
     Type: "AWS::Lambda::Function"
@@ -777,6 +787,7 @@ Resources:
           OPERATOR_NAME: "faceSearch"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
 
   checkFaceSearch:
     Type: "AWS::Lambda::Function"
@@ -803,6 +814,7 @@ Resources:
           OPERATOR_NAME: "faceSearch"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
 
   startLabelDetection:
     Type: "AWS::Lambda::Function"
@@ -830,6 +842,7 @@ Resources:
           OPERATOR_NAME: "labelDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
 
   checkLabelDetection:
     Type: "AWS::Lambda::Function"
@@ -856,6 +869,7 @@ Resources:
           OPERATOR_NAME: "labelDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
 
   startPersonTracking:
     Type: "AWS::Lambda::Function"
@@ -881,6 +895,7 @@ Resources:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
           REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
           OPERATOR_NAME: "personTracking"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
 
   checkPersonTracking:
     Type: "AWS::Lambda::Function"
@@ -907,6 +922,7 @@ Resources:
           OPERATOR_NAME: "personTracking"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
 
   # Mediaconvert Lambdas
 
@@ -981,6 +997,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
 
   CheckTranscribeFunction:
     Type: "AWS::Lambda::Function"
@@ -1004,6 +1021,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
 
   # Create Web Captions Lambda
 
@@ -1153,6 +1171,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
 
   # Polly Lambdas
 
@@ -1178,6 +1197,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
 
   CheckPollyFunction:
     Type: "AWS::Lambda::Function"
@@ -1201,6 +1221,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
 
   # Register as operators in the control plane
 

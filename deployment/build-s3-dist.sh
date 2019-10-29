@@ -766,6 +766,7 @@ echo "create lambda package"
 # All the Python dependencies for Rekognition functions are in the Lambda layer, so
 # we can deploy the zipped source file without dependencies.
 
+zip -r9 generic_data_lookup.zip generic_data_lookup.py
 zip -r9 start_celebrity_recognition.zip start_celebrity_recognition.py
 zip -r9 check_celebrity_recognition_status.zip check_celebrity_recognition_status.py
 zip -r9 start_content_moderation.zip start_content_moderation.py

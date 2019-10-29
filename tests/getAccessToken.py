@@ -44,7 +44,13 @@ else:
     logging.error(error)
     sys.exit(1)
 
-cognito = boto3.client('cognito-idp', region_name=region)
+if 'AWS_PROFILE' in os.environ:
+    profile = str(os.environ['AWS_PROFILE'])
+else:
+    profile = 'default'
+
+session = boto3.session.Session(profile_name=profile)
+cognito = session.client('cognito-idp', region_name=region)
 
 
 def main():

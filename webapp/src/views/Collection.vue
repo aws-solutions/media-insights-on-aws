@@ -72,6 +72,7 @@
                     hover
                     fixed
                     responsive
+                    show-empty
                     :fields="fields"
                     :items="asset_list"
                     :sort-by.sync="sortBy"

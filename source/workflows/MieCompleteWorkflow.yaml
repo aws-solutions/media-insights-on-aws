@@ -22,6 +22,8 @@ Resources:
       Name: "defaultVideoStage"
       Operations:
         - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:GenericDataLookup"
+        - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:CelebRecognition"
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:ContentModeration"

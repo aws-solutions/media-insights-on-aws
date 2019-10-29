@@ -365,9 +365,9 @@
         var data = {}
         if (media_type == 'image/jpeg') {
           data = {
-            "Name": "ParallelRekognitionWorkflowImage",
+            "Name": "ImageWorkflow",
             "Configuration": {
-              "parallelRekognitionStageImage": {
+              "RekognitionStage": {
                 "faceSearchImage": {
                   "Enabled": this.enabledOperators.includes("faceSearch"),
                   "CollectionId": this.faceCollectionId === "" ? "undefined" : this.faceCollectionId

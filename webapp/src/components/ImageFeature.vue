@@ -2,8 +2,8 @@
   <b-container fluid>
     <b-img id="imageFeature" fluid :src="image_url" @load="onImageLoad"></b-img>
     <canvas
-        id="canvas"
-        class="canvas"
+      id="canvas"
+      class="canvas"
     />
   </b-container>
 </template>
@@ -48,8 +48,6 @@ export default {
       canvas.height = image_feature.clientHeight;
     },
   },
-  beforeUpdate: function () {
-  }
 }
 </script>
 

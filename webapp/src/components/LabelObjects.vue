@@ -91,11 +91,14 @@
 
   export default {
     name: "LabelObjects",
-    props: {
-      mediaType: "",
-    },
     components: {
       Loading
+    },
+    props: {
+      mediaType: {
+        type: String,
+        default: ""
+      },
     },
     data() {
       return {
@@ -186,7 +189,10 @@
       updateConfidence (event) {
         this.isBusy = true
         this.Confidence = event.target.value;
-        this.player.markers.removeAll();
+        if (this.mediaType === "video/mp4") {
+          // redraw markers on video timeline
+          this.player.markers.removeAll();
+        }
         this.fetchAssetData()
       },
       updateMarkers (label) {
@@ -216,9 +222,9 @@
               // Iterate through all the boxes recorded for the label at this time
               for (let i=0; i<record.Instances.length; i++) {
                 const item = record.Instances[i];
-                // Use time resolution of 0.1 second
+                // TODO: move image processing to a separate component
                 if (this.mediaType === "image/jpg") {
-                  const timestamp = i
+                  // use timestamp to index boxes in the boxMap collection
                   const boxinfo = {
                     'instance': i,
                     'name': record.Name,
@@ -230,6 +236,7 @@
                   };
                   boxMap.set(i, [boxinfo])
                 } else {
+                  // Use time resolution of 0.1 second
                   const timestamp = Math.round(record.Timestamp/100);
                   const boxinfo = {'instance':i, 'timestamp':Math.ceil(record.Timestamp/100), 'name':record.Name, 'confidence':(record.Confidence * 1).toFixed(2), 'x':item.BoundingBox.Left*canvas.width, 'y':item.BoundingBox.Top*canvas.height, 'width':item.BoundingBox.Width*canvas.width, 'height':item.BoundingBox.Height*canvas.height};
                   // If there are multiple bounding boxes for this instance at this
@@ -247,7 +254,7 @@
         if (boxMap.size > 0) {
           this.drawBoxes(boxMap);
         }
-        // TODO: add mediaType filtering throughout this file
+        // TODO: move image processing to a separate component
         if (this.mediaType === "video/mp4") {
           // redraw markers on video timeline
           this.player.markers.removeAll();
@@ -275,6 +282,7 @@
       drawBoxes: function(boxMap) {
         var canvas = document.getElementById('canvas');
         var ctx = canvas.getContext('2d');
+        // TODO: move image processing to a separate component
         if (this.mediaType === "image/jpg") {
           ctx.clearRect(0, 0, canvas.width, canvas.height);
           ctx.beginPath();
@@ -293,6 +301,7 @@
               ctx.stroke();
             }
           });
+          // now return so we avoid rendering any of the video related components below
           return
         }
         // If user just clicked a new label...

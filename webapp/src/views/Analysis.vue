@@ -52,6 +52,7 @@
                   </b-container>
                 </b-tab>
                 <b-tab
+                  v-if="mediaType !== 'image/jpg'"
                   title="Speech Recognition"
                   @click="currentView = 'Transcript'; speechTabs = 0"
                 >
@@ -237,15 +238,8 @@
       ...mapState(['Confidence'])
     },
     created() {
-          this.checkServerAccess();
-          this.getAssetMetadata();
-      },
-    mounted() {
-      // Set canvas size to image size
-      var canvas = document.getElementById('canvas');
-      var image = document.getElementById('featured_image');
-      // canvas.width = image.clientWidth;
-      // canvas.height = image.clientHeight;
+      this.checkServerAccess();
+      this.getAssetMetadata();
     },
     methods: {
       async getAssetMetadata () {

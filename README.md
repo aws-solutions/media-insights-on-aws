@@ -57,7 +57,28 @@ The default settings for the template are configured to deploy the sample web ap
 
 ## Required parameters
 
-**ApiIpList**  A CIDR block that indicates which internet addresses can access the MIE APIs and Elasticsearch UI, Kibana. For example, 192.168.100.14/24 represents the IPv4 address 192.168.100.14 and its associated routing prefix 192.168.100.0, while the CIDR block 0.0.0.0/0 indicates the APIs are open to requests from all internet addresses. 
+**Stack Name**: Name of stack. Defaults to `mie`.
+
+**System Configuration**
+* **MaxConcurrentWorkflows**: Maximum number of workflows to run concurrently. When the maximum is reached, additional workflows are added to a wait queue. Defaults to `10`.
+
+* **ApiIpList**:  A CIDR block that indicates which internet addresses can access the MIE APIs and Elasticsearch UI, Kibana. For example, 192.168.100.14/24 represents the IPv4 address 192.168.100.14 and its associated routing prefix 192.168.100.0, while the CIDR block 0.0.0.0/0 indicates the APIs are open to requests from all internet addresses. 
+
+**Operators** 
+* **Enable Operator Library Deployment**: If set to true, deploys the operator library. Defaults to `true`.
+
+**Workflows**
+* **DeployTestWorkflow**: If set to true, deploys test workflow which contains operator, stage and workflow stubs for integration testing. Defaults to `false`.
+* **DeployInstantTranslateWorkflow**: If set to true, deploys Instant Translate Workflow which takes a video as input and transcribes, translates and creates an audio file in the new language. Defaults to `false`.
+* **DeployRekognitionWorkflow**: If set to true, deploys Rekognition Workflows which takes a video as input and transcribes, translates and creates an audio file in the new language. Defaults to `false`.
+* **DeployComprehendWorkflow**: If set to true, deploys a Comprehend Workflow which takes text as input and identifies key entities and phrases. Defaults to `false`.
+* **DeployKitchenSinkWorkflow**: If set to true, deploys the Kitchen Sink Workflow which contains all MIE operators. Defaults to `true`.
+
+**Sample Applications**
+* **DeployDemoSite**: If set to true, deploys a front end application to explore extracted metadata. Defaults to `true`.
+
+**Other parameters**
+* **DeployAnalyticsPipeline**: If set to true, deploys a metadata streaming pipeline that can be consumed by downstream analytics plaforms. Defaults to `true`.
 
 ## Outputs
 

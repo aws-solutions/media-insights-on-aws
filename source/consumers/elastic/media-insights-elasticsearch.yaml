@@ -29,9 +29,6 @@ Parameters:
     Description: "The number of nodes in the Elasticsearch cluster."
     Type: Number
     Default: 2
-  AccessCidr:
-    Type: String
-    Description: "CIDR Block that will have access to kibana / elasticsearch"
   MieDataplaneBucket:
     Type: String
     Description: "Name of the dataplane bucket"
@@ -42,6 +39,9 @@ Parameters:
   AnalyticsStreamArn:
     Description: "Arn of the MIE kinesis data stream"
     Type: String
+  MIEAdminRoleArn:
+    Type: String
+
 
 Conditions:
   DeployESCluster: !Equals [!Ref DeployElasticsearch, Yes]
@@ -53,9 +53,10 @@ Mappings:
             KeyPrefix: "media-insights-solution/%%VERSION%%/code"
 
 Resources:
-  # elastic seach cluster
+  # elastic search cluster
 
   # TODO: Best Practice - Resource found with an explicit name, this disallows updates that require replacement of this resource
+
   ESDomain:
     Type: "AWS::Elasticsearch::Domain"
     Condition: DeployESCluster
@@ -64,14 +65,13 @@ Resources:
         Version: "2012-10-17"
         Statement:
           - Effect: Allow
-            Principal: "*"
+            Principal:
+              AWS:
+                - !Ref MIEAdminRoleArn
             Action:
-              - es:*
-            Condition:
-              IpAddress:
-                aws:SourceIp: !Ref AccessCidr
+              - "es:ESHttpGet"
             Resource:
-              - !Join ["", ["arn:aws:es:", !Ref "AWS::Region", ":", !Ref "AWS::AccountId", ":domain/", "mie-es/*"]]
+              - !Join ["", ["arn:aws:es:", !Ref "AWS::Region", ":", !Ref "AWS::AccountId", ":domain/", "mie-es/_search"]]
           - Effect: Allow
             Principal:
               AWS:

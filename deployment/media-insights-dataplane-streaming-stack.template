@@ -24,6 +24,8 @@ Parameters:
   DataplaneBucket:
     Type: String
     Description: "Dataplane bucket"
+  MieAdminRole:
+    Type: String
 
 Mappings: 
   SourceCode:
@@ -138,6 +140,7 @@ Resources:
         AnalyticsStreamArn: !GetAtt AnalyticsStream.Arn
         MieDataplaneBucket: !Ref DataplaneBucket
         AccessCidr: !Ref AccessIpList
+        MIEAdminRoleArn: !Ref MieAdminRole
 
 Outputs:
   ElasticUrl:

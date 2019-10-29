@@ -43,7 +43,7 @@
       <b-collapse id="collapse-2">
         <b-container class="text-left">
           <b-card-group deck>
-            <b-card header="Video Operators">
+            <b-card header="Video and Image Operators">
               <b-form-group>
                 <b-form-checkbox-group
                   id="checkbox-group-1"
@@ -132,7 +132,7 @@
           {text: 'Content Moderation', value: 'contentModeration'},
           {text: 'Face Detection', value: 'faceDetection'},
           {text: 'Face Search', value: 'faceSearch'},
-          {text: 'Generic Data Lookup', value: 'genericDataLookup'},
+          {text: 'Generic Data Lookup (video only)', value: 'genericDataLookup'},
         ],
         audioOperators: [
           {text: 'Transcribe', value: 'Transcribe'},

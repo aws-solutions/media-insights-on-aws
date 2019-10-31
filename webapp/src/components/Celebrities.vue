@@ -18,7 +18,7 @@
           {{ Confidence }}%<br>
         </div>
       </b-row>
-      <div v-if='lowerConfidence === true'>
+      <div v-if="lowerConfidence === true">
         {{ lowerConfidenceMessage }}
       </div>
       <div

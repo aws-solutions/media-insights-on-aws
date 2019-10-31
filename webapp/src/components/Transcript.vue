@@ -1,7 +1,7 @@
 <template>
   <div>
-    <div v-if='noTranscript === true'>
-        No transcript found for this asset
+    <div v-if="noTranscript === true">
+      No transcript found for this asset
     </div>
     <div v-if="isBusy">
       <b-spinner

@@ -378,11 +378,12 @@
         let token = await this.getAccessToken()
         for (var i = 0, len = assets.length; i < len; i++) {
           // check if from search collection or retrieve and format
+          var assetId;
           if (typeof assets[i] === 'object') {
-            var assetId = assets[i].asset_id
+            assetId = assets[i].asset_id
             }
           else {
-            var assetId = assets[i]
+            assetId = assets[i]
           }
           let assetInfo = await this.getAssetInformation(token, assetId)
           let created = new Date(0);

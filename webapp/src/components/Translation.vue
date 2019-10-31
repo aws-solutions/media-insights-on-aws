@@ -1,7 +1,7 @@
 <template>
   <div>
-    <div v-if='noTranslation === true'>
-        No translation found for this asset
+    <div v-if="noTranslation === true">
+      No translation found for this asset
     </div>
     <div
       v-if="isBusy"
@@ -16,9 +16,8 @@
       </p>
     </div>
     <div
-      v-else
+      v-else-if="noTranslation === false"
       class="wrapper"
-      v-if='noTranslation === false'
     >
       <label>Source Language:</label> {{ source_language }}<br>
       <label>Target Language:</label> {{ target_language }}<br>

@@ -84,7 +84,7 @@ export default {
         this.fetchAssetData()
     },
     async fetchAssetData () {
-      let query = 'AssetId:'+this.$route.params.asset_id+' Confidence:>'+this.Confidence+' Operator:'+this.operator
+      let query = 'AssetId:'+this.$route.params.asset_id+' Confidence:>'+this.Confidence+' _index:miekey_phrases'
       let apiName = 'mieElasticsearch';
       let path = '/_search';
       let apiParams = {

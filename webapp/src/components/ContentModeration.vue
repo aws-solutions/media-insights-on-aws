@@ -80,6 +80,12 @@
     components: {
       Loading
     },
+    props: {
+      mediaType: {
+        type: String,
+        default: ""
+      },
+    },
     data() {
       return {
         Confidence: 90,
@@ -154,7 +160,11 @@
       updateConfidence (event) {
         this.isBusy = !this.isBusy
         this.Confidence = event.target.value;
-        this.player.markers.removeAll();
+        // TODO: move image processing to a separate component
+        if (this.mediaType === "video/mp4") {
+          // redraw markers on video timeline
+          this.player.markers.removeAll();
+        }
         this.fetchAssetData()
       },
       updateMarkers (label) {
@@ -167,8 +177,12 @@
             markers.push({'time': record.Timestamp/1000, 'text': record.Name, 'overlayText': record.Name})
           }
         });
-        this.player.markers.removeAll();
-        this.player.markers.add(markers);
+        // TODO: move image processing to a separate component
+        if (this.mediaType === "video/mp4") {
+          // redraw markers on video timeline
+          this.player.markers.removeAll();
+          this.player.markers.add(markers);
+        }
       },
       async fetchAssetData () {
           let query = 'AssetId:'+this.$route.params.asset_id+' Confidence:>'+this.Confidence+' Operator:'+this.operator

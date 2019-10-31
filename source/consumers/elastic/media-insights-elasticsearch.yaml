@@ -70,6 +70,7 @@ Resources:
                 - !Ref MIEAdminRoleArn
             Action:
               - "es:ESHttpGet"
+              - "es:ESHttpPost"
             Resource:
               - !Join ["", ["arn:aws:es:", !Ref "AWS::Region", ":", !Ref "AWS::AccountId", ":domain/", "mie-es/_search"]]
           - Effect: Allow

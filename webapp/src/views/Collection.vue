@@ -111,13 +111,6 @@
                     </p>
                   </div>
                   <div
-                    v-if="noSearchResults"
-                  >
-                    <p> 
-                      No search results found
-                    </p>
-                  </div>
-                  <div
                     v-if="isBusy"
                     class="wrapper"
                   >
@@ -162,7 +155,6 @@
         showDataplaneAlert: false,
         showDeletedAlert: false,
         totalRows: 1,
-        noSearchResults: null,
         noAssets: null,
         currentPage: 1,
         perPage: 10,

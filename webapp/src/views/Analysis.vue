@@ -52,6 +52,7 @@
                   </b-container>
                 </b-tab>
                 <b-tab
+                  v-if="mediaType !== 'image/jpg'"
                   title="Speech Recognition"
                   @click="currentView = 'Transcript'; speechTabs = 0"
                 >
@@ -83,7 +84,7 @@
           </div>
           <div>
             <keep-alive>
-              <component :is="currentView">
+              <component :is="currentView" :mediaType="mediaType">
                 <!-- inactive components will be cached! -->
               </component>
             </keep-alive>
@@ -91,7 +92,13 @@
         </b-col>
         <b-col>
           <div v-if="mediaType === 'image/jpg'">
-            <img width="90%" :src="videoOptions.sources[0].src">
+            <!-- TODO: rename videoOptions since its not always a video -->
+            <div v-if="videoOptions.sources[0].src === ''">
+              <Loading />
+            </div>
+            <div v-else>
+              <ImageFeature :options="videoOptions" />
+            </div>
           </div>
           <div v-else>
             <div v-if="videoOptions.sources[0].src === ''">
@@ -120,6 +127,7 @@
 <script>
   import Header from '@/components/Header.vue'
   import VideoPlayer from '@/components/VideoPlayer.vue'
+  import ImageFeature from '@/components/ImageFeature.vue'
   import Loading from '@/components/Loading.vue'
   import ComponentLoadingError from '@/components/ComponentLoadingError.vue'
   import MediaSummaryBox from '@/components/MediaSummaryBox.vue'
@@ -134,6 +142,7 @@
       MediaSummaryBox,
       Loading,
       VideoPlayer,
+      ImageFeature,
       LineChart,
       LabelObjects: () => ({
         component: new Promise(function(resolve) {
@@ -229,9 +238,9 @@
       ...mapState(['Confidence'])
     },
     created() {
-          this.checkServerAccess();
-          this.getAssetMetadata();
-      },
+      this.checkServerAccess();
+      this.getAssetMetadata();
+    },
     methods: {
       async getAssetMetadata () {
           const token = await this.$Amplify.Auth.currentSession().then(data =>{

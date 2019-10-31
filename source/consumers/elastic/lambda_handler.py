@@ -33,6 +33,8 @@ def process_celebrity_detection(asset, workflow, results):
     extracted_items = []
     if isinstance(metadata, list):
         for page in metadata:
+            # Parse schema for videos:
+            # https://docs.aws.amazon.com/rekognition/latest/dg/celebrities-video-sqs.html
             if "Celebrities" in page:
                 for item in page["Celebrities"]:
                     try:
@@ -60,7 +62,25 @@ def process_celebrity_detection(asset, workflow, results):
                     except KeyError as e:
                         print("KeyError: " + str(e))
                         print("Item: " + json.dumps(item))
+            # Parse schema for images:
+            # https://docs.aws.amazon.com/rekognition/latest/dg/API_RecognizeCelebrities.html
+            if "CelebrityFaces" in page:
+                for item in page["CelebrityFaces"]:
+                    try:
+                        item["Operator"] = "celebrity_detection"
+                        item["Workflow"] = workflow
+                        if "Face" in item:
+                            # flatten the inner Face array
+                            item["Confidence"] = item["Face"]["Confidence"]
+                            item["BoundingBox"] = item["Face"]["BoundingBox"]
+                            # delete flattened array
+                            del item["Face"]
+                        extracted_items.append(item)
+                    except KeyError as e:
+                        print("KeyError: " + str(e))
+                        print("Item: " + json.dumps(item))
     else:
+        # Parse schema for videos:
         if "Celebrities" in metadata:
             for item in metadata["Celebrities"]:
                 try:
@@ -83,6 +103,22 @@ def process_celebrity_detection(asset, workflow, results):
                         item['URL'] = url
                         # delete flattened array
                         del item["Celebrity"]
+                    extracted_items.append(item)
+                except KeyError as e:
+                    print("KeyError: " + str(e))
+                    print("Item: " + json.dumps(item))
+        # Parse schema for images:
+        if "CelebrityFaces" in metadata:
+            for item in metadata["CelebrityFaces"]:
+                try:
+                    item["Operator"] = "celebrity_detection"
+                    item["Workflow"] = workflow
+                    if "Face" in item:
+                        # flatten the inner Face array
+                        item["Confidence"] = item["Face"]["Confidence"]
+                        item["BoundingBox"] = item["Face"]["BoundingBox"]
+                        # delete flattened array
+                        del item["Face"]
                     extracted_items.append(item)
                 except KeyError as e:
                     print("KeyError: " + str(e))
@@ -221,6 +257,7 @@ def process_face_detection(asset, workflow, results):
     extracted_items = []
     if isinstance(metadata, list):
         for page in metadata:
+            # Parse schema for video:
             if "Faces" in page:
                 for item in page["Faces"]:
                     try:
@@ -246,7 +283,14 @@ def process_face_detection(asset, workflow, results):
                     except KeyError as e:
                         print("KeyError: " + str(e))
                         print("Item: " + json.dumps(item))
+            # Parse schema for images:
+            if "FaceDetails" in page:
+                for item in page["FaceDetails"]:
+                    item["Operator"] = "face_detection"
+                    item["Workflow"] = workflow
+                    extracted_items.append(item)
     else:
+        # Parse schema for videos:
         if "Faces" in metadata:
             for item in metadata["Faces"]:
                 try:
@@ -272,6 +316,12 @@ def process_face_detection(asset, workflow, results):
                 except KeyError as e:
                     print("KeyError: " + str(e))
                     print("Item: " + json.dumps(item))
+        # Parse schema for images:
+        if "FaceDetails" in metadata:
+            for item in metadata["FaceDetails"]:
+                item["Operator"] = "face_detection"
+                item["Workflow"] = workflow
+                extracted_items.append(item)
     bulk_index(es, asset, "face_detection", extracted_items)
 
 def process_logo_detection(asset, workflow, results):

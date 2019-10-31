@@ -47,9 +47,9 @@ def start_frame_workflows(nframes, stack_resources):
     print("starting {} workflows".format(nframes))
 
     body = {
-        "Name":"ParallelRekognitionWorkflowImage",
+        "Name":"ImageWorkflow",
         "Configuration": {
-            "parallelRekognitionStageImage": {
+            "RekognitionStage": {
                 "faceSearchImage": {
                     "MediaType": "Image",
                     "Enabled": False,

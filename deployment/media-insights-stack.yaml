@@ -1080,7 +1080,6 @@ Resources:
           ],
         ]
       Parameters:
-        ApiIpList: !Ref ApiIpList
         DataplaneTableName: !Ref DataplaneTable
         DataplaneBucketName: !Ref Dataplane
         UserPoolArn: !GetAtt MieUserPool.Arn
@@ -1119,7 +1118,6 @@ Resources:
         DynamoTableArn: !GetAtt DataplaneTable.Arn
         DeployElasticConsumer: Yes
         DataplaneBucket: !Ref Dataplane
-        AccessIpList: !Ref ApiIpList
         MieAdminRole: !GetAtt MieDeveloperRole.Arn
 
   # Workflow creation and execution API
@@ -1137,7 +1135,6 @@ Resources:
           ],
         ]
       Parameters:
-        ApiIpList: !Ref ApiIpList
         UserPoolArn: !GetAtt MieUserPool.Arn
         StageExecutionQueueUrl: !Ref StageExecutionQueue
         StageExecutionRole: !GetAtt StepFunctionRole.Arn

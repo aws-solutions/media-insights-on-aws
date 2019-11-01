@@ -29,12 +29,6 @@
             Collection
           </b-nav-item>
           <b-nav-item
-            :href="`${elasticsearch_endpoint}/_plugin/kibana/`"
-            target="_blank"
-          >
-            Analytics
-          </b-nav-item>
-          <b-nav-item
             href="https://w.amazon.com/bin/view/Media_insights_engine/#overview"
             disabled
           >

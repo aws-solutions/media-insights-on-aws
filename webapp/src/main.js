@@ -11,9 +11,9 @@ import router from './router.js'
 
 import Amplify, * as AmplifyModules from "aws-amplify";
 import { AmplifyPlugin } from "aws-amplify-vue";
-import awsauth from "@/aws-exports";
+import awsconfig from "@/aws-exports";
 
-Amplify.configure(awsauth);
+Amplify.configure(awsconfig);
 
 Vue.config.productionTip = false
 

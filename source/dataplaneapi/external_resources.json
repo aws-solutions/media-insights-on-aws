@@ -1,9 +1,5 @@
 {
   "Parameters": {
-    "ApiIpList": {
-      "Type": "String",
-      "Description": "Deprecated parameter - used for declaring an IP based resource policy"
-    },
     "DataplaneTableName": {
       "Type": "String",
       "Description": "Table used for storing asset metadata"

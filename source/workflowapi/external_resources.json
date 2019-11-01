@@ -8,10 +8,6 @@
       "Type": "String",
       "Description": "S3 Key of the dataplane deployment package"
     },
-    "ApiIpList": {
-      "Type": "String",
-      "Description": "Deprecated parameter - used for declaring an IP based resource policy"
-    },
     "SystemTableName": {
       "Type": "String",
       "Description": "Table used to store system configuration"

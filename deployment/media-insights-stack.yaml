@@ -56,7 +56,7 @@ Parameters:
   DeployRekognitionWorkflow:
     Description: Deploy Rekognition Workflows which takes a video as input and transcribes, translates and creates an audio file in the new language
     Type: String
-    Default: No
+    Default: Yes
     AllowedValues:
       - Yes
       - No

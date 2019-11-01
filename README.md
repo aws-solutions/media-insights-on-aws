@@ -50,8 +50,8 @@ Deploy the demo architecture and application in your AWS account and start explo
 
 Region| Launch
 ------|-----
-US East (N. Virginia) | [![Launch in us-east-1](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-east-1.s3.amazonaws.com/media-insights-solution/v0.1.2/cf/media-insights-stack.template)
-US West (Oregon) | [![Launch in us-west-2](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-west-2.s3.amazonaws.com/media-insights-solution/v0.1.2/cf/media-insights-stack.template)
+US East (N. Virginia) | [![Launch in us-east-1](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-east-1.s3.amazonaws.com/media-insights-solution/v0.1.3/cf/media-insights-stack.template)
+US West (Oregon) | [![Launch in us-west-2](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-west-2.s3.amazonaws.com/media-insights-solution/v0.1.3/cf/media-insights-stack.template)
 
 The default settings for the template are configured to deploy the sample web application and all the back-end components it requires.  In addition, you must set the required parameter below.
 
@@ -61,8 +61,6 @@ The default settings for the template are configured to deploy the sample web ap
 
 **System Configuration**
 * **MaxConcurrentWorkflows**: Maximum number of workflows to run concurrently. When the maximum is reached, additional workflows are added to a wait queue. Defaults to `10`.
-
-* **ApiIpList**:  A CIDR block that indicates which internet addresses can access the MIE APIs and Elasticsearch UI, Kibana. For example, 192.168.100.14/24 represents the IPv4 address 192.168.100.14 and its associated routing prefix 192.168.100.0, while the CIDR block 0.0.0.0/0 indicates the APIs are open to requests from all internet addresses. 
 
 **Operators** 
 * **Enable Operator Library Deployment**: If set to true, deploys the operator library. Defaults to `true`.

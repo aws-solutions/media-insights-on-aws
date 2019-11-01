@@ -50,14 +50,33 @@ Deploy the demo architecture and application in your AWS account and start explo
 
 Region| Launch
 ------|-----
-US East (N. Virginia) | [![Launch in us-east-1](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-east-1.s3.amazonaws.com/media-insights-solution/v0.1.2/cf/media-insights-stack.template)
-US West (Oregon) | [![Launch in us-west-2](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-west-2.s3.amazonaws.com/media-insights-solution/v0.1.2/cf/media-insights-stack.template)
+US East (N. Virginia) | [![Launch in us-east-1](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-east-1.s3.amazonaws.com/media-insights-solution/v0.1.3/cf/media-insights-stack.template)
+US West (Oregon) | [![Launch in us-west-2](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-west-2.s3.amazonaws.com/media-insights-solution/v0.1.3/cf/media-insights-stack.template)
 
 The default settings for the template are configured to deploy the sample web application and all the back-end components it requires.  In addition, you must set the required parameter below.
 
 ## Required parameters
 
-**ApiIpList**  A CIDR block that indicates which internet addresses can access the MIE APIs and Elasticsearch UI, Kibana. For example, 192.168.100.14/24 represents the IPv4 address 192.168.100.14 and its associated routing prefix 192.168.100.0, while the CIDR block 0.0.0.0/0 indicates the APIs are open to requests from all internet addresses. 
+**Stack Name**: Name of stack. Defaults to `mie`.
+
+**System Configuration**
+* **MaxConcurrentWorkflows**: Maximum number of workflows to run concurrently. When the maximum is reached, additional workflows are added to a wait queue. Defaults to `10`.
+
+**Operators** 
+* **Enable Operator Library Deployment**: If set to true, deploys the operator library. Defaults to `true`.
+
+**Workflows**
+* **DeployTestWorkflow**: If set to true, deploys test workflow which contains operator, stage and workflow stubs for integration testing. Defaults to `false`.
+* **DeployInstantTranslateWorkflow**: If set to true, deploys Instant Translate Workflow which takes a video as input and transcribes, translates and creates an audio file in the new language. Defaults to `false`.
+* **DeployRekognitionWorkflow**: If set to true, deploys Rekognition Workflows which takes a video as input and transcribes, translates and creates an audio file in the new language. Defaults to `false`.
+* **DeployComprehendWorkflow**: If set to true, deploys a Comprehend Workflow which takes text as input and identifies key entities and phrases. Defaults to `false`.
+* **DeployKitchenSinkWorkflow**: If set to true, deploys the Kitchen Sink Workflow which contains all MIE operators. Defaults to `true`.
+
+**Sample Applications**
+* **DeployDemoSite**: If set to true, deploys a front end application to explore extracted metadata. Defaults to `true`.
+
+**Other parameters**
+* **DeployAnalyticsPipeline**: If set to true, deploys a metadata streaming pipeline that can be consumed by downstream analytics plaforms. Defaults to `true`.
 
 ## Outputs
 

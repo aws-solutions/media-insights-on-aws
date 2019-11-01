@@ -18,6 +18,9 @@
           {{ Confidence }}%<br>
         </div>
       </b-row>
+      <div v-if="lowerConfidence === true">
+        {{ lowerConfidenceMessage }}
+      </div>
       <div
         v-if="isBusy"
         class="wrapper"
@@ -94,6 +97,12 @@
     components: {
       Loading
     },
+    props: {
+      mediaType: {
+        type: String,
+        default: ""
+      },
+    },
     data() {
       return {
         Confidence: 90,
@@ -106,7 +115,9 @@
         operator: 'label_detection',
         canvasRefreshInterval: undefined,
         timeseries: new Map(),
-        selectedLabel: ''
+        selectedLabel: '',
+        lowerConfidenceMessage: 'Try lowering confidence threshold',
+        lowerConfidence: false
       }
     },
     computed: {
@@ -140,7 +151,6 @@
       },
     },
     deactivated: function () {
-      console.log('deactivated component:', this.operator);
       this.boxes_available = [];
       this.selectedLabel = '';
       clearInterval(this.canvasRefreshInterval);
@@ -149,7 +159,6 @@
       if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
     },
     activated: function () {
-      console.log('activated component:', this.operator);
       this.fetchAssetData();
     },
     beforeDestroy: function () {
@@ -183,7 +192,10 @@
       updateConfidence (event) {
         this.isBusy = true
         this.Confidence = event.target.value;
-        this.player.markers.removeAll();
+        if (this.mediaType === "video/mp4") {
+          // redraw markers on video timeline
+          this.player.markers.removeAll();
+        }
         this.fetchAssetData()
       },
       updateMarkers (label) {
@@ -213,15 +225,30 @@
               // Iterate through all the boxes recorded for the label at this time
               for (let i=0; i<record.Instances.length; i++) {
                 const item = record.Instances[i];
-                // Use time resolution of 0.1 second
-                const timestamp = Math.round(record.Timestamp/100);
-                const boxinfo = {'instance':i, 'timestamp':Math.ceil(record.Timestamp/100), 'name':record.Name, 'confidence':(record.Confidence * 1).toFixed(2), 'x':item.BoundingBox.Left*canvas.width, 'y':item.BoundingBox.Top*canvas.height, 'width':item.BoundingBox.Width*canvas.width, 'height':item.BoundingBox.Height*canvas.height};
-                // If there are multiple bounding boxes for this instance at this
-                // timestamp, then save them together in an array.
-                if (boxMap.has(timestamp)) {
-                  boxMap.get(timestamp).push(boxinfo)
+                // TODO: move image processing to a separate component
+                if (this.mediaType === "image/jpg") {
+                  // use timestamp to index boxes in the boxMap collection
+                  const boxinfo = {
+                    'instance': i,
+                    'name': record.Name,
+                    'confidence': (record.Confidence * 1).toFixed(2),
+                    'x': item.BoundingBox.Left * canvas.width,
+                    'y': item.BoundingBox.Top * canvas.height,
+                    'width': item.BoundingBox.Width * canvas.width,
+                    'height': item.BoundingBox.Height * canvas.height
+                  };
+                  boxMap.set(i, [boxinfo])
                 } else {
-                  boxMap.set(timestamp, [boxinfo])
+                  // Use time resolution of 0.1 second
+                  const timestamp = Math.round(record.Timestamp/100);
+                  const boxinfo = {'instance':i, 'timestamp':Math.ceil(record.Timestamp/100), 'name':record.Name, 'confidence':(record.Confidence * 1).toFixed(2), 'x':item.BoundingBox.Left*canvas.width, 'y':item.BoundingBox.Top*canvas.height, 'width':item.BoundingBox.Width*canvas.width, 'height':item.BoundingBox.Height*canvas.height};
+                  // If there are multiple bounding boxes for this instance at this
+                  // timestamp, then save them together in an array.
+                  if (boxMap.has(timestamp)) {
+                    boxMap.get(timestamp).push(boxinfo)
+                  } else {
+                    boxMap.set(timestamp, [boxinfo])
+                  }
                 }
               }
             }
@@ -230,31 +257,68 @@
         if (boxMap.size > 0) {
           this.drawBoxes(boxMap);
         }
-        // redraw markers on video timeline
-        this.player.markers.removeAll();
-        this.player.markers.add(markers);
+        // TODO: move image processing to a separate component
+        if (this.mediaType === "video/mp4") {
+          // redraw markers on video timeline
+          this.player.markers.removeAll();
+          this.player.markers.add(markers);
+        }
       },
-      fetchAssetData () {
-        fetch(process.env.VUE_APP_ELASTICSEARCH_ENDPOINT+'/_search?q=AssetId:'+this.$route.params.asset_id+' Confidence:>'+this.Confidence+' Operator:'+this.operator+'&default_operator=AND&size=10000', {
-          method: 'get'
-        }).then(response =>
-          response.json().then(data => ({
-              data: data,
-              status: response.status
-            })
-          ).then(res => {
-            var es_data = [];
-            res.data.hits.hits.forEach(function (item) {
-              es_data.push(item._source)
-            });
-            this.elasticsearch_data = JSON.parse(JSON.stringify( es_data ))
+      async fetchAssetData () {
+          let query = 'AssetId:'+this.$route.params.asset_id+' Confidence:>'+this.Confidence+' Operator:'+this.operator
+          let apiName = 'mieElasticsearch';
+          let path = '/_search';
+          let apiParams = {
+            headers: {'Content-Type': 'application/json'},
+            queryStringParameters: {'q': query, 'default_operator': 'AND', 'size': 10000}
+          }
+          let response = await this.$Amplify.API.get(apiName, path, apiParams)
+          if (!response) {
+            this.showElasticSearchAlert = true
+          }
+          else {
+            let es_data = []
+            let result = await response
+            let data = result.hits.hits
+            if (data.length === 0 && this.Confidence > 55) {
+                this.lowerConfidence = true
+                this.lowerConfidenceMessage = 'Try lowering confidence threshold'
+            }
+            else {
+              this.lowerConfidence = false
+              for (var i = 0, len = data.length; i < len; i++) {
+                es_data.push(data[i]._source)
+              }
+            }
+            this.elasticsearch_data = JSON.parse(JSON.stringify(es_data))
             this.isBusy = false
-          })
-        );
+        }
       },
       drawBoxes: function(boxMap) {
         var canvas = document.getElementById('canvas');
         var ctx = canvas.getContext('2d');
+        // TODO: move image processing to a separate component
+        if (this.mediaType === "image/jpg") {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.beginPath();
+          ctx.strokeStyle = "red";
+          ctx.font = "15px Arial";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillStyle = "red";
+          // For each box instance...
+          boxMap.forEach( i => {
+            var drawMe = i[0];
+            if (drawMe) {
+              ctx.rect(drawMe.x, drawMe.y, drawMe.width, drawMe.height);
+              // Draw object name and confidence score
+              ctx.fillText(drawMe.name + " (" + drawMe.confidence + "%)", (drawMe.x + drawMe.width / 2), drawMe.y - 10);
+              ctx.stroke();
+            }
+          });
+          // now return so we avoid rendering any of the video related components below
+          return
+        }
         // If user just clicked a new label...
         if (this.canvasRefreshInterval != undefined) {
           // ...then reset the old canvas refresh interval.

@@ -28,7 +28,7 @@ rek = boto3.client('rekognition', config=config)
 # Detect faces in an image
 def detect_faces(bucket, key):
     try:
-        response = rek.detect_moderation_labels(Image={'S3Object':{'Bucket':bucket, 'Name':key}})
+        response = rek.detect_faces(Image={'S3Object':{'Bucket':bucket, 'Name':key}})
     except Exception as e:
         output_object.update_workflow_status("Error")
         output_object.add_workflow_metadata(FaceDetectionError=str(e))

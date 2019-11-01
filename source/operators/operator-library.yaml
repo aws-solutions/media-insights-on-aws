@@ -35,6 +35,34 @@ Resources:
 
   # IAM Roles:
 
+  genericDataLookupLambdaRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action:
+              - "sts:AssumeRole"
+            Effect: "Allow"
+            Principal:
+              Service: "lambda.amazonaws.com"
+      Policies:
+        - PolicyName: "GenericDataLookupLambdaAccess"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  - "s3:GetObject"
+                  - "s3:PutObject"
+                Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
+                Effect: "Allow"
+              - Action: "lambda:InvokeFunction"
+                Resource: !Ref DataPlaneHandlerArn
+                Effect: "Allow"
+
   mediaConvertS3Role:
     Type: "AWS::IAM::Role"
     Properties:
@@ -432,6 +460,32 @@ Resources:
                 Effect: "Allow"
 
   # Lambda functions
+
+  # This is a generic Lambda function for getting metadata from JSON file in S3:
+  startGenericDataLookup:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "generic_data_lookup.lambda_handler"
+      Layers:
+        - !Ref MediaInsightsEnginePython37Layer
+      Role: !GetAtt genericDataLookupLambdaRole.Arn
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "generic_data_lookup.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Timeout: 300
+      Environment:
+        Variables:
+          OPERATOR_NAME: "GenericDataLookup"
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DataLookupRole: !GetAtt genericDataLookupLambdaRole.Arn
 
   # Comprehend
 
@@ -1171,6 +1225,17 @@ Resources:
 
   # Register as operators in the control plane
 
+  GenericDataLookupOperation:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "GenericDataLookup"
+      Type: "Sync"
+      Configuration: { "MediaType": "Video", "Enabled": true }
+      StartLambdaArn: !GetAtt startGenericDataLookup.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
   MediaconvertOperation:
     Type: Custom::CustomResource
     Properties:
@@ -1434,6 +1499,11 @@ Resources:
   # Export operator names as outputs
 
 Outputs:
+  GenericDataLookupOperation:
+    Description: "Operation name of GenericDataLookup"
+    Value: !GetAtt GenericDataLookupOperation.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", GenericDataLookup]]
   MediaconvertOperation:
     Description: "Operation name of mediaconvert"
     Value: !GetAtt MediaconvertOperation.Name

@@ -26,8 +26,13 @@ except ClientError as e:
     print(e.response['Error']['Message'])
 '''
 
+formatter = logging.Formatter('{%(pathname)s:%(lineno)d} %(levelname)s - %(message)s')
+handler = logging.StreamHandler()
+handler.setFormatter(formatter)
+
 logger = logging.getLogger('boto3')
 logger.setLevel(logging.INFO)
+logger.addHandler(handler)
 
 app_name = 'dataplaneapi'
 app = Chalice(app_name=app_name)

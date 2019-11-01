@@ -18,6 +18,9 @@
           {{ Confidence }}%<br>
         </div>
       </b-row>
+      <div v-if="lowerConfidence === true">
+        {{ lowerConfidenceMessage }}
+      </div>
       <div
         v-if="isBusy"
         class="wrapper"
@@ -77,6 +80,12 @@
     components: {
       Loading
     },
+    props: {
+      mediaType: {
+        type: String,
+        default: ""
+      },
+    },
     data() {
       return {
         Confidence: 90,
@@ -88,6 +97,8 @@
         operator: 'content_moderation',
         timeseries: new Map(),
         selectedLabel: '',
+        lowerConfidence: false,
+        lowerConfidenceMessage: 'Try lowering confidence threshold'
       }
     },
     computed: {
@@ -149,7 +160,11 @@
       updateConfidence (event) {
         this.isBusy = !this.isBusy
         this.Confidence = event.target.value;
-        this.player.markers.removeAll();
+        // TODO: move image processing to a separate component
+        if (this.mediaType === "video/mp4") {
+          // redraw markers on video timeline
+          this.player.markers.removeAll();
+        }
         this.fetchAssetData()
       },
       updateMarkers (label) {
@@ -162,26 +177,43 @@
             markers.push({'time': record.Timestamp/1000, 'text': record.Name, 'overlayText': record.Name})
           }
         });
-        this.player.markers.removeAll();
-        this.player.markers.add(markers);
+        // TODO: move image processing to a separate component
+        if (this.mediaType === "video/mp4") {
+          // redraw markers on video timeline
+          this.player.markers.removeAll();
+          this.player.markers.add(markers);
+        }
       },
-      fetchAssetData () {
-        fetch(process.env.VUE_APP_ELASTICSEARCH_ENDPOINT+'/_search?q=AssetId:'+this.$route.params.asset_id+' Confidence:>'+this.Confidence+' Operator:'+this.operator+'&default_operator=AND&size=10000', {
-          method: 'get'
-        }).then(response =>
-          response.json().then(data => ({
-              data: data,
-              status: response.status
-            })
-          ).then(res => {
-            var es_data = [];
-            res.data.hits.hits.forEach(function (item) {
-              es_data.push(item._source)
-            });
-            this.elasticsearch_data = JSON.parse(JSON.stringify( es_data ))
+      async fetchAssetData () {
+          let query = 'AssetId:'+this.$route.params.asset_id+' Confidence:>'+this.Confidence+' Operator:'+this.operator
+          let apiName = 'mieElasticsearch';
+          let path = '/_search';
+          let apiParams = {
+            headers: {'Content-Type': 'application/json'},
+            queryStringParameters: {'q': query, 'default_operator': 'AND', 'size': 10000}
+          }
+          let response = await this.$Amplify.API.get(apiName, path, apiParams)
+          if (!response) {
+            this.showElasticSearchAlert = true
+          }
+          else {
+            let es_data = []
+            let result = await response
+            let data = result.hits.hits
+            let dataLength = data.length
+            if (dataLength === 0 && this.Confidence > 55)  {
+              this.lowerConfidence = true
+              this.lowerConfidenceMessage = 'Try lowering confidence threshold'
+            }
+            else {
+              this.lowerConfidence = false
+              for (var i = 0, len = dataLength; i < len; i++) {
+                es_data.push(data[i]._source)
+              }
+            }
+            this.elasticsearch_data = JSON.parse(JSON.stringify(es_data))
             this.isBusy = false
-          })
-        );
+        }
       },
       chartData() {
         var timeseries = new Map();

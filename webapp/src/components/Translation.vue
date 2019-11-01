@@ -1,5 +1,8 @@
 <template>
   <div>
+    <div v-if="noTranslation === true">
+      No translation found for this asset
+    </div>
     <div
       v-if="isBusy"
       class="wrapper"
@@ -13,7 +16,7 @@
       </p>
     </div>
     <div
-      v-else
+      v-else-if="noTranslation === false"
       class="wrapper"
     >
       <label>Source Language:</label> {{ source_language }}<br>
@@ -32,7 +35,8 @@ export default {
       source_language: "",
       target_language: "",
       isBusy: false,
-      operator: "translation"
+      operator: "translation",
+      noTranslation: false
     }
   },
   deactivated: function () {
@@ -48,24 +52,34 @@ export default {
       this.target_language = ""
     },
   methods: {
-    fetchAssetData () {
-      const vm = this;
-      fetch(process.env.VUE_APP_ELASTICSEARCH_ENDPOINT+'/_search?q=AssetId:'+this.$route.params.asset_id+' _index:mietranslation&default_operator=AND&size=10000', {
-        method: 'get'
-      }).then(response =>
-        response.json().then(data => ({
-            data: data,
-            status: response.status
-          })
-        ).then(res => {
-          res.data.hits.hits.forEach(function (item) {
-            vm.translated_text = item._source.TranslatedText
-            vm.source_language = item._source.SourceLanguageCode
-            vm.target_language = item._source.TargetLanguageCode
-          });
-          vm.isBusy = false
-        })
-      );
+    async fetchAssetData () {
+      let query = 'AssetId:'+this.$route.params.asset_id+ ' _index:mietranslation'
+      let apiName = 'mieElasticsearch';
+      let path = '/_search';
+      let apiParams = {
+        headers: {'Content-Type': 'application/json'},
+        queryStringParameters: {'q': query, 'default_operator': 'AND', 'size': 10000}
+      }
+      let response = await this.$Amplify.API.get(apiName, path, apiParams)
+      if (!response) {
+        this.showElasticSearchAlert = true
+      }
+      else {
+        let result = await response
+        let data = result.hits.hits
+        if (data.length === 0) {
+          this.noTranslation = true
+        }
+        else {
+          this.noTranslation = false
+          for (var i = 0, len = data.length; i < len; i++) {
+            this.translated_text = data[i]._source.TranslatedText
+            this.source_language = data[i]._source.SourceLanguageCode
+            this.target_language = data[i]._source.TargetLanguageCode
+          }
+        }
+        this.isBusy = false
+      }
     }
   }
 }

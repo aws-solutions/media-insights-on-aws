@@ -56,7 +56,7 @@ Parameters:
   DeployRekognitionWorkflow:
     Description: Deploy Rekognition Workflows which takes a video as input and transcribes, translates and creates an audio file in the new language
     Type: String
-    Default: No
+    Default: Yes
     AllowedValues:
       - Yes
       - No
@@ -86,12 +86,6 @@ Parameters:
   #    AllowedValues:
   #      - Yes
   #      - No
-  ApiIpList:
-    Type: String
-    Description:
-      CIDR block string.  Indicates which internet addresses can access the MIE APIs.
-      For example, 192.168.100.14/24 represents the IPv4 address 192.168.100.14 and its associated routing prefix
-      192.168.100.0, while the CIDR block 0.0.0.0/0 indicates the APIs are open to requests from all internet addresses.
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -109,7 +103,6 @@ Metadata:
         Parameters:
           - AdminEmail
           - MaxConcurrentWorkflows
-          - ApiIpList
       - Label:
           default: Operators
         Parameters:
@@ -608,7 +601,7 @@ Resources:
 
   # Services - S3
   # TODO: Best Practice - S3 Bucket should have access logging configured, S3 Bucket should have encryption option set
-  DataplaneBucket:
+  Dataplane:
     Type: "AWS::S3::Bucket"
     DeletionPolicy: Retain
     Properties:
@@ -691,6 +684,12 @@ Resources:
       EmailConfiguration:
         EmailSendingAccount: 'COGNITO_DEFAULT'
       AutoVerifiedAttributes: ['email']
+
+  MieCognitoDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: !Ref Dataplane
+      UserPoolId: !Ref MieUserPool
 
   MieAdminClient:
     Type: AWS::Cognito::UserPoolClient
@@ -1081,9 +1080,8 @@ Resources:
           ],
         ]
       Parameters:
-        ApiIpList: !Ref ApiIpList
         DataplaneTableName: !Ref DataplaneTable
-        DataplaneBucketName: !Ref DataplaneBucket
+        DataplaneBucketName: !Ref Dataplane
         UserPoolArn: !GetAtt MieUserPool.Arn
         DeploymentPackageBucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         DeploymentPackageKey:
@@ -1119,8 +1117,8 @@ Resources:
             - StreamArn
         DynamoTableArn: !GetAtt DataplaneTable.Arn
         DeployElasticConsumer: Yes
-        DataplaneBucket: !Ref DataplaneBucket
-        AccessIpList: !Ref ApiIpList
+        DataplaneBucket: !Ref Dataplane
+        MieAdminRole: !GetAtt MieDeveloperRole.Arn
 
   # Workflow creation and execution API
   MediaInsightsWorkflowApi:
@@ -1137,7 +1135,6 @@ Resources:
           ],
         ]
       Parameters:
-        ApiIpList: !Ref ApiIpList
         UserPoolArn: !GetAtt MieUserPool.Arn
         StageExecutionQueueUrl: !Ref StageExecutionQueue
         StageExecutionRole: !GetAtt StepFunctionRole.Arn
@@ -1168,7 +1165,7 @@ Resources:
           Fn::GetAtt:
             - MediaInsightsDataplaneApiStack
             - Outputs.APIHandlerArn
-        DataPlaneBucket: !Ref DataplaneBucket
+        DataPlaneBucket: !Ref Dataplane
         OperatorFailedHandlerLambdaArn: !GetAtt OperatorFailedLambda.Arn
         DeploymentPackageBucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         DeploymentPackageKey:
@@ -1212,7 +1209,7 @@ Resources:
             - Outputs.WorkflowCustomResourceArn
         DataPlaneEndpoint: !GetAtt MediaInsightsDataplaneApiStack.Outputs.APIHandlerName
         DataPlaneHandlerArn: !GetAtt MediaInsightsDataplaneApiStack.Outputs.APIHandlerArn
-        DataPlaneBucket: !Ref DataplaneBucket
+        DataPlaneBucket: !Ref Dataplane
         MediaInsightsEnginePython37Layer: !Ref MediaInsightsEnginePython37Layer
 
   TestWorkflow:
@@ -1242,7 +1239,7 @@ Resources:
           Fn::GetAtt:
             - MediaInsightsDataplaneApiStack
             - Outputs.APIHandlerName
-        DataPlaneBucket: !Ref DataplaneBucket
+        DataPlaneBucket: !Ref Dataplane
         MediaInsightsEnginePython37Layer: !Ref MediaInsightsEnginePython37Layer
         StepfunctionRole: !GetAtt StepFunctionRole.Arn
 
@@ -1394,7 +1391,7 @@ Resources:
         DataplaneEndpoint: !GetAtt MediaInsightsDataplaneApiStack.Outputs.EndpointURL
         WorkflowEndpoint: !GetAtt MediaInsightsWorkflowApi.Outputs.EndpointURL
         ElasticEndpoint: !GetAtt Analytics.Outputs.ElasticUrl
-        DataplaneBucket: !Ref DataplaneBucket
+        DataplaneBucket: !Ref Dataplane
         UserPoolId: !Ref MieUserPool
         IdentityPoolId: !Ref MieIdentityPool
         AwsRegion: !Ref "AWS::Region"
@@ -1430,7 +1427,7 @@ Resources:
 Outputs:
   DataplaneBucket:
     Description: Bucket used to store transfomred media object from workflow execution
-    Value: !Ref DataplaneBucket
+    Value: !Ref Dataplane
     Export:
       Name: !Join [":", [!Ref "AWS::StackName", DataplaneBucket]]
   DataplaneApiEndpoint:

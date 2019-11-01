@@ -94,6 +94,12 @@
     components: {
       Loading
     },
+    props: {
+      mediaType: {
+        type: String,
+        default: ""
+      },
+    },
     data() {
       return {
         Confidence: 90,
@@ -159,6 +165,72 @@
       this.count_labels = 0;
     },
     methods: {
+      async fetchAssetData () {
+          let query = 'AssetId:'+this.$route.params.asset_id+' Confidence:>'+this.Confidence+' Operator:'+this.operator
+          let apiName = 'mieElasticsearch';
+          let path = '/_search';
+          let apiParams = {
+            headers: {'Content-Type': 'application/json'},
+            queryStringParameters: {'q': query, 'default_operator': 'AND', 'size': 10000}
+          }
+          let response = await this.$Amplify.API.get(apiName, path, apiParams)
+          if (!response) {
+            this.showElasticSearchAlert = true
+          }
+          else {
+            let result = await response
+            let data = result.hits.hits
+            let es_data = [];
+            for (var i = 0, len = data.length; i < len; i++) {
+              let item = data[i]._source
+              // need to also loop thru emotions
+              for (var emotion = 0, emotionsLen = item.Emotions.length; emotion < emotionsLen; emotion++) {
+                if (item.Emotions[emotion].Confidence >= this.Confidence) {
+                  es_data.push({"Name": item.Emotions[emotion].Type, "Timestamp": item.Timestamp})
+                }
+              }
+              if (item.Beard.Value == true) {
+                if (item.Beard.Confidence > this.Confidence) {
+                  es_data.push({"Name": "Beard", "Timestamp": item.Timestamp})
+                }
+              }
+              if (item.Eyeglasses.Value == true) {
+                if (item.Eyeglasses.Confidence > this.Confidence) {
+                  es_data.push({"Name": "Eyeglasses", "Timestamp": item.Timestamp})
+                }
+              }
+              if (item.EyesOpen.Value == true) {
+                if (item.EyesOpen.Confidence > this.Confidence) {
+                  es_data.push({"Name": "EyesOpen", "Timestamp": item.Timestamp})
+                }
+              }
+              if (item.MouthOpen.Value == true) {
+                if (item.MouthOpen.Confidence > this.Confidence) {
+                  es_data.push({"Name": "MouthOpen", "Timestamp": item.Timestamp})
+                }
+              }
+              if (item.Mustache.Value == true) {
+                if (item.Mustache.Confidence > this.Confidence) {
+                  es_data.push({"Name": "Mustache", "Timestamp": item.Timestamp})
+                }
+              }
+              if (item.Smile.Value == true) {
+                if (item.Smile.Confidence > this.Confidence) {
+                  es_data.push({"Name": "Smile", "Timestamp": item.Timestamp})
+                }
+              }
+              if (item.Sunglasses.Value == true) {
+                if (item.Sunglasses.Confidence > this.Confidence) {
+                  es_data.push({"Name": "Sunglasses", "Timestamp": item.Timestamp})
+                }
+              }
+              es_data.push({"Name": item.Gender.Value, "Timestamp": item.Timestamp})
+              es_data.push({"Name": "Face", "Timestamp": item.Timestamp, "Confidence": item.Confidence, "BoundingBox": {"Width": item.BoundingBox.Width, "Height": item.BoundingBox.Height, "Left": item.BoundingBox.Left, "Top": item.BoundingBox.Top}})
+            }
+            this.elasticsearch_data = JSON.parse(JSON.stringify(es_data))
+            this.isBusy = false
+        }
+      },
       saveBoxedLabel(label_name) {
         if (!this.boxes_available.includes(label_name)) {
           this.boxes_available.push(label_name);
@@ -182,7 +254,10 @@
       updateConfidence (event) {
         this.isBusy = true
         this.Confidence = event.target.value;
-        this.player.markers.removeAll();
+        if (this.mediaType === "video/mp4") {
+          // redraw markers on video timeline
+          this.player.markers.removeAll();
+        }
         this.fetchAssetData()
       },
       updateMarkers (label) {
@@ -204,20 +279,53 @@
         var markers = [];
         var es_data = this.elasticsearch_data
         var instance = 0;
+        var i=0;
         es_data.forEach(function (record) {
           if (record.Name === label) {
             markers.push({'time': record.Timestamp/1000, 'text': record.Name, 'overlayText': record.Name})
             // Save bounding box info if it exists
             if (record.BoundingBox) {
-              // Use time resolution of 0.1 second
-              const timestamp = Math.round(record.Timestamp/100);
-              if (boxMap.has(timestamp)) {
-                const boxinfo = {'instance':instance++, 'timestamp':Math.ceil(record.Timestamp/100), 'name':record.Name, 'confidence':(record.Confidence * 1).toFixed(2), 'x':record.BoundingBox.Left*canvas.width, 'y':record.BoundingBox.Top*canvas.height, 'width':record.BoundingBox.Width*canvas.width, 'height':record.BoundingBox.Height*canvas.height};
-                boxMap.get(timestamp).push(boxinfo)
+              // TODO: move image processing to a separate component
+              if (this.mediaType === "image/jpg") {
+                const boxinfo = {
+                  'instance': i,
+                  'name': record.Name,
+                  'confidence': (record.Confidence * 1).toFixed(2),
+                  'x': record.BoundingBox.Left * canvas.width,
+                  'y': record.BoundingBox.Top * canvas.height,
+                  'width': record.BoundingBox.Width * canvas.width,
+                  'height': record.BoundingBox.Height * canvas.height
+                };
+                boxMap.set(i++, [boxinfo])
               } else {
-                instance = 0;
-                const boxinfo = {'instance':instance++, 'timestamp':Math.ceil(record.Timestamp/100), 'name':record.Name, 'confidence':(record.Confidence * 1).toFixed(2), 'x':record.BoundingBox.Left*canvas.width, 'y':record.BoundingBox.Top*canvas.height, 'width':record.BoundingBox.Width*canvas.width, 'height':record.BoundingBox.Height*canvas.height};
-                boxMap.set(timestamp, [boxinfo])
+                // Use time resolution of 0.1 second
+                const timestamp = Math.round(record.Timestamp / 100);
+                if (boxMap.has(timestamp)) {
+                  const boxinfo = {
+                    'instance': instance++,
+                    'timestamp': Math.ceil(record.Timestamp / 100),
+                    'name': record.Name,
+                    'confidence': (record.Confidence * 1).toFixed(2),
+                    'x': record.BoundingBox.Left * canvas.width,
+                    'y': record.BoundingBox.Top * canvas.height,
+                    'width': record.BoundingBox.Width * canvas.width,
+                    'height': record.BoundingBox.Height * canvas.height
+                  };
+                  boxMap.get(timestamp).push(boxinfo)
+                } else {
+                  instance = 0;
+                  const boxinfo = {
+                    'instance': instance++,
+                    'timestamp': Math.ceil(record.Timestamp / 100),
+                    'name': record.Name,
+                    'confidence': (record.Confidence * 1).toFixed(2),
+                    'x': record.BoundingBox.Left * canvas.width,
+                    'y': record.BoundingBox.Top * canvas.height,
+                    'width': record.BoundingBox.Width * canvas.width,
+                    'height': record.BoundingBox.Height * canvas.height
+                  };
+                  boxMap.set(timestamp, [boxinfo])
+                }
               }
             }
           }
@@ -225,73 +333,38 @@
         if (boxMap.size > 0) {
           this.drawBoxes(boxMap);
         }
-        // redraw markers on video timeline
-        this.player.markers.removeAll();
-        this.player.markers.add(markers);
-      },
-      fetchAssetData () {
-        const vm = this;
-        fetch(process.env.VUE_APP_ELASTICSEARCH_ENDPOINT+'/_search?q=AssetId:'+this.$route.params.asset_id+' Confidence:>'+this.Confidence+' Operator:'+this.operator+'&default_operator=AND&size=10000', {
-          method: 'get'
-        }).then(response =>
-          response.json().then(data => ({
-              data: data,
-              status: response.status
-            })
-          ).then(res => {
-            var es_data = [];
-            res.data.hits.hits.forEach(function (item) {
-              item._source.Emotions.forEach(function (emotion) {
-                if (emotion.Confidence >= vm.Confidence) {
-                  es_data.push({"Name": emotion.Type, "Timestamp": item._source.Timestamp})
-                }
-              })
-              if (item._source.Beard.Value == true) {
-                if (item._source.Beard.Confidence > vm.Confidence) {
-                  es_data.push({"Name": "Beard", "Timestamp": item._source.Timestamp})
-                }
-              }
-              if (item._source.Eyeglasses.Value == true) {
-                if (item._source.Eyeglasses.Confidence > vm.Confidence) {
-                  es_data.push({"Name": "Eyeglasses", "Timestamp": item._source.Timestamp})
-                }
-              }
-              if (item._source.EyesOpen.Value == true) {
-                if (item._source.EyesOpen.Confidence > vm.Confidence) {
-                  es_data.push({"Name": "EyesOpen", "Timestamp": item._source.Timestamp})
-                }
-              }
-              if (item._source.MouthOpen.Value == true) {
-                if (item._source.MouthOpen.Confidence > vm.Confidence) {
-                  es_data.push({"Name": "MouthOpen", "Timestamp": item._source.Timestamp})
-                }
-              }
-              if (item._source.Mustache.Value == true) {
-                if (item._source.Mustache.Confidence > vm.Confidence) {
-                  es_data.push({"Name": "Mustache", "Timestamp": item._source.Timestamp})
-                }
-              }
-              if (item._source.Smile.Value == true) {
-                if (item._source.Smile.Confidence > vm.Confidence) {
-                  es_data.push({"Name": "Smile", "Timestamp": item._source.Timestamp})
-                }
-              }
-              if (item._source.Sunglasses.Value == true) {
-                if (item._source.Sunglasses.Confidence > vm.Confidence) {
-                  es_data.push({"Name": "Sunglasses", "Timestamp": item._source.Timestamp})
-                }
-              }
-              es_data.push({"Name": item._source.Gender.Value, "Timestamp": item._source.Timestamp})
-              es_data.push({"Name": "Face", "Timestamp": item._source.Timestamp, "Confidence": item._source.Confidence, "BoundingBox": {"Width": item._source.BoundingBox.Width, "Height": item._source.BoundingBox.Height, "Left": item._source.BoundingBox.Left, "Top": item._source.BoundingBox.Top}})
-            });
-            this.elasticsearch_data = JSON.parse(JSON.stringify( es_data ))
-            this.isBusy = false
-          })
-        );
+        // TODO: move image processing to a separate component
+        if (this.mediaType === "video/mp4") {
+          // redraw markers on video timeline
+          this.player.markers.removeAll();
+          this.player.markers.add(markers);
+        }
       },
       drawBoxes: function(boxMap) {
         var canvas = document.getElementById('canvas');
         var ctx = canvas.getContext('2d');
+        // TODO: move image processing to a separate component
+        if (this.mediaType === "image/jpg") {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.beginPath();
+          ctx.strokeStyle = "red";
+          ctx.font = "15px Arial";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillStyle = "red";
+          // For each box instance...
+          boxMap.forEach( i => {
+            var drawMe = i[0];
+            if (drawMe) {
+              ctx.rect(drawMe.x, drawMe.y, drawMe.width, drawMe.height);
+              // Draw object name and confidence score
+              ctx.fillText(drawMe.name + " (" + drawMe.confidence + "%)", (drawMe.x + drawMe.width / 2), drawMe.y - 10);
+              ctx.stroke();
+            }
+          });
+          // now return so we avoid rendering any of the video related components below
+          return
+        }
         // If user just clicked a new label...
         if (this.canvasRefreshInterval != undefined) {
           // ...then reset the old canvas refresh interval.

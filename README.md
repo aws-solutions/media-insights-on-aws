@@ -62,8 +62,6 @@ The default settings for the template are configured to deploy the sample web ap
 **System Configuration**
 * **MaxConcurrentWorkflows**: Maximum number of workflows to run concurrently. When the maximum is reached, additional workflows are added to a wait queue. Defaults to `10`.
 
-* **ApiIpList**:  A CIDR block that indicates which internet addresses can access the MIE APIs and Elasticsearch UI, Kibana. For example, 192.168.100.14/24 represents the IPv4 address 192.168.100.14 and its associated routing prefix 192.168.100.0, while the CIDR block 0.0.0.0/0 indicates the APIs are open to requests from all internet addresses. 
-
 **Operators** 
 * **Enable Operator Library Deployment**: If set to true, deploys the operator library. Defaults to `true`.
 

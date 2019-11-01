@@ -387,6 +387,7 @@
           let thumbnailS3Key = 'private/assets/' + assetId + '/input/' + filename
           if (filename.substring(filename.lastIndexOf(".")) === ".mp4") {
               thumbnailS3Key = 'private/assets/' + assetId + '/' + filename.substring(0, filename.lastIndexOf(".")) + '_thumbnail.0000001.jpg'
+          }
           let thumbnail = await this.getAssetThumbNail(token, bucket, thumbnailS3Key)
           let workflowStatus = await this.getAssetWorkflowStatus(token, assetId)
           this.asset_list.push({
@@ -400,7 +401,6 @@
             Thumbnail: '',
             Actions: 'Run'
             })
-          }
         }
       },
       async retrieveAndFormatAsssets () {

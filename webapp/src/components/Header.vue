@@ -29,8 +29,7 @@
             Collection
           </b-nav-item>
           <b-nav-item
-            href="https://w.amazon.com/bin/view/Media_insights_engine/#overview"
-            disabled
+            href="https://github.com/awslabs/aws-media-insights-engine/blob/master/IMPLEMENTATION_GUIDE.md"
           >
             Help
           </b-nav-item>

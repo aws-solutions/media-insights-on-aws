@@ -350,6 +350,14 @@
           var player_timestamp = Math.round(this.player.currentTime()*10.0);
           // If we have a box for the player's timestamp...
           if (boxMap.has(player_timestamp)) {
+            i=0
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.beginPath();
+            ctx.strokeStyle = "red";
+            ctx.font = "15px Arial";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillStyle = "red";
             // ...then get a list of box instances
             var instance_list = (boxMap.get(player_timestamp)).map( item => item.instance).filter((v, i, a) => a.indexOf(v) === i);
             // For each box instance...
@@ -357,19 +365,16 @@
               // ...get all of the boxes belonging to this instance
               // at the current timestamp.
               var boxes = boxMap.get(player_timestamp).filter(box => box.instance === i)
-              // Determine which box has the highest confidence
-              var highconfidence = Math.max.apply(Math, boxes.map(function(o) { return o.confidence; }));
-              var drawMe = boxes.find(box => box.confidence === highconfidence.toString())
-              // Prevent overlapping boxes by drawing only the box
-              // with the highest confidence.
-              if (drawMe) {
-                ctx.rect(drawMe.x, drawMe.y, drawMe.width, drawMe.height);
-                // Draw object name and confidence score
-                ctx.fillText(drawMe.name + " (" + drawMe.confidence + "%)", (drawMe.x + drawMe.width / 2), drawMe.y - 10);
-              }
-            })
+              boxes.forEach (drawMe => {
+                if (drawMe) {
+                  ctx.rect(drawMe.x, drawMe.y, drawMe.width, drawMe.height);
+                  // Draw object name and confidence score
+                  ctx.fillText(drawMe.name + " (" + drawMe.confidence + "%)", (drawMe.x + drawMe.width / 2), drawMe.y - 10);
+                }
+              })
+            });
+            ctx.stroke();
           }
-          ctx.stroke();
         }.bind(this), interval_ms);
       },
       chartData() {

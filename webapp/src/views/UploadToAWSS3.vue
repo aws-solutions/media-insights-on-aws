@@ -99,7 +99,10 @@
       </b-collapse>
     </b-container>
     <br>
-    <b-container class="bv-example-row">
+    <b-container v-if="executed_assets.length > 0">
+      <label>
+        Execution History
+      </label>
       <b-table
         striped
         bordered
@@ -109,6 +112,9 @@
         fixed
         :items="executed_assets"
       />
+      <b-button size="sm" @click="clearHistory">
+        Clear History
+      </b-button>
     </b-container>
   </div>
 </template>
@@ -116,6 +122,7 @@
 <script>
   import vueDropzone from '@/components/vue-dropzone.vue';
   import Header from '@/components/Header.vue'
+  import { mapState } from 'vuex'
 
   export default {
     components: {
@@ -219,6 +226,7 @@
       }
     },
     computed: {
+      ...mapState(['execution_history']),
       textFormError() {
         // Validate translated text is en, ru, es, or fr if Polly is enabled
         if (this.enabledOperators.includes('Polly') && !(this.enabledOperators.includes('Translate'))) {
@@ -338,6 +346,9 @@
         }
       }
     },
+    mounted: function() {
+      this.executed_assets = this.execution_history;
+    },
     beforeDestroy () {
       clearInterval(this.workflow_status_polling)
     },
@@ -437,6 +448,7 @@
               var s3key = location.s3ObjectLocation.fields.key;
               console.log("Media assigned asset id: " + asset_id);
               vm.executed_assets.push({asset_id: asset_id, file_name: s3key, workflow_status: ""});
+              this.$store.commit('updateExecutedAssets', vm.executed_assets);
               vm.getWorkflowStatus(asset_id);
               vm.pollWorkflowStatus()
             }
@@ -469,6 +481,7 @@
                   break;
                 }
               }
+              this.$store.commit('updateExecutedAssets', vm.executed_assets);
             }
           })
         )
@@ -483,12 +496,17 @@
             }
           });
         }, poll_frequency)
+        this.$store.commit('updateExecutedAssets', vm.executed_assets);
       },
       uploadFiles() {
         console.log("Uploading to " + this.s3_destination);
         // console.log("Presigning URL endpoint: " + this.signurl);
         this.$refs.myVueDropzone.setAWSSigningURL(this.signurl);
         this.$refs.myVueDropzone.processQueue();
+      },
+      clearHistory() {
+        this.executed_assets = [];
+        this.$store.commit('updateExecutedAssets', this.executed_assets);
       }
     }
   }

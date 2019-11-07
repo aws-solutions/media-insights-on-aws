@@ -18,6 +18,9 @@
           {{ Confidence }}%<br>
         </div>
       </b-row>
+      <div v-if="lowerConfidence === true">
+        {{ lowerConfidenceMessage }}
+      </div>
       <div
         v-if="isBusy"
         class="wrapper"
@@ -113,7 +116,9 @@
         canvasRefreshInterval: undefined,
         timeseries: new Map(),
         selectedLabel: '',
-        boxes_available: []
+        boxes_available: [],
+        noResults: false,
+        lowerConfidenceMessage: 'Try lowering confidence threshold'
       }
     },
     computed: {
@@ -179,69 +184,75 @@
             this.showElasticSearchAlert = true
           }
           else {
-            let result = await response
-            let data = result.hits.hits
+            let result = await response;
+            let data = result.hits.hits;
             let es_data = [];
-            for (var i = 0, len = data.length; i < len; i++) {
-              let item = data[i]._source
-              // need to also loop thru emotions
-              if ("Emotions" in item) {
-                for (var emotion = 0, emotionsLen = item.Emotions.length; emotion < emotionsLen; emotion++) {
-                  if (item.Emotions[emotion].Confidence >= this.Confidence) {
-                    es_data.push({"Name": item.Emotions[emotion].Type, "Timestamp": item.Timestamp})
+            if (data.length === 0 && this.Confidence > 55) {
+              this.lowerConfidence = true;
+              this.lowerConfidenceMessage = 'Try lowering confidence threshold'
+            } else {
+              this.lowerConfidence = false;
+              this.noResults = false;
+              for (var i = 0, len = data.length; i < len; i++) {
+                let item = data[i]._source;
+                if ("Emotions" in item) {
+                  for (var emotion = 0, emotionsLen = item.Emotions.length; emotion < emotionsLen; emotion++) {
+                    if (item.Emotions[emotion].Confidence >= this.Confidence) {
+                      es_data.push({"Name": item.Emotions[emotion].Type, "Timestamp": item.Timestamp})
+                    }
                   }
                 }
-              }
-              if ("Beard" in item) {
-                if (item.Beard.Confidence > this.Confidence) {
-                  es_data.push({"Name": "Beard", "Timestamp": item.Timestamp})
-                }
-              }
-              if ("Eyeglasses" in item) {
-                if (item.Eyeglasses.Confidence > this.Confidence) {
-                  es_data.push({"Name": "Eyeglasses", "Timestamp": item.Timestamp})
-                }
-              }
-              if ("EyesOpen" in item) {
-                if (item.EyesOpen.Confidence > this.Confidence) {
-                  es_data.push({"Name": "EyesOpen", "Timestamp": item.Timestamp})
-                }
-              }
-              if ("MouthOpen" in item) {
-                if (item.MouthOpen.Confidence > this.Confidence) {
-                  es_data.push({"Name": "MouthOpen", "Timestamp": item.Timestamp})
-                }
-              }
-              if ("Mustache" in item) {
-                if (item.Mustache.Confidence > this.Confidence) {
-                  es_data.push({"Name": "Mustache", "Timestamp": item.Timestamp})
-                }
-              }
-              if ("Smile" in item) {
-                if (item.Smile.Confidence > this.Confidence) {
-                  es_data.push({"Name": "Smile", "Timestamp": item.Timestamp})
-                }
-              }
-              if ("Sunglasses" in item) {
-                if (item.Sunglasses.Confidence > this.Confidence) {
-                  es_data.push({"Name": "Sunglasses", "Timestamp": item.Timestamp})
-                }
-              }
-              if ("Gender" in item) {
-                es_data.push({"Name": item.Gender.Value, "Timestamp": item.Timestamp})
-              }
-              if ("BoundingBox" in item) {
-                es_data.push({
-                  "Name": "Face",
-                  "Timestamp": item.Timestamp,
-                  "Confidence": item.Confidence,
-                  "BoundingBox": {
-                    "Width": item.BoundingBox.Width,
-                    "Height": item.BoundingBox.Height,
-                    "Left": item.BoundingBox.Left,
-                    "Top": item.BoundingBox.Top
+                if ("Beard" in item) {
+                  if (item.Beard.Confidence > this.Confidence) {
+                    es_data.push({"Name": "Beard", "Timestamp": item.Timestamp})
                   }
-                })
+                }
+                if ("Eyeglasses" in item) {
+                  if (item.Eyeglasses.Confidence > this.Confidence) {
+                    es_data.push({"Name": "Eyeglasses", "Timestamp": item.Timestamp})
+                  }
+                }
+                if ("EyesOpen" in item) {
+                  if (item.EyesOpen.Confidence > this.Confidence) {
+                    es_data.push({"Name": "EyesOpen", "Timestamp": item.Timestamp})
+                  }
+                }
+                if ("MouthOpen" in item) {
+                  if (item.MouthOpen.Confidence > this.Confidence) {
+                    es_data.push({"Name": "MouthOpen", "Timestamp": item.Timestamp})
+                  }
+                }
+                if ("Mustache" in item) {
+                  if (item.Mustache.Confidence > this.Confidence) {
+                    es_data.push({"Name": "Mustache", "Timestamp": item.Timestamp})
+                  }
+                }
+                if ("Smile" in item) {
+                  if (item.Smile.Confidence > this.Confidence) {
+                    es_data.push({"Name": "Smile", "Timestamp": item.Timestamp})
+                  }
+                }
+                if ("Sunglasses" in item) {
+                  if (item.Sunglasses.Confidence > this.Confidence) {
+                    es_data.push({"Name": "Sunglasses", "Timestamp": item.Timestamp})
+                  }
+                }
+                if ("Gender" in item) {
+                  es_data.push({"Name": item.Gender.Value, "Timestamp": item.Timestamp})
+                }
+                if ("BoundingBox" in item) {
+                  es_data.push({
+                    "Name": "Face",
+                    "Timestamp": item.Timestamp,
+                    "Confidence": item.Confidence,
+                    "BoundingBox": {
+                      "Width": item.BoundingBox.Width,
+                      "Height": item.BoundingBox.Height,
+                      "Left": item.BoundingBox.Left,
+                      "Top": item.BoundingBox.Top
+                    }
+                  })
+                }
               }
             }
             this.elasticsearch_data = JSON.parse(JSON.stringify(es_data))

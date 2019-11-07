@@ -117,7 +117,7 @@
         timeseries: new Map(),
         selectedLabel: '',
         boxes_available: [],
-        noResults: false,
+        lowerConfidence: false,
         lowerConfidenceMessage: 'Try lowering confidence threshold'
       }
     },
@@ -192,7 +192,6 @@
               this.lowerConfidenceMessage = 'Try lowering confidence threshold'
             } else {
               this.lowerConfidence = false;
-              this.noResults = false;
               for (var i = 0, len = data.length; i < len; i++) {
                 let item = data[i]._source;
                 if ("Emotions" in item) {

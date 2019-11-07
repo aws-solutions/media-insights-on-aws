@@ -117,8 +117,8 @@
         canvasRefreshInterval: undefined,
         timeseries: new Map(),
         selectedLabel: '',
+        lowerConfidence: false,
         lowerConfidenceMessage: 'Try lowering confidence threshold',
-        lowerConfidence: false
       }
     },
     computed: {

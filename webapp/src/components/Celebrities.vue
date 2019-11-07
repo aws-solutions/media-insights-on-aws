@@ -118,7 +118,7 @@
         canvasRefreshInterval: undefined,
         timeseries: new Map(),
         selectedLabel: '',
-        noResults: false,
+        lowerConfidence: false,
         lowerConfidenceMessage: 'Try lowering confidence threshold'
       }
     },
@@ -294,7 +294,6 @@
           }
           else {
             this.lowerConfidence = false
-            this.noResults = false
             for (var i = 0, len = data.length; i < len; i++) {
               es_data.push(data[i]._source)
             }

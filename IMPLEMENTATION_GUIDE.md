@@ -70,7 +70,7 @@ This assumes that MIE has been full deployed at this point.
 
 ## 5.1. Logging in to the Application
 1. Navigate to the CloudFormation console where you launched MIE.
-1. From the **Outputs** tab of your stack, copy the value of `WebAppCloudfrontUrl` on to your browser. This should open up the sample application.
+1. From the **Outputs** tab of your stack, copy the value of `MediaInsightsWebAppUrl` on to your browser. This should open up the sample application.
 1. On the login page, enter the email address you provided in the **AdminEmail** for username. Enter the **temporary password** you were emailed in the password. 
 1. Enter a new password when prompted to update the temporary one. Save this off somewhere handy in case you have to login back to the sample application. 
 

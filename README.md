@@ -90,7 +90,7 @@ After the stack successfully deploys, you can find important interface resources
 
 **MediaInsightsEnginePython37Layer** is a lambda layer required to build new operator lambdas
 
-**WebAppCloudfrontUrl** is the Url for the sample Media Insights web application
+**MediaInsightsWebAppUrl** is the Url for the sample Media Insights web application
 
 **WorkflowApiEndpoint** is the endpoint for accessing the Workflow APIs to create, update, delete and execute MIE workflows.
 

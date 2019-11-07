@@ -1445,10 +1445,10 @@ Outputs:
     Value: !GetAtt MediaInsightsWorkflowApi.Outputs.EndpointURL
     Export:
       Name: !Join [":", [!Ref "AWS::StackName", WorkflowApiEndpoint]]
-  WebAppCloudfrontUrl:
+  MediaInsightsWebAppUrl:
     Condition: DeployDemoSiteCondition
-    Description: Url of the MIE Webapp
-    Value: !GetAtt MediaInsightsWebApp.Outputs.CloudfrontUrl
+    Description: Url of the Media Insights Engine sample web application
+    Value: !Join ["", ["https://", !GetAtt MediaInsightsWebApp.Outputs.CloudfrontUrl]]
   ElasticsearchEndpoint:
     Condition: DeployAnalyticsPipelineCondition
     Description: Endpoint for elasticsearch cluster

@@ -104,14 +104,19 @@
         Execution History
       </label>
       <b-table
-        striped
+        :fields="fields"
         bordered
         hover
         small
         responsive
+        show-empty
         fixed
         :items="executed_assets"
-      />
+      >
+        <template v-slot:cell(workflow_status)="data">
+          <a v-bind:href="data.item.state_machine_console_link">{{ data.item.workflow_status }}</a>
+        </template>
+      </b-table>
       <b-button size="sm" @click="clearHistory">
         Clear History
       </b-button>
@@ -131,6 +136,25 @@
     },
     data() {
       return {
+        fields: [
+          {
+            'asset_id': {
+              label: "Asset Id",
+              sortable: false
+            }
+          },
+          {
+            'file_name': {
+              label: "File Name",
+              sortable: false
+            }
+          },
+          { 'workflow_status': {
+              label: 'Workflow Status',
+              sortable: false
+            }
+          }
+        ],
         upload_in_progress: false,
         enabledOperators: ['labelDetection', 'celebrityRecognition', 'contentModeration', 'faceDetection', 'Transcribe', 'Translate', 'ComprehendKeyPhrases', 'ComprehendEntities'],
         videoOperators: [
@@ -447,8 +471,7 @@
               var asset_id = res.data.AssetId;
               var s3key = location.s3ObjectLocation.fields.key;
               console.log("Media assigned asset id: " + asset_id);
-              vm.executed_assets.push({asset_id: asset_id, file_name: s3key, workflow_status: ""});
-              this.$store.commit('updateExecutedAssets', vm.executed_assets);
+              vm.executed_assets.push({asset_id: asset_id, file_name: s3key, workflow_status: "", state_machine_console_link: ""});
               vm.getWorkflowStatus(asset_id);
               vm.pollWorkflowStatus()
             }
@@ -478,6 +501,7 @@
               for (var i = 0; i < vm.executed_assets.length; i++) {
                 if (vm.executed_assets[i].asset_id === asset_id) {
                   vm.executed_assets[i].workflow_status = res.data[0].Status;
+                  vm.executed_assets[i].state_machine_console_link = "https://"+process.env.VUE_APP_AWS_REGION+".console.aws.amazon.com/states/home?region="+process.env.VUE_APP_AWS_REGION+"#/executions/details/"+res.data[0].StateMachineExecutionArn;
                   break;
                 }
               }
@@ -496,7 +520,6 @@
             }
           });
         }, poll_frequency)
-        this.$store.commit('updateExecutedAssets', vm.executed_assets);
       },
       uploadFiles() {
         console.log("Uploading to " + this.s3_destination);

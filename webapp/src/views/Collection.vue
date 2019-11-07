@@ -86,6 +86,10 @@
                         :signed-url="data.item.signedUrl"
                       />
                     </template>
+                    <template v-slot:cell(status)="data">
+                      <!-- open link in new tab -->
+                      <a href="" v-on:click.stop.prevent="openWindow(data.item.state_machine_console_link)">{{ data.item.status }}</a>
+                    </template>
                     <template v-slot:cell(Actions)="data">
                       <b-button
                         variant="orange"
@@ -106,7 +110,7 @@
                   <div
                     v-if="noAssets"
                   >
-                    <p> 
+                    <p>
                       Looks like no assets have been uploaded! Try uploading <a href="upload">here</a>
                     </p>
                   </div>
@@ -212,6 +216,9 @@
       this.retrieveAndFormatAsssets()
     },
     methods: {
+      openWindow: function (url) {
+        window.open(url);
+      },
       async deleteAsset(asset_id) {
         let token = await this.getAccessToken()
         let response = await fetch(process.env.VUE_APP_DATAPLANE_API_ENDPOINT+'/metadata/'+asset_id, {
@@ -395,6 +402,7 @@
             Created: created.toLocaleDateString(),
             Filename: filename,
             status: workflowStatus[0].Status,
+            state_machine_console_link: "https://"+process.env.VUE_APP_AWS_REGION+".console.aws.amazon.com/states/home?region="+process.env.VUE_APP_AWS_REGION+"#/executions/details/"+workflowStatus[0].StateMachineExecutionArn,
             s3_uri: s3Uri,
             signedUrl: thumbnail,
             thumbnailID: '_' + assetId,

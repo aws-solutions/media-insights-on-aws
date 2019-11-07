@@ -32,6 +32,7 @@
           <br>
           <template v-for="label in sorted_unique_labels">
             <template v-if="boxes_available.includes(label[0])">
+              <!-- Show darker button outline if boxes are available for the label -->
               <b-button
                 v-b-tooltip.hover
                 variant="outline-dark"
@@ -276,9 +277,8 @@
         }
         this.fetchAssetData()
       },
+      // updateMarkers updates markers in the video player and is called when someone clicks on a label button
       updateMarkers (label) {
-        // this function updates markers in the video player and is called when someone clicks on a label button
-        this.selectedLabel = label;
         // clear canvas for redrawing
         this.boxes_available = [];
         clearInterval(this.canvasRefreshInterval);
@@ -290,6 +290,12 @@
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillStyle = "red";
+        if (this.selectedLabel === label) {
+          // keep the canvas clear canvas if user clicked the label button a second consecutive time
+          this.selectedLabel = "";
+          return
+        }
+        this.selectedLabel = label;
         // initialize lists of boxes and markers to be drawn
         var boxMap = new Map();
         var markers = [];

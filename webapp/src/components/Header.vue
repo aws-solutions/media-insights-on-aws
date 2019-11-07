@@ -29,8 +29,7 @@
             Collection
           </b-nav-item>
           <b-nav-item
-            href="https://github.com/awslabs/aws-media-insights-engine/blob/master/IMPLEMENTATION_GUIDE.md"
-          >
+            href="" v-on:click.stop.prevent="openWindow('https://github.com/awslabs/aws-media-insights-engine/blob/master/IMPLEMENTATION_GUIDE.md')">
             Help
           </b-nav-item>
           <b-nav-item
@@ -78,6 +77,9 @@ export default {
     });
   },
   methods: {
+    openWindow: function (url) {
+      window.open(url);
+    },
     signOut() {
       this.$Amplify.Auth.signOut()
           .then(() => this.$router.push({name: "Login"}))

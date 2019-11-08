@@ -114,7 +114,7 @@
         :items="executed_assets"
       >
         <template v-slot:cell(workflow_status)="data">
-          <a v-bind:href="data.item.state_machine_console_link">{{ data.item.workflow_status }}</a>
+          <a href="" v-on:click.stop.prevent="openWindow(data.item.state_machine_console_link)">{{ data.item.workflow_status }}</a>
         </template>
       </b-table>
       <b-button size="sm" @click="clearHistory">
@@ -372,11 +372,15 @@
     },
     mounted: function() {
       this.executed_assets = this.execution_history;
+      this.pollWorkflowStatus()
     },
     beforeDestroy () {
       clearInterval(this.workflow_status_polling)
     },
     methods: {
+      openWindow: function (url) {
+        window.open(url);
+      },
       countDownChanged(dismissCountDown) {
         this.dismissCountDown = dismissCountDown
       },
@@ -473,7 +477,6 @@
               console.log("Media assigned asset id: " + asset_id);
               vm.executed_assets.push({asset_id: asset_id, file_name: s3key, workflow_status: "", state_machine_console_link: ""});
               vm.getWorkflowStatus(asset_id);
-              vm.pollWorkflowStatus()
             }
           })
         )

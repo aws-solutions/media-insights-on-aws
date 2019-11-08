@@ -223,7 +223,7 @@
           {text: 'Turkish', value: 'tr'},
         ],
         sourceLanguageCode: "en",
-        targetLanguageCode: "ru",
+        targetLanguageCode: "es",
         uploadErrorMessage: "",
         dismissSecs: 8,
         dismissCountDown: 0,

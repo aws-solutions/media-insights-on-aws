@@ -95,10 +95,10 @@
               </div>
             </b-card>
           </b-card-group>
+          <br>
         </b-container>
       </b-collapse>
     </b-container>
-    <br>
     <b-container v-if="executed_assets.length > 0">
       <label>
         Execution History

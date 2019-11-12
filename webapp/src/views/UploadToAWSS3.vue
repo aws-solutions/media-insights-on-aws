@@ -51,7 +51,9 @@
                   :options="videoOperators"
                   name="flavour-1"
                 ></b-form-checkbox-group>
-                <b-form-input v-if="enabledOperators.includes('faceSearch')" v-model="faceCollectionId" placeholder="Enter face collection id"></b-form-input>
+                <label>Thumbnail position: </label>
+                <b-form-input v-model="thumbnail_position" type="range" min="1" max="20" step="1"></b-form-input> {{ thumbnail_position }} sec
+                <b-form-input v-if="enabledOperators.includes('faceSearch')" v-model="faceCollectionId" id="Enter face collection id"></b-form-input>
                 <b-form-input v-if="enabledOperators.includes('genericDataLookup')" v-model="genericDataFilename" placeholder="Enter data filename"></b-form-input>
               </b-form-group>
               <div v-if="videoFormError" style="color:red">
@@ -155,8 +157,9 @@
             }
           }
         ],
+        thumbnail_position: 10,
         upload_in_progress: false,
-        enabledOperators: ['labelDetection', 'celebrityRecognition', 'contentModeration', 'faceDetection', 'Transcribe', 'Translate', 'ComprehendKeyPhrases', 'ComprehendEntities'],
+        enabledOperators: ['labelDetection', 'celebrityRecognition', 'contentModeration', 'faceDetection', 'thumbnail', 'Transcribe', 'Translate', 'ComprehendKeyPhrases', 'ComprehendEntities'],
         videoOperators: [
           {text: 'Object Detection', value: 'labelDetection'},
           {text: 'Celebrity Recognition', value: 'celebrityRecognition'},
@@ -186,8 +189,6 @@
           {text: 'US Spanish', value: 'es-US'},
           {text: 'ES Spanish', value: 'es-ES'},
           {text: 'Italian', value: 'it-IT'},
-          {text: 'Brazilian Portuguese', value: 'pt-BR'},
-          {text: 'German', value: 'de-DE'},
           {text: 'Korean', value: 'ko-KR'},
           {text: 'Hindi', value: 'hi-IN'},
           {text: 'Indian-accented English', value: 'en-IN'},
@@ -338,6 +339,10 @@
                 "Bucket": process.env.VUE_APP_DATAPLANE_BUCKET,
                 "Key": this.genericDataFilename==="" ? "undefined" : this.genericDataFilename
               },
+              "Mediainfo": {
+                "ThumbnailPosition": this.thumbnail_position,
+                "Enabled": true
+              }
             },
             "defaultAudioStage": {
               "Transcribe": {

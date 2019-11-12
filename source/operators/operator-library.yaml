@@ -950,6 +950,30 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
 
+  StartMediaInfoFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "start_media_info.lambda_handler"
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
+      Role: !GetAtt "mediaConvertLambdaRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "start_media_info.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Environment:
+        Variables:
+          mediaconvertRole: !GetAtt "mediaConvertS3Role.Arn"
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+
   CheckMediaConvertFunction:
     Type: "AWS::Lambda::Function"
     Properties:
@@ -1248,6 +1272,17 @@ Resources:
       MonitorLambdaArn: !GetAtt CheckMediaConvertFunction.Arn
       StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
+  MediainfoOperation:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "Mediainfo"
+      Type: "Sync"
+      Configuration: { "MediaType": "Video", "Enabled": true }
+      StartLambdaArn: !GetAtt StartMediaInfoFunction.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
   TranscribeOperation:
     Type: Custom::CustomResource
     Properties:
@@ -1509,6 +1544,11 @@ Outputs:
     Value: !GetAtt MediaconvertOperation.Name
     Export:
       Name: !Join [":", [!Ref "AWS::StackName", Mediaconvert]]
+  MediainfoOperation:
+    Description: "Operation name of mediainfo"
+    Value: !GetAtt MediainfoOperation.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", Mediainfo]]
   TranscribeOperation:
     Description: "Operation name of transcribe"
     Value: !GetAtt TranscribeOperation.Name

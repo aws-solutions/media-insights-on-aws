@@ -86,6 +86,10 @@
                         :signed-url="data.item.signedUrl"
                       />
                     </template>
+                    <template v-slot:cell(Created)="data">
+                      {{ data.item.Created.toLocaleDateString() }}<br>
+                      {{ data.item.Created.toLocaleTimeString() }}
+                    </template>
                     <template v-slot:cell(status)="data">
                       <!-- open link in new tab -->
                       <a href="" v-on:click.stop.prevent="openWindow(data.item.state_machine_console_link)">{{ data.item.status }}</a>

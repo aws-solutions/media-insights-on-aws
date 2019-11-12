@@ -427,58 +427,27 @@ cp "./dist/get_media_convert.zip" "$dist_dir/get_media_convert.zip"
 
 
 echo "------------------------------------------------------------------------------"
-echo "Mediainfo  Operations"
+echo "Thumbnail  Operations"
 echo "------------------------------------------------------------------------------"
 
-echo "Building Media Info function"
-cd "$source_dir/operators/mediainfo" || exit
+echo "Building Thumbnail function"
+cd "$source_dir/operators/thumbnail" || exit
 
+# Make lambda package
 [ -e dist ] && rm -r dist
 mkdir -p dist
 
-[ -e package ] && rm -r package
-mkdir -p package
+if ! [ -d ./dist/start_thumbnail.zip ]; then
+  zip -r9 ./dist/start_thumbnail.zip .
 
-echo "create requirements for lambda"
-
-#pipreqs . --force
-
-# Make lambda package
-
-pushd package
-echo "create lambda package"
-
-# Handle distutils install errors
-
-touch ./setup.cfg
-
-echo "[install]" > ./setup.cfg
-echo "prefix= " >> ./setup.cfg
-
-# Try and handle failure if pip version mismatch
-if [ -x "$(command -v pip)" ]; then
-  pip install -r ../requirements.txt --target .
-
-elif [ -x "$(command -v pip3)" ]; then
-  echo "pip not found, trying with pip3"
-  pip3 install -r ../requirements.txt --target .
-
-elif ! [ -x "$(command -v pip)" ] && ! [ -x "$(command -v pip3)" ]; then
- echo "No version of pip installed. This script requires pip. Cleaning up and exiting."
- exit 1
-fi
-
-if ! [ -d ../dist/start_media_info.zip ]; then
-  zip -r9 ../dist/start_media_info.zip .
-
-elif [ -d ../dist/start_media_info.zip ]; then
+elif [ -d ./dist/start_thumbnail.zip ]; then
   echo "Package already present"
 fi
 
 popd
 
-zip -g dist/start_media_info.zip start_media_info.py
-cp "./dist/start_media_info.zip" "$dist_dir/start_media_info.zip"
+zip -g dist/start_thumbnail.zip start_thumbnail.py
+cp "./dist/start_thumbnail.zip" "$dist_dir/start_thumbnail.zip"
 
 echo "------------------------------------------------------------------------------"
 echo "Transcribe  Operations"

@@ -18,10 +18,10 @@
 #
 # USAGE:
 #   To run this operator add
-#   '"MediaInfo":{"Position":7, "Enabled":true}'
+#   '"Thumbnail":{"Position":7, "Enabled":true}'
 #   to the workflow configuration, like this:
 #
-#   curl -k -X POST -H "Authorization: $MIE_ACCESS_TOKEN" -H "Content-Type: application/json" --data '{"Name":"MieCompleteWorkflow","Configuration":{"defaultVideoStage":{"MediaInfo":{"ThumbnailPosition":7, Enabled":true}}}},"Input":{"Media":{"Video":{"S3Bucket":"'$DATAPLANE_BUCKET'","S3Key":"My Video.mp4"}}}}'  $WORKFLOW_API_ENDPOINT/workflow/execution
+#   curl -k -X POST -H "Authorization: $MIE_ACCESS_TOKEN" -H "Content-Type: application/json" --data '{"Name":"MieCompleteWorkflow","Configuration":{"defaultVideoStage":{"Thumbnail":{"ThumbnailPosition":7, Enabled":true}}}},"Input":{"Media":{"Video":{"S3Bucket":"'$DATAPLANE_BUCKET'","S3Key":"My Video.mp4"}}}}'  $WORKFLOW_API_ENDPOINT/workflow/execution
 #
 #  For instructions on getting $MIE_ACCESS_TOKEN, see:
 #  https://github.com/awslabs/aws-media-insights-engine/blob/master/IMPLEMENTATION_GUIDE.md#step-6-test-your-operator
@@ -48,7 +48,7 @@ def lambda_handler(event, context):
         key = operator_object.input["Media"]["Video"]["S3Key"]
     except KeyError as e:
         operator_object.update_workflow_status("Error")
-        operator_object.add_workflow_metadata(MediainfoError="Missing a required metadata key {e}".format(e=e))
+        operator_object.add_workflow_metadata(ThumbnailError="Missing a required metadata key {e}".format(e=e))
         raise MasExecutionError(operator_object.return_output_object())
 
     # Adding in exception block for now since we aren't guaranteed an asset id will be present, should remove later
@@ -62,7 +62,7 @@ def lambda_handler(event, context):
 
     # Get user-defined location for generic data file
     if "ThumbnailPosition" in operator_object.configuration:
-        thumbnail_position = operator_object.configuration["ThumbnailPosition"]
+        thumbnail_position = int(operator_object.configuration["ThumbnailPosition"])
     else:
         thumbnail_position = 7
 
@@ -71,7 +71,7 @@ def lambda_handler(event, context):
     except Exception as e:
         print("Exception:\n", e)
         operator_object.update_workflow_status("Error")
-        operator_object.add_workflow_metadata(MediainfoError=str(e))
+        operator_object.add_workflow_metadata(ThumbnailError=str(e))
         raise MasExecutionError(operator_object.return_output_object())
     else:
         mediaconvert_endpoint = response["Endpoints"][0]["Url"]
@@ -138,7 +138,7 @@ def lambda_handler(event, context):
                                         "FrameCaptureSettings": {
                                             "FramerateNumerator": 1,
                                             "FramerateDenominator": thumbnail_position,
-                                            "MaxCaptures": 1,
+                                            "MaxCaptures": 2,
                                             "Quality": 80
                                         }
                                     },
@@ -174,7 +174,7 @@ def lambda_handler(event, context):
     except Exception as e:
         print("Exception:\n", e)
         operator_object.update_workflow_status("Error")
-        operator_object.add_workflow_metadata(MediainfoError=str(e))
+        operator_object.add_workflow_metadata(ThumbnailError=str(e))
         raise MasExecutionError(operator_object.return_output_object())
     else:
         operator_object.update_workflow_status("Complete")

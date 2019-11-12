@@ -341,8 +341,8 @@
                 "Bucket": process.env.VUE_APP_DATAPLANE_BUCKET,
                 "Key": this.genericDataFilename==="" ? "undefined" : this.genericDataFilename
               },
-              "Mediainfo": {
-                "ThumbnailPosition": this.thumbnail_position,
+              "Thumbnail": {
+                "ThumbnailPosition": this.thumbnail_position.toString(),
                 "Enabled": true
               }
             },

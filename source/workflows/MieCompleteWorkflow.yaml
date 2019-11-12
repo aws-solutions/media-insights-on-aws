@@ -38,7 +38,7 @@ Resources:
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:Mediaconvert"
         - Fn::ImportValue:
-            Fn::Sub: "${OperatorLibraryStack}:Mediainfo"
+            Fn::Sub: "${OperatorLibraryStack}:Thumbnail"
 
   defaultAudioStage:
     Type: Custom::CustomResource

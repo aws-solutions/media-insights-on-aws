@@ -404,10 +404,17 @@
         let thumbnailS3Key = 'private/assets/' + assetId + '/input/' + filename
         if (filename.substring(filename.lastIndexOf(".")) === ".mp4") {
           // The thumbnail is created by Media Convert, see:
-          // source/operators/mediainfo/start_media_info.py
+          // source/operators/thumbnail/start_thumbnail.py
           thumbnailS3Key = 'private/assets/' + assetId + '/' + filename.substring(0, filename.lastIndexOf(".")) + '_thumbnail.0000001.jpg'
         }
-        let [thumbnail, workflowStatus] = await Promise.all([this.getAssetThumbNail(token, bucket, thumbnailS3Key), this.getAssetWorkflowStatus(token, assetId)])
+        let [thumbnail, workflowStatus] = await Promise.all([this.getAssetThumbNail(token, bucket, thumbnailS3Key), this.getAssetWorkflowStatus(token, assetId)]);
+        // Check if _thumbnail.00000001.jpg is available
+        if ((await fetch(thumbnail, {method: 'get'})).ok === false) {
+          console.log("getting 0")
+          // If thumbnail #1 is not available then try to get thumbnail #0
+          thumbnailS3Key = 'private/assets/' + assetId + '/' + filename.substring(0, filename.lastIndexOf(".")) + '_thumbnail.0000000.jpg';
+          thumbnail = await this.getAssetThumbNail(token, bucket, thumbnailS3Key)
+        }
         if (workflowStatus[0] && thumbnail)
         {
           this.asset_list.push({

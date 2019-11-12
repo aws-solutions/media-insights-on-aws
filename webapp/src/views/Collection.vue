@@ -376,39 +376,48 @@
       async pushAssetsToTable(assets) {
         let token = await this.getAccessToken()
         for (var i = 0, len = assets.length; i < len; i++) {
-          // check if from search collection or retrieve and format
           var assetId;
           if (typeof assets[i] === 'object') {
+            // If the asset list is coming from Elasticsearch, we get the assetId like this:
             assetId = assets[i].asset_id
-            }
-          else {
+          } else {
+            // If the asset list is coming from the dataplaneapi, we get the assetId like this:
             assetId = assets[i]
           }
-          let assetInfo = await this.getAssetInformation(token, assetId)
-          let created = new Date(0);
-          created.setUTCSeconds(assetInfo.results.Created)
-          let bucket = assetInfo.results.S3Bucket
-          let s3Key = assetInfo.results.S3Key
-          let s3Uri = 's3://'+ bucket+'/'+ s3Key
-          let filename = s3Key.split("/").pop()
-          let thumbnailS3Key = 'private/assets/' + assetId + '/input/' + filename
-          if (filename.substring(filename.lastIndexOf(".")) === ".mp4") {
-              thumbnailS3Key = 'private/assets/' + assetId + '/' + filename.substring(0, filename.lastIndexOf(".")) + '_thumbnail.0000001.jpg'
-          }
-          let thumbnail = await this.getAssetThumbNail(token, bucket, thumbnailS3Key)
-          let workflowStatus = await this.getAssetWorkflowStatus(token, assetId)
+          // Invoke an asynchronous task to add assets to the table in parallel so the table updates
+          // as fast as possible. For large media collections this may take several seconds.
+          this.pushAssetToTable(assetId, token)
+        }
+      },
+      async pushAssetToTable (assetId, token) {
+        let assetInfo = await this.getAssetInformation(token, assetId)
+        let created = new Date(0);
+        created.setUTCSeconds(assetInfo.results.Created)
+        let bucket = assetInfo.results.S3Bucket
+        let s3Key = assetInfo.results.S3Key
+        let s3Uri = 's3://' + bucket + '/' + s3Key
+        let filename = s3Key.split("/").pop()
+        let thumbnailS3Key = 'private/assets/' + assetId + '/input/' + filename
+        if (filename.substring(filename.lastIndexOf(".")) === ".mp4") {
+          // The thumbnail is created by Media Convert, see:
+          // source/operators/mediainfo/start_media_info.py
+          thumbnailS3Key = 'private/assets/' + assetId + '/' + filename.substring(0, filename.lastIndexOf(".")) + '_thumbnail.0000001.jpg'
+        }
+        let [thumbnail, workflowStatus] = await Promise.all([this.getAssetThumbNail(token, bucket, thumbnailS3Key), this.getAssetWorkflowStatus(token, assetId)])
+        if (workflowStatus[0] && thumbnail)
+        {
           this.asset_list.push({
             asset_id: assetId,
-            Created: created.toLocaleDateString(),
+            Created: created,
             Filename: filename,
             status: workflowStatus[0].Status,
-            state_machine_console_link: "https://"+process.env.VUE_APP_AWS_REGION+".console.aws.amazon.com/states/home?region="+process.env.VUE_APP_AWS_REGION+"#/executions/details/"+workflowStatus[0].StateMachineExecutionArn,
+            state_machine_console_link: "https://" + process.env.VUE_APP_AWS_REGION + ".console.aws.amazon.com/states/home?region=" + process.env.VUE_APP_AWS_REGION + "#/executions/details/" + workflowStatus[0].StateMachineExecutionArn,
             s3_uri: s3Uri,
             signedUrl: thumbnail,
             thumbnailID: '_' + assetId,
             Thumbnail: '',
             Actions: 'Run'
-            })
+          })
         }
       },
       async retrieveAndFormatAsssets () {

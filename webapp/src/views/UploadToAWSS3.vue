@@ -53,7 +53,7 @@
                 ></b-form-checkbox-group>
                 <label>Thumbnail position: </label>
                 <b-form-input v-model="thumbnail_position" type="range" min="1" max="20" step="1"></b-form-input> {{ thumbnail_position }} sec
-                <b-form-input v-if="enabledOperators.includes('faceSearch')" v-model="faceCollectionId" id="Enter face collection id"></b-form-input>
+                <b-form-input v-if="enabledOperators.includes('faceSearch')" id="Enter face collection id" v-model="faceCollectionId"></b-form-input>
                 <b-form-input v-if="enabledOperators.includes('genericDataLookup')" v-model="genericDataFilename" placeholder="Enter data filename"></b-form-input>
               </b-form-group>
               <div v-if="videoFormError" style="color:red">
@@ -116,7 +116,7 @@
         :items="executed_assets"
       >
         <template v-slot:cell(workflow_status)="data">
-          <a href="" v-on:click.stop.prevent="openWindow(data.item.state_machine_console_link)">{{ data.item.workflow_status }}</a>
+          <a href="" @click.stop.prevent="openWindow(data.item.state_machine_console_link)">{{ data.item.workflow_status }}</a>
         </template>
       </b-table>
       <b-button size="sm" @click="clearHistory">

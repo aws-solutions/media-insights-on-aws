@@ -29,7 +29,8 @@
             Collection
           </b-nav-item>
           <b-nav-item
-            href="" v-on:click.stop.prevent="openWindow('https://github.com/awslabs/aws-media-insights-engine/blob/master/IMPLEMENTATION_GUIDE.md')">
+            href="" @click.stop.prevent="openWindow('https://github.com/awslabs/aws-media-insights-engine/blob/master/IMPLEMENTATION_GUIDE.md')"
+          >
             Help
           </b-nav-item>
           <b-nav-item

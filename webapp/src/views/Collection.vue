@@ -92,7 +92,7 @@
                     </template>
                     <template v-slot:cell(status)="data">
                       <!-- open link in new tab -->
-                      <a href="" v-on:click.stop.prevent="openWindow(data.item.state_machine_console_link)">{{ data.item.status }}</a>
+                      <a href="" @click.stop.prevent="openWindow(data.item.state_machine_console_link)">{{ data.item.status }}</a>
                     </template>
                     <template v-slot:cell(Actions)="data">
                       <b-button

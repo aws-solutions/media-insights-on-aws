@@ -162,7 +162,6 @@
         showElasticSearchAlert: false,
         showDataplaneAlert: false,
         showDeletedAlert: false,
-        totalRows: 1,
         noAssets: null,
         currentPage: 1,
         perPage: 10,
@@ -213,6 +212,11 @@
               }
             }
         ]
+      }
+    },
+    computed: {
+      totalRows() {
+        return this.asset_list.length
       }
     },
     created: function () {
@@ -307,7 +311,6 @@
             }
             else {
               this.pushAssetsToTable(assets)
-              this.totalRows = this.asset_list.length
               this.isBusy = false
             }
           }
@@ -436,7 +439,6 @@
         else {
           this.noAssets = false
           this.pushAssetsToTable(assets)
-          this.totalRows = this.asset_list.length
           this.isBusy = false
         }
       }

@@ -58,17 +58,6 @@
           </template>
           <div class="wrapper">
             <br>
-            Bounding box smoothing<br>
-            <input
-                type="range"
-                value="40"
-                min="1"
-                max="50"
-                step="1"
-                @click="updateSmoothing"
-            >
-            <br>
-            Boxes stay for at least {{ erase_on_iteration }} seconds
           </div>
 
         </div>
@@ -201,9 +190,6 @@
         this.Confidence = event.target.value;
         this.player.markers.removeAll();
         this.fetchAssetData()
-      },
-      updateSmoothing (event) {
-        this.erase_on_iteration = event.target.value;
       },
       updateMarkers (label) {
         // This function updates markers in the video player and is called when someone clicks on a label button

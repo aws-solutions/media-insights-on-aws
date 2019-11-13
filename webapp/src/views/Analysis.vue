@@ -46,6 +46,10 @@
                             title="Faces"
                             @click="currentView = 'FaceDetection'"
                           />
+                          <b-tab
+                              title="AutoML"
+                              @click="currentView = 'AutoML'"
+                          />
                         </b-tabs>
                       </div>
                     </b-row>
@@ -149,6 +153,15 @@
           setTimeout(function() {
             resolve(import('@/components/LabelObjects.vue'));
         }, 1000);
+        }),
+        loading: Loading
+      }),
+
+      AutoML: () => ({
+        component: new Promise(function(resolve) {
+          setTimeout(function() {
+            resolve(import('@/components/AutoML.vue'));
+          }, 1000);
         }),
         loading: Loading
       }),

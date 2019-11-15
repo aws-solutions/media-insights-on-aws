@@ -697,7 +697,7 @@ Resources:
       UserPoolId: !Ref MieUserPool
       ExplicitAuthFlows: ['ADMIN_NO_SRP_AUTH']
 
-  MieAppClient:
+  MieWebAppClient:
     Type: AWS::Cognito::UserPoolClient
     Properties:
       UserPoolId: !Ref MieUserPool
@@ -707,7 +707,7 @@ Resources:
     Properties:
       AllowUnauthenticatedIdentities: False
       CognitoIdentityProviders:
-        - ClientId: !Ref MieAppClient
+        - ClientId: !Ref MieWebAppClient
           ProviderName: !GetAtt MieUserPool.ProviderName
 
   # More hacky cfn for getting the role mapping
@@ -723,7 +723,7 @@ Resources:
           - - 'Fn::GetAtt':
                 - MieUserPool
                 - ProviderName
-            - Ref: MieAppClient
+            - Ref: MieWebAppClient
 
   CognitStandardAuthDefaultRole:
     Type: "AWS::IAM::Role"
@@ -1395,7 +1395,7 @@ Resources:
         UserPoolId: !Ref MieUserPool
         IdentityPoolId: !Ref MieIdentityPool
         AwsRegion: !Ref "AWS::Region"
-        PoolClientId: !Ref MieAppClient
+        PoolClientId: !Ref MieWebAppClient
 
 #  TranscriberWebApp:
 #    Condition: DeployTranscriberApp
@@ -1466,8 +1466,11 @@ Outputs:
     Description: ID of the MIE Cognito User Pool
     Value: !Ref MieUserPool
   AdminClientId:
-    Description: ID of the Admin Cognito Client
+    Description: ID of the Admin Cognito Client. This can be used to authenticate command-line apps using boto3.
     Value: !Ref MieAdminClient
+  WebAppClientId:
+    Description: ID of the Webapp Cognito Client. This can be used to authenticate web apps using Amplify.
+    Value: !Ref MieWebAppClient
   AdminUsername:
     Description: Username of the default MIE admin
     Value: !Ref AdminEmail

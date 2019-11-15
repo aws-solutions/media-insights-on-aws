@@ -34,7 +34,6 @@ def lambda_handler(event, context):
 
     file_input = "s3://" + bucket + "/" + key
     destination = "s3://" + bucket + "/" + 'private/assets/' + asset_id + "/workflows/" + workflow_id + "/"
-    thumbnail_destination = "s3://" + bucket + "/" + 'private/assets/' + asset_id + "/"
 
     try:
         response = mediaconvert.describe_endpoints()
@@ -89,41 +88,6 @@ def lambda_handler(event, context):
                     "Destination": destination
                   }
                 }
-              },
-              {
-                  "CustomName": "thumbnail",
-                  "Name": "File Group",
-                  "Outputs": [
-                      {
-                          "ContainerSettings": {
-                              "Container": "RAW"
-                          },
-                          "VideoDescription": {
-                              "ScalingBehavior": "DEFAULT",
-                              "TimecodeInsertion": "DISABLED",
-                              "AntiAlias": "ENABLED",
-                              "Sharpness": 50,
-                              "CodecSettings": {
-                                  "Codec": "FRAME_CAPTURE",
-                                  "FrameCaptureSettings": {
-                                      "FramerateNumerator": 1,
-                                      "FramerateDenominator": 5,
-                                      "MaxCaptures": 2,
-                                      "Quality": 80
-                                  }
-                              },
-                              "DropFrameTimecode": "ENABLED",
-                              "ColorMetadata": "INSERT"
-                          },
-                          "NameModifier": "_thumbnail"
-                      }
-                  ],
-                  "OutputGroupSettings": {
-                      "Type": "FILE_GROUP_SETTINGS",
-                      "FileGroupSettings": {
-                          "Destination": thumbnail_destination
-                      }
-                  }
               }],
               "AdAvailOffset": 0,
               "Inputs": [{

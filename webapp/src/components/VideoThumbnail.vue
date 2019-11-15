@@ -6,7 +6,7 @@
         rounded
         fluid
         :src="signedUrl"
-        alt="thumbnail image"
+        alt="Thumbnail image is not available."
       />
     </b-container>
   </div>

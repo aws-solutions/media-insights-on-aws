@@ -86,6 +86,14 @@
                         :signed-url="data.item.signedUrl"
                       />
                     </template>
+                    <template v-slot:cell(Created)="data">
+                      {{ data.item.Created.toLocaleDateString() }}<br>
+                      {{ data.item.Created.toLocaleTimeString() }}
+                    </template>
+                    <template v-slot:cell(status)="data">
+                      <!-- open link in new tab -->
+                      <a href="" @click.stop.prevent="openWindow(data.item.state_machine_console_link)">{{ data.item.status }}</a>
+                    </template>
                     <template v-slot:cell(Actions)="data">
                       <b-button
                         variant="orange"
@@ -106,7 +114,7 @@
                   <div
                     v-if="noAssets"
                   >
-                    <p> 
+                    <p>
                       Looks like no assets have been uploaded! Try uploading <a href="upload">here</a>
                     </p>
                   </div>
@@ -154,7 +162,6 @@
         showElasticSearchAlert: false,
         showDataplaneAlert: false,
         showDeletedAlert: false,
-        totalRows: 1,
         noAssets: null,
         currentPage: 1,
         perPage: 10,
@@ -207,11 +214,19 @@
         ]
       }
     },
+    computed: {
+      totalRows() {
+        return this.asset_list.length
+      }
+    },
     created: function () {
       this.isBusy = true
       this.retrieveAndFormatAsssets()
     },
     methods: {
+      openWindow: function (url) {
+        window.open(url);
+      },
       async deleteAsset(asset_id) {
         let token = await this.getAccessToken()
         let response = await fetch(process.env.VUE_APP_DATAPLANE_API_ENDPOINT+'/metadata/'+asset_id, {
@@ -296,7 +311,6 @@
             }
             else {
               this.pushAssetsToTable(assets)
-              this.totalRows = this.asset_list.length
               this.isBusy = false
             }
           }
@@ -369,38 +383,48 @@
       async pushAssetsToTable(assets) {
         let token = await this.getAccessToken()
         for (var i = 0, len = assets.length; i < len; i++) {
-          // check if from search collection or retrieve and format
           var assetId;
           if (typeof assets[i] === 'object') {
+            // If the asset list is coming from Elasticsearch, we get the assetId like this:
             assetId = assets[i].asset_id
-            }
-          else {
+          } else {
+            // If the asset list is coming from the dataplaneapi, we get the assetId like this:
             assetId = assets[i]
           }
-          let assetInfo = await this.getAssetInformation(token, assetId)
-          let created = new Date(0);
-          created.setUTCSeconds(assetInfo.results.Created)
-          let bucket = assetInfo.results.S3Bucket
-          let s3Key = assetInfo.results.S3Key
-          let s3Uri = 's3://'+ bucket+'/'+ s3Key
-          let filename = s3Key.split("/").pop()
-          let thumbnailS3Key = 'private/assets/' + assetId + '/input/' + filename
-          if (filename.substring(filename.lastIndexOf(".")) === ".mp4") {
-              thumbnailS3Key = 'private/assets/' + assetId + '/' + filename.substring(0, filename.lastIndexOf(".")) + '_thumbnail.0000001.jpg'
-          }
-          let thumbnail = await this.getAssetThumbNail(token, bucket, thumbnailS3Key)
-          let workflowStatus = await this.getAssetWorkflowStatus(token, assetId)
+          // Invoke an asynchronous task to add assets to the table in parallel so the table updates
+          // as fast as possible. For large media collections this may take several seconds.
+          this.pushAssetToTable(assetId, token)
+        }
+      },
+      async pushAssetToTable (assetId, token) {
+        let assetInfo = await this.getAssetInformation(token, assetId)
+        let created = new Date(0);
+        created.setUTCSeconds(assetInfo.results.Created)
+        let bucket = assetInfo.results.S3Bucket
+        let s3Key = assetInfo.results.S3Key
+        let s3Uri = 's3://' + bucket + '/' + s3Key
+        let filename = s3Key.split("/").pop()
+        let thumbnailS3Key = 'private/assets/' + assetId + '/input/' + filename
+        if (filename.substring(filename.lastIndexOf(".")) === ".mp4") {
+          // The thumbnail is created by Media Convert, see:
+          // source/operators/thumbnail/start_thumbnail.py
+          thumbnailS3Key = 'private/assets/' + assetId + '/' + filename.substring(0, filename.lastIndexOf(".")) + '_thumbnail.0000001.jpg'
+        }
+        let [thumbnail, workflowStatus] = await Promise.all([this.getAssetThumbNail(token, bucket, thumbnailS3Key), this.getAssetWorkflowStatus(token, assetId)]);
+        if (workflowStatus[0] && thumbnail)
+        {
           this.asset_list.push({
             asset_id: assetId,
-            Created: created.toLocaleDateString(),
+            Created: created,
             Filename: filename,
             status: workflowStatus[0].Status,
+            state_machine_console_link: "https://" + process.env.VUE_APP_AWS_REGION + ".console.aws.amazon.com/states/home?region=" + process.env.VUE_APP_AWS_REGION + "#/executions/details/" + workflowStatus[0].StateMachineExecutionArn,
             s3_uri: s3Uri,
             signedUrl: thumbnail,
             thumbnailID: '_' + assetId,
             Thumbnail: '',
             Actions: 'Run'
-            })
+          })
         }
       },
       async retrieveAndFormatAsssets () {
@@ -415,7 +439,6 @@
         else {
           this.noAssets = false
           this.pushAssetsToTable(assets)
-          this.totalRows = this.asset_list.length
           this.isBusy = false
         }
       }

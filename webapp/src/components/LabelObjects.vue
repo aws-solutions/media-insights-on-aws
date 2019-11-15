@@ -35,6 +35,7 @@
           <br>
           <template v-for="label in sorted_unique_labels">
             <template v-if="boxes_available.includes(label[0])">
+              <!-- Show darker button outline if boxes are available for the label -->
               <b-button
                 v-b-tooltip.hover
                 variant="outline-dark"
@@ -116,8 +117,8 @@
         canvasRefreshInterval: undefined,
         timeseries: new Map(),
         selectedLabel: '',
+        lowerConfidence: false,
         lowerConfidenceMessage: 'Try lowering confidence threshold',
-        lowerConfidence: false
       }
     },
     computed: {
@@ -198,9 +199,8 @@
         }
         this.fetchAssetData()
       },
+      // updateMarkers updates markers in the video player and is called when someone clicks on a label button
       updateMarkers (label) {
-        // This function updates markers in the video player and is called when someone clicks on a label button
-        this.selectedLabel = label;
         // clear canvas for redrawing
         this.boxes_available = [];
         clearInterval(this.canvasRefreshInterval);
@@ -212,7 +212,12 @@
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillStyle = "red";
-        // initialize lists of boxes and markers to be drawn
+        if (this.selectedLabel === label) {
+          // keep the canvas clear canvas if user clicked the label button a second consecutive time
+          this.selectedLabel = "";
+          return
+        }
+        this.selectedLabel = label;        // initialize lists of boxes and markers to be drawn
         var boxMap = new Map();
         var markers = [];
         var es_data = this.elasticsearch_data
@@ -345,6 +350,14 @@
           var player_timestamp = Math.round(this.player.currentTime()*10.0);
           // If we have a box for the player's timestamp...
           if (boxMap.has(player_timestamp)) {
+            i=0
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.beginPath();
+            ctx.strokeStyle = "red";
+            ctx.font = "15px Arial";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillStyle = "red";
             // ...then get a list of box instances
             var instance_list = (boxMap.get(player_timestamp)).map( item => item.instance).filter((v, i, a) => a.indexOf(v) === i);
             // For each box instance...
@@ -352,19 +365,16 @@
               // ...get all of the boxes belonging to this instance
               // at the current timestamp.
               var boxes = boxMap.get(player_timestamp).filter(box => box.instance === i)
-              // Determine which box has the highest confidence
-              var highconfidence = Math.max.apply(Math, boxes.map(function(o) { return o.confidence; }));
-              var drawMe = boxes.find(box => box.confidence === highconfidence.toString())
-              // Prevent overlapping boxes by drawing only the box
-              // with the highest confidence.
-              if (drawMe) {
-                ctx.rect(drawMe.x, drawMe.y, drawMe.width, drawMe.height);
-                // Draw object name and confidence score
-                ctx.fillText(drawMe.name + " (" + drawMe.confidence + "%)", (drawMe.x + drawMe.width / 2), drawMe.y - 10);
-              }
-            })
+              boxes.forEach (drawMe => {
+                if (drawMe) {
+                  ctx.rect(drawMe.x, drawMe.y, drawMe.width, drawMe.height);
+                  // Draw object name and confidence score
+                  ctx.fillText(drawMe.name + " (" + drawMe.confidence + "%)", (drawMe.x + drawMe.width / 2), drawMe.y - 10);
+                }
+              })
+            });
+            ctx.stroke();
           }
-          ctx.stroke();
         }.bind(this), interval_ms);
       },
       chartData() {

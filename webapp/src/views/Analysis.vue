@@ -46,10 +46,6 @@
                             title="Faces"
                             @click="currentView = 'FaceDetection'"
                           />
-                          <b-tab
-                              title="AutoML"
-                              @click="currentView = 'AutoML'"
-                          />
                         </b-tabs>
                       </div>
                     </b-row>

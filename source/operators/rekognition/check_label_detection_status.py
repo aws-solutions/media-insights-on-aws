@@ -63,6 +63,7 @@ def lambda_handler(event, context):
             output_object.add_workflow_metadata(LabelDetectionJobId=job_id, LabelDetectionError=str(response["StatusMessage"]))
             raise MasExecutionError(output_object.return_output_object())
         elif response['JobStatus'] == "SUCCEEDED":
+            is_paginated = False
             if 'NextToken' in response:
                 is_paginated = True
                 pagination_token = response['NextToken']

@@ -97,7 +97,10 @@
               </div>
             </b-card>
           </b-card-group>
-          <br>
+          <div align="right">
+            <button type="button" class="btn btn-link" @click="selectAll">Select All</button>
+            <button type="button" class="btn btn-link" @click="clearAll">Clear All</button>
+          </div>
         </b-container>
       </b-collapse>
     </b-container>
@@ -385,6 +388,12 @@
       clearInterval(this.workflow_status_polling)
     },
     methods: {
+      selectAll: function (){
+        this.enabledOperators = ['labelDetection', 'celebrityRecognition', 'contentModeration', 'faceDetection', 'thumbnail', 'Transcribe', 'Translate', 'ComprehendKeyPhrases', 'ComprehendEntities']
+      },
+      clearAll: function (){
+        this.enabledOperators = []
+      },
       openWindow: function (url) {
         window.open(url);
       },

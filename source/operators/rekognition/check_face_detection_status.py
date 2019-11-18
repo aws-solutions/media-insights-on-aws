@@ -68,7 +68,7 @@ def lambda_handler(event, context):
                 is_paginated = True
                 pagination_token = response['NextToken']
                 # Persist rekognition results (current page)
-                metadata_upload = dataplane.store_asset_metadata(asset_id, operator_name, workflow_id, response)
+                metadata_upload = dataplane.store_asset_metadata(asset_id=asset_id, operator_name=operator_name, workflow_id=workflow_id, results=response, paginate=True, end=False)
                 if "Status" not in metadata_upload:
                     output_object.update_workflow_status("Error")
                     output_object.add_workflow_metadata(
@@ -93,7 +93,10 @@ def lambda_handler(event, context):
             else:
                 finished = True
                 # Persist rekognition results
-                metadata_upload = dataplane.store_asset_metadata(asset_id, operator_name, workflow_id, response)
+                if is_paginated:
+                    metadata_upload = dataplane.store_asset_metadata(asset_id=asset_id, operator_name=operator_name, workflow_id=workflow_id, results=response, paginate=True, end=True)
+                else:
+                    metadata_upload = dataplane.store_asset_metadata(asset_id=asset_id, operator_name=operator_name, workflow_id=workflow_id, results=response)
                 if "Status" not in metadata_upload:
                     output_object.update_workflow_status("Error")
                     output_object.add_workflow_metadata(

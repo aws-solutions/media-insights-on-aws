@@ -97,7 +97,10 @@
               </div>
             </b-card>
           </b-card-group>
-          <br>
+          <div align="right">
+            <button type="button" class="btn btn-link" @click="selectAll">Select All</button>
+            <button type="button" class="btn btn-link" @click="clearAll">Clear All</button>
+          </div>
         </b-container>
       </b-collapse>
     </b-container>
@@ -174,7 +177,6 @@
         textOperators: [
           {text: 'Comprehend Key Phrases', value: 'ComprehendKeyPhrases'},
           {text: 'Comprehend Entities', value: 'ComprehendEntities'},
-          {text: 'Polly', value: 'Polly'},
           {text: 'Translate', value: 'Translate'},
         ],
         faceCollectionId: "",
@@ -255,18 +257,11 @@
     computed: {
       ...mapState(['execution_history']),
       textFormError() {
-        // Validate translated text is en, ru, es, or fr if Polly is enabled
-        if (this.enabledOperators.includes('Polly') && !(this.enabledOperators.includes('Translate'))) {
-          return "Polly requires Translate to be enabled.";
-        }
-        if (this.enabledOperators.includes('Polly') && this.targetLanguageCode !== "en" && this.targetLanguageCode !== "ru" && this.targetLanguageCode !== "es" && this.targetLanguageCode !== "fr") {
-          return "Polly requires translation target to be English, Russian, Spanish, or French.";
-        }
         return "";
       },
       audioFormError() {
         // Validate transcribe is enabled if any text operator is enabled
-        if (!this.enabledOperators.includes("Transcribe") && (this.enabledOperators.includes("Translate") || this.enabledOperators.includes("ComprehendEntities") || this.enabledOperators.includes("ComprehendKeyPhrases") || this.enabledOperators.includes("Polly"))) {
+        if (!this.enabledOperators.includes("Transcribe") && (this.enabledOperators.includes("Translate") || this.enabledOperators.includes("ComprehendEntities") || this.enabledOperators.includes("ComprehendKeyPhrases"))) {
           return "Transcribe must be enabled if any text operator is enabled.";
         }
         return "";
@@ -323,7 +318,7 @@
                 "Enabled": this.enabledOperators.includes("labelDetection"),
               },
               "Mediaconvert": {
-                "Enabled": (this.enabledOperators.includes("Mediaconvert") || this.enabledOperators.includes("Transcribe") || this.enabledOperators.includes("Translate") || this.enabledOperators.includes("ComprehendEntities") || this.enabledOperators.includes("ComprehendKeyPhrases") || this.enabledOperators.includes("Polly")),
+                "Enabled": (this.enabledOperators.includes("Mediaconvert") || this.enabledOperators.includes("Transcribe") || this.enabledOperators.includes("Translate") || this.enabledOperators.includes("ComprehendEntities") || this.enabledOperators.includes("ComprehendKeyPhrases")),
               },
               "contentModeration": {
                 "Enabled": this.enabledOperators.includes("contentModeration"),
@@ -368,8 +363,9 @@
 
             },
             "defaultTextSynthesisStage": {
+              // Polly is available in the MIECompleteWorkflow but not used in the front-end, so we've disabled it here.
               "Polly": {
-                "Enabled": this.enabledOperators.includes("Polly"),
+                "Enabled": false,
               }
 
             }
@@ -385,6 +381,12 @@
       clearInterval(this.workflow_status_polling)
     },
     methods: {
+      selectAll: function (){
+        this.enabledOperators = ['labelDetection', 'celebrityRecognition', 'contentModeration', 'faceDetection', 'thumbnail', 'Transcribe', 'Translate', 'ComprehendKeyPhrases', 'ComprehendEntities']
+      },
+      clearAll: function (){
+        this.enabledOperators = []
+      },
       openWindow: function (url) {
         window.open(url);
       },

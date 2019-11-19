@@ -153,6 +153,15 @@
         loading: Loading
       }),
 
+      AutoML: () => ({
+        component: new Promise(function(resolve) {
+          setTimeout(function() {
+            resolve(import('@/components/AutoML.vue'));
+          }, 1000);
+        }),
+        loading: Loading
+      }),
+
       Celebrities: () => ({
         component: new Promise(function(resolve) {
           setTimeout(function() {

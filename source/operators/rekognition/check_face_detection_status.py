@@ -50,6 +50,7 @@ def lambda_handler(event, context):
     max_results = 1000
     pagination_token = ''
     finished = False
+    is_paginated = False
     # Pagination starts on 1001th result. This while loops through each page.
     while not finished:
         response = rek.get_face_detection(JobId=job_id, MaxResults=max_results, NextToken=pagination_token)
@@ -64,7 +65,6 @@ def lambda_handler(event, context):
             output_object.add_workflow_metadata(FaceDetectionJobId=job_id, FaceDetectionError=str(response["StatusMessage"]))
             raise MasExecutionError(output_object.return_output_object())
         elif response['JobStatus'] == "SUCCEEDED":
-            is_paginated = False
             if 'NextToken' in response:
                 is_paginated = True
                 pagination_token = response['NextToken']

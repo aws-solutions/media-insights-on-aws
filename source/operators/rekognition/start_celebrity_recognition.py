@@ -106,7 +106,7 @@ def lambda_handler(event, context):
     elif file_type in valid_video_types:
         job_id = start_celebrity_recognition(s3bucket, urllib.parse.unquote_plus(s3key))
         output_object.update_workflow_status("Executing")
-        output_object.add_workflow_metadata(CelebrityRecognitionJobId=job_id, AssetId=asset_id, WorkflowExecutionId=workflow_id)
+        output_object.add_workflow_metadata(JobId=job_id, AssetId=asset_id, WorkflowExecutionId=workflow_id)
         return output_object.return_output_object()
     else:
         print("ERROR: invalid file type")

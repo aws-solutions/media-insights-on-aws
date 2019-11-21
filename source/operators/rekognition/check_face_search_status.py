@@ -35,10 +35,8 @@ def lambda_handler(event, context):
         raise MasExecutionError(output_object.return_output_object())
     # Images will have already been processed, so return if job status is already set.
     if status == "Complete":
-        # TODO: Persist rekognition output
         output_object.update_workflow_status("Complete")
         return output_object.return_output_object()
-
     try:
         job_id = event["MetaData"]["FaceSearchJobId"]
         workflow_id = event["MetaData"]["WorkflowExecutionId"]
@@ -46,18 +44,15 @@ def lambda_handler(event, context):
         output_object.update_workflow_status("Error")
         output_object.add_workflow_metadata(FaceSearchError="Missing a required metadata key {e}".format(e=e))
         raise MasExecutionError(output_object.return_output_object())
-
     # Check rekognition job status:
     dataplane = DataPlane()
     max_results = 1000
     pagination_token = ''
     finished = False
+    is_paginated = False
     # Pagination starts on 1001th result. This while loops through each page.
     while not finished:
-        response = rek.get_face_search(JobId=job_id,
-                                          MaxResults=max_results,
-                                          NextToken=pagination_token)
-
+        response = rek.get_face_search(JobId=job_id, MaxResults=max_results, NextToken=pagination_token)
         if response['JobStatus'] == "IN_PROGRESS":
             finished = True
             output_object.update_workflow_status("Executing")
@@ -66,18 +61,19 @@ def lambda_handler(event, context):
         elif response['JobStatus'] == "FAILED":
             finished = True
             output_object.update_workflow_status("Error")
-            output_object.add_workflow_metadata(FaceSearchJobId=job_id,
-                                          FaceSearchError=str(response["StatusMessage"]))
+            output_object.add_workflow_metadata(FaceSearchJobId=job_id, FaceSearchError=str(response["StatusMessage"]))
             raise MasExecutionError(output_object.return_output_object())
         elif response['JobStatus'] == "SUCCEEDED":
             if 'NextToken' in response:
+                is_paginated = True
                 pagination_token = response['NextToken']
                 # Persist rekognition results (current page)
-                metadata_upload = dataplane.store_asset_metadata(asset_id, operator_name, workflow_id, response)
+                metadata_upload = dataplane.store_asset_metadata(asset_id=asset_id, operator_name=operator_name, workflow_id=workflow_id, results=response, paginate=True, end=False)
                 if "Status" not in metadata_upload:
                     output_object.update_workflow_status("Error")
                     output_object.add_workflow_metadata(
-                        FaceSearchError="Unable to upload metadata for asset: {asset}".format(asset=asset_id))
+                        FaceSearchError="Unable to upload metadata for asset: {asset}".format(asset=asset_id),
+                        FaceSearchJobId=job_id)
                     raise MasExecutionError(output_object.return_output_object())
                 else:
                     if metadata_upload["Status"] == "Success":
@@ -85,23 +81,26 @@ def lambda_handler(event, context):
                     elif metadata_upload["Status"] == "Failed":
                         output_object.update_workflow_status("Error")
                         output_object.add_workflow_metadata(
-                            FaceSearchError="Unable to upload metadata for asset: {asset}".format(asset=asset_id))
+                            FaceSearchError="Unable to upload metadata for asset: {asset}".format(asset=asset_id),
+                            FaceSearchJobId=job_id)
                         raise MasExecutionError(output_object.return_output_object())
                     else:
                         output_object.update_workflow_status("Error")
                         output_object.add_workflow_metadata(
-                            FaceSearchError="Unable to upload metadata for asset: {asset}".format(asset=asset_id))
-                        output_object.add_workflow_metadata(PersonTrackingJobId=job_id)
+                            FaceSearchError="Unable to upload metadata for asset: {asset}".format(asset=asset_id),
+                            FaceSearchJobId=job_id)
                         raise MasExecutionError(output_object.return_output_object())
-
             else:
                 finished = True
                 # Persist rekognition results
-                metadata_upload = dataplane.store_asset_metadata(asset_id, operator_name, workflow_id, response)
+                if is_paginated:
+                    metadata_upload = dataplane.store_asset_metadata(asset_id=asset_id, operator_name=operator_name, workflow_id=workflow_id, results=response, paginate=True, end=True)
+                else:
+                    metadata_upload = dataplane.store_asset_metadata(asset_id=asset_id, operator_name=operator_name, workflow_id=workflow_id, results=response)
                 if "Status" not in metadata_upload:
                     output_object.update_workflow_status("Error")
                     output_object.add_workflow_metadata(
-                        FaceSearchError="Unable to upload metadata for asset: {asset}".format(asset=asset_id))
+                        FaceSearchError="Unable to upload metadata for {asset}: {error}".format(asset=asset_id, error=metadata_upload))
                     raise MasExecutionError(output_object.return_output_object())
                 else:
                     if metadata_upload["Status"] == "Success":
@@ -118,7 +117,7 @@ def lambda_handler(event, context):
                         output_object.update_workflow_status("Error")
                         output_object.add_workflow_metadata(
                             FaceSearchError="Unable to upload metadata for asset: {asset}".format(asset=asset_id))
-                        output_object.add_workflow_metadata(PersonTrackingJobId=job_id)
+                        output_object.add_workflow_metadata(FaceSearchJobId=job_id)
                         raise MasExecutionError(output_object.return_output_object())
         else:
             output_object.update_workflow_status("Error")

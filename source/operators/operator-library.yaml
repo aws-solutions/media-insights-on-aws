@@ -1191,6 +1191,7 @@ Resources:
             ],
           ]
       Runtime: "python3.7"
+      Timeout: 600
       Environment:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"

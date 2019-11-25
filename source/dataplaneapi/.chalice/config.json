@@ -11,7 +11,7 @@
       "api_gateway_stage": "api",
       "autogen_policy": false,
       "iam_policy_file": "policy-dev.json",
-      "lambda_timeout": 900,
+      "lambda_timeout": 120,
       "lambda_memory_size": 2048
     }
   }

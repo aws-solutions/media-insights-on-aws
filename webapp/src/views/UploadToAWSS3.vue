@@ -461,6 +461,7 @@
         } else {
           vm.s3UploadError("Unsupported media type, " + media_type + ". Please upload a jpg or mp4.")
         }
+        console.log(JSON.stringify(data))
         fetch(process.env.VUE_APP_WORKFLOW_API_ENDPOINT + 'workflow/execution', {
           method: 'post',
           body: JSON.stringify(data),

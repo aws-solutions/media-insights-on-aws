@@ -23,6 +23,7 @@ config = config.Config(**mie_config)
 rek = boto3.client('rekognition', config=config)
 
 def lambda_handler(event, context):
+    print(json.dumps(event))
     try:
         status = event["Status"]
         asset_id = event['MetaData']['AssetId']
@@ -45,17 +46,26 @@ def lambda_handler(event, context):
     dataplane = DataPlane()
     max_results = 1000
     pagination_token = ''
-    finished = False
     is_paginated = False
-    pagination_token=''
     # If pagination token is in event["MetaData"] then use that to start
     # reading reko results from where this Lambda's previous invocation left off.
     if ("PageToken" in event["MetaData"]):
         pagination_token = event["MetaData"]["PageToken"]
+        is_paginated = True
     # Read and persist 10 reko pages per invocation of this Lambda
     for page_number in range(11):
         # Get reko results
-        response = rek.get_label_detection(JobId=job_id, MaxResults=max_results, NextToken=pagination_token)
+        print("job id: " + job_id + " page token: " + pagination_token)
+        try:
+            response = rek.get_label_detection(JobId=job_id, MaxResults=max_results, NextToken=pagination_token)
+        except rek.exceptions.InvalidPaginationTokenException as e:
+            # Trying to reverse seek to the last valid pagination token would be difficult
+            # to implement, so in the rare case that a pagination token expires we'll
+            # just start over by reading from the first page.
+            print(e)
+            print("WARNING: Invalid pagination token found. Restarting read from first page.")
+            pagination_token=''
+            continue
         # If the reko job is IN_PROGRESS then return. We'll check again after a step function wait.
         if response['JobStatus'] == "IN_PROGRESS":
             output_object.update_workflow_status("Executing")
@@ -77,7 +87,7 @@ def lambda_handler(event, context):
                 # If dataplane request succeeded then get the next pagination token and continue.
                 if "Status" in metadata_upload and metadata_upload["Status"] == "Success":
                     # Log that this page has been successfully uploaded to the dataplane
-                    print("Uploaded metadata for asset: {asset}".format(asset=asset_id))
+                    print("Uploaded metadata for asset: {asset}, job {JobId}, page {page}".format(asset=asset_id, JobId=job_id, page=pagination_token))
                     # Get the next pagination token:
                     pagination_token = response['NextToken']
                     # In order to avoid Lambda timeouts, we're only going to persist 10 pages then
@@ -103,7 +113,7 @@ def lambda_handler(event, context):
                     metadata_upload = dataplane.store_asset_metadata(asset_id=asset_id, operator_name=operator_name, workflow_id=workflow_id, results=response)
                 # If dataplane request succeeded then mark the stage complete
                 if "Status" in metadata_upload and metadata_upload["Status"] == "Success":
-                    print("Uploaded metadata for asset: {asset}".format(asset=asset_id))
+                    print("Uploaded metadata for asset: {asset}, job {JobId}, page {page}".format(asset=asset_id, JobId=job_id, page=pagination_token))
                     output_object.add_workflow_metadata(JobId=job_id)
                     output_object.update_workflow_status("Complete")
                     return output_object.return_output_object()

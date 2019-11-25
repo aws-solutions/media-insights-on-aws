@@ -45,7 +45,6 @@ def lambda_handler(event, context):
         raise MasExecutionError(output_object.return_output_object())
     # Check rekognition job status:
     dataplane = DataPlane()
-    max_results = 1000
     pagination_token = ''
     is_paginated = False
     # If pagination token is in event["MetaData"] then use that to start

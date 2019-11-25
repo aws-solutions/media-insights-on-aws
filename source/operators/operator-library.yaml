@@ -614,7 +614,7 @@ Resources:
             ],
           ]
       Runtime: "python3.7"
-      Timeout: 300
+      Timeout: 120
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
@@ -642,7 +642,7 @@ Resources:
             ],
           ]
       Runtime: "python3.7"
-      Timeout: 300
+      Timeout: 120
       Environment:
         Variables:
           REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
@@ -669,7 +669,7 @@ Resources:
             ],
           ]
       Runtime: "python3.7"
-      Timeout: 300
+      Timeout: 120
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
@@ -697,7 +697,7 @@ Resources:
             ],
           ]
       Runtime: "python3.7"
-      Timeout: 300
+      Timeout: 120
       Environment:
         Variables:
           REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
@@ -724,7 +724,8 @@ Resources:
             ],
           ]
       Runtime: "python3.7"
-      Timeout: 300
+      Timeout: 120
+      MemorySize: 256
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
@@ -752,7 +753,8 @@ Resources:
             ],
           ]
       Runtime: "python3.7"
-      Timeout: 300
+      Timeout: 120
+      MemorySize: 256
       Environment:
         Variables:
           REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
@@ -779,7 +781,8 @@ Resources:
             ],
           ]
       Runtime: "python3.7"
-      Timeout: 300
+      Timeout: 120
+      MemorySize: 256
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
@@ -807,7 +810,8 @@ Resources:
             ],
           ]
       Runtime: "python3.7"
-      Timeout: 300
+      Timeout: 120
+      MemorySize: 256
       Environment:
         Variables:
           REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
@@ -834,7 +838,8 @@ Resources:
             ],
           ]
       Runtime: "python3.7"
-      Timeout: 300
+      Timeout: 120
+      MemorySize: 256
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
@@ -862,7 +867,8 @@ Resources:
             ],
           ]
       Runtime: "python3.7"
-      Timeout: 300
+      Timeout: 120
+      MemorySize: 256
       Environment:
         Variables:
           REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
@@ -889,7 +895,8 @@ Resources:
             ],
           ]
       Runtime: "python3.7"
-      Timeout: 300
+      Timeout: 120
+      MemorySize: 256
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
@@ -915,7 +922,8 @@ Resources:
             ],
           ]
       Runtime: "python3.7"
-      Timeout: 300
+      Timeout: 120
+      MemorySize: 256
       Environment:
         Variables:
           REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
@@ -1192,6 +1200,7 @@ Resources:
           ]
       Runtime: "python3.7"
       Timeout: 600
+      MemorySize: 2048
       Environment:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"

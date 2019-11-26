@@ -34,6 +34,7 @@
         <div class="wrapper">
           <br>
           <template v-for="label in sorted_unique_labels">
+            <!-- Show lighter button outline since content moderation never provides bounding boxes -->
             <b-button
               v-b-tooltip.hover
               variant="outline-secondary"
@@ -167,8 +168,13 @@
         }
         this.fetchAssetData()
       },
+      // updateMarkers updates markers in the video player and is called when someone clicks on a label button
       updateMarkers (label) {
-        // this function updates markers in the video player and is called when someone clicks on a label button
+        if (this.selectedLabel === label) {
+          // keep the canvas clear canvas if user clicked the label button a second consecutive time
+          this.selectedLabel = "";
+          return
+        }
         this.selectedLabel = label;
         var markers = [];
         var es_data = this.elasticsearch_data

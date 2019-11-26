@@ -51,7 +51,10 @@
                   :options="videoOperators"
                   name="flavour-1"
                 ></b-form-checkbox-group>
-                <b-form-input v-if="enabledOperators.includes('faceSearch')" v-model="faceCollectionId" placeholder="Enter face collection id"></b-form-input>
+                <label>Thumbnail position: </label>
+                <b-form-input v-model="thumbnail_position" type="range" min="1" max="20" step="1"></b-form-input> {{ thumbnail_position }} sec
+                <b-form-input v-if="enabledOperators.includes('faceSearch')" id="Enter face collection id" v-model="faceCollectionId"></b-form-input>
+
                 <b-form-input v-if="enabledOperators.includes('genericDataLookup')" v-model="genericDataFilename" placeholder="Enter data filename"></b-form-input>
               </b-form-group>
               <div v-if="videoFormError" style="color:red">
@@ -95,20 +98,34 @@
               </div>
             </b-card>
           </b-card-group>
+          <div align="right">
+            <button type="button" class="btn btn-link" @click="selectAll">Select All</button>
+            <button type="button" class="btn btn-link" @click="clearAll">Clear All</button>
+          </div>
         </b-container>
       </b-collapse>
     </b-container>
-    <br>
-    <b-container class="bv-example-row">
+    <b-container v-if="executed_assets.length > 0">
+      <label>
+        Execution History
+      </label>
       <b-table
-        striped
+        :fields="fields"
         bordered
         hover
         small
         responsive
+        show-empty
         fixed
         :items="executed_assets"
-      />
+      >
+        <template v-slot:cell(workflow_status)="data">
+          <a href="" @click.stop.prevent="openWindow(data.item.state_machine_console_link)">{{ data.item.workflow_status }}</a>
+        </template>
+      </b-table>
+      <b-button size="sm" @click="clearHistory">
+        Clear History
+      </b-button>
     </b-container>
   </div>
 </template>
@@ -116,6 +133,7 @@
 <script>
   import vueDropzone from '@/components/vue-dropzone.vue';
   import Header from '@/components/Header.vue'
+  import { mapState } from 'vuex'
 
   export default {
     components: {
@@ -124,8 +142,28 @@
     },
     data() {
       return {
+        fields: [
+          {
+            'asset_id': {
+              label: "Asset Id",
+              sortable: false
+            }
+          },
+          {
+            'file_name': {
+              label: "File Name",
+              sortable: false
+            }
+          },
+          { 'workflow_status': {
+              label: 'Workflow Status',
+              sortable: false
+            }
+          }
+        ],
+        thumbnail_position: 10,
         upload_in_progress: false,
-        enabledOperators: ['labelDetection', 'celebrityRecognition', 'contentModeration', 'faceDetection', 'Transcribe', 'Translate', 'ComprehendKeyPhrases', 'ComprehendEntities'],
+        enabledOperators: ['labelDetection', 'celebrityRecognition', 'contentModeration', 'faceDetection', 'thumbnail', 'Transcribe', 'Translate', 'ComprehendKeyPhrases', 'ComprehendEntities'],
         videoOperators: [
           {text: 'Object Detection', value: 'labelDetection'},
           {text: 'Celebrity Recognition', value: 'celebrityRecognition'},
@@ -140,29 +178,28 @@
         textOperators: [
           {text: 'Comprehend Key Phrases', value: 'ComprehendKeyPhrases'},
           {text: 'Comprehend Entities', value: 'ComprehendEntities'},
-          {text: 'Polly', value: 'Polly'},
           {text: 'Translate', value: 'Translate'},
         ],
         faceCollectionId: "",
         genericDataFilename: "",
         transcribeLanguage: "en-US",
         transcribeLanguages: [
-          {text: 'US English', value: 'en-US'},
-          {text: 'British English', value: 'en-GB'},
-          {text: 'Australian English', value: 'en-AU'},
-          {text: 'French', value: 'fr-FR'},
-          {text: 'Canadian French', value: 'fr-CA'},
-          {text: 'US Spanish', value: 'es-US'},
-          {text: 'ES Spanish', value: 'es-ES'},
-          {text: 'Italian', value: 'it-IT'},
-          {text: 'Brazilian Portuguese', value: 'pt-BR'},
-          {text: 'German', value: 'de-DE'},
-          {text: 'Korean', value: 'ko-KR'},
-          {text: 'Hindi', value: 'hi-IN'},
-          {text: 'Indian-accented English', value: 'en-IN'},
-          {text: 'Modern Standard Arabic', value: 'ar-SA'},
-          {text: 'Russian', value: 'ru-RU'},
+          {text: 'Arabic, Modern Standard', value: 'ar-SA'},
           {text: 'Chinese', value: 'zh-CN'},
+          {text: 'English, US', value: 'en-US'},
+          {text: 'English, Australian', value: 'en-AU'},
+          {text: 'English, British', value: 'en-GB'},
+          {text: 'English, Indian-accented', value: 'en-IN'},
+          {text: 'French', value: 'fr-FR'},
+          {text: 'French, Canadian', value: 'fr-CA'},
+          {text: 'German', value: 'de-DE'},
+          {text: 'Hindi', value: 'hi-IN'},
+          {text: 'Italian', value: 'it-IT'},
+          {text: 'Korean', value: 'ko-KR'},
+          {text: 'Portuguese, Brazilian', value: 'pt-BR'},
+          {text: 'Russian', value: 'ru-RU'},
+          {text: 'Spanish, ES', value: 'es-ES'},
+          {text: 'Spanish, US', value: 'es-US'},
         ],
         translateLanguages: [
           {text: 'Arabic', value: 'ar'},
@@ -192,7 +229,7 @@
           {text: 'Turkish', value: 'tr'},
         ],
         sourceLanguageCode: "en",
-        targetLanguageCode: "ru",
+        targetLanguageCode: "es",
         uploadErrorMessage: "",
         dismissSecs: 8,
         dismissCountDown: 0,
@@ -219,19 +256,13 @@
       }
     },
     computed: {
+      ...mapState(['execution_history']),
       textFormError() {
-        // Validate translated text is en, ru, es, or fr if Polly is enabled
-        if (this.enabledOperators.includes('Polly') && !(this.enabledOperators.includes('Translate'))) {
-          return "Polly requires Translate to be enabled.";
-        }
-        if (this.enabledOperators.includes('Polly') && this.targetLanguageCode !== "en" && this.targetLanguageCode !== "ru" && this.targetLanguageCode !== "es" && this.targetLanguageCode !== "fr") {
-          return "Polly requires translation target to be English, Russian, Spanish, or French.";
-        }
         return "";
       },
       audioFormError() {
         // Validate transcribe is enabled if any text operator is enabled
-        if (!this.enabledOperators.includes("Transcribe") && (this.enabledOperators.includes("Translate") || this.enabledOperators.includes("ComprehendEntities") || this.enabledOperators.includes("ComprehendKeyPhrases") || this.enabledOperators.includes("Polly"))) {
+        if (!this.enabledOperators.includes("Transcribe") && (this.enabledOperators.includes("Translate") || this.enabledOperators.includes("ComprehendEntities") || this.enabledOperators.includes("ComprehendKeyPhrases"))) {
           return "Transcribe must be enabled if any text operator is enabled.";
         }
         return "";
@@ -243,6 +274,7 @@
           if (this.faceCollectionId === "") {
             return "Face collection name is required.";
           }
+
           // Validate that the collection ID matches required regex
           else if ((new RegExp('[^a-zA-Z0-9_.\\-]')).test(this.faceCollectionId)) {
             return "Face collection name must match pattern [a-zA-Z0-9_.\\\\-]+";
@@ -288,7 +320,7 @@
                 "Enabled": this.enabledOperators.includes("labelDetection"),
               },
               "Mediaconvert": {
-                "Enabled": (this.enabledOperators.includes("Mediaconvert") || this.enabledOperators.includes("Transcribe") || this.enabledOperators.includes("Translate") || this.enabledOperators.includes("ComprehendEntities") || this.enabledOperators.includes("ComprehendKeyPhrases") || this.enabledOperators.includes("Polly")),
+                "Enabled": (this.enabledOperators.includes("Mediaconvert") || this.enabledOperators.includes("Transcribe") || this.enabledOperators.includes("Translate") || this.enabledOperators.includes("ComprehendEntities") || this.enabledOperators.includes("ComprehendKeyPhrases")),
               },
               "contentModeration": {
                 "Enabled": this.enabledOperators.includes("contentModeration"),
@@ -306,6 +338,10 @@
                 "Bucket": process.env.VUE_APP_DATAPLANE_BUCKET,
                 "Key": this.genericDataFilename==="" ? "undefined" : this.genericDataFilename
               },
+              "Thumbnail": {
+                "ThumbnailPosition": this.thumbnail_position.toString(),
+                "Enabled": true
+              }
             },
             "defaultAudioStage": {
               "Transcribe": {
@@ -329,19 +365,32 @@
 
             },
             "defaultTextSynthesisStage": {
+              // Polly is available in the MIECompleteWorkflow but not used in the front-end, so we've disabled it here.
               "Polly": {
-                "Enabled": this.enabledOperators.includes("Polly"),
+                "Enabled": false,
               }
-
             }
           },
         }
       }
     },
+    mounted: function() {
+      this.executed_assets = this.execution_history;
+      this.pollWorkflowStatus()
+    },
     beforeDestroy () {
       clearInterval(this.workflow_status_polling)
     },
     methods: {
+      selectAll: function (){
+        this.enabledOperators = ['labelDetection', 'celebrityRecognition', 'contentModeration', 'faceDetection', 'thumbnail', 'Transcribe', 'Translate', 'ComprehendKeyPhrases', 'ComprehendEntities']
+      },
+      clearAll: function (){
+        this.enabledOperators = []
+      },
+      openWindow: function (url) {
+        window.open(url);
+      },
       countDownChanged(dismissCountDown) {
         this.dismissCountDown = dismissCountDown
       },
@@ -436,9 +485,8 @@
               var asset_id = res.data.AssetId;
               var s3key = location.s3ObjectLocation.fields.key;
               console.log("Media assigned asset id: " + asset_id);
-              vm.executed_assets.push({asset_id: asset_id, file_name: s3key, workflow_status: ""});
+              vm.executed_assets.push({asset_id: asset_id, file_name: s3key, workflow_status: "", state_machine_console_link: ""});
               vm.getWorkflowStatus(asset_id);
-              vm.pollWorkflowStatus()
             }
           })
         )
@@ -466,9 +514,11 @@
               for (var i = 0; i < vm.executed_assets.length; i++) {
                 if (vm.executed_assets[i].asset_id === asset_id) {
                   vm.executed_assets[i].workflow_status = res.data[0].Status;
+                  vm.executed_assets[i].state_machine_console_link = "https://"+process.env.VUE_APP_AWS_REGION+".console.aws.amazon.com/states/home?region="+process.env.VUE_APP_AWS_REGION+"#/executions/details/"+res.data[0].StateMachineExecutionArn;
                   break;
                 }
               }
+              this.$store.commit('updateExecutedAssets', vm.executed_assets);
             }
           })
         )
@@ -489,6 +539,11 @@
         // console.log("Presigning URL endpoint: " + this.signurl);
         this.$refs.myVueDropzone.setAWSSigningURL(this.signurl);
         this.$refs.myVueDropzone.processQueue();
+      },
+      clearHistory() {
+        this.executed_assets = [];
+        this.$store.commit('updateExecutedAssets', this.executed_assets);
+
       }
     }
   }

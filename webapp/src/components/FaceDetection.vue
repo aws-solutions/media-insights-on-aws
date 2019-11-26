@@ -18,6 +18,9 @@
           {{ Confidence }}%<br>
         </div>
       </b-row>
+      <div v-if="lowerConfidence === true">
+        {{ lowerConfidenceMessage }}
+      </div>
       <div
         v-if="isBusy"
         class="wrapper"
@@ -32,6 +35,7 @@
           <br>
           <template v-for="label in sorted_unique_labels">
             <template v-if="boxes_available.includes(label[0])">
+              <!-- Show darker button outline if boxes are available for the label -->
               <b-button
                 v-b-tooltip.hover
                 variant="outline-dark"
@@ -112,7 +116,9 @@
         canvasRefreshInterval: undefined,
         timeseries: new Map(),
         selectedLabel: '',
-        boxes_available: []
+        boxes_available: [],
+        lowerConfidence: false,
+        lowerConfidenceMessage: 'Try lowering confidence threshold'
       }
     },
     computed: {
@@ -178,54 +184,75 @@
             this.showElasticSearchAlert = true
           }
           else {
-            let result = await response
-            let data = result.hits.hits
+            let result = await response;
+            let data = result.hits.hits;
             let es_data = [];
-            for (var i = 0, len = data.length; i < len; i++) {
-              let item = data[i]._source
-              // need to also loop thru emotions
-              for (var emotion = 0, emotionsLen = item.Emotions.length; emotion < emotionsLen; emotion++) {
-                if (item.Emotions[emotion].Confidence >= this.Confidence) {
-                  es_data.push({"Name": item.Emotions[emotion].Type, "Timestamp": item.Timestamp})
+            if (data.length === 0 && this.Confidence > 55) {
+              this.lowerConfidence = true;
+              this.lowerConfidenceMessage = 'Try lowering confidence threshold'
+            } else {
+              this.lowerConfidence = false;
+              for (var i = 0, len = data.length; i < len; i++) {
+                let item = data[i]._source;
+                if ("Emotions" in item) {
+                  for (var emotion = 0, emotionsLen = item.Emotions.length; emotion < emotionsLen; emotion++) {
+                    if (item.Emotions[emotion].Confidence >= this.Confidence) {
+                      es_data.push({"Name": item.Emotions[emotion].Type, "Timestamp": item.Timestamp})
+                    }
+                  }
+                }
+                if ("Beard" in item) {
+                  if (item.Beard.Confidence > this.Confidence) {
+                    es_data.push({"Name": "Beard", "Timestamp": item.Timestamp})
+                  }
+                }
+                if ("Eyeglasses" in item) {
+                  if (item.Eyeglasses.Confidence > this.Confidence) {
+                    es_data.push({"Name": "Eyeglasses", "Timestamp": item.Timestamp})
+                  }
+                }
+                if ("EyesOpen" in item) {
+                  if (item.EyesOpen.Confidence > this.Confidence) {
+                    es_data.push({"Name": "EyesOpen", "Timestamp": item.Timestamp})
+                  }
+                }
+                if ("MouthOpen" in item) {
+                  if (item.MouthOpen.Confidence > this.Confidence) {
+                    es_data.push({"Name": "MouthOpen", "Timestamp": item.Timestamp})
+                  }
+                }
+                if ("Mustache" in item) {
+                  if (item.Mustache.Confidence > this.Confidence) {
+                    es_data.push({"Name": "Mustache", "Timestamp": item.Timestamp})
+                  }
+                }
+                if ("Smile" in item) {
+                  if (item.Smile.Confidence > this.Confidence) {
+                    es_data.push({"Name": "Smile", "Timestamp": item.Timestamp})
+                  }
+                }
+                if ("Sunglasses" in item) {
+                  if (item.Sunglasses.Confidence > this.Confidence) {
+                    es_data.push({"Name": "Sunglasses", "Timestamp": item.Timestamp})
+                  }
+                }
+                if ("Gender" in item) {
+                  es_data.push({"Name": item.Gender.Value, "Timestamp": item.Timestamp})
+                }
+                if ("BoundingBox" in item) {
+                  es_data.push({
+                    "Name": "Face",
+                    "Timestamp": item.Timestamp,
+                    "Confidence": item.Confidence,
+                    "BoundingBox": {
+                      "Width": item.BoundingBox.Width,
+                      "Height": item.BoundingBox.Height,
+                      "Left": item.BoundingBox.Left,
+                      "Top": item.BoundingBox.Top
+                    }
+                  })
                 }
               }
-              if (item.Beard.Value == true) {
-                if (item.Beard.Confidence > this.Confidence) {
-                  es_data.push({"Name": "Beard", "Timestamp": item.Timestamp})
-                }
-              }
-              if (item.Eyeglasses.Value == true) {
-                if (item.Eyeglasses.Confidence > this.Confidence) {
-                  es_data.push({"Name": "Eyeglasses", "Timestamp": item.Timestamp})
-                }
-              }
-              if (item.EyesOpen.Value == true) {
-                if (item.EyesOpen.Confidence > this.Confidence) {
-                  es_data.push({"Name": "EyesOpen", "Timestamp": item.Timestamp})
-                }
-              }
-              if (item.MouthOpen.Value == true) {
-                if (item.MouthOpen.Confidence > this.Confidence) {
-                  es_data.push({"Name": "MouthOpen", "Timestamp": item.Timestamp})
-                }
-              }
-              if (item.Mustache.Value == true) {
-                if (item.Mustache.Confidence > this.Confidence) {
-                  es_data.push({"Name": "Mustache", "Timestamp": item.Timestamp})
-                }
-              }
-              if (item.Smile.Value == true) {
-                if (item.Smile.Confidence > this.Confidence) {
-                  es_data.push({"Name": "Smile", "Timestamp": item.Timestamp})
-                }
-              }
-              if (item.Sunglasses.Value == true) {
-                if (item.Sunglasses.Confidence > this.Confidence) {
-                  es_data.push({"Name": "Sunglasses", "Timestamp": item.Timestamp})
-                }
-              }
-              es_data.push({"Name": item.Gender.Value, "Timestamp": item.Timestamp})
-              es_data.push({"Name": "Face", "Timestamp": item.Timestamp, "Confidence": item.Confidence, "BoundingBox": {"Width": item.BoundingBox.Width, "Height": item.BoundingBox.Height, "Left": item.BoundingBox.Left, "Top": item.BoundingBox.Top}})
             }
             this.elasticsearch_data = JSON.parse(JSON.stringify(es_data))
             this.isBusy = false
@@ -260,9 +287,8 @@
         }
         this.fetchAssetData()
       },
+      // updateMarkers updates markers in the video player and is called when someone clicks on a label button
       updateMarkers (label) {
-        // this function updates markers in the video player and is called when someone clicks on a label button
-        this.selectedLabel = label;
         // clear canvas for redrawing
         this.boxes_available = [];
         clearInterval(this.canvasRefreshInterval);
@@ -274,6 +300,12 @@
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillStyle = "red";
+        if (this.selectedLabel === label) {
+          // keep the canvas clear canvas if user clicked the label button a second consecutive time
+          this.selectedLabel = "";
+          return
+        }
+        this.selectedLabel = label;
         // initialize lists of boxes and markers to be drawn
         var boxMap = new Map();
         var markers = [];
@@ -391,15 +423,31 @@
           var player_timestamp = Math.round(this.player.currentTime()*10.0);
           // If we have a box for the player's timestamp...
           if (boxMap.has(player_timestamp)) {
-            var faces = (boxMap.get(player_timestamp));
+            i=0
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.beginPath();
+            ctx.strokeStyle = "red";
+            ctx.font = "15px Arial";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillStyle = "red";
+            // ...then get a list of box instances
+            var instance_list = (boxMap.get(player_timestamp)).map( item => item.instance).filter((v, i, a) => a.indexOf(v) === i);
             // For each box instance...
-            faces.forEach( drawMe => {
-              ctx.rect(drawMe.x, drawMe.y, drawMe.width, drawMe.height);
-              // Draw object name and confidence score
-              ctx.fillText(drawMe.name + " (" + drawMe.confidence + "%)", (drawMe.x + drawMe.width / 2), drawMe.y - 10);
+            instance_list.forEach( i => {
+              // ...get all of the boxes belonging to this instance
+              // at the current timestamp.
+              var boxes = boxMap.get(player_timestamp).filter(box => box.instance === i)
+              boxes.forEach (drawMe => {
+                if (drawMe) {
+                  ctx.rect(drawMe.x, drawMe.y, drawMe.width, drawMe.height);
+                  // Draw object name and confidence score
+                  ctx.fillText(drawMe.name + " (" + drawMe.confidence + "%)", (drawMe.x + drawMe.width / 2), drawMe.y - 10);
+                }
+              })
             });
+            ctx.stroke();
           }
-          ctx.stroke();
         }.bind(this), interval_ms);
       },
       chartData() {

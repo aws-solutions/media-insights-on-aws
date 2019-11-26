@@ -11,4 +11,7 @@ export default {
   updateSelectedLabel (state, value){
     state.selected_label = value
   },
+  updateExecutedAssets (state, value){
+    state.execution_history = value
+  },
 }

@@ -419,11 +419,35 @@ fi
 
 popd
 
-zip -g dist/start_media_convert.zip start_media_convert.py awsmie.py
-zip -g dist/get_media_convert.zip get_media_convert.py awsmie.py
+zip -g dist/start_media_convert.zip start_media_convert.py
+zip -g dist/get_media_convert.zip get_media_convert.py
 
 cp "./dist/start_media_convert.zip" "$dist_dir/start_media_convert.zip"
 cp "./dist/get_media_convert.zip" "$dist_dir/get_media_convert.zip"
+
+
+echo "------------------------------------------------------------------------------"
+echo "Thumbnail  Operations"
+echo "------------------------------------------------------------------------------"
+
+echo "Building Thumbnail function"
+cd "$source_dir/operators/thumbnail" || exit
+
+# Make lambda package
+[ -e dist ] && rm -r dist
+mkdir -p dist
+
+if ! [ -d ./dist/start_thumbnail.zip ]; then
+  zip -r9 ./dist/start_thumbnail.zip .
+
+elif [ -d ./dist/start_thumbnail.zip ]; then
+  echo "Package already present"
+fi
+
+popd
+
+zip -g dist/start_thumbnail.zip start_thumbnail.py
+cp "./dist/start_thumbnail.zip" "$dist_dir/start_thumbnail.zip"
 
 echo "------------------------------------------------------------------------------"
 echo "Transcribe  Operations"
@@ -483,8 +507,8 @@ fi
 
 popd
 
-zip -g dist/start_transcribe.zip start_transcribe.py awsmie.py
-zip -g dist/get_transcribe.zip get_transcribe.py awsmie.py
+zip -g dist/start_transcribe.zip start_transcribe.py
+zip -g dist/get_transcribe.zip get_transcribe.py
 
 cp "./dist/start_transcribe.zip" "$dist_dir/start_transcribe.zip"
 cp "./dist/get_transcribe.zip" "$dist_dir/get_transcribe.zip"
@@ -540,7 +564,7 @@ fi
 
 popd
 
-zip -g dist/get_captions.zip get_captions.py awsmie.py
+zip -g dist/get_captions.zip get_captions.py
 
 cp "./dist/get_captions.zip" "$dist_dir/get_captions.zip"
 
@@ -595,7 +619,7 @@ fi
 
 popd
 
-zip -g dist/start_translate.zip start_translate.py awsmie.py
+zip -g dist/start_translate.zip start_translate.py
 
 cp "./dist/start_translate.zip" "$dist_dir/start_translate.zip"
 
@@ -658,8 +682,8 @@ fi
 
 popd
 
-zip -g dist/start_polly.zip start_polly.py awsmie.py
-zip -g dist/get_polly.zip get_polly.py awsmie.py
+zip -g dist/start_polly.zip start_polly.py
+zip -g dist/get_polly.zip get_polly.py
 
 cp "./dist/start_polly.zip" "$dist_dir/start_polly.zip"
 cp "./dist/get_polly.zip" "$dist_dir/get_polly.zip"

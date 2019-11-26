@@ -18,7 +18,11 @@
 #   '"GenericDataLookup":{"Bucket": "myBucket", "Key":"test-media/My Video.json", "Enabled":true}'
 #   to the workflow configuration, like this:
 #
-#   curl -k -X POST -H "Content-Type: application/json" --data '{"Name":"MieCompleteWorkflow","Configuration":{"defaultVideoStage":{"GenericDataLookup":{"Bucket": "myBucket", "Key":"test-media/My Video.json","Enabled":true}}},"Input":{"Media":{"Video":{"S3Bucket":"'$DATAPLANE_BUCKET'","S3Key":"My Video.mp4"}}}}'  $WORKFLOW_API_ENDPOINT/workflow/execution
+#   curl -k -X POST -H "Authorization: $MIE_ACCESS_TOKEN" -H "Content-Type: application/json" --data '{"Name":"MieCompleteWorkflow","Configuration":{"defaultVideoStage":{"GenericDataLookup":{"Bucket": "myBucket", "Key":"test-media/My Video.json","Enabled":true}}},"Input":{"Media":{"Video":{"S3Bucket":"'$DATAPLANE_BUCKET'","S3Key":"My Video.mp4"}}}}'  $WORKFLOW_API_ENDPOINT/workflow/execution
+#
+#  For instructions on getting $MIE_ACCESS_TOKEN, see:
+#  https://github.com/awslabs/aws-media-insights-engine/blob/master/IMPLEMENTATION_GUIDE.md#step-6-test-your-operator
+
 #
 ###############################################################################
 

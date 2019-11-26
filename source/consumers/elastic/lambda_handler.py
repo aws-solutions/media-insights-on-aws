@@ -324,10 +324,8 @@ def process_face_detection(asset, workflow, results):
                 extracted_items.append(item)
     bulk_index(es, asset, "face_detection", extracted_items)
 
-def process_logo_detection(asset, workflow, results):
-    # This function puts logo detection data in Elasticsearch.
-    # The logo detection raw data was in inconsistent with Confidence and BoundingBox fields in Rekognition.
-    # So, those fields are modified in this function, accordingly.
+def process_generic_data(asset, workflow, results):
+    # This function puts generic data in Elasticsearch.
     metadata = json.loads(results)
     es = connect_es(es_endpoint)
     extracted_items = []
@@ -335,63 +333,67 @@ def process_logo_detection(asset, workflow, results):
     if isinstance(metadata, list):
         # handle paged results
         for page in metadata:
-            if "Logos" in page:
-                for item in page["Logos"]:
+            if "Labels" in page:
+                for item in page["Labels"]:
                     try:
-                        item["Operator"] = "logo_detection"
+                        item["Operator"] = "generic_data_lookup"
                         item["Workflow"] = workflow
-                        if "Logo" in item:
-                            # Flatten the inner Logo array
-                            item["Confidence"] = float(item["Logo"]["Confidence"])*100
-                            item["Name"] = item["Logo"]["Name"]
+                        if "Label" in item:
+                            # Flatten the inner Label array
+                            item["Confidence"] = float(item["Label"]["Confidence"])*100
+                            item["Name"] = item["Label"]["Name"]
                             item["Instances"] = ''
-                            if 'Instances' in item["Logo"]:
-                                for box in item["Logo"]["Instances"]:
+                            if 'Instances' in item["Label"]:
+                                for box in item["Label"]["Instances"]:
                                     box["BoundingBox"]["Height"] = float(box["BoundingBox"]["Height"]) / 720
                                     box["BoundingBox"]["Top"] = float(box["BoundingBox"]["Top"]) / 720
                                     box["BoundingBox"]["Left"] = float(box["BoundingBox"]["Left"]) / 1280
                                     box["BoundingBox"]["Width"] = float(box["BoundingBox"]["Width"]) / 1280
                                     box["Confidence"] = float(box["Confidence"])*100
-                                item["Instances"] = item["Logo"]["Instances"]
+
+                                item["Instances"] = item["Label"]["Instances"]
                             item["Parents"] = ''
-                            if 'Parents' in item["Logo"]:
-                                item["Parents"] = item["Logo"]["Parents"]
+                            if 'Parents' in item["Label"]:
+                                item["Parents"] = item["Label"]["Parents"]
                             # Delete the flattened array
-                            del item["Logo"]
+                            del item["Label"]
                         extracted_items.append(item)
                     except KeyError as e:
                         print("KeyError: " + str(e))
                         print("Item: " + json.dumps(item))
     else:
         # these results are not paged
-        if "Logos" in metadata:
-            for item in metadata["Logos"]:
+
+        if "Labels" in metadata:
+            for item in metadata["Labels"]:
                 try:
-                    item["Operator"] = "logo_detection"
+                    item["Operator"] = "generic_data_lookup"
                     item["Workflow"] = workflow
-                    if "Logo" in item:
-                        # Flatten the inner Logo array
-                        item["Confidence"] = float(item["Logo"]["Confidence"])*100
-                        item["Name"] = item["Logo"]["Name"]
+                    if "Label" in item:
+                        # Flatten the inner Label array
+                        item["Confidence"] = float(item["Label"]["Confidence"])*100
+                        item["Name"] = item["Label"]["Name"]
                         item["Instances"] = ''
-                        if 'Instances' in item["Logo"]:
-                            for box in item["Logo"]["Instances"]:
+                        if 'Instances' in item["Label"]:
+                            for box in item["Label"]["Instances"]:
                                 box["BoundingBox"]["Height"] = float(box["BoundingBox"]["Height"]) / 720
                                 box["BoundingBox"]["Top"] = float(box["BoundingBox"]["Top"]) / 720
                                 box["BoundingBox"]["Left"] = float(box["BoundingBox"]["Left"]) / 1280
                                 box["BoundingBox"]["Width"] = float(box["BoundingBox"]["Width"]) / 1280
                                 box["Confidence"] = float(box["Confidence"])*100
-                            item["Instances"] = item["Logo"]["Instances"]
+                            item["Instances"] = item["Label"]["Instances"]
                         item["Parents"] = ''
-                        if 'Parents' in item["Logo"]:
-                            item["Parents"] = item["Logo"]["Parents"]
+                        if 'Parents' in item["Label"]:
+                            item["Parents"] = item["Label"]["Parents"]
                         # Delete the flattened array
-                        del item["Logo"]
+                        del item["Label"]
                     extracted_items.append(item)
                 except KeyError as e:
                     print("KeyError: " + str(e))
                     print("Item: " + json.dumps(item))
-    bulk_index(es, asset, "logos", extracted_items)
+
+    bulk_index(es, asset, "labels", extracted_items)
+
 
 def process_label_detection(asset, workflow, results):
     # Rekognition label detection puts labels on an inner array in its JSON result, but for ease of search in Elasticsearch we need those results as a top level json array. So this function does that.
@@ -674,7 +676,8 @@ def lambda_handler(event, context):
                         if operator == "translate":
                             process_translate(asset_id, workflow, metadata["Results"])
                         if operator == "genericdatalookup":
-                            process_logo_detection(asset_id, workflow, metadata["Results"])
+                            process_generic_data(asset_id, workflow, metadata["Results"])
+
                         if operator == "labeldetection":
                             process_label_detection(asset_id, workflow, metadata["Results"])
                         if operator == "celebrityrecognition":

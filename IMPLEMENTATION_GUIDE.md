@@ -37,10 +37,10 @@ The guide is intended for IT infrastructure architects and developers who have p
   - [Step 5: Update the build script to deploy your operator to AWS Lambda](#step-5-update-the-build-script-to-deploy-your-operator-to-aws-lambda)        
   - [Step 6: Test your operator](#step-6-test-your-operator)
 
+
 [7. API Documentation](#7-api-documentation)
 
 [8. Glossary](#8-glossary)
-
 
 
 
@@ -885,4 +885,6 @@ Stores metadata for an asset that can be retrieved as a single block or pages of
 
 ### **Data plane pipeline consumer**
 
+
 A lambda function that consumes data from the data plane pipeline and stores it (or acts on it) in another downstream data store.  Data can be stored in different kind of data stores to fit the data management and query needs of the application.  There can be 0 or more pipeline consumers in a MIE application.
+

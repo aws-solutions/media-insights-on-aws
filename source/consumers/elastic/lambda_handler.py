@@ -350,6 +350,7 @@ def process_generic_data(asset, workflow, results):
                                     box["BoundingBox"]["Left"] = float(box["BoundingBox"]["Left"]) / 1280
                                     box["BoundingBox"]["Width"] = float(box["BoundingBox"]["Width"]) / 1280
                                     box["Confidence"] = float(box["Confidence"])*100
+
                                 item["Instances"] = item["Label"]["Instances"]
                             item["Parents"] = ''
                             if 'Parents' in item["Label"]:
@@ -362,6 +363,7 @@ def process_generic_data(asset, workflow, results):
                         print("Item: " + json.dumps(item))
     else:
         # these results are not paged
+
         if "Labels" in metadata:
             for item in metadata["Labels"]:
                 try:
@@ -389,7 +391,9 @@ def process_generic_data(asset, workflow, results):
                 except KeyError as e:
                     print("KeyError: " + str(e))
                     print("Item: " + json.dumps(item))
+
     bulk_index(es, asset, "labels", extracted_items)
+
 
 def process_label_detection(asset, workflow, results):
     # Rekognition label detection puts labels on an inner array in its JSON result, but for ease of search in Elasticsearch we need those results as a top level json array. So this function does that.
@@ -673,6 +677,7 @@ def lambda_handler(event, context):
                             process_translate(asset_id, workflow, metadata["Results"])
                         if operator == "genericdatalookup":
                             process_generic_data(asset_id, workflow, metadata["Results"])
+
                         if operator == "labeldetection":
                             process_label_detection(asset_id, workflow, metadata["Results"])
                         if operator == "celebrityrecognition":

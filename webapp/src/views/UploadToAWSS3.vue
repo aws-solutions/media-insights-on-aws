@@ -54,6 +54,7 @@
                 <label>Thumbnail position: </label>
                 <b-form-input v-model="thumbnail_position" type="range" min="1" max="20" step="1"></b-form-input> {{ thumbnail_position }} sec
                 <b-form-input v-if="enabledOperators.includes('faceSearch')" id="Enter face collection id" v-model="faceCollectionId"></b-form-input>
+
                 <b-form-input v-if="enabledOperators.includes('genericDataLookup')" v-model="genericDataFilename" placeholder="Enter data filename"></b-form-input>
               </b-form-group>
               <div v-if="videoFormError" style="color:red">
@@ -273,6 +274,7 @@
           if (this.faceCollectionId === "") {
             return "Face collection name is required.";
           }
+
           // Validate that the collection ID matches required regex
           else if ((new RegExp('[^a-zA-Z0-9_.\\-]')).test(this.faceCollectionId)) {
             return "Face collection name must match pattern [a-zA-Z0-9_.\\\\-]+";
@@ -367,7 +369,6 @@
               "Polly": {
                 "Enabled": false,
               }
-
             }
           },
         }
@@ -542,6 +543,7 @@
       clearHistory() {
         this.executed_assets = [];
         this.$store.commit('updateExecutedAssets', this.executed_assets);
+
       }
     }
   }

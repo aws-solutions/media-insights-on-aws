@@ -39,6 +39,10 @@
                             @click="currentView = 'Celebrities'"
                           />
                           <b-tab
+                            title="Face Matches"
+                            @click="currentView = 'FaceSearch'"
+                          />
+                          <b-tab
                             title="Moderation"
                             @click="currentView = 'ContentModeration'"
                           />
@@ -161,7 +165,14 @@
         }),
         loading: Loading,
       }),
-
+      FaceSearch: () => ({
+        component: new Promise(function(resolve) {
+          setTimeout(function() {
+            resolve(import('@/components/FaceSearch.vue'));
+        }, 1000);
+        }),
+        loading: Loading,
+      }),
       ContentModeration: () => ({
         component: new Promise(function(resolve) {
           setTimeout(function() {

@@ -71,12 +71,14 @@ def lambda_handler(event, context):
     #    process translate on that appended chunk
 
     try:
-        # process transcript in blocks of 5000 characters
+        # Translate can handle 5000 unicode characters but we'll process only 4000 at a time
+        # in case the input text is ascii encoded.
+        # (A unicode character can be more than one ascii character).
         translated_text = ''
         print("Input text length: " + str(len(transcript)))
-        for i in range(math.ceil(len(transcript)/5000)):
-            transcript_chunk = transcript[i*5000:i*5000+4999]
-            print("Processing transcript characters " + str(i*5000) + " through " + str(i*5000+4999))
+        for i in range(math.ceil(len(transcript)/4000)):
+            transcript_chunk = transcript[i*4000:i*4000+3999]
+            print("Processing transcript characters " + str(i*4000) + " through " + str(i*4000+3999))
             translation_chunk = translate_client.translate_text(Text=transcript_chunk,SourceLanguageCode=source_lang,TargetLanguageCode=target_lang)
             translated_text = translated_text + ' ' + translation_chunk["TranslatedText"]
     except Exception as e:

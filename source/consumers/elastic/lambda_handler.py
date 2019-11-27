@@ -471,13 +471,11 @@ def process_transcribe(asset, workflow, results):
     for item in transcript_time:
         content = item["alternatives"][0]["content"]
         confidence = normalize_confidence(item["alternatives"][0]["confidence"])
-        try:
+        if "start_time" in item and "end_time" in item:
             start_time = convert_to_milliseconds(item["start_time"])
             end_time = convert_to_milliseconds(item["end_time"])
             item["start_time"] = start_time
             item["end_time"] = end_time
-        except KeyError:
-            print("This item has no timestamps:", item)
 
         del item["alternatives"]
 

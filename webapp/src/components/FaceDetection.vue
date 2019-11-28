@@ -152,7 +152,7 @@
       },
     },
     deactivated: function () {
-      console.log('activated component:', this.operator);
+      console.log('deactivated component:', this.operator);
       this.boxes_available = [];
       this.selectedLabel = '';
       clearInterval(this.canvasRefreshInterval);

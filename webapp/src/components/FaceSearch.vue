@@ -62,7 +62,6 @@
           </template>
         </div>
       </b-row>
-
       <b-row
         align-h="center"
         class="my-1"
@@ -226,7 +225,7 @@
         var markers = [];
         var es_data = this.elasticsearch_data;
         var i=0;
-        es_data.forEach( function(record) {
+        es_data.forEach(function(record) {
           if (record.Name === label) {
             // Save label name overlaying on video timeline
             markers.push({'time': record.Timestamp/1000, 'text': record.Name, 'overlayText': record.Name});
@@ -285,17 +284,43 @@
           this.showElasticSearchAlert = true
         }
         else {
-          let es_data = []
-          let result = await response
-          let data = result.hits.hits
+          let es_data = [];
+          let result = await response;
+          let data = result.hits.hits;
           if (data.length === 0 && this.Confidence > 55) {
-            this.lowerConfidence = true
+            this.lowerConfidence = true;
             this.lowerConfidenceMessage = 'Try lowering confidence threshold'
-          }
-          else {
-            this.lowerConfidence = false
+          } else {
+            this.lowerConfidence = false;
             for (var i = 0, len = data.length; i < len; i++) {
               es_data.push(data[i]._source)
+              let item = data[i]._source;
+
+              if (item.ContainsKnownFace && item.ExternalImageId) {
+                es_data.push({
+                  "Name": item.ExternalImageId,
+                  "Timestamp": item.Timestamp,
+                  "Confidence": item.KnownFaceSimilarity,
+                  "BoundingBox": {
+                    "Width": item.KnownFaceBoundingBox.Width,
+                    "Height": item.KnownFaceBoundingBox.Height,
+                    "Left": item.KnownFaceBoundingBox.Left,
+                    "Top": item.KnownFaceBoundingBox.Top
+                  }
+                })
+              } else if ("FaceBoundingBox" in item) {
+                es_data.push({
+                  "Name": 'Person' + item.PersonIndex,
+                  "Timestamp": item.Timestamp,
+                  "Confidence": item.Confidence,
+                  "BoundingBox": {
+                    "Width": item.FaceBoundingBox.Width,
+                    "Height": item.FaceBoundingBox.Height,
+                    "Left": item.FaceBoundingBox.Left,
+                    "Top": item.FaceBoundingBox.Top
+                  }
+                })
+              }
             }
           }
           this.elasticsearch_data = JSON.parse(JSON.stringify(es_data))

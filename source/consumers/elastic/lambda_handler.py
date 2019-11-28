@@ -200,19 +200,21 @@ def process_face_search(asset, workflow, results):
                         confidence = item["Person"]["Face"]["Confidence"]
                         item["Confidence"] = confidence
 
-                    if "FaceMatches" in item:
+                    # flatten face matches key
+                    if item["FaceMatches"]:
                         item["ContainsKnownFace"] = True
-                        # flatten face matches key
-                        for face in item["FaceMatches"]:
-                            item["KnownFaceSimilarity"] = face["Similarity"]
-                            item["MatchingKnownFaceId"] = face["Face"]["FaceId"]
-                            item["KnownFaceBoundingBox"] = face["Face"]["BoundingBox"]
-                            item["ImageId"] = face["Face"]["ImageId"]
-                            item["ExternalImageId"] = face["Face"].get("ExternalImageId", None)
-                        del item["FaceMatches"]
+
+                        face = item["FaceMatches"][0]  # the highest similarity comes first
+                        item["KnownFaceSimilarity"] = face["Similarity"]
+                        item["MatchingKnownFaceId"] = face["Face"]["FaceId"]
+                        item["KnownFaceBoundingBox"] = face["Face"]["BoundingBox"]
+                        item["ImageId"] = face["Face"]["ImageId"]
+                        item["ExternalImageId"] = face["Face"].get("ExternalImageId", None)
                     else:
                         item["ContainsKnownFace"] = False
+
                     del item["Person"]
+                    del item["FaceMatches"]
 
                     extracted_items.append(item)
 
@@ -225,7 +227,7 @@ def process_face_search(asset, workflow, results):
                 item["PersonIndex"] = item["Person"]["Index"]
                 if "BoundingBox" in item["Person"]:
                     item["PersonBoundingBox"] = item["Person"]["BoundingBox"]
-                #flatten face key
+                # flatten face key
                 if "Face" in item["Person"]:
                     item["FaceBoundingBox"] = item["Person"]["Face"]["BoundingBox"]
                     item["FaceLandmarks"] = item["Person"]["Face"]["Landmarks"]
@@ -234,19 +236,21 @@ def process_face_search(asset, workflow, results):
                     confidence = item["Person"]["Face"]["Confidence"]
                     item["Confidence"] = confidence
 
-                if "FaceMatches" in item:
+                # flatten face matches key
+                if item["FaceMatches"]:
                     item["ContainsKnownFace"] = True
-                    # flatten face matches key
-                    for face in item["FaceMatches"]:
-                        item["KnownFaceSimilarity"] = face["Similarity"]
-                        item["MatchingKnownFaceId"] = face["Face"]["FaceId"]
-                        item["KnownFaceBoundingBox"] = face["Face"]["BoundingBox"]
-                        item["ImageId"] = face["Face"]["ImageId"]
-                        item["ExternalImageId"] = face["Face"].get("ExternalImageId", None)
-                    del item["FaceMatches"]
+
+                    face = item["FaceMatches"][0]  # the highest similarity comes first
+                    item["KnownFaceSimilarity"] = face["Similarity"]
+                    item["MatchingKnownFaceId"] = face["Face"]["FaceId"]
+                    item["KnownFaceBoundingBox"] = face["Face"]["BoundingBox"]
+                    item["ImageId"] = face["Face"]["ImageId"]
+                    item["ExternalImageId"] = face["Face"].get("ExternalImageId", None)
                 else:
                     item["ContainsKnownFace"] = False
+
                 del item["Person"]
+                del item["FaceMatches"]
 
                 extracted_items.append(item)
 

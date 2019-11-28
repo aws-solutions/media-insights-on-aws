@@ -208,6 +208,7 @@ def process_face_search(asset, workflow, results):
                             item["MatchingKnownFaceId"] = face["Face"]["FaceId"]
                             item["KnownFaceBoundingBox"] = face["Face"]["BoundingBox"]
                             item["ImageId"] = face["Face"]["ImageId"]
+                            item["ExternalImageId"] = face["Face"].get("ExternalImageId", None)
                         del item["FaceMatches"]
                     else:
                         item["ContainsKnownFace"] = False
@@ -241,6 +242,7 @@ def process_face_search(asset, workflow, results):
                         item["MatchingKnownFaceId"] = face["Face"]["FaceId"]
                         item["KnownFaceBoundingBox"] = face["Face"]["BoundingBox"]
                         item["ImageId"] = face["Face"]["ImageId"]
+                        item["ExternalImageId"] = face["Face"].get("ExternalImageId", None)
                     del item["FaceMatches"]
                 else:
                     item["ContainsKnownFace"] = False

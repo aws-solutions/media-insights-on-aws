@@ -296,9 +296,9 @@
               es_data.push(data[i]._source)
               let item = data[i]._source;
 
-              if (item.ContainsKnownFace && item.ExternalImageId) {
+              if (item.ContainsKnownFace) {
                 es_data.push({
-                  "Name": item.ExternalImageId,
+                  "Name": item.MatchingKnownFaceId,
                   "Timestamp": item.Timestamp,
                   "Confidence": item.KnownFaceConfidence,
                   "BoundingBox": {

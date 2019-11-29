@@ -300,7 +300,7 @@
                 es_data.push({
                   "Name": item.ExternalImageId,
                   "Timestamp": item.Timestamp,
-                  "Confidence": item.KnownFaceSimilarity,
+                  "Confidence": item.KnownFaceConfidence,
                   "BoundingBox": {
                     "Width": item.KnownFaceBoundingBox.Width,
                     "Height": item.KnownFaceBoundingBox.Height,

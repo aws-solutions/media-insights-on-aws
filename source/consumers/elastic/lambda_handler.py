@@ -197,8 +197,7 @@ def process_face_search(asset, workflow, results):
                         item["FaceLandmarks"] = item["Person"]["Face"]["Landmarks"]
                         item["FacePose"] = item["Person"]["Face"]["Pose"]
                         item["FaceQuality"] = item["Person"]["Face"]["Quality"]
-                        confidence = item["Person"]["Face"]["Confidence"]
-                        item["Confidence"] = confidence
+                        item["Confidence"] = item["Person"]["Face"]["Confidence"]
 
                     # flatten face matches key
                     if item["FaceMatches"]:
@@ -206,6 +205,7 @@ def process_face_search(asset, workflow, results):
 
                         face = item["FaceMatches"][0]  # the highest similarity comes first
                         item["KnownFaceSimilarity"] = face["Similarity"]
+                        item["KnownFaceConfidence"] = face["Face"]["Confidence"]
                         item["MatchingKnownFaceId"] = face["Face"]["FaceId"]
                         item["KnownFaceBoundingBox"] = face["Face"]["BoundingBox"]
                         item["ImageId"] = face["Face"]["ImageId"]
@@ -233,8 +233,7 @@ def process_face_search(asset, workflow, results):
                     item["FaceLandmarks"] = item["Person"]["Face"]["Landmarks"]
                     item["FacePose"] = item["Person"]["Face"]["Pose"]
                     item["FaceQuality"] = item["Person"]["Face"]["Quality"]
-                    confidence = item["Person"]["Face"]["Confidence"]
-                    item["Confidence"] = confidence
+                    item["Confidence"] = item["Person"]["Face"]["Confidence"]
 
                 # flatten face matches key
                 if item["FaceMatches"]:
@@ -242,6 +241,7 @@ def process_face_search(asset, workflow, results):
 
                     face = item["FaceMatches"][0]  # the highest similarity comes first
                     item["KnownFaceSimilarity"] = face["Similarity"]
+                    item["KnownFaceConfidence"] = face["Face"]["Confidence"]
                     item["MatchingKnownFaceId"] = face["Face"]["FaceId"]
                     item["KnownFaceBoundingBox"] = face["Face"]["BoundingBox"]
                     item["ImageId"] = face["Face"]["ImageId"]

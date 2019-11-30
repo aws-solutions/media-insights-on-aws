@@ -56,7 +56,7 @@ def lambda_handler(event, context):
         # Get reko results
         print("job id: " + job_id + " page token: " + pagination_token)
         try:
-            response = rek.get_person_tracking(JobId=job_id, MaxResults=max_results, NextToken=pagination_token)
+            response = rek.get_person_tracking(JobId=job_id, NextToken=pagination_token)
         except rek.exceptions.InvalidPaginationTokenException as e:
             # Trying to reverse seek to the last valid pagination token would be difficult
             # to implement, so in the rare case that a pagination token expires we'll
@@ -127,4 +127,3 @@ def lambda_handler(event, context):
             output_object.update_workflow_status("Error")
             output_object.add_workflow_metadata(PersonTrackingError="Unable to determine status")
             raise MasExecutionError(output_object.return_output_object())
-

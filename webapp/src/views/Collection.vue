@@ -97,7 +97,7 @@
                     <template v-slot:cell(Actions)="data">
                       <b-button
                         variant="orange"
-                        @click="$router.push(`/analysis/${data.item.asset_id}`)"
+                        :href="(`/analysis/${data.item.asset_id}`)"
                       >
                         Analyze
                       </b-button>

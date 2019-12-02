@@ -570,6 +570,9 @@ def connect_es(endpoint):
 
 
 def bulk_index(es_object, asset, index, data):
+    if len(data) == 0:
+        print("Data is empty. Skipping insert to Elasticsearch.")
+        return
     es_index = "mie{index}".format(index=index).lower()
     actions_to_send = []
     # Elasticsearch will respond with an error like, "Request size exceeded 10485760 bytes"
@@ -613,7 +616,7 @@ def bulk_index(es_object, asset, index, data):
         )
     except Exception as e:
         print('Unable to load data into es:', e)
-        print("Data: ", item)
+        print("Data: ", data)
     else:
         print("Successfully stored data in elasticsearch for asset: ", asset)
 

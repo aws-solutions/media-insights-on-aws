@@ -245,7 +245,7 @@
           // disable network timeouts (important for large uploads)
           timeout: 0,
           // limit max upload file size (in MB)
-          maxFilesize: 500
+          maxFilesize: 2000
         },
         awss3: {
           signingURL: '',

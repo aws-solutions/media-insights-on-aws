@@ -87,7 +87,7 @@
                 ></b-form-checkbox-group>
                 <div v-if="enabledOperators.includes('Translate')">
                   <label>Translation Source Language</label>
-                  <b-form-select v-model="sourceLanguageCode" :options="translateLanguages"></b-form-select>
+                  <b-form-select v-model="transcribeLanguage" :options="transcribeLanguages"></b-form-select>
                   <label>Translation Target Language</label>
                   <b-form-select v-model="targetLanguageCode" :options="translateLanguages"></b-form-select>
                 </div>
@@ -351,7 +351,7 @@
             "defaultTextStage": {
               "Translate": {
                 "Enabled": this.enabledOperators.includes("Translate"),
-                "SourceLanguageCode": this.sourceLanguageCode,
+                "SourceLanguageCode": this.transcribeLanguage.split('-')[0],
                 "TargetLanguageCode": this.targetLanguageCode
               },
               "ComprehendEntities": {

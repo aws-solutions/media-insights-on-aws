@@ -185,7 +185,7 @@ def process_face_search(asset, workflow, results):
         for page in metadata:
             if "Persons" in page:
                 for item in page["Persons"]:
-                    item["Operator"] = "faceSearch"
+                    item["Operator"] = "face_search"
                     item["Workflow"] = workflow
                     # flatten person key
                     item["PersonIndex"] = item["Person"]["Index"]
@@ -221,7 +221,7 @@ def process_face_search(asset, workflow, results):
     else:
         if "Persons" in metadata:
             for item in metadata["Persons"]:
-                item["Operator"] = "faceSearch"
+                item["Operator"] = "face_search"
                 item["Workflow"] = workflow
                 # flatten person key
                 item["PersonIndex"] = item["Person"]["Index"]
@@ -624,7 +624,7 @@ def bulk_index(es_object, asset, index, data):
         print('Unable to load data into es:', e)
         print("Data: ", data)
     else:
-        print("Successfully stored data in elasticsearch for asset: ", asset)
+        print(f"Successfully stored {es_index} in elasticsearch for: {asset}")
 
 
 def index_document(es_object, asset, index, data):
@@ -640,7 +640,7 @@ def index_document(es_object, asset, index, data):
         print('Unable to load data into es:', e)
         print("Data:", data)
     else:
-        print("Successfully stored data in elasticsearch for:", asset)
+        print(f"Successfully stored {es_index} in elasticsearch for: {asset}")
 
 
 def read_json_from_s3(key):

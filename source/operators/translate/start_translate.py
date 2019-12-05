@@ -125,6 +125,8 @@ def lambda_handler(event, context):
     # Put final result into a JSON object because the MIE dataplane requires it to be so.
     translation_result = {}
     translation_result["TranslatedText"] = translated_text
+    translation_result["SourceLanguageCode"] = source_lang
+    translation_result["TargetLanguageCode"] = target_lang
     print("Final translation text length: " + str(len(translated_text)))
     dataplane = DataPlane()
     metadata_upload = dataplane.store_asset_metadata(asset_id, operator_object.name, workflow_id, translation_result)

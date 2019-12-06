@@ -293,19 +293,18 @@
           } else {
             this.lowerConfidence = false;
             for (var i = 0, len = data.length; i < len; i++) {
-              es_data.push(data[i]._source)
               let item = data[i]._source;
 
               if (item.ContainsKnownFace) {
                 es_data.push({
                   "Name": item.MatchingKnownFaceId,
                   "Timestamp": item.Timestamp,
-                  "Confidence": item.KnownFaceConfidence,
+                  "Confidence": item.Confidence,
                   "BoundingBox": {
-                    "Width": item.KnownFaceBoundingBox.Width,
-                    "Height": item.KnownFaceBoundingBox.Height,
-                    "Left": item.KnownFaceBoundingBox.Left,
-                    "Top": item.KnownFaceBoundingBox.Top
+                    "Width": item.FaceBoundingBox.Width,
+                    "Height": item.FaceBoundingBox.Height,
+                    "Left": item.FaceBoundingBox.Left,
+                    "Top": item.FaceBoundingBox.Top
                   }
                 })
               } else if ("FaceBoundingBox" in item) {

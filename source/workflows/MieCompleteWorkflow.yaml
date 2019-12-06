@@ -12,6 +12,9 @@ Parameters:
   OperatorLibraryStack:
     Description: "Name of the operator library stack"
     Type: String
+  ShortUUID:
+    Type: String
+    Description: "A short UUID that is going to be appended to resource names"
 
 Resources:
   PreliminaryStage:
@@ -30,7 +33,7 @@ Resources:
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Stage"
-      Name: "defaultVideoStage"
+      Name: !Sub "defaultVideoStage-${ShortUUID}"
       Operations:
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:GenericDataLookup"
@@ -56,7 +59,7 @@ Resources:
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Stage"
-      Name: "defaultAudioStage"
+      Name: !Sub "defaultAudioStage-${ShortUUID}"
       Operations:
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:Transcribe"
@@ -66,7 +69,7 @@ Resources:
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Stage"
-      Name: "defaultTextStage"
+      Name: !Sub "defaultTextStage-${ShortUUID}"
       Operations:
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:Translate"
@@ -80,7 +83,7 @@ Resources:
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Stage"
-      Name: "defaultTextSynthesisStage"
+      Name: !Sub "defaultTextSynthesisStage-${ShortUUID}"
       Operations:
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:Polly"
@@ -96,7 +99,7 @@ Resources:
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Workflow"
-      Name: "MieCompleteWorkflow"
+      Name: !Sub "MieCompleteWorkflow-${ShortUUID}"
       StartAt: !GetAtt PreliminaryStage.Name
       Stages: !Sub
         - |-
@@ -124,4 +127,3 @@ Resources:
           defaultTextStage: !GetAtt defaultTextStage.Name,
           defaultTextSynthesisStage: !GetAtt defaultTextSynthesisStage.Name
         }
-

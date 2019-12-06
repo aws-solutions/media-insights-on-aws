@@ -12,6 +12,9 @@ Parameters:
   OperatorLibraryStack:
     Description: "Name of the operator library stack"
     Type: String
+  ShortUUID:
+    Type: String
+    Description: "A short UUID that is going to be appended to resource names"
 
 Resources:
 
@@ -22,7 +25,7 @@ Resources:
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Stage"
-      Name: "ParallelComprehendStage"
+      Name: !Sub "ParallelComprehendStage-${ShortUUID}"
       Operations:
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:ComprehendPhrases"
@@ -39,7 +42,7 @@ Resources:
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Workflow"
-      Name: "ParallelComprehendWorkflow"
+      Name: !Sub "ParallelComprehendWorkflow-${ShortUUID}"
       Stages: !Sub
         - |-
           {

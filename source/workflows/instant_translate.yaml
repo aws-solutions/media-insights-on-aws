@@ -9,6 +9,9 @@ Parameters:
   OperatorLibraryStack:
     Description: "Name of the operator library stack"
     Type: String
+  ShortUUID:
+    Type: String
+    Description: "A short UUID that is going to be appended to resource names"
 
 Resources:
   # Stages
@@ -18,7 +21,7 @@ Resources:
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Stage"
-      Name: "ITMediaconvertStage"
+      Name: !Sub "ITMediaconvertStage-${ShortUUID}"
       Operations:
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:Mediaconvert"
@@ -27,7 +30,7 @@ Resources:
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Stage"
-      Name: "ITTranscribeStage"
+      Name: !Sub "ITTranscribeStage-${ShortUUID}"
       Operations:
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:Transcribe"
@@ -36,7 +39,7 @@ Resources:
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Stage"
-      Name: "ITTranslateStage"
+      Name: !Sub "ITTranslateStage-${ShortUUID}"
       Operations:
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:Translate"
@@ -45,7 +48,7 @@ Resources:
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Stage"
-      Name: "ITPollyStage"
+      Name: !Sub "ITPollyStage-${ShortUUID}"
       Operations:
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:Polly"
@@ -62,9 +65,9 @@ Resources:
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Workflow"
-      Name: "InstantTranslateWorkflow"
+      Name: !Sub "InstantTranslateWorkflow-${ShortUUID}"
       StartAt: !GetAtt MediaconvertStage.Name
-      Stages: !Sub 
+      Stages: !Sub
         - |-
           {
             "${MediaconvertStage}":{
@@ -79,7 +82,7 @@ Resources:
             "${PollyStage}":{
               "End": true
               }
-          }          
+          }
         - {
             MediaconvertStage: !GetAtt MediaconvertStage.Name,
             TranscribeStage: !GetAtt TranscribeStage.Name,

@@ -9,6 +9,9 @@ Parameters:
   OperatorLibraryStack:
     Description: "Name of the operator library stack"
     Type: String
+  ShortUUID:
+    Type: String
+    Description: "A short UUID that is going to be appended to resource names"
 
 Resources:
   # Stages
@@ -18,7 +21,7 @@ Resources:
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Stage"
-      Name: "MediaconvertStage"
+      Name: !Sub "MediaconvertStage-${ShortUUID}"
       Operations:
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:Mediaconvert"
@@ -27,7 +30,7 @@ Resources:
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Stage"
-      Name: "TranscribeStage"
+      Name: !Sub "TranscribeStage-${ShortUUID}"
       Operations:
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:Transcribe"
@@ -36,7 +39,7 @@ Resources:
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Stage"
-      Name: "WebCaptionsStage"
+      Name: !Sub "WebCaptionsStage-${ShortUUID}"
       Operations:
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:WebCaptions"
@@ -45,7 +48,7 @@ Resources:
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Stage"
-      Name: "CreateTimeSeriesStage"
+      Name: !Sub "CreateTimeSeriesStage-${ShortUUID}"
       Operations:
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:WebToSRTCaptions"
@@ -64,7 +67,7 @@ Resources:
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Workflow"
-      Name: "TranscribeWorkflow"
+      Name: !Sub "TranscribeWorkflow-${ShortUUID}"
       StartAt: !GetAtt MediaconvertStage.Name
       Stages: !Sub
         - |-

@@ -23,8 +23,11 @@ Parameters:
     Description: "Dataplane bucket"
   MieAdminRole:
     Type: String
+  ShortUUID:
+    Type: String
+    Description: "A short UUID that is going to be appended to resource names"
 
-Mappings: 
+Mappings:
   SourceCode:
         General:
             S3Bucket: '%%BUCKET_NAME%%'
@@ -140,6 +143,7 @@ Resources:
         AnalyticsStreamArn: !GetAtt AnalyticsStream.Arn
         MieDataplaneBucket: !Ref DataplaneBucket
         MIEAdminRoleArn: !Ref MieAdminRole
+        DomainName: !Sub "mie-es-${ShortUUID}"
 
 Outputs:
   ElasticUrl:

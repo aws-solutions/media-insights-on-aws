@@ -896,19 +896,19 @@ Resources:
   WorkflowExecutionLambdaDeadLetterQueue:
     Type: "AWS::SQS::Queue"
     Properties:
-      QueueName: "WorkflowExecutionLambdaDLQ"
+      QueueName: !Sub "${AWS::StackName}-WorkflowExecutionLambdaDLQ"
       MessageRetentionPeriod: 43200 # #Maximum, 12 hours in seconds.
 
   StageExecutionDeadLetterQueue:
     Type: "AWS::SQS::Queue"
     Properties:
-      QueueName: "StageExecutionDLQ"
+      QueueName: !Sub "${AWS::StackName}-StageExecutionDLQ"
       MessageRetentionPeriod: 43200 # #Maximum, 12 hours in seconds.
 
   StageExecutionQueue:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: StageExecution
+      QueueName: !Sub "${AWS::StackName}-StageExecution"
       VisibilityTimeout: 43200 #Maximum, 12 hours in seconds.  Stages are long running
       ReceiveMessageWaitTimeSeconds: 20 #Maximum, long poll on this queue, it has one reader that is single threaded
       RedrivePolicy:
@@ -937,7 +937,7 @@ Resources:
             ],
           ]
       Description: Boto3 and MediaInsightsEngineLambdaHelper packages for Python 3.7
-      LayerName: media-insights-engine-python37
+      LayerName: !Sub "${AWS::StackName}-media-insights-engine-python37"
       LicenseInfo: Apache-2.0
 
   MediaInsightsEnginePython36Layer:
@@ -957,7 +957,7 @@ Resources:
             ],
           ]
       Description: Boto3 and MediaInsightsEngineLambdaHelper packages for Python 3.6
-      LayerName: media-insights-engine-python36
+      LayerName: !Sub "${AWS::StackName}-media-insights-engine-python36"
       LicenseInfo: Apache-2.0
 
   Boto3Python37LayerPermission:
@@ -1169,6 +1169,7 @@ Resources:
         DeployElasticConsumer: Yes
         DataplaneBucket: !Ref Dataplane
         MieAdminRole: !GetAtt MieDeveloperRole.Arn
+        ShortUUID: !GetAtt GetShortUUID.Data
 
   # Workflow creation and execution API
   MediaInsightsWorkflowApi:
@@ -1261,6 +1262,7 @@ Resources:
         DataPlaneHandlerArn: !GetAtt MediaInsightsDataplaneApiStack.Outputs.APIHandlerArn
         DataPlaneBucket: !Ref Dataplane
         MediaInsightsEnginePython37Layer: !Ref MediaInsightsEnginePython37Layer
+        ShortUUID: !GetAtt GetShortUUID.Data
 
   TestWorkflow:
     Condition: DeployTestWorkflowCondition
@@ -1317,6 +1319,7 @@ Resources:
             - MediaInsightsWorkflowApi
             - Outputs.WorkflowCustomResourceArn
         OperatorLibraryStack: !GetAtt OperatorLibrary.Outputs.StackName
+        ShortUUID: !GetAtt GetShortUUID.Data
 
   #  TranscribeWorkflow:
   #    Condition: DeployTranscribeWorkflowCondition
@@ -1341,6 +1344,7 @@ Resources:
   #            - MediaInsightsWorkflowApi
   #            - Outputs.WorkflowCustomResourceArn
   #        OperatorLibraryStack: !GetAtt OperatorLibrary.Outputs.StackName
+  #        ShortUUID: !GetAtt GetShortUUID.Data
 
   RekognitionWorkflow:
     Condition: DeployRekognitionWorkflowCondition
@@ -1366,6 +1370,7 @@ Resources:
             - MediaInsightsWorkflowApi
             - Outputs.WorkflowCustomResourceArn
         OperatorLibraryStack: !GetAtt OperatorLibrary.Outputs.StackName
+        ShortUUID: !GetAtt GetShortUUID.Data
 
   ComprehendWorkflow:
     Condition: DeployComprehendWorkflowCondition
@@ -1391,6 +1396,7 @@ Resources:
             - MediaInsightsWorkflowApi
             - Outputs.WorkflowCustomResourceArn
         OperatorLibraryStack: !GetAtt OperatorLibrary.Outputs.StackName
+        ShortUUID: !GetAtt GetShortUUID.Data
 
   KitchenSinkWorkflow:
     Condition: DeployKitchenSinkWorkflowCondition
@@ -1416,6 +1422,7 @@ Resources:
             - MediaInsightsWorkflowApi
             - Outputs.WorkflowCustomResourceArn
         OperatorLibraryStack: !GetAtt OperatorLibrary.Outputs.StackName
+        ShortUUID: !GetAtt GetShortUUID.Data
 
   # Auto build/deploy webapp
 
@@ -1489,6 +1496,60 @@ Resources:
 #            - MediaInsightsDataplaneApiStack
 #            - Outputs.EndpointURL
 #        DataPlaneBucket: !Ref DataplaneBucket
+
+  # Helper function - create a short UUID to avoid name conflicts
+  # TODO: move to a separate template?
+  MieHelperExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: ['logs:*']
+                Resource: 'arn:aws:logs:*:*:*'
+  MieHelperFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        ZipFile: |
+          import string
+          import random
+
+          import cfnresponse
+
+          def id_generator(size=6, chars=string.ascii_lowercase + string.digits):
+              return "".join(random.choices(chars, k=size))
+
+          def handler(event, context):
+              response_data = {'Data': id_generator()}
+              cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data, "CustomResourcePhysicalID")
+
+      Handler: index.handler
+      Runtime: python3.6
+      Role: !GetAtt MieHelperExecutionRole.Arn
+  MieHelperFunctionPermissions:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !GetAtt MieHelperFunction.Arn
+      Principal: 'cloudformation.amazonaws.com'
+  GetShortUUID:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !GetAtt MieHelperFunction.Arn
 
 Outputs:
   DataplaneBucket:

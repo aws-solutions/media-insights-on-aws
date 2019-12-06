@@ -41,6 +41,9 @@ Parameters:
     Type: String
   MIEAdminRoleArn:
     Type: String
+  DomainName:
+    Type: String
+    Description: User defined Elasticsearch Domain name
 
 
 Conditions:
@@ -72,7 +75,7 @@ Resources:
               - "es:ESHttpGet"
               - "es:ESHttpPost"
             Resource:
-              - !Join ["", ["arn:aws:es:", !Ref "AWS::Region", ":", !Ref "AWS::AccountId", ":domain/", "mie-es/_search"]]
+              - !Join ["", ["arn:aws:es:", !Ref "AWS::Region", ":", !Ref "AWS::AccountId", ":domain/", !Ref DomainName, "/_search"]]
           - Effect: Allow
             Principal:
               AWS:
@@ -80,8 +83,8 @@ Resources:
             Action:
               - es:*
             Resource:
-              - !Join ["", ["arn:aws:es:", !Ref "AWS::Region", ":", !Ref "AWS::AccountId", ":domain/", "mie-es/*"]]
-      DomainName: "mie-es"
+              - !Join ["", ["arn:aws:es:", !Ref "AWS::Region", ":", !Ref "AWS::AccountId", ":domain/", !Ref DomainName, "/*"]]
+      DomainName: !Ref DomainName
       EBSOptions:
         EBSEnabled: true
         Iops: 0

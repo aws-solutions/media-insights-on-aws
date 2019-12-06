@@ -692,7 +692,7 @@ Resources:
               "#/stacks/stackinfo?stackId=",
               Ref: "AWS::StackId"
             ]]
-            EmailSubject: !Join [" ", ["Your temporary password for stack", !Ref "AWS::StackName"]]
+            EmailSubject: "Welcome to the AWS Media Insights Engine"
       UsernameAttributes: ['email']
       EmailConfiguration:
         EmailSendingAccount: 'COGNITO_DEFAULT'

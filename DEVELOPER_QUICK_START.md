@@ -22,7 +22,9 @@ Use the following shell commands to configure the build environment parameters:
     VERSION=[enter an arbitrary version name here]
     REGION=[enter the name of the region in which you would like to build MIE]
 
-Create an S3 bucket for the MIE build files named `$DIST_OUTPUT_BUCKET-$REGION` using the input you gave above.
+Create an S3 bucket for the MIE build files named `$DIST_OUTPUT_BUCKET-$REGION` using the input you gave above. Example using AWS CLI:
+
+    aws s3 mb s3://$DIST_OUTPUT_BUCKET-$REGION --region $REGION
 
 Run the following build command in your terminal from the `deployment` directory:
 
@@ -33,7 +35,8 @@ After a few minutes the build files should appear in your S3 bucket.
 
 ### Deploy the stack
 
-From your S3 bucket, navigate to `media-insights-solution/main/cf/media-insights-workflow-stack.template` and use this CloudFormation template to create your stack and deploy MIE.
+From your S3 bucket, navigate to `media-insights-solution/<VERSION>/cf/media-insights-stack.template` and copy the object URL.
+Use this CloudFormation template to create your stack and deploy MIE.
 
 
 ## Implementing a new Operator in MIE

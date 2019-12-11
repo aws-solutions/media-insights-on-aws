@@ -118,6 +118,28 @@ def lambda_handler(event, context):
                     return output_object.return_output_object()
                 # If dataplane request failed then mark workflow as failed
                 else:
+                    if metadata_upload["Status"] == "Success":
+                        print("Uploaded metadata for asset: {asset}".format(asset=asset_id))
+                    elif metadata_upload["Status"] == "Failed":
+                        output_object.update_workflow_status("Error")
+                        output_object.add_workflow_metadata(
+                            LabelDetectionError="Unable to upload metadata for asset: {asset}".format(asset=asset_id),
+                            LabelDetectionJobId=job_id)
+                        raise MasExecutionError(output_object.return_output_object())
+                    else:
+                        output_object.update_workflow_status("Error")
+                        output_object.add_workflow_metadata(
+                            LabelDetectionError="Unable to upload metadata for asset: {asset}".format(asset=asset_id),
+                            LabelDetectionJobId=job_id)
+                        raise MasExecutionError(output_object.return_output_object())
+            else:
+                finished = True
+                # Persist rekognition results
+                if is_paginated:
+                    metadata_upload = dataplane.store_asset_metadata(asset_id=asset_id, operator_name=operator_name, workflow_id=workflow_id, results=response, paginate=True, end=True)
+                else:
+                    metadata_upload = dataplane.store_asset_metadata(asset_id=asset_id, operator_name=operator_name, workflow_id=workflow_id, results=response)
+                if "Status" not in metadata_upload:
                     output_object.update_workflow_status("Error")
                     output_object.add_workflow_metadata(LabelDetectionError="Unable to upload metadata for {asset}: {error}".format(asset=asset_id, error=metadata_upload))
                     output_object.add_workflow_metadata(JobId=job_id)

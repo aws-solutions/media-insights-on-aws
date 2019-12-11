@@ -22,6 +22,7 @@
 #
 #  For instructions on getting $MIE_ACCESS_TOKEN, see:
 #  https://github.com/awslabs/aws-media-insights-engine/blob/master/IMPLEMENTATION_GUIDE.md#step-6-test-your-operator
+
 #
 ###############################################################################
 

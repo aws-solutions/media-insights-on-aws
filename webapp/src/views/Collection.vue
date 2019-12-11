@@ -428,6 +428,7 @@
           })
         }
       },
+
       async retrieveAndFormatAsssets () {
         let token = await this.getAccessToken()
         let data = await this.fetchAssets(token)

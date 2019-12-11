@@ -109,7 +109,7 @@ def lambda_handler(event, context):
         # Video processing is asynchronous.
         job_id = start_label_detection(s3bucket, urllib.parse.unquote_plus(s3key))
         output_object.update_workflow_status("Executing")
-        output_object.add_workflow_metadata(LabelDetectionJobId=job_id, AssetId=asset_id, WorkflowExecutionId=workflow_id)
+        output_object.add_workflow_metadata(JobId=job_id, AssetId=asset_id, WorkflowExecutionId=workflow_id)
         return output_object.return_output_object()
     else:
         print("ERROR: invalid file type")

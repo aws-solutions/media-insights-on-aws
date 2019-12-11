@@ -3,10 +3,8 @@
 
 ###############################################################################
 # PURPOSE:
-#   Lambda function to check the status of a Rekognition job processing a media object
-#
-# REFERENCE:
-# https://github.com/awsdocs/amazon-rekognition-developer-guide/blob/master/code_examples/python_examples/stored_video/python-rek-video.py
+#   Lambda function to check the status of a Rekognition job and save that job's
+#   data to the MIE dataplane when the job is complete.
 ###############################################################################
 
 import os
@@ -24,8 +22,8 @@ mie_config = json.loads(os.environ['botoConfig'])
 config = config.Config(**mie_config)
 rek = boto3.client('rekognition', config=config)
 
-
 def lambda_handler(event, context):
+    print(json.dumps(event))
     try:
         status = event["Status"]
         asset_id = event['MetaData']['AssetId']
@@ -38,7 +36,7 @@ def lambda_handler(event, context):
         output_object.update_workflow_status("Complete")
         return output_object.return_output_object()
     try:
-        job_id = event["MetaData"]["LabelDetectionJobId"]
+        job_id = event["MetaData"]["JobId"]
         workflow_id = event["MetaData"]["WorkflowExecutionId"]
     except KeyError as e:
         output_object.update_workflow_status("Error")
@@ -46,35 +44,79 @@ def lambda_handler(event, context):
         raise MasExecutionError(output_object.return_output_object())
     # Check rekognition job status:
     dataplane = DataPlane()
-    max_results = 1000
     pagination_token = ''
-    finished = False
     is_paginated = False
-    # Pagination starts on 1001th result. This while loops through each page.
-    while not finished:
-        response = rek.get_label_detection(JobId=job_id, MaxResults=max_results, NextToken=pagination_token)
+    # If pagination token is in event["MetaData"] then use that to start
+    # reading reko results from where this Lambda's previous invocation left off.
+    if ("PageToken" in event["MetaData"]):
+        pagination_token = event["MetaData"]["PageToken"]
+        is_paginated = True
+    # Read and persist 10 reko pages per invocation of this Lambda
+    for page_number in range(11):
+        # Get reko results
+        print("job id: " + job_id + " page token: " + pagination_token)
+        try:
+            response = rek.get_label_detection(JobId=job_id, NextToken=pagination_token)
+        except rek.exceptions.InvalidPaginationTokenException as e:
+            # Trying to reverse seek to the last valid pagination token would be difficult
+            # to implement, so in the rare case that a pagination token expires we'll
+            # just start over by reading from the first page.
+            print(e)
+            print("WARNING: Invalid pagination token found. Restarting read from first page.")
+            pagination_token=''
+            continue
+        # If the reko job is IN_PROGRESS then return. We'll check again after a step function wait.
         if response['JobStatus'] == "IN_PROGRESS":
-            finished = True
             output_object.update_workflow_status("Executing")
-            output_object.add_workflow_metadata(LabelDetectionJobId=job_id, AssetId=asset_id, WorkflowExecutionId=workflow_id)
+            output_object.add_workflow_metadata(JobId=job_id, AssetId=asset_id, WorkflowExecutionId=workflow_id)
             return output_object.return_output_object()
+        # If the reko job is FAILED then mark the workflow status as Error and return.
         elif response['JobStatus'] == "FAILED":
-            finished = True
             output_object.update_workflow_status("Error")
-            output_object.add_workflow_metadata(LabelDetectionJobId=job_id, LabelDetectionError=str(response["StatusMessage"]))
+            output_object.add_workflow_metadata(JobId=job_id, LabelDetectionError=str(response["StatusMessage"]))
             raise MasExecutionError(output_object.return_output_object())
+        # If the reko job is SUCCEEDED then save this current reko page result
+        # and continue to next page_number.
         elif response['JobStatus'] == "SUCCEEDED":
+            # If reko results contain more pages then save this page and continue to the next page
             if 'NextToken' in response:
                 is_paginated = True
-                pagination_token = response['NextToken']
                 # Persist rekognition results (current page)
                 metadata_upload = dataplane.store_asset_metadata(asset_id=asset_id, operator_name=operator_name, workflow_id=workflow_id, results=response, paginate=True, end=False)
-                if "Status" not in metadata_upload:
+                # If dataplane request succeeded then get the next pagination token and continue.
+                if "Status" in metadata_upload and metadata_upload["Status"] == "Success":
+                    # Log that this page has been successfully uploaded to the dataplane
+                    print("Uploaded metadata for asset: {asset}, job {JobId}, page {page}".format(asset=asset_id, JobId=job_id, page=pagination_token))
+                    # Get the next pagination token:
+                    pagination_token = response['NextToken']
+                    # In order to avoid Lambda timeouts, we're only going to persist 10 pages then
+                    # pass the pagination token to the workflow metadata and let our step function
+                    # invoker restart this Lambda. The pagination token allows this Lambda
+                    # continue from where it left off.
+                    if page_number == 10:
+                        output_object.update_workflow_status("Executing")
+                        output_object.add_workflow_metadata(PageToken=pagination_token, JobId=job_id, AssetId=asset_id, WorkflowExecutionId=workflow_id)
+                        return output_object.return_output_object()
+                # If dataplane request failed then mark workflow as failed
+                else:
                     output_object.update_workflow_status("Error")
-                    output_object.add_workflow_metadata(
-                        LabelDetectionError="Unable to upload metadata for asset: {asset}".format(asset=asset_id),
-                        LabelDetectionJobId=job_id)
+                    output_object.add_workflow_metadata(LabelDetectionError="Unable to upload metadata for asset: {asset}".format(asset=asset_id), JobId=job_id)
                     raise MasExecutionError(output_object.return_output_object())
+            # If reko results contain no more pages then save this page and mark the stage complete
+            else:
+                # If we've been saving pages, then tell dataplane this is the last page
+                if is_paginated:
+                    metadata_upload = dataplane.store_asset_metadata(asset_id=asset_id, operator_name=operator_name, workflow_id=workflow_id, results=response, paginate=True, end=True)
+                # If there is only one page then save to dataplane without dataplane options
+                else:
+                    metadata_upload = dataplane.store_asset_metadata(asset_id=asset_id, operator_name=operator_name, workflow_id=workflow_id, results=response)
+                # If dataplane request succeeded then mark the stage complete
+                if "Status" in metadata_upload and metadata_upload["Status"] == "Success":
+                    print("Uploaded metadata for asset: {asset}, job {JobId}, page {page}".format(asset=asset_id, JobId=job_id, page=pagination_token))
+                    output_object.add_workflow_metadata(JobId=job_id)
+                    output_object.update_workflow_status("Complete")
+                    return output_object.return_output_object()
+                # If dataplane request failed then mark workflow as failed
                 else:
                     if metadata_upload["Status"] == "Success":
                         print("Uploaded metadata for asset: {asset}".format(asset=asset_id))
@@ -99,26 +141,10 @@ def lambda_handler(event, context):
                     metadata_upload = dataplane.store_asset_metadata(asset_id=asset_id, operator_name=operator_name, workflow_id=workflow_id, results=response)
                 if "Status" not in metadata_upload:
                     output_object.update_workflow_status("Error")
-                    output_object.add_workflow_metadata(
-                        LabelDetectionError="Unable to upload metadata for {asset}: {error}".format(asset=asset_id, error=metadata_upload))
+                    output_object.add_workflow_metadata(LabelDetectionError="Unable to upload metadata for {asset}: {error}".format(asset=asset_id, error=metadata_upload))
+                    output_object.add_workflow_metadata(JobId=job_id)
                     raise MasExecutionError(output_object.return_output_object())
-                else:
-                    if metadata_upload["Status"] == "Success":
-                        print("Uploaded metadata for asset: {asset}".format(asset=asset_id))
-                        output_object.add_workflow_metadata(LabelDetectionJobId=job_id)
-                        output_object.update_workflow_status("Complete")
-                        return output_object.return_output_object()
-                    elif metadata_upload["Status"] == "Failed":
-                        output_object.update_workflow_status("Error")
-                        output_object.add_workflow_metadata(
-                            LabelDetectionError="Unable to upload metadata for asset: {asset}".format(asset=asset_id))
-                        raise MasExecutionError(output_object.return_output_object())
-                    else:
-                        output_object.update_workflow_status("Error")
-                        output_object.add_workflow_metadata(
-                            LabelDetectionError="Unable to upload metadata for asset: {asset}".format(asset=asset_id))
-                        output_object.add_workflow_metadata(LabelDetectionJobId=job_id)
-                        raise MasExecutionError(output_object.return_output_object())
+        # If reko job failed then mark workflow as failed
         else:
             output_object.update_workflow_status("Error")
             output_object.add_workflow_metadata(LabelDetectionError="Unable to determine status")

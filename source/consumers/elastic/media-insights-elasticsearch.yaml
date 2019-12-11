@@ -116,11 +116,12 @@ Resources:
             ],
           ]
       Runtime: "python3.7"
+      Timeout: 900
+      MemorySize: 2048
       Environment:
         Variables:
           EsEndpoint: !GetAtt ESDomain.DomainEndpoint
           DataplaneBucket: !Ref MieDataplaneBucket
-      Timeout: 300
 
   # stream event mapping for lambda
 

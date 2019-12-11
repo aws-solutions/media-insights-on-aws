@@ -21,6 +21,7 @@
           v-model="showDeletedAlert"
           variant="success"
           dismissible
+          fade
         >
           Successfully Deleted Asset
         </b-alert>
@@ -97,7 +98,7 @@
                     <template v-slot:cell(Actions)="data">
                       <b-button
                         variant="orange"
-                        @click="$router.push(`/analysis/${data.item.asset_id}`)"
+                        :href="(`/analysis/${data.item.asset_id}`)"
                       >
                         Analyze
                       </b-button>
@@ -161,7 +162,7 @@
       return {
         showElasticSearchAlert: false,
         showDataplaneAlert: false,
-        showDeletedAlert: false,
+        showDeletedAlert: 0,
         noAssets: null,
         currentPage: 1,
         perPage: 10,
@@ -236,8 +237,8 @@
           }
         })
         if (response.status === 200) {
-            this.showDeletedAlert = true
-            this.asset_list = []
+            this.showDeletedAlert = 5;
+            this.asset_list = [];
             this.retrieveAndFormatAsssets()
         }
         else {

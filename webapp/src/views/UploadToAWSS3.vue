@@ -88,7 +88,7 @@
                 ></b-form-checkbox-group>
                 <div v-if="enabledOperators.includes('Translate')">
                   <label>Translation Source Language</label>
-                  <b-form-select v-model="sourceLanguageCode" :options="translateLanguages"></b-form-select>
+                  <b-form-select v-model="transcribeLanguage" :options="transcribeLanguages"></b-form-select>
                   <label>Translation Target Language</label>
                   <b-form-select v-model="targetLanguageCode" :options="translateLanguages"></b-form-select>
                 </div>
@@ -246,7 +246,7 @@
           // disable network timeouts (important for large uploads)
           timeout: 0,
           // limit max upload file size (in MB)
-          maxFilesize: 500
+          maxFilesize: 2000
         },
         awss3: {
           signingURL: '',
@@ -353,7 +353,7 @@
             "defaultTextStage": {
               "Translate": {
                 "Enabled": this.enabledOperators.includes("Translate"),
-                "SourceLanguageCode": this.sourceLanguageCode,
+                "SourceLanguageCode": this.transcribeLanguage.split('-')[0],
                 "TargetLanguageCode": this.targetLanguageCode
               },
               "ComprehendEntities": {
@@ -462,6 +462,7 @@
         } else {
           vm.s3UploadError("Unsupported media type, " + media_type + ". Please upload a jpg or mp4.")
         }
+        console.log(JSON.stringify(data))
         fetch(process.env.VUE_APP_WORKFLOW_API_ENDPOINT + 'workflow/execution', {
           method: 'post',
           body: JSON.stringify(data),

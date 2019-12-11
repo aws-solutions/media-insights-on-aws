@@ -178,4 +178,4 @@ Resources:
           HttpVersion: 'http2'
 Outputs:
   CloudfrontUrl:
-    Value: !GetAtt MediaInsightsWebsiteDistribution.DomainName
+    Value: !Join ["", ["https://", !GetAtt MediaInsightsWebsiteDistribution.DomainName]]

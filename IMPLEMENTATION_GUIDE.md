@@ -37,11 +37,9 @@ The guide is intended for IT infrastructure architects and developers who have p
   - [Step 5: Update the build script to deploy your operator to AWS Lambda](#step-5-update-the-build-script-to-deploy-your-operator-to-aws-lambda)        
   - [Step 6: Test your operator](#step-6-test-your-operator)
 
+[7. Glossary](#7-glossary)
 
-[7. API Documentation](#7-api-documentation)
-
-[8. Glossary](#8-glossary)
-
+[8. API Documentation](#8-api-documentation)
 
 
 # 1. Overview
@@ -885,6 +883,439 @@ Stores metadata for an asset that can be retrieved as a single block or pages of
 
 ### **Data plane pipeline consumer**
 
-
 A lambda function that consumes data from the data plane pipeline and stores it (or acts on it) in another downstream data store.  Data can be stored in different kind of data stores to fit the data management and query needs of the application.  There can be 0 or more pipeline consumers in a MIE application.
 
+# API Documentation:
+
+## Summary:
+* Dataplane API
+    * GET /
+    * POST /create
+    * POST /download
+    * GET /mediapath/{asset_id}/{workflow_id}
+    * GET /metadata
+    * DELETE /metadata/{asset_id}
+    * DELETE /metadata/{asset_id}/{operator_name}
+    * POST /upload
+* Workflow API
+    * GET /
+    * POST /system/configuration
+    * POST /workflow
+    * GET /workflow/configuration/{Name}
+    * POST /workflow/execution
+    * GET /workflow/execution/asset/{AssetId}
+    * GET /workflow/execution/status/{Status}
+    * DELETE /workflow/execution/{Id}
+    * POST /workflow/operation
+    * DELETE /workflow/operation/{Name}
+    * POST /workflow/stage
+    * DELETE /workflow/stage/{Name}
+    * DELETE /workflow/{Name}
+
+## Dataplane API
+
+* Create an asset in the dataplane from a json input composed of the input key and bucket of the object:
+
+    `POST /create`
+
+    ```
+    Body:
+    
+    {
+        "Input": {
+            "S3Bucket": "{somenbucket}",
+            "S3Key": "{somekey}"
+        }
+    }
+    ```
+    Returns: A dict mapping of the asset id and the new location of the media object
+
+* Retrieve metadata for an asset:
+
+    `GET /metadata/{asset_id}`
+
+    Returns: All asset metadata
+
+* Add operation metadata for an asset:
+
+    `POST /metadata/{asset_id}`
+    
+    ```
+    Body:
+    
+    {
+        "OperatorName": "{some_operator}",
+        "Results": "{json_formatted_results}"
+    }
+    ```
+
+* Retrieve the metadata that a specific operator created from an asset: 
+
+    `GET /metadata/{asset_id}/{operator_name}`
+
+## Workflow API
+
+* Add a new system configuration parameter or update an existing MIE system configuration parameter:
+
+    `POST /system/configuration`
+
+    ```
+    Body:
+    
+    {
+        "Name": "ParameterName",
+        "Value": "ParameterValue"
+    }
+    ```
+  
+    Supported parameters:
+    * ***MaxConcurrentWorkflows*** - Sets the maximum number of workflows that are allowed to run concurrently. Any new workflows that are added after MaxConcurrentWorkflows is reached are placed on a queue until capacity is freed by completing workflows. Use this to help avoid throttling in service API calls from workflow operators. This setting is checked each time the WorkflowSchedulerLambda is run and may take up to 60 seconds to take effect.
+
+    Returns: None
+    
+    Raises: 
+    * 200: The system configuration was set successfully successfully. 
+    * 400: Bad Request
+    * 500: Internal server error - an input value is invalid
+
+* Get the current MIE system configuration
+    
+    `GET /system/configuration`
+
+    Returns:
+    * A list of dict containing the current MIE system configuration key-value pairs.
+
+    Raises:
+    * 200: The system configuration was returned successfully. 
+    * 500: Internal server error
+
+* Create a workflow from a list of existing stages. A workflow is a pipeline of stages that are executed sequentially to transform and extract metadata for a set of MediaType objects. Each stage must contain either a “Next” key indicating the next stage to execute or and “End” key indicating it is the last stage.
+
+    `POST /workflow`
+    ```
+    Body:
+    
+    {
+        "Name": string,
+        "StartAt": string - name of starting stage,
+        "Stages": {
+            "stage-name": {
+                "Next": "string - name of next stage"
+            },
+            ...,
+            "stage-name": {
+                "End": true
+            }
+        }
+    }
+    ```
+    Returns:
+    * A dict mapping keys to the corresponding workflow created including the AWS resources used to execute each stage.
+
+    Raises:
+    * 200: The workflow was created successfully. 
+    * 400: Bad Request - one of the input stages was not found or was invalid 
+    * 500: Internal server error
+
+* List all workflow defintions
+
+    `GET /workflow`
+    
+    Returns:
+    * A list of workflow definitions.
+
+    Raises:
+    * 200: All workflows returned sucessfully. 
+    * 500: Internal server error
+
+* Get a workflow configruation object by name
+
+    `GET /workflow/configuration/{Name}`
+
+    Returns:
+    * A dictionary contianing the workflow configuration.
+
+    Raises:
+    * 200: All workflows returned sucessfully. 
+    * 404: Not found 
+    * 500: Internal server error
+
+* Execute a workflow. The Body contains the name of the workflow to execute, at least one input media type within the media object. A dictionary of stage configuration objects can be passed in to override the default configuration of the operations within the stages.
+
+    `POST /workflow/execution`
+    ```
+    Body:
+    
+    {
+    "Name":"Default",
+    "Input": media-object
+    "Configuration": {
+        {
+        "stage-name": {
+            "Operations": {
+                "SplitAudio": {
+                   "Enabled": True,
+                   "MediaTypes": {
+                       "Video": True/False,
+                       "Audio": True/False,
+                       "Frame": True/False
+                   }
+               },
+           },
+       }
+       ...
+       }
+    }
+    ```
+    Returns:
+    * A dict mapping keys to the corresponding workflow execution created including the WorkflowExecutionId, the AWS queue and state machine resources assiciated with the workflow execution and the current execution status of the workflow.
+
+    Raises:
+    * 200: The workflow execution was created successfully. 
+    * 400: Bad Request - the input workflow was not found or was invalid 
+    * 500: Internal server error
+
+* List all workflow executions:
+
+    `GET /workflow/execution`
+
+    Returns:
+    * A list of workflow executions.
+
+    Raises:
+    * 200: All workflow executions returned sucessfully. 
+    * 500: Internal server error
+
+* Get workflow executions by AssetId:
+
+    `GET /workflow/execution/asset/{AssetId}`
+
+    Returns:
+    * A list of dictionaries containing the workflow executions matching the AssetId.
+
+    Raises:
+    * 200: Workflow executions returned sucessfully. 
+    * 404: Not found 
+    * 500: Internal server error
+
+* Get all workflow executions with the specified status:
+
+    `GET /workflow/execution/status/{Status}`
+
+    Returns:
+    * A list of dictionaries containing the workflow executions with the requested status
+
+    Raises:
+    * 200: All workflows returned sucessfully. 
+    * 404: Not found 
+    * 500: Internal server error
+
+* Delete a workflow executions:
+
+    `DELETE /workflow/execution/{Id}`
+    
+    Raises:
+    * 200: Workflow execution deleted sucessfully. 
+    * 404: Not found 
+    * 500: Internal server error
+
+* Get a workflow execution by id
+
+    `GET /workflow/execution/{Id}`
+
+    Returns:
+    * A dictionary containing the workflow execution.
+
+    Raises:
+    * 200: Workflow executions returned sucessfully. 
+    * 404: Not found 
+    * 500: Internal server error
+
+* Create a new operation
+
+    `POST /workflow/operation`
+    
+    Generates an operation state machine using the operation lambda(s) provided
+    
+    Creates a singleton operator stage that can be used to run the operator as a single-operator stage in a workflow.
+    
+    Operators can be synchronous (Sync) or asynchronous (Async). Synchronous operators complete before returning control to the invoker, while asynchronous operators return control to the invoker when the operation is successfully initiated, but not complete. Asynchronous operators require an additional monitoring task to check the status of the operation.
+    
+    For more information on how to implemenent lambdas to be used in MIE operators, see [6.3. Implementing a new Operator in MIE](#63-implementing-a-new-operator-in-mie)
+    
+    ```
+    Body:
+    
+    {
+        "Name":"operation-name",
+        "Type": ["Async"|"Sync"],
+        "Configuration" : {
+                "MediaType": "Video",
+                "Enabled:": True,
+                "configuration1": "value1",
+                "configuration2": "value2",
+                ...
+            }
+        "StartLambdaArn":arn,
+        "MonitorLambdaArn":arn,
+        "SfnExecutionRole": arn
+        }
+    ```
+    Returns:
+    * A dict mapping keys to the corresponding operation.
+    ```
+    {
+        "Name": string,
+        "Type": ["Async"|"Sync"],
+        "Configuration" : {
+            "MediaType": "Video|Frame|Audio|Text|...",
+            "Enabled:": boolean,
+            "configuration1": "value1",
+            "configuration2": "value2",
+            ...
+        }
+        "StartLambdaArn":arn,
+        "MonitorLambdaArn":arn,
+        "StateMachineExecutionRoleArn": arn,
+        "StateMachineAsl": ASL-string
+        "StageName": string
+    }
+    ```
+    Raises:
+    * 200: The operation and stage was created successfully. 
+    * 400: Bad Request
+        * one of the input lambdas was not found
+        * one or more of the required input keys is missing
+        * an input value is invalid
+    * 409: Conflict 
+    * 500: Internal server error
+
+* List all defined operators
+
+    `GET /workflow/operation`  
+    
+    Returns:
+    * A list of operation definitions.
+    
+    Raises:
+    * 200: All operations returned sucessfully. 
+    * 500: Internal server error
+
+* Delete a an operation
+
+    `DELETE /workflow/operation/{Name}`
+    
+    Raises:
+    * 200: Operation deleted sucessfully. 
+    * 500: Internal server error
+
+* Get an operation definition by name
+    
+    `GET /workflow/operation/{Name}`
+    
+    Returns:
+    * A dictionary containing the operation definition.
+    
+    Raises:
+    * 200: All operations returned sucessfully. 
+    * 404: Not found 
+    * 500: Internal server error
+
+* Create a stage state machine from a list of existing operations. A stage is a set of operations that are grouped so they can be executed in parallel. When the stage is executed as part of a workflow, operations within a stage are executed as branches in a parallel Step Functions state. The generated state machines status is tracked by the workflow engine control plane during execution.
+    
+    An optional Configuration for each operator in the stage can be input to override the default configuration for the stage.
+    
+    `POST /workflow/stage`
+    ```
+    Body:
+    
+    {
+    "Name":"stage-name",
+    "Operations": ["operation-name1", "operation-name2", ...]
+    }
+    Returns:
+    A dict mapping keys to the corresponding stage created including the ARN of the state machine created.
+    
+    {
+    “Name”: string, “Operations”: [
+    
+    “operation-name1”, “operation-name2”, …
+    ], “Configuration”: {
+    
+    “operation-name1”: operation-configuration-object1, “operation-name2”: operation-configuration-object1, …
+    } “StateMachineArn”: ARN-string
+    
+    “Name”: “TestStage”, “Operations”: [
+    
+    “TestOperator”
+    ], “Configuration”: {
+    
+    “TestOperator”: {
+    “MediaType”: “Video”, “Enabled”: true
+    }
+    }, “StateMachineArn”: “arn:aws:states:us-west-2:526662735483:stateMachine:TestStage”
+    }
+    ```
+    
+    Raises:
+    * 200: The stage was created successfully. 
+    * 400: Bad Request - one of the input state machines was not found or was invalid 
+    * 409: Conflict 
+    * 500: Internal server error
+
+* List all stage defintions
+
+    `GET /workflow/stage`
+    
+    Returns:
+    * A list of operation definitions.
+    
+    Raises:
+    * 200: All operations returned sucessfully. 
+    * 500: Internal server error
+
+* Delete a stage
+    
+    `DELETE /workflow/stage/{Name}`
+    
+    Returns:
+    
+    Raises:
+    * 200: Stage deleted sucessfully. 
+    * 404: Not found 
+    * 500: Internal server error
+
+* Get a stage definition by name
+
+    `GET /workflow/stage/{Name}`
+    
+    Returns:
+    A dictionary contianing the stage definition.
+    
+    Raises:
+    * 200: All stages returned sucessfully. 
+    * 404: Not found 
+    * 500: Internal server error
+
+* Delete a workflow
+    
+    `DELETE /workflow/{Name}`
+    
+    Returns:
+    
+    Raises:
+    * 200: Workflow deleted sucessfully. 
+    * 404: Not found 
+    * 500: Internal server error
+
+* Get a workflow definition by name
+
+    `GET /workflow/{Name}`
+    
+    Returns:
+    * A dictionary contianing the workflow definition.
+    
+    Raises:
+    * 200: All workflows returned sucessfully. 
+    * 404: Not found 
+    * 500: Internal server error

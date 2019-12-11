@@ -680,6 +680,19 @@ Resources:
     Properties:
       AdminCreateUserConfig:
           AllowAdminCreateUserOnly: True
+          InviteMessageTemplate:
+            EmailMessage: !Join ["", [
+              "Your username is {username} and temporary password is {####}<br>Stack Name: ",
+              Ref: "AWS::StackName",
+              "<br>Stack Overview:<br>",
+              "https://",
+              Ref: "AWS::Region",
+              ".console.aws.amazon.com/cloudformation/home?region=",
+              Ref: "AWS::Region",
+              "#/stacks/stackinfo?stackId=",
+              Ref: "AWS::StackId"
+            ]]
+            EmailSubject: "Welcome to the AWS Media Insights Engine"
       UsernameAttributes: ['email']
       EmailConfiguration:
         EmailSendingAccount: 'COGNITO_DEFAULT'
@@ -1448,7 +1461,7 @@ Outputs:
   MediaInsightsWebAppUrl:
     Condition: DeployDemoSiteCondition
     Description: Url of the Media Insights Engine sample web application
-    Value: !Join ["", ["https://", !GetAtt MediaInsightsWebApp.Outputs.CloudfrontUrl]]
+    Value: !GetAtt MediaInsightsWebApp.Outputs.CloudfrontUrl
   ElasticsearchEndpoint:
     Condition: DeployAnalyticsPipelineCondition
     Description: Endpoint for elasticsearch cluster

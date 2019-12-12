@@ -12,7 +12,7 @@ MIE is a _serverless_ framework to accelerate the development of applications th
 
 # Limits
 
-This preview version of MIE can support workflows on short videos up to 4 minutes in duration. 
+This preview version of MIE can support workflows on videos up to 120 minutes in duration. 
 
 # Architecture Overview
 

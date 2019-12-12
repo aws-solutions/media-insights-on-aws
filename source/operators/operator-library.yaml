@@ -609,8 +609,8 @@ Resources:
           !Join [
             "/",
             [
-              !FindInMap ["SourceCode", "General", "KeyPrefix"],
-              "start_celebrity_recognition.zip",
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "start_celebrity_recognition.zip",
             ],
           ]
       Runtime: "python3.7"
@@ -637,8 +637,8 @@ Resources:
           !Join [
             "/",
             [
-              !FindInMap ["SourceCode", "General", "KeyPrefix"],
-              "check_celebrity_recognition_status.zip",
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "check_celebrity_recognition_status.zip",
             ],
           ]
       Runtime: "python3.7"
@@ -664,8 +664,8 @@ Resources:
           !Join [
             "/",
             [
-              !FindInMap ["SourceCode", "General", "KeyPrefix"],
-              "start_content_moderation.zip",
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "start_content_moderation.zip",
             ],
           ]
       Runtime: "python3.7"
@@ -692,8 +692,8 @@ Resources:
           !Join [
             "/",
             [
-              !FindInMap ["SourceCode", "General", "KeyPrefix"],
-              "check_content_moderation_status.zip",
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "check_content_moderation_status.zip",
             ],
           ]
       Runtime: "python3.7"
@@ -719,8 +719,8 @@ Resources:
           !Join [
             "/",
             [
-              !FindInMap ["SourceCode", "General", "KeyPrefix"],
-              "start_face_detection.zip",
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "start_face_detection.zip",
             ],
           ]
       Runtime: "python3.7"
@@ -748,8 +748,8 @@ Resources:
           !Join [
             "/",
             [
-              !FindInMap ["SourceCode", "General", "KeyPrefix"],
-              "check_face_detection_status.zip",
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "check_face_detection_status.zip",
             ],
           ]
       Runtime: "python3.7"
@@ -776,8 +776,8 @@ Resources:
           !Join [
             "/",
             [
-              !FindInMap ["SourceCode", "General", "KeyPrefix"],
-              "start_face_search.zip",
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "start_face_search.zip",
             ],
           ]
       Runtime: "python3.7"
@@ -805,8 +805,8 @@ Resources:
           !Join [
             "/",
             [
-              !FindInMap ["SourceCode", "General", "KeyPrefix"],
-              "check_face_search_status.zip",
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "check_face_search_status.zip",
             ],
           ]
       Runtime: "python3.7"
@@ -833,8 +833,8 @@ Resources:
           !Join [
             "/",
             [
-              !FindInMap ["SourceCode", "General", "KeyPrefix"],
-              "start_label_detection.zip",
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "start_label_detection.zip",
             ],
           ]
       Runtime: "python3.7"
@@ -860,8 +860,8 @@ Resources:
           !Join [
             "/",
             [
-              !FindInMap ["SourceCode", "General", "KeyPrefix"],
-              "check_label_detection_status.zip",
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "check_label_detection_status.zip",
             ],
           ]
       Runtime: "python3.7"
@@ -888,8 +888,8 @@ Resources:
           !Join [
             "/",
             [
-              !FindInMap ["SourceCode", "General", "KeyPrefix"],
-              "start_person_tracking.zip",
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "start_person_tracking.zip",
             ],
           ]
       Runtime: "python3.7"
@@ -913,8 +913,8 @@ Resources:
           !Join [
             "/",
             [
-              !FindInMap ["SourceCode", "General", "KeyPrefix"],
-              "check_person_tracking_status.zip",
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "check_person_tracking_status.zip",
             ],
           ]
       Runtime: "python3.7"
@@ -943,11 +943,12 @@ Resources:
           !Join [
             "/",
             [
-              !FindInMap ["SourceCode", "General", "KeyPrefix"],
-              "start_media_convert.zip",
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "start_media_convert.zip",
             ],
           ]
       Runtime: "python3.7"
+      Timeout: 60
       Environment:
         Variables:
           mediaconvertRole: !GetAtt "mediaConvertS3Role.Arn"
@@ -972,6 +973,7 @@ Resources:
             ],
           ]
       Runtime: "python3.7"
+      Timeout: 60
       Environment:
         Variables:
           mediaconvertRole: !GetAtt "mediaConvertS3Role.Arn"
@@ -991,11 +993,12 @@ Resources:
           !Join [
             "/",
             [
-              !FindInMap ["SourceCode", "General", "KeyPrefix"],
-              "get_media_convert.zip",
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "get_media_convert.zip",
             ],
           ]
       Runtime: "python3.7"
+      Timeout: 60
       Environment:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
@@ -1016,8 +1019,8 @@ Resources:
           !Join [
             "/",
             [
-              !FindInMap ["SourceCode", "General", "KeyPrefix"],
-              "start_transcribe.zip",
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "start_transcribe.zip",
             ],
           ]
       Runtime: "python3.7"
@@ -1040,8 +1043,8 @@ Resources:
           !Join [
             "/",
             [
-              !FindInMap ["SourceCode", "General", "KeyPrefix"],
-              "get_transcribe.zip",
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "get_transcribe.zip",
             ],
           ]
       Runtime: "python3.7"
@@ -1192,8 +1195,8 @@ Resources:
           !Join [
             "/",
             [
-              !FindInMap ["SourceCode", "General", "KeyPrefix"],
-              "start_translate.zip",
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "start_translate.zip",
             ],
           ]
       Runtime: "python3.7"
@@ -1220,8 +1223,8 @@ Resources:
           !Join [
             "/",
             [
-              !FindInMap ["SourceCode", "General", "KeyPrefix"],
-              "start_polly.zip",
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "start_polly.zip",
             ],
           ]
       Runtime: "python3.7"
@@ -1244,8 +1247,8 @@ Resources:
           !Join [
             "/",
             [
-              !FindInMap ["SourceCode", "General", "KeyPrefix"],
-              "get_polly.zip",
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "get_polly.zip",
             ],
           ]
       Runtime: "python3.7"

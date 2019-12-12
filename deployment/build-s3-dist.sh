@@ -1285,3 +1285,12 @@ rm -rf $VENV
 echo "------------------------------------------------------------------------------"
 echo "Done"
 echo "------------------------------------------------------------------------------"
+
+echo "------------------------------------------------------------------------------"
+echo "Template to deploy:"
+if [ $region == "us-east-1" ]; then
+  echo https://$bucket.s3.amazonaws.com/media-insights-solution/$version/cf/media-insights-stack.template
+else
+  echo https://$bucket.s3.$region.amazonaws.com/media-insights-solution/$version/cf/media-insights-stack.template
+fi
+echo "------------------------------------------------------------------------------"

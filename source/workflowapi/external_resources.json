@@ -75,6 +75,10 @@
     "SqsQueueArn": {
       "Type": "String",
       "Description": "Arn of the MIE workflow queue"
+    },
+    "ShortUUID": {
+      "Type": "String",
+      "Description": "A short UUID that is going to be appended to resource names"
     }
   },
   "Resources": {
@@ -268,6 +272,9 @@
                 },
                 "USER_POOL_ARN": {
                     "Ref": "UserPoolArn"
+                },
+                "STACK_SHORT_UUID": {
+                  "Ref": "ShortUUID"
                 }
             }
         },

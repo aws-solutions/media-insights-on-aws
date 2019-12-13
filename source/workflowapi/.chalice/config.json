@@ -16,7 +16,8 @@
     "DataplaneEndpoint": "",
     "DATAPLANE_BUCKET": "",
     "OPERATOR_FAILED_LAMBDA_ARN": "",
-    "USER_POOL_ARN": ""
+    "USER_POOL_ARN": "",
+    "STACK_SHORT_UUID": ""
     },
   "stages": {
     "dev": {

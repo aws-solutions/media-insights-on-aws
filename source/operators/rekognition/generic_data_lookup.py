@@ -100,7 +100,7 @@ def lambda_handler(event, context):
     # Save metadata to dataplane
     operator_object.add_workflow_metadata(AssetId=asset_id,WorkflowExecutionId=workflow_id)
     dataplane = DataPlane()
-    metadata_upload = dataplane.store_asset_metadata(asset_id, operator_object.name, workflow_id, metadata_json)
+    metadata_upload = dataplane.store_asset_metadata(asset_id, "GenericDataLookup", workflow_id, metadata_json)
 
     # Validate that the metadata was saved to the dataplane
     if "Status" not in metadata_upload:

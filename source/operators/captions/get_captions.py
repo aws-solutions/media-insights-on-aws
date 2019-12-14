@@ -149,7 +149,7 @@ def web_captions(event, context):
         }
 
         if i != len(captions) - 1:
-            metadata_upload = dataplane.store_asset_metadata(asset_id, operator_object.name, workflow_id,
+            metadata_upload = dataplane.store_asset_metadata(asset_id, "WebCaptions", workflow_id,
                                            json.dumps(metadata))
             if "Status" not in metadata_upload:
                 operator_object.update_workflow_status("Error")
@@ -166,7 +166,7 @@ def web_captions(event, context):
                         CaptionsError="Unable to store web captions {e}".format(e=metadata_upload))
                     raise MasExecutionError(operator_object.return_output_object())
         else:
-            metadata_upload = dataplane.store_asset_metadata(asset_id, operator_object.name, workflow_id,
+            metadata_upload = dataplane.store_asset_metadata(asset_id, "WebCaptions", workflow_id,
                                                              json.dumps(metadata))
             if "Status" not in metadata_upload:
                 operator_object.update_workflow_status("Error")
@@ -244,7 +244,7 @@ def web_to_srt(event, context):
         "WorkflowId": workflow_id
     }
 
-    metadata_upload = dataplane.store_asset_metadata(asset_id, operator_object.name, workflow_id,
+    metadata_upload = dataplane.store_asset_metadata(asset_id, "WebCaptions", workflow_id,
                                    json.dumps(metadata))
 
     if "Status" not in metadata_upload:
@@ -314,7 +314,7 @@ def web_to_vtt(event, context):
         "WorkflowId": workflow_id
     }
 
-    metadata_upload = dataplane.store_asset_metadata(asset_id, operator_object.name, workflow_id,
+    metadata_upload = dataplane.store_asset_metadata(asset_id, "WebCaptions", workflow_id,
                                    json.dumps(metadata))
 
     if "Status" not in metadata_upload:

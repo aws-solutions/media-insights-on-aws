@@ -134,7 +134,7 @@ def lambda_handler(event, context):
     translation_result["TargetLanguageCode"] = target_lang
     print("Final translation text length: " + str(len(translated_text)))
     dataplane = DataPlane()
-    metadata_upload = dataplane.store_asset_metadata(asset_id, operator_object.name, workflow_id, translation_result)
+    metadata_upload = dataplane.store_asset_metadata(asset_id, "Translate", workflow_id, translation_result)
     if "Status" not in metadata_upload:
         operator_object.add_workflow_metadata(
             TranslateError="Unable to upload metadata for asset: {asset}".format(asset=asset_id))

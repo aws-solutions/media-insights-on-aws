@@ -79,7 +79,7 @@ def lambda_handler(event, context):
 
             transcription_json["TextTranscriptUri"] = {"S3Bucket": bucket, "S3Key": key}
 
-            metadata_upload = dataplane.store_asset_metadata(asset_id, operator_object.name, workflow_id,
+            metadata_upload = dataplane.store_asset_metadata(asset_id, "Transcribe", workflow_id,
                                                              transcription_json)
             if "Status" not in metadata_upload:
                 operator_object.add_workflow_metadata(

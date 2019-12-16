@@ -561,12 +561,37 @@ def connect_es(endpoint):
         return es_client
 
 
-# def delete_document(es_object, index, doc_id):
-#     es_index = "mie{index}".format(index=index).lower()
-#     es_object.delete(
-#         index=es_index,
-#         id=doc_id
-#     )
+def delete_asset_metadata_by_index(es_object, asset_id, index):
+    try:
+        es_object.delete(
+            index=index,
+            id=asset_id
+        )
+    except Exception as e:
+        print("Unable to delete metadata from elasticsearch: {es}:".format(es=e))
+    else:
+        print("Deleted {asset} metadata: {index} rom elasticsearch".format(asset=asset_id, index=index))
+
+
+def delete_asset_all_indices(es_object, asset_id):
+    delete_query = {
+      "query": {
+        "match": {
+          "AssetId": asset_id
+        }
+      }
+    }
+
+    try:
+        delete_request = es_object.delete_by_query(
+            index="_all",
+            body=delete_query
+        )
+    except Exception as e:
+        print("Unable to delete from elasticsearch: {es}:".format(es=e))
+    else:
+        print(delete_request)
+        print("Deleted asset: {asset} from elasticsearch".format(asset=asset_id))
 
 
 def bulk_index(es_object, asset, index, data):
@@ -723,7 +748,11 @@ def lambda_handler(event, context):
                 operator = payload['Operator']
             except KeyError:
                 print("Operator type not present in payload, this must be a request to delete the entire asset")
-                # es = connect_es(es_endpoint)
+                es = connect_es(es_endpoint)
+                delete_asset_all_indices(es, asset_id)
             else:
-                print("Deleting {operator} metadata for asset {asset}".format(operator=operator, asset=asset_id))
+                print(payload)
+                print('Not allowing deletion of specific metadata from ES as that is not exposed in the UI')
+                # print("Deleting {operator} metadata for asset {asset}".format(operator=operator, asset=asset_id))
                 # es = connect_es(es_endpoint)
+                # delete_asset_metadata_by_index(es, asset_id, operator)

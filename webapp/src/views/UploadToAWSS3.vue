@@ -195,7 +195,8 @@
           {text: 'English, Scottish', value: 'en-AB'},
           {text: 'English, US', value: 'en-US'},
           {text: 'English, Welsh', value: 'en-WL'},
-          {text: 'Farsi', value: 'fa-IR'},
+          // Disabled until 'fa' supported by AWS Translate
+          // {text: 'Farsi', value: 'fa-IR'},
           {text: 'French', value: 'fr-FR'},
           {text: 'French, Canadian', value: 'fr-CA'},
           {text: 'German', value: 'de-DE'},
@@ -213,7 +214,8 @@
           {text: 'Spanish', value: 'es-ES'},
           {text: 'Spanish, US', value: 'es-US'},
           {text: 'Tamil', value: 'ta-IN'},
-          {text: 'Telugu', value: 'te-IN'},
+          // Disabled until 'te' supported by AWS Translate
+          // {text: 'Telugu', value: 'te-IN'},
           {text: 'Turkish', value: 'tr-TR'},
         ],
         translateLanguages: [

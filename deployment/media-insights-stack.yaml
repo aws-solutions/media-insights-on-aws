@@ -693,7 +693,6 @@ Resources:
               Ref: "AWS::StackId"
             ]]
             EmailSubject: "Welcome to the AWS Media Insights Engine"
-      UsernameAttributes: ['email']
       EmailConfiguration:
         EmailSendingAccount: 'COGNITO_DEFAULT'
       AutoVerifiedAttributes: ['email']

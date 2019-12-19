@@ -55,7 +55,7 @@ echo "Building Lambda Layer zip file"
 echo "------------------------------------------------------------------------------"
 docker build --tag=lambda_layer_factory:latest .
 docker run --rm -it -v $(pwd):/packages lambda_layer_factory
-if [[ ! -f ./lambda_layer-python3.6.zip ]] || [[ ! -f ./lambda_layer-python3.7.zip ]]; then
+if [[ ! -f ./lambda_layer-python3.6.zip ]] || [[ ! -f ./lambda_layer-python3.7.zip ]] || [[ ! -f ./lambda_layer-python3.8.zip ]]; then
     echo "ERROR: Failed to build lambda layer zip file."
     exit 1
 fi
@@ -65,21 +65,26 @@ echo "--------------------------------------------------------------------------
 # See https://docs.aws.amazon.com/lambda/latest/dg/limits.html
 unzip -q -d lambda_layer-python-3.6 ./lambda_layer-python3.6.zip
 unzip -q -d lambda_layer-python-3.7 ./lambda_layer-python3.7.zip
+unzip -q -d lambda_layer-python-3.8 ./lambda_layer-python3.8.zip
 ZIPPED_LIMIT=50
 UNZIPPED_LIMIT=250
 UNZIPPED_SIZE_36=`du -sm ./lambda_layer-python-3.6/ | cut -f 1`
 ZIPPED_SIZE_36=`du -sm ./lambda_layer-python3.6.zip | cut -f 1`
 UNZIPPED_SIZE_37=`du -sm ./lambda_layer-python-3.7/ | cut -f 1`
 ZIPPED_SIZE_37=`du -sm ./lambda_layer-python3.7.zip | cut -f 1`
-if (( $UNZIPPED_SIZE_36 > $UNZIPPED_LIMIT || $ZIPPED_SIZE_36 > $ZIPPED_LIMIT || $UNZIPPED_SIZE_37 > $UNZIPPED_LIMIT || $ZIPPED_SIZE_37 > $ZIPPED_LIMIT)); then
+UNZIPPED_SIZE_38=`du -sm ./lambda_layer-python-3.8/ | cut -f 1`
+ZIPPED_SIZE_38=`du -sm ./lambda_layer-python3.8.zip | cut -f 1`
+if (( $UNZIPPED_SIZE_36 > $UNZIPPED_LIMIT || $ZIPPED_SIZE_36 > $ZIPPED_LIMIT || $UNZIPPED_SIZE_37 > $UNZIPPED_LIMIT || $ZIPPED_SIZE_37 > $ZIPPED_LIMIT || $UNZIPPED_SIZE_38 > $UNZIPPED_LIMIT || $ZIPPED_SIZE_38 > $ZIPPED_LIMIT)); then
 	echo "ERROR: Deployment package exceeds AWS Lambda layer size limits.";
 	rm -f ./lambda_layer-python3.6.zip
 	rm -f ./lambda_layer-python3.7.zip
+  rm -f ./lambda_layer-python3.8.zip
 	rm -rf ./lambda_layer-python-3.6/
 	rm -rf ./lambda_layer-python-3.7/
+  rm -rf ./lambda_layer-python-3.8/
 	exit 1
 fi
-echo "Lambda layers have been saved to ./lambda_layer-python3.6.zip and ./lambda_layer-python3.7.zip."
+echo "Lambda layers have been saved to ./lambda_layer-python3.6.zip, ./lambda_layer-python3.7.zip, and ./lambda_layer-python3.8.zip."
 
 if [ ! -z $S3_FQDN ]; then
     which aws > /dev/null
@@ -102,6 +107,7 @@ if [ ! -z $S3_FQDN ]; then
     LAMBDA_LAYERS_BUCKET=lambda-layers-$ACCOUNT_ID
     LAYER_NAME_36=lambda_layer-python36
     LAYER_NAME_37=lambda_layer-python37
+    LAYER_NAME_38=lambda_layer-python38
     # create temp working dir for zip files
     aws s3 mb s3://$LAMBDA_LAYERS_BUCKET > /dev/null
     # Warn user if layer already exists
@@ -129,11 +135,24 @@ if [ ! -z $S3_FQDN ]; then
             arn37=$(aws lambda list-layer-versions --layer-name lambda_layer-python37 --output text --query 'LayerVersions[0].LayerVersionArn')
         fi
     fi
+    aws lambda list-layer-versions --layer-name $LAYER_NAME_38 | grep "\"LayerVersions\": \["
+    if [ $? -eq 0 ]; then
+        echo "WARNING: AWS Layer with name $LAYER_NAME_38 already exists."
+        read -r -p "Are you sure you want to overwrite $LAYER_NAME_38? [y/N] " response
+        if [[ "$response" =~ ^([yY][eE][sS]|[yY])+$ ]]
+        then
+            aws s3 cp lambda_layer-python3.8.zip s3://$LAMBDA_LAYERS_BUCKET
+            aws lambda publish-layer-version --layer-name $LAYER_NAME_38 --content S3Bucket=$LAMBDA_LAYERS_BUCKET,S3Key=lambda_layer-python3.8.zip --compatible-runtimes python3.8
+            aws s3 rm s3://$LAMBDA_LAYERS_BUCKET/lambda_layer-python3.8.zip
+            arn38=$(aws lambda list-layer-versions --layer-name lambda_layer-python37 --output text --query 'LayerVersions[0].LayerVersionArn')
+        fi
+    fi
     # remove temp working dir for zip files
     aws s3 rb s3://$LAMBDA_LAYERS_BUCKET/ > /dev/null    
     echo "Lambda layers have been published. Use the following ARNs to attach them to Lambda functions:"
     echo $arn36
     echo $arn37
+    echo $arn38
 fi
 
 echo "------------------------------------------------------------------------------"

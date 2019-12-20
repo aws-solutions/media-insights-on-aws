@@ -61,6 +61,11 @@ def lambda_handler(event, context):
         operator_object.add_workflow_metadata(TranslateError="Unable to read transcription from S3: {e}".format(e=str(e)))
         raise MasExecutionError(operator_object.return_output_object())
 
+    # If input text is empty then we're done.
+    if len(transcript) < 1:
+        operator_object.update_workflow_status("Complete")
+        return operator_object.return_output_object()
+
     # Tell the NLTK data loader to look for files in /tmp/
     nltk.data.path.append("/tmp/")
     # Download NLTK tokenizers to /tmp/

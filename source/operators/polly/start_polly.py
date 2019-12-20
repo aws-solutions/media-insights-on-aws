@@ -19,7 +19,7 @@ s3 = boto3.client('s3')
 def lambda_handler(event, context):
     print("We got this event:\n", event)
 
-    operator_object = MediaInsightsOperationHelper(event) 
+    operator_object = MediaInsightsOperationHelper(event)
 
     try:
         workflow_id = operator_object.workflow_execution_id
@@ -48,6 +48,12 @@ def lambda_handler(event, context):
         operator_object.update_workflow_status("Error")
         operator_object.add_workflow_metadata(PollyError="Unable to read translation from S3: {e}".format(e=str(e)))
         raise MasExecutionError(operator_object.return_output_object())
+
+    # If input text is empty then we're done.
+    if len(translation) < 1:
+        operator_object.update_workflow_status("Complete")
+        return operator_object.return_output_object()
+
 
     voices = {'en': 'Kendra', 'ru': 'Maxim', 'es': 'Lucia', 'fr': 'Mathieu'}
 

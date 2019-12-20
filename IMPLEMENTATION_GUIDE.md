@@ -37,9 +37,9 @@ The guide is intended for IT infrastructure architects and developers who have p
   - [Step 5: Update the build script to deploy your operator to AWS Lambda](#step-5-update-the-build-script-to-deploy-your-operator-to-aws-lambda)        
   - [Step 6: Test your operator](#step-6-test-your-operator)
 
-[7. Glossary](#7-glossary)
+[7. API Documentation](#7-api-documentation)
 
-[8. API Documentation](#8-api-documentation)
+[8. Glossary](#8-glossary)
 
 
 # 1. Overview

@@ -149,7 +149,7 @@ Conditions:
     !Equals [!Ref DeployComprehendWorkflow, Yes]
   DeployKitchenSinkWorkflowCondition:
     !Equals [!Ref DeployKitchenSinkWorkflow, Yes]
-  DeployAnalyticsPipelineCondition: !Equals [!Ref DeployAnalyticsPipeline, Yes]
+  DeployAnalyticsPipelineCondition: !Or [!Equals [!Ref DeployAnalyticsPipeline, Yes], !Equals [!Ref DeployDemoSite, Yes]]
   DeployDemoSiteCondition: !Equals [!Ref DeployDemoSite, Yes]
   #DeployTranscriberApp: !Equals [!Ref TranscriberApp, Yes]
 

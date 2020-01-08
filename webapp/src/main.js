@@ -38,13 +38,7 @@ getRuntimeConfig().then(function(json) {
   console.log("Runtime config: " + JSON.stringify(json))
   Amplify.configure(awsconfig);
   Vue.config.productionTip = false
-  var marked = require('marked');
   Vue.mixin({
-    methods: {
-      marked: function (input) {
-        return marked(input);
-      }
-    },
     data() {
       return {
         // Distribute the runtime config into every Vue component

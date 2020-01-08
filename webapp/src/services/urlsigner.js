@@ -1,3 +1,5 @@
+import axios from "axios";
+
 export default {
   getSignedURL(file, config) {
     return new Promise((resolve, reject) => {
@@ -24,7 +26,9 @@ export default {
       if (config.withCredentials === true) {
         request.withCredentials = true;
       }
-      request.send("{\"S3Bucket\":\""+process.env.VUE_APP_DATAPLANE_BUCKET+"\",\"S3Key\":\""+file.name+"\"}");
+      axios.get('/runtimeConfig.json').then(response => {
+        request.send("{\"S3Bucket\":\""+response.data.DATAPLABE_BUCKET+"\",\"S3Key\":\""+file.name+"\"}");
+      })
     });
   },
   sendFile(file, config) {

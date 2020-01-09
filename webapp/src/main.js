@@ -41,8 +41,12 @@ getRuntimeConfig().then(function(json) {
   Vue.mixin({
     data() {
       return {
-        // Distribute the runtime config into every Vue component
-        runtimeConfig: json
+        // Distribute runtime configs into every Vue component
+        ELASTICSEARCH_ENDPOINT: json.ELASTICSEARCH_ENDPOINT,
+        DATAPLANE_API_ENDPOINT: json.DATAPLANE_API_ENDPOINT,
+        DATAPLANE_BUCKET: json.DATAPLANE_BUCKET,
+        WORKFLOW_API_ENDPOINT: json.WORKFLOW_API_ENDPOINT,
+        AWS_REGION: json.AWS_REGION
       }
     },
   });

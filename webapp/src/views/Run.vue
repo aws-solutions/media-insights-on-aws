@@ -55,7 +55,7 @@
         return accessToken
         })
         let workflow_list = [];
-        fetch(process.env.VUE_APP_WORKFLOW_API_ENDPOINT+'/workflow', {
+        fetch(this.WORKFLOW_API_ENDPOINT+'/workflow', {
           method: 'get',
           headers: {
             'Authorization': token

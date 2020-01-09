@@ -230,7 +230,7 @@
       },
       async deleteAsset(asset_id) {
         let token = await this.getAccessToken()
-        let response = await fetch(process.env.VUE_APP_DATAPLANE_API_ENDPOINT+'/metadata/'+asset_id, {
+        let response = await fetch(this.DATAPLANE_API_ENDPOINT+'/metadata/'+asset_id, {
           method: 'delete',
           headers: {
             'Authorization': token
@@ -318,7 +318,7 @@
         }
       },
       async getAssetWorkflowStatus (token, assetId) {
-        let response = await fetch(process.env.VUE_APP_WORKFLOW_API_ENDPOINT+'workflow/execution/asset/'+assetId, {
+        let response = await fetch(this.WORKFLOW_API_ENDPOINT+'workflow/execution/asset/'+assetId, {
             method: 'get',
             headers: {
               'Authorization': token
@@ -329,7 +329,7 @@
       },
       async getAssetThumbNail (token, bucket, s3Key) {
         const data = { "S3Bucket": bucket, "S3Key": s3Key }
-        let response = await fetch(process.env.VUE_APP_DATAPLANE_API_ENDPOINT + '/download', {
+        let response = await fetch(this.DATAPLANE_API_ENDPOINT + '/download', {
             method: 'POST',
             mode: 'cors',
             headers: {
@@ -347,7 +347,7 @@
         }
       },
       async getAssetInformation (token, assetId) {
-        let response = await fetch(process.env.VUE_APP_DATAPLANE_API_ENDPOINT+'/metadata/'+assetId, {
+        let response = await fetch(this.DATAPLANE_API_ENDPOINT+'/metadata/'+assetId, {
             method: 'get',
             headers: {
               'Authorization': token
@@ -362,7 +362,7 @@
         }
       },
       async fetchAssets (token) {
-        let response = await fetch(process.env.VUE_APP_DATAPLANE_API_ENDPOINT+'/metadata', {
+        let response = await fetch(this.DATAPLANE_API_ENDPOINT+'/metadata', {
             method: 'get',
             headers: {
               'Authorization': token
@@ -419,7 +419,7 @@
             Created: created,
             Filename: filename,
             status: workflowStatus[0].Status,
-            state_machine_console_link: "https://" + process.env.VUE_APP_AWS_REGION + ".console.aws.amazon.com/states/home?region=" + process.env.VUE_APP_AWS_REGION + "#/executions/details/" + workflowStatus[0].StateMachineExecutionArn,
+            state_machine_console_link: "https://" + this.AWS_REGION + ".console.aws.amazon.com/states/home?region=" + this.AWS_REGION + "#/executions/details/" + workflowStatus[0].StateMachineExecutionArn,
             s3_uri: s3Uri,
             signedUrl: thumbnail,
             thumbnailID: '_' + assetId,

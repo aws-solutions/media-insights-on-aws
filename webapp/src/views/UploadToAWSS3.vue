@@ -283,10 +283,9 @@
         executed_assets: [],
         workflow_status_polling: null,
         description: "Click start to begin. Media analysis status will be shown after upload completes.",
-        signurl: process.env.VUE_APP_DATAPLANE_API_ENDPOINT + '/upload',
-        s3_destination: 's3://' + process.env.VUE_APP_DATAPLANE_BUCKET,
+        s3_destination: 's3://' + this.DATAPLANE_BUCKET,
         dropzoneOptions: {
-          url: 'https://' + process.env.VUE_APP_DATAPLANE_BUCKET + '.s3.amazonaws.com',
+          url: 'https://' + this.DATAPLANE_BUCKET + '.s3.amazonaws.com',
           thumbnailWidth: 200,
           addRemoveLinks: true,
           autoProcessQueue: false,
@@ -382,7 +381,7 @@
               },
               "GenericDataLookup": {
                 "Enabled": this.enabledOperators.includes("genericDataLookup"),
-                "Bucket": process.env.VUE_APP_DATAPLANE_BUCKET,
+                "Bucket": this.DATAPLANE_BUCKET,
                 "Key": this.genericDataFilename==="" ? "undefined" : this.genericDataFilename
               },
               "Thumbnail": {
@@ -424,6 +423,7 @@
     mounted: function() {
       this.executed_assets = this.execution_history;
       this.pollWorkflowStatus()
+      console.log("this.DATAPLANE_BUCKET: " + this.DATAPLANE_BUCKET)
     },
     beforeDestroy () {
       clearInterval(this.workflow_status_polling)
@@ -485,7 +485,7 @@
             "Input": {
               "Media": {
                 "Image": {
-                  "S3Bucket": process.env.VUE_APP_DATAPLANE_BUCKET,
+                  "S3Bucket": this.DATAPLANE_BUCKET,
                   "S3Key": location.s3ObjectLocation.fields.key
                 }
               }
@@ -496,7 +496,7 @@
           data["Input"] = {
             "Media": {
               "Video": {
-                "S3Bucket": process.env.VUE_APP_DATAPLANE_BUCKET,
+                "S3Bucket": this.DATAPLANE_BUCKET,
                 "S3Key": location.s3ObjectLocation.fields.key
               }
             }
@@ -510,7 +510,7 @@
           vm.s3UploadError("Unsupported media type, " + media_type + ". Please upload a jpg or mp4.")
         }
         console.log(JSON.stringify(data))
-        fetch(process.env.VUE_APP_WORKFLOW_API_ENDPOINT + 'workflow/execution', {
+        fetch(this.WORKFLOW_API_ENDPOINT + 'workflow/execution', {
           method: 'post',
           body: JSON.stringify(data),
           headers: {'Content-Type': 'application/json', 'Authorization': token}
@@ -524,7 +524,7 @@
               console.log("ERROR: Failed to start workflow.");
               console.log(res.data.Code);
               console.log(res.data.Message);
-              console.log("URL: " + process.env.VUE_APP_WORKFLOW_API_ENDPOINT + 'workflow/execution');
+              console.log("URL: " + this.WORKFLOW_API_ENDPOINT + 'workflow/execution');
               console.log("Data:");
               console.log(JSON.stringify(data));
               console.log((data));
@@ -545,7 +545,7 @@
           return accessToken
         })
         var vm = this;
-        fetch(process.env.VUE_APP_WORKFLOW_API_ENDPOINT+'workflow/execution/asset/'+asset_id, {
+        fetch(this.WORKFLOW_API_ENDPOINT+'workflow/execution/asset/'+asset_id, {
           method: 'get',
           headers: {
             'Authorization': token
@@ -562,7 +562,7 @@
               for (var i = 0; i < vm.executed_assets.length; i++) {
                 if (vm.executed_assets[i].asset_id === asset_id) {
                   vm.executed_assets[i].workflow_status = res.data[0].Status;
-                  vm.executed_assets[i].state_machine_console_link = "https://"+process.env.VUE_APP_AWS_REGION+".console.aws.amazon.com/states/home?region="+process.env.VUE_APP_AWS_REGION+"#/executions/details/"+res.data[0].StateMachineExecutionArn;
+                  vm.executed_assets[i].state_machine_console_link = "https://"+this.AWS_REGION+".console.aws.amazon.com/states/home?region="+this.AWS_REGION+"#/executions/details/"+res.data[0].StateMachineExecutionArn;
                   break;
                 }
               }
@@ -583,9 +583,9 @@
         }, poll_frequency)
       },
       uploadFiles() {
-        console.log("Uploading to " + this.s3_destination);
-        // console.log("Presigning URL endpoint: " + this.signurl);
-        this.$refs.myVueDropzone.setAWSSigningURL(this.signurl);
+        console.log("Uploading to s3://" + this.DATAPLANE_BUCKET,);
+        const signurl = this.DATAPLANE_API_ENDPOINT + '/upload';
+        this.$refs.myVueDropzone.setAWSSigningURL(signurl);
         this.$refs.myVueDropzone.processQueue();
       },
       clearHistory() {

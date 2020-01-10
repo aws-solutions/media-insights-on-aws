@@ -1,8 +1,10 @@
+import axios from "axios";
+
 export default {
   getSignedURL(file, config) {
     return new Promise((resolve, reject) => {
       // var fd = new FormData();
-      const token = config.token
+      const token = config.token;
       let request = new XMLHttpRequest(),
           signingURL = (typeof config.signingURL === "function") ?  config.signingURL(file) : config.signingURL;
       // console.log('signing URL: ', signingURL)
@@ -11,7 +13,7 @@ export default {
       request.setRequestHeader("Authorization", token);
       // console.log(token)
       request.onload = function () {
-        if (request.status == 200) {
+        if (request.status === 200) {
           resolve(JSON.parse(request.response));
         } else {
           reject((request.statusText));
@@ -24,7 +26,9 @@ export default {
       if (config.withCredentials === true) {
         request.withCredentials = true;
       }
-      request.send("{\"S3Bucket\":\""+process.env.VUE_APP_DATAPLANE_BUCKET+"\",\"S3Key\":\""+file.name+"\"}");
+      axios.get('/runtimeConfig.json').then(response => {
+        request.send("{\"S3Bucket\":\""+response.data.DATAPLANE_BUCKET+"\",\"S3Key\":\""+file.name+"\"}");
+      })
     });
   },
   sendFile(file, config) {

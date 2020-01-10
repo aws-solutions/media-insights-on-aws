@@ -56,7 +56,6 @@ export default {
   props: ['isCollectionActive', 'isUploadActive'],
   data() {
     return {
-      elasticsearch_endpoint: process.env.VUE_APP_ELASTICSEARCH_ENDPOINT,
       signedIn: false
     }
   },

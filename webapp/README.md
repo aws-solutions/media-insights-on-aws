@@ -49,20 +49,25 @@ cd MediaInsightsEngine/webapp
 npm install
 ```
 
-### Define the following environment variables in `.env`:
-* VUE_APP_ELASTICSEARCH_ENDPOINT
-* VUE_APP_WORKFLOW_API_ENDPOINT
-* VUE_APP_DATAPLANE_API_ENDPOINT
-* VUE_APP_DATAPLANE_BUCKET
+### Define the following environment variables in `webapp/public/runtimeConfig.json`:
+* ELASTICSEARCH_ENDPOINT
+* WORKFLOW_API_ENDPOINT
+* DATAPLANE_API_ENDPOINT
+* DATAPLANE_BUCKET
+* USER_POOL_ID
+* USER_POOL_CLIENT_ID
+* IDENTITY_POOL_ID
+* AWS_REGION
+
 
 ### Run with hot-reload for development:
 ```
 npm run serve
 ```
 
-### Define CORS policy to allow uploads to VUE_APP_DATAPLANE_BUCKET
+### Define CORS policy to allow uploads to DATAPLANE_BUCKET
 
-Files will not upload through the MIE webapp until you add a CORS rule to the VUE_APP_DATAPLANE_BUCKET for the IP address that the webapp is running on. If you run the webapp on localhost or from AWS CloudFront then add CORS rules like this:
+Files will not upload through the MIE webapp until you add a CORS rule to the DATAPLANE_BUCKET for the IP address that the webapp is running on. If you run the webapp on localhost or from AWS CloudFront then add CORS rules like this:
 ```
 <?xml version="1.0" encoding="UTF-8"?>
 <CORSConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
@@ -126,10 +131,7 @@ DATAPLANE_PATH=$DATAPLANE_BUCKET/private/media/
 ELASTICSEARCH_DOMAINNAME=`aws es list-domain-names --query 'DomainNames[].DomainName' --output text --profile $PROFILE`
 ELASTICSEARCH_ENDPOINT=`aws es describe-elasticsearch-domain --domain-name $ELASTICSEARCH_DOMAINNAME --query 'DomainStatus.Endpoint' --output text --profile $PROFILE`
 
-echo "VUE_APP_ELASTICSEARCH_ENDPOINT="https://$ELASTICSEARCH_ENDPOINT >> ../webapp/.env
-echo "VUE_APP_WORKFLOW_API_ENDPOINT="$WORKFLOW_API_ENDPOINT >> ../webapp/.env
-echo "VUE_APP_DATAPLANE_API_ENDPOINT="$DATAPLANE_API_ENDPOINT >> ../webapp/.env
-echo "VUE_APP_DATAPLANE_BUCKET="$DATAPLANE_BUCKET >> ../webapp/.env
+echo -e "{\"ELASTICSEARCH_ENDPOINT\": \"https://$ELASTICSEARCH_ENDPOINT\", \"WORKFLOW_API_ENDPOINT\": \"$WORKFLOW_API_ENDPOINT\", \"DATAPLANE_API_ENDPOINT\": \"$DATAPLANE_ENDPOINT\", \"DATAPLANE_BUCKET\": \"$DATAPLANE_BUCKET\", \"USER_POOL_ID\": \"$USER_POOL_ID\", \"USER_POOL_CLIENT_ID\": \"$USER_POOL_CLIENT_ID\", \"IDENTITY_POOL_ID\": \"$IDENTITY_POOL_ID\", \"AWS_REGION\": \"$REGION\"}" >> ../webapp/public/runtimeConfig.json
 ```
 
 ### Setup S3 bucket

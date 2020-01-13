@@ -43,38 +43,38 @@ export default {
     console.log('deactivated component:', this.operator)
   },
   activated: function () {
-    console.log('activated component:', this.operator)
+    console.log('activated component:', this.operator);
     this.fetchAssetData();
   },
   beforeDestroy: function () {
-      this.translated_text = "",
-      this.source_language = "",
-      this.target_language = ""
+      this.translated_text = "";
+      this.source_language = "";
+      this.target_language = "";
     },
   methods: {
     async fetchAssetData () {
-      let query = 'AssetId:'+this.$route.params.asset_id+ ' _index:mietranslation'
+      let query = 'AssetId:'+this.$route.params.asset_id+ ' _index:mietranslation';
       let apiName = 'mieElasticsearch';
       let path = '/_search';
       let apiParams = {
         headers: {'Content-Type': 'application/json'},
         queryStringParameters: {'q': query, 'default_operator': 'AND', 'size': 10000}
-      }
-      let response = await this.$Amplify.API.get(apiName, path, apiParams)
+      };
+      let response = await this.$Amplify.API.get(apiName, path, apiParams);
       if (!response) {
         this.showElasticSearchAlert = true
       }
       else {
-        let result = await response
-        let data = result.hits.hits
+        let result = await response;
+        let data = result.hits.hits;
         if (data.length === 0) {
           this.noTranslation = true
         }
         else {
-          this.noTranslation = false
-          for (var i = 0, len = data.length; i < len; i++) {
-            this.translated_text = data[i]._source.TranslatedText
-            this.source_language = data[i]._source.SourceLanguageCode
+          this.noTranslation = false;
+          for (let i = 0, len = data.length; i < len; i++) {
+            this.translated_text = data[i]._source.TranslatedText;
+            this.source_language = data[i]._source.SourceLanguageCode;
             this.target_language = data[i]._source.TargetLanguageCode
           }
         }

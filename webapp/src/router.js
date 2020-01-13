@@ -2,11 +2,10 @@ import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Analysis from '@/views/Analysis.vue'
 import Upload from '@/views/UploadToAWSS3.vue'
-import Run from '@/views/Run.vue'
 import Collection from '@/views/Collection.vue'
 import Login from '@/views/Login.vue'
 
-Vue.use(VueRouter)
+Vue.use(VueRouter);
 
 const router = new VueRouter({
   mode: 'history',
@@ -31,19 +30,13 @@ const router = new VueRouter({
       meta: { requiresAuth: true }
     },
     {
-      path: '/run/:asset_id',
-      name: 'run',
-      component: Run,
-      meta: { requiresAuth: true }
-    },
-    {
       path: "/",
       name: "Login",
       component: Login,
       meta: { requiresAuth: false },
     }
   ]
-})
+});
 
 router.beforeResolve(async (to, from, next) => {
   if (to.matched.some(record => record.meta.requiresAuth)) {
@@ -51,7 +44,7 @@ router.beforeResolve(async (to, from, next) => {
       await Vue.prototype.$Amplify.Auth.currentAuthenticatedUser();
       next();
     } catch (e) {
-      console.log(e)
+      console.log(e);
       next({
         path: "/",
         query: {
@@ -60,7 +53,7 @@ router.beforeResolve(async (to, from, next) => {
       });
     }
   }
-  console.log(next)
+  console.log(next);
   next();
 });
 

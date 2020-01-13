@@ -65,12 +65,12 @@ export default {
     ...mapState(['player']),
   },
   deactivated: function () {
-    console.log('deactivated component:', this.operator)
+    console.log('deactivated component:', this.operator);
     // clearing this value after every deactivation so we dont carry this huge amount of data in memory
     this.key_phrases = []
   },
   activated: function () {
-    console.log('activated component:', this.operator)
+    console.log('activated component:', this.operator);
     this.fetchAssetData();
   },
   beforeDestroy: function () {
@@ -84,21 +84,21 @@ export default {
         this.fetchAssetData()
     },
     async fetchAssetData () {
-      let query = 'AssetId:'+this.$route.params.asset_id+' Confidence:>'+this.Confidence+' _index:miekey_phrases'
+      let query = 'AssetId:'+this.$route.params.asset_id+' Confidence:>'+this.Confidence+' _index:miekey_phrases';
       let apiName = 'mieElasticsearch';
       let path = '/_search';
       let apiParams = {
         headers: {'Content-Type': 'application/json'},
         queryStringParameters: {'q': query, 'default_operator': 'AND', 'size': 10000}
-      }
-      let response = await this.$Amplify.API.get(apiName, path, apiParams)
+      };
+      let response = await this.$Amplify.API.get(apiName, path, apiParams);
       if (!response) {
         this.showElasticSearchAlert = true
       }
       else {
-        let result = await response
-        let data = result.hits.hits
-        for (var i = 0, len = data.length; i < len; i++) {
+        let result = await response;
+        let data = result.hits.hits;
+        for (let i = 0, len = data.length; i < len; i++) {
           this.key_phrases.push({ "PhraseText": data[i]._source.PhraseText, "Confidence": data[i]._source.Confidence, "BeginOffset": data[i]._source.BeginOffset, "EndOffset": data[i]._source.EndOffset})
         }
         this.isBusy = false

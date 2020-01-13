@@ -36,17 +36,16 @@ export default {
   },
   computed: {
     isProfane() {
-      var Filter = require('bad-words');
-      var profanityFilter = new Filter({ placeHolder: '_' });
-      var result = profanityFilter.isProfane(this.transcript);
-      return result
+      const Filter = require('bad-words');
+      const profanityFilter = new Filter({ placeHolder: '_' });
+      return profanityFilter.isProfane(this.transcript);
     },
   },
   deactivated: function () {
     console.log('deactivated component:', this.operator)
   },
   activated: function () {
-    console.log('activated component:', this.operator)
+    console.log('activated component:', this.operator);
     this.fetchAssetData();
   },
   beforeDestroy: function () {
@@ -54,26 +53,26 @@ export default {
   },
   methods: {
     async fetchAssetData () {
-      let query = 'AssetId:'+this.$route.params.asset_id+ ' _index:mietranscript'
+      let query = 'AssetId:'+this.$route.params.asset_id+ ' _index:mietranscript';
       let apiName = 'mieElasticsearch';
       let path = '/_search';
       let apiParams = {
         headers: {'Content-Type': 'application/json'},
         queryStringParameters: {'q': query, 'default_operator': 'AND', 'size': 10000}
-      }
-      let response = await this.$Amplify.API.get(apiName, path, apiParams)
+      };
+      let response = await this.$Amplify.API.get(apiName, path, apiParams);
       if (!response) {
         this.showElasticSearchAlert = true
       }
       else {
-        let result = await response
-        let data = result.hits.hits
+        let result = await response;
+        let data = result.hits.hits;
         if (data.length === 0) {
           this.noTranscript = true
         }
         else {
-          this.noTranscript = false
-          for (var i = 0, len = data.length; i < len; i++) {
+          this.noTranscript = false;
+          for (let i = 0, len = data.length; i < len; i++) {
             this.transcript = data[i]._source.transcript
           }
         }

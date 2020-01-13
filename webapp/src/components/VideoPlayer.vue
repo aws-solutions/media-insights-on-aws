@@ -52,8 +52,7 @@ export default {
     }
   },
   created() {
-    const video_url = this.options.sources[0].src;
-    this.video_url = video_url
+    this.video_url = this.options.sources[0].src;
   },
   mounted: function () {
     this.player = videojs(this.$refs.videoPlayer);
@@ -83,15 +82,15 @@ export default {
       this.$store.commit('updatePlayer', this.player);
 
       // Set canvas size to videoPlayer size
-      var canvas = document.getElementById('canvas');
-      var video = document.getElementById('videoPlayer');
+      const canvas = document.getElementById('canvas');
+      const video = document.getElementById('videoPlayer');
       canvas.width = video.clientWidth;
       canvas.height = video.clientHeight;
     });
     window.addEventListener('resize', function () {
       // Update canvas size when window is resized
-      var canvas = document.getElementById('canvas');
-      var video = document.getElementById('videoPlayer');
+      const canvas = document.getElementById('canvas');
+      const video = document.getElementById('videoPlayer');
       canvas.width = video.clientWidth;
       canvas.height = video.clientHeight;
     });

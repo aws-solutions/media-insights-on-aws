@@ -43,7 +43,7 @@
       },
     },
     deactivated: function () {
-      console.log('deactivated component:', this.operator)
+      console.log('deactivated component:', this.operator);
       this.lineChart = Object
     },
     activated: function () {
@@ -55,7 +55,7 @@
       getDuration() {
         if (this.player) {
           this.player.on('loadedmetadata', function () {
-            var seconds = this.player.duration();
+            const seconds = this.player.duration();
             if (seconds >= 3600) {
               this.duration = new Date(seconds*1000).toISOString().substr(11, 8);
             } else {

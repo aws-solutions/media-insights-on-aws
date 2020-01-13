@@ -99,8 +99,12 @@
             </b-card>
           </b-card-group>
           <div align="right">
-            <button type="button" class="btn btn-link" @click="selectAll">Select All</button>
-            <button type="button" class="btn btn-link" @click="clearAll">Clear All</button>
+            <button type="button" class="btn btn-link" @click="selectAll">
+              Select All
+            </button>
+            <button type="button" class="btn btn-link" @click="clearAll">
+              Clear All
+            </button>
           </div>
         </b-container>
       </b-collapse>
@@ -347,7 +351,7 @@
         return "";
       },
       validForm() {
-        var validStatus = true;
+        let validStatus = true;
         if (this.textFormError || this.audioFormError || this.videoFormError) validStatus = false;
         return validStatus;
       },
@@ -374,10 +378,6 @@
               "faceSearch": {
                 "Enabled": this.enabledOperators.includes("faceSearch"),
                 "CollectionId": this.faceCollectionId==="" ? "undefined" : this.faceCollectionId
-              },
-              "personTracking": {
-                // TODO: enable this operator after it has been added to front-end
-                "Enabled": false,
               },
               "GenericDataLookup": {
                 "Enabled": this.enabledOperators.includes("genericDataLookup"),
@@ -422,7 +422,7 @@
     },
     mounted: function() {
       this.executed_assets = this.execution_history;
-      this.pollWorkflowStatus()
+      this.pollWorkflowStatus();
       console.log("this.DATAPLANE_BUCKET: " + this.DATAPLANE_BUCKET)
     },
     beforeDestroy () {
@@ -449,17 +449,16 @@
       },
       s3UploadComplete: async function (location) {
         const token = await this.$Amplify.Auth.currentSession().then(data =>{
-          var accessToken = data.getIdToken().getJwtToken();
-          return accessToken
+          return data.getIdToken().getJwtToken();
         });
-        var vm = this;
-        var s3_uri = location.s3ObjectLocation.url + location.s3ObjectLocation.fields.key;
-        var media_type = location.type;
+        const vm = this;
+        const s3_uri = location.s3ObjectLocation.url + location.s3ObjectLocation.fields.key;
+        const media_type = location.type;
         console.log('media type: ' + media_type);
         console.log('s3UploadComplete: ');
-        console.log(s3_uri)
-        var data = {}
-        if (media_type == 'image/jpeg') {
+        console.log(s3_uri);
+        let data = {};
+        if (media_type === 'image/jpeg') {
           data = {
             "Name": "ImageWorkflow",
             "Configuration": {
@@ -491,7 +490,7 @@
               }
             }
           };
-        } else if (media_type == 'video/mp4') {
+        } else if (media_type === 'video/mp4') {
           data = vm.workflowConfig;
           data["Input"] = {
             "Media": {
@@ -501,15 +500,15 @@
               }
             }
           };
-        } else if (media_type == 'application/json') {
+        } else if (media_type === 'application/json') {
           // JSON files may be uploaded for the genericDataLookup operator, but
           // we won't run a workflow for json file types.
-          console.log("Data file has been uploaded to s3://" + location.s3ObjectLocation.fields.key)
+          console.log("Data file has been uploaded to s3://" + location.s3ObjectLocation.fields.key);
           return;
         } else {
           vm.s3UploadError("Unsupported media type, " + media_type + ". Please upload a jpg or mp4.")
         }
-        console.log(JSON.stringify(data))
+        console.log(JSON.stringify(data));
         fetch(this.WORKFLOW_API_ENDPOINT + 'workflow/execution', {
           method: 'post',
           body: JSON.stringify(data),
@@ -520,7 +519,7 @@
               status: response.status
             })
           ).then(res => {
-            if (res.status != 200) {
+            if (res.status !== 200) {
               console.log("ERROR: Failed to start workflow.");
               console.log(res.data.Code);
               console.log(res.data.Message);
@@ -530,8 +529,8 @@
               console.log((data));
               console.log("Response: " + response.status);
             } else {
-              var asset_id = res.data.AssetId;
-              var s3key = location.s3ObjectLocation.fields.key;
+              const asset_id = res.data.AssetId;
+              const s3key = location.s3ObjectLocation.fields.key;
               console.log("Media assigned asset id: " + asset_id);
               vm.executed_assets.push({asset_id: asset_id, file_name: s3key, workflow_status: "", state_machine_console_link: ""});
               vm.getWorkflowStatus(asset_id);
@@ -541,10 +540,9 @@
       },
       async getWorkflowStatus(asset_id) {
         const token = await this.$Amplify.Auth.currentSession().then(data =>{
-          var accessToken = data.getIdToken().getJwtToken()
-          return accessToken
-        })
-        var vm = this;
+          return data.getIdToken().getJwtToken();
+        });
+        const vm = this;
         fetch(this.WORKFLOW_API_ENDPOINT+'workflow/execution/asset/'+asset_id, {
           method: 'get',
           headers: {
@@ -556,10 +554,10 @@
               status: response.status
             })
           ).then(res => {
-            if (res.status != 200) {
+            if (res.status !== 200) {
               console.log("ERROR: Failed to get workflow status")
             } else {
-              for (var i = 0; i < vm.executed_assets.length; i++) {
+              for (let i = 0; i < vm.executed_assets.length; i++) {
                 if (vm.executed_assets[i].asset_id === asset_id) {
                   vm.executed_assets[i].workflow_status = res.data[0].Status;
                   vm.executed_assets[i].state_machine_console_link = "https://"+this.AWS_REGION+".console.aws.amazon.com/states/home?region="+this.AWS_REGION+"#/executions/details/"+res.data[0].StateMachineExecutionArn;
@@ -573,7 +571,7 @@
       },
       pollWorkflowStatus() {
         // Poll frequency in milliseconds
-        const poll_frequency = 5000
+        const poll_frequency = 5000;
         this.workflow_status_polling = setInterval(() => {
           this.executed_assets.forEach(item => {
             if (item.workflow_status === "" || item.workflow_status === "Started" || item.workflow_status === "Queued") {

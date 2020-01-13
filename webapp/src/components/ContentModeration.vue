@@ -106,13 +106,13 @@
       ...mapState(['player']),
       sorted_unique_labels() {
         // This function sorts and counts unique labels for mouse over events on label buttons
-        var es_data = this.elasticsearch_data;
+        const es_data = this.elasticsearch_data;
         const unique_labels = new Map();
         // sort and count unique labels for label mouse over events
         es_data.forEach(function (record) {
           unique_labels.set(record.Name, unique_labels.get(record.Name) ? unique_labels.get(record.Name) + 1 : 1)
         });
-        var sorted_unique_labels = new Map([...unique_labels.entries()].slice().sort((a, b) => b[1] - a[1]))
+        const sorted_unique_labels = new Map([...unique_labels.entries()].slice().sort((a, b) => b[1] - a[1]));
         // If Elasticsearch returned undefined labels then delete them:
         sorted_unique_labels.delete(undefined);
         this.countLabels(sorted_unique_labels.size, es_data.length);
@@ -159,7 +159,7 @@
         a.dispatchEvent(e);
       },
       updateConfidence (event) {
-        this.isBusy = !this.isBusy
+        this.isBusy = !this.isBusy;
         this.Confidence = event.target.value;
         // TODO: move image processing to a separate component
         if (this.mediaType === "video/mp4") {
@@ -176,8 +176,8 @@
           return
         }
         this.selectedLabel = label;
-        var markers = [];
-        var es_data = this.elasticsearch_data
+        let markers = [];
+        const es_data = this.elasticsearch_data;
         es_data.forEach(function (record) {
           if (record.Name === label) {
             markers.push({'time': record.Timestamp/1000, 'text': record.Name, 'overlayText': record.Name})
@@ -191,38 +191,38 @@
         }
       },
       async fetchAssetData () {
-          let query = 'AssetId:'+this.$route.params.asset_id+' Confidence:>'+this.Confidence+' Operator:'+this.operator
+          let query = 'AssetId:'+this.$route.params.asset_id+' Confidence:>'+this.Confidence+' Operator:'+this.operator;
           let apiName = 'mieElasticsearch';
           let path = '/_search';
           let apiParams = {
             headers: {'Content-Type': 'application/json'},
             queryStringParameters: {'q': query, 'default_operator': 'AND', 'size': 10000}
-          }
-          let response = await this.$Amplify.API.get(apiName, path, apiParams)
+          };
+          let response = await this.$Amplify.API.get(apiName, path, apiParams);
           if (!response) {
             this.showElasticSearchAlert = true
           }
           else {
-            let es_data = []
-            let result = await response
-            let data = result.hits.hits
-            let dataLength = data.length
+            let es_data = [];
+            let result = await response;
+            let data = result.hits.hits;
+            let dataLength = data.length;
             if (dataLength === 0 && this.Confidence > 55)  {
-              this.lowerConfidence = true
+              this.lowerConfidence = true;
               this.lowerConfidenceMessage = 'Try lowering confidence threshold'
             }
             else {
-              this.lowerConfidence = false
-              for (var i = 0, len = dataLength; i < len; i++) {
+              this.lowerConfidence = false;
+              for (let i = 0, len = dataLength; i < len; i++) {
                 es_data.push(data[i]._source)
               }
             }
-            this.elasticsearch_data = JSON.parse(JSON.stringify(es_data))
+            this.elasticsearch_data = JSON.parse(JSON.stringify(es_data));
             this.isBusy = false
         }
       },
       chartData() {
-        var timeseries = new Map();
+        let timeseries = new Map();
         function saveTimestamp (millisecond) {
           if (timeseries.has(millisecond)) {
             timeseries.set(millisecond, {"x": millisecond, "y": timeseries.get(millisecond).y + 1})
@@ -230,7 +230,7 @@
             timeseries.set(millisecond, {"x": millisecond, "y":1})
           }
         }
-        var es_data = this.elasticsearch_data;
+        const es_data = this.elasticsearch_data;
         es_data.forEach( function(record) {
           // Define timestamp with millisecond resolution
           const millisecond = Math.round(record.Timestamp);

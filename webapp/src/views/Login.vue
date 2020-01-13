@@ -17,17 +17,17 @@
 function patchSignIn () {
   // monkey-patch the UsernameField component, and add a watcher to make it properly emit a changed
   // event when the username field changes
-  let usernameComponent = Vue.component('amplify-username-field')
-  let watches = usernameComponent.options.watch = usernameComponent.options.watch || {}
+  let usernameComponent = Vue.component('amplify-username-field');
+  let watches = usernameComponent.options.watch = usernameComponent.options.watch || {};
   watches.username = function () {
     this.usernameChanged()
-  }
+  };
   watches.email = function () {
     this.emailChanged()
   }
 }
 import Vue from 'vue'
-patchSignIn()
+patchSignIn();
 //-----------------------------------------------------------//
 
 import { AmplifyEventBus } from "aws-amplify-vue";

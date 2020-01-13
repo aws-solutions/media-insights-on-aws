@@ -27,8 +27,8 @@ export default {
   beforeDestroy() {
   },
   created() {
-    const image_url = this.options.sources[0].src;
-    this.image_url = image_url
+    const _image_url = this.options.sources[0].src;
+    this.image_url = _image_url
   },
   mounted: function () {
     window.addEventListener('resize', function () {

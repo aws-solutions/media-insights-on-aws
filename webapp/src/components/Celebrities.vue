@@ -1,3 +1,4 @@
+<!--suppress ALL -->
 <template>
   <b-container fluid>
     <b-col>
@@ -126,7 +127,7 @@
       ...mapState(['player']),
       sorted_unique_labels() {
         // This function sorts and counts unique labels for mouse over events on label buttons
-        var es_data = this.elasticsearch_data;
+        const es_data = this.elasticsearch_data;
         const unique_labels = new Map();
         // sort and count unique labels for label mouse over events
         es_data.forEach(function (record) {
@@ -136,7 +137,7 @@
             this.saveBoxedLabel(record.Name)
           }
         }.bind(this));
-        var sorted_unique_labels = new Map([...unique_labels.entries()].slice().sort((a, b) => b[1] - a[1]));
+        const sorted_unique_labels = new Map([...unique_labels.entries()].slice().sort((a, b) => b[1] - a[1]));
         // If Elasticsearch returned undefined labels then delete them:
         sorted_unique_labels.delete(undefined);
         this.countLabels(sorted_unique_labels.size, es_data.length);
@@ -157,7 +158,7 @@
       this.boxes_available = [];
       this.selectedLabel = '';
       clearInterval(this.canvasRefreshInterval);
-      var canvas = document.getElementById('canvas');
+      const canvas = document.getElementById('canvas');
       if (canvas) var ctx = canvas.getContext('2d');
       if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
     },
@@ -194,7 +195,7 @@
         a.dispatchEvent(e);
       },
       updateConfidence (event) {
-        this.isBusy = !this.isBusy
+        this.isBusy = !this.isBusy;
         this.Confidence = event.target.value;
         // TODO: move image processing to a separate component
         if (this.mediaType === "video/mp4") {
@@ -273,32 +274,32 @@
         }
       },
       async fetchAssetData () {
-        let query = 'AssetId:'+this.$route.params.asset_id+' Confidence:>'+this.Confidence+' Operator:'+this.operator
+        let query = 'AssetId:'+this.$route.params.asset_id+' Confidence:>'+this.Confidence+' Operator:'+this.operator;
         let apiName = 'mieElasticsearch';
         let path = '/_search';
         let apiParams = {
           headers: {'Content-Type': 'application/json'},
           queryStringParameters: {'q': query, 'default_operator': 'AND', 'size': 10000}
-        }
-        let response = await this.$Amplify.API.get(apiName, path, apiParams)
+        };
+        let response = await this.$Amplify.API.get(apiName, path, apiParams);
         if (!response) {
           this.showElasticSearchAlert = true
         }
         else {
-          let es_data = []
-          let result = await response
-          let data = result.hits.hits
+          let es_data = [];
+          let result = await response;
+          let data = result.hits.hits;
           if (data.length === 0 && this.Confidence > 55) {
-            this.lowerConfidence = true
+            this.lowerConfidence = true;
             this.lowerConfidenceMessage = 'Try lowering confidence threshold'
           }
           else {
-            this.lowerConfidence = false
+            this.lowerConfidence = false;
             for (var i = 0, len = data.length; i < len; i++) {
               es_data.push(data[i]._source)
             }
           }
-          this.elasticsearch_data = JSON.parse(JSON.stringify(es_data))
+          this.elasticsearch_data = JSON.parse(JSON.stringify(es_data));
           this.isBusy = false
         }
       },
@@ -328,7 +329,7 @@
           return
         }
         // If user just clicked a new label...
-        if (this.canvasRefreshInterval != undefined) {
+        if (this.canvasRefreshInterval !== undefined) {
           // ...then reset the old canvas refresh interval.
           clearInterval(this.canvasRefreshInterval)
         }
@@ -353,7 +354,7 @@
           var player_timestamp = Math.round(this.player.currentTime()*10.0);
           // If we have a box for the player's timestamp...
           if (boxMap.has(player_timestamp)) {
-            i=0
+            i=0;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.beginPath();
             ctx.strokeStyle = "red";
@@ -367,7 +368,7 @@
             instance_list.forEach( i => {
               // ...get all of the boxes belonging to this instance
               // at the current timestamp.
-              var boxes = boxMap.get(player_timestamp).filter(box => box.instance === i)
+              var boxes = boxMap.get(player_timestamp).filter(box => box.instance === i);
               boxes.forEach (drawMe => {
                 if (drawMe) {
                   ctx.rect(drawMe.x, drawMe.y, drawMe.width, drawMe.height);
@@ -381,7 +382,7 @@
         }.bind(this), interval_ms);
       },
       chartData() {
-        var timeseries = new Map();
+        let timeseries = new Map();
         function saveTimestamp (millisecond) {
           if (timeseries.has(millisecond)) {
             timeseries.set(millisecond, {"x": millisecond, "y": timeseries.get(millisecond).y + 1})

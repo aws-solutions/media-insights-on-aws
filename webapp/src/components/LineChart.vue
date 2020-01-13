@@ -44,7 +44,7 @@
       },
     },
     deactivated: function () {
-      console.log('deactivated component:', this.operator)
+      console.log('deactivated component:', this.operator);
       this.chart = Object
     },
     activated: function () {
@@ -121,7 +121,7 @@
             }]
           },
         }
-      }
+      };
       window.addEventListener('resize', function () {
         // TODO: set chart and canvas width equal to video player width
         // TODO: make columns resize equally when resizing window
@@ -165,7 +165,7 @@
           this.player.on('timeupdate', function () {
             const current_position = Math.round(this.player.currentTime() / this.player.duration() * 1000);
             if (current_position !== last_position) {
-              this.drawVerticleLine(current_position/1000)
+              this.drawVerticleLine(current_position/1000);
               last_position = current_position;
             }
           }.bind(this));
@@ -206,7 +206,7 @@
         canvas_overlay.height=this.chart.height;
       },
       drawVerticleLine(position) {
-        var canvas_overlay = document.getElementById('verticalLineCanvas')
+        var canvas_overlay = document.getElementById('verticalLineCanvas');
         if (!canvas_overlay) return;
         var ctx = canvas_overlay.getContext('2d');
         if (!ctx || !this.chart) return;

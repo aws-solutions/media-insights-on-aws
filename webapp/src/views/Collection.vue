@@ -221,7 +221,7 @@
       }
     },
     created: function () {
-      this.isBusy = true
+      this.isBusy = true;
       this.retrieveAndFormatAsssets()
     },
     methods: {
@@ -229,13 +229,13 @@
         window.open(url);
       },
       async deleteAsset(asset_id) {
-        let token = await this.getAccessToken()
+        let token = await this.getAccessToken();
         let response = await fetch(this.DATAPLANE_API_ENDPOINT+'/metadata/'+asset_id, {
           method: 'delete',
           headers: {
             'Authorization': token
           }
-        })
+        });
         if (response.status === 200) {
             this.showDeletedAlert = 5;
             this.asset_list = [];
@@ -258,60 +258,55 @@
                 }
               },
               queryStringParameters: {'q': query, '_source': 'AssetId'}
-            }
-            let response = await this.$Amplify.API.post(apiName, path, apiParams)
+            };
+            let response = await this.$Amplify.API.post(apiName, path, apiParams);
             if (!response) {
               this.showElasticSearchAlert = true
             }
             else {
-              this.noAssets = false
-              let result = await response
-              return result
+              this.noAssets = false;
+              return await response;
         }
       },
       async searchCollection () {
-          this.noSearchResults = false
-          this.isBusy = true
-          let query = this.user_defined_query
+          this.noSearchResults = false;
+          this.isBusy = true;
+          let query = this.user_defined_query;
           // if search is empty string then get asset list from dataplane instead of Elasticsearch.
           if (query === "") {
             this.showElasticSearchAlert = false;
             this.asset_list = [];
             this.retrieveAndFormatAsssets();
-            this.isBusy = false
-            return;
+            this.isBusy = false;
           }
           else {
             // Get the list of assets that contain metadata matching the user-specified search query.
-            let elasticData = await this.elasticsearchQuery(query)
+            let elasticData = await this.elasticsearchQuery(query);
             if (elasticData.hits.total === 0) {
               // the search returned no data
-              this.asset_list = []
-              this.noSearchResults = true
+              this.asset_list = [];
+              this.noSearchResults = true;
               this.isBusy = false;
             }
             else {
-              let assets = []
-              this.asset_list = []
-              this.noSearchResults = false
-              let token = await this.getAccessToken()
-              let buckets = elasticData.aggregations.distinct_assets.buckets
+              let assets = [];
+              this.asset_list = [];
+              this.noSearchResults = false;
+              let token = await this.getAccessToken();
+              let buckets = elasticData.aggregations.distinct_assets.buckets;
               for (var i = 0, len = buckets.length; i < len; i++) {
-                let assetId = buckets[i].key
-                let assetInfo = await this.getAssetInformation(token, assetId)
-                if (assetInfo === null) {
-                  continue
-                }
-                else {
+                let assetId = buckets[i].key;
+                let assetInfo = await this.getAssetInformation(token, assetId);
+                if (assetInfo !== null) {
                   assets.push(assetInfo)
                 }
             }
             if (assets.length === 0) {
-              this.noSearchResults = true
+              this.noSearchResults = true;
               this.isBusy = false
             }
             else {
-              this.pushAssetsToTable(assets)
+              this.pushAssetsToTable(assets);
               this.isBusy = false
             }
           }
@@ -323,12 +318,11 @@
             headers: {
               'Authorization': token
           }
-        })
-        let result = await response.json()
-        return result
+        });
+        return await response.json();
       },
       async getAssetThumbNail (token, bucket, s3Key) {
-        const data = { "S3Bucket": bucket, "S3Key": s3Key }
+        const data = { "S3Bucket": bucket, "S3Key": s3Key };
         let response = await fetch(this.DATAPLANE_API_ENDPOINT + '/download', {
             method: 'POST',
             mode: 'cors',
@@ -337,10 +331,9 @@
               'Authorization': token
             },
             body: JSON.stringify(data)
-          })
+          });
         if (response.status === 200) {
-          let result = await response.text()
-          return result
+          return await response.text();
         }
         else {
           this.showDataplaneAlert = true
@@ -352,10 +345,9 @@
             headers: {
               'Authorization': token
           }
-        })
+        });
         if (response.status === 200) {
-          let result = await response.json()
-          return result
+          return await response.json();
         }
         else {
           this.showDataplaneAlert = true
@@ -367,22 +359,20 @@
             headers: {
               'Authorization': token
           }
-        })
+        });
         if (response.status === 200) {
-          let result = await response.json()
-          return result
+          return await response.json();
         }
         else {
           this.showDataplaneAlert = true
         }
       },
       async getAccessToken () {
-          let response = await this.$Amplify.Auth.currentSession()
-          let result = await response.getIdToken().getJwtToken()
-          return result
+          let response = await this.$Amplify.Auth.currentSession();
+          return await response.getIdToken().getJwtToken();
       },
       async pushAssetsToTable(assets) {
-        let token = await this.getAccessToken()
+        let token = await this.getAccessToken();
         for (var i = 0, len = assets.length; i < len; i++) {
           var assetId;
           if (typeof assets[i] === 'object') {
@@ -398,14 +388,14 @@
         }
       },
       async pushAssetToTable (assetId, token) {
-        let assetInfo = await this.getAssetInformation(token, assetId)
+        let assetInfo = await this.getAssetInformation(token, assetId);
         let created = new Date(0);
-        created.setUTCSeconds(assetInfo.results.Created)
-        let bucket = assetInfo.results.S3Bucket
-        let s3Key = assetInfo.results.S3Key
-        let s3Uri = 's3://' + bucket + '/' + s3Key
-        let filename = s3Key.split("/").pop()
-        let thumbnailS3Key = 'private/assets/' + assetId + '/input/' + filename
+        created.setUTCSeconds(assetInfo.results.Created);
+        let bucket = assetInfo.results.S3Bucket;
+        let s3Key = assetInfo.results.S3Key;
+        let s3Uri = 's3://' + bucket + '/' + s3Key;
+        let filename = s3Key.split("/").pop();
+        let thumbnailS3Key = 'private/assets/' + assetId + '/input/' + filename;
         if (filename.substring(filename.lastIndexOf(".")) === ".mp4") {
           // The thumbnail is created by Media Convert, see:
           // source/operators/thumbnail/start_thumbnail.py
@@ -430,17 +420,17 @@
       },
 
       async retrieveAndFormatAsssets () {
-        let token = await this.getAccessToken()
-        let data = await this.fetchAssets(token)
-        let assets = data.assets
+        let token = await this.getAccessToken();
+        let data = await this.fetchAssets(token);
+        let assets = data.assets;
         if (assets.length === 0) {
-          this.noAssets = true
-          this.noSearchResults = false
+          this.noAssets = true;
+          this.noSearchResults = false;
           this.isBusy = false;
         }
         else {
-          this.noAssets = false
-          this.pushAssetsToTable(assets)
+          this.noAssets = false;
+          this.pushAssetsToTable(assets);
           this.isBusy = false
         }
       }

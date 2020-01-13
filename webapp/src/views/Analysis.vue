@@ -243,10 +243,9 @@
     methods: {
       async getAssetMetadata () {
           const token = await this.$Amplify.Auth.currentSession().then(data =>{
-            var accessToken = data.getIdToken().getJwtToken()
-            return accessToken
-          })
-          var asset_id = this.$route.params.asset_id;
+            return data.getIdToken().getJwtToken();
+          });
+          const asset_id = this.$route.params.asset_id;
           fetch(this.DATAPLANE_API_ENDPOINT+'/metadata/'+asset_id, {
             method: 'get',
             headers: {
@@ -257,7 +256,7 @@
                 data: data,
               })
             ).then(res => {
-              this.s3_uri = 's3://'+res.data.results.S3Bucket+'/'+res.data.results.S3Key
+              this.s3_uri = 's3://'+res.data.results.S3Bucket+'/'+res.data.results.S3Key;
               this.filename = this.s3_uri.split("/").pop();
               if (this.filename.substring(this.filename.lastIndexOf(".")) === ".jpg") {
                 this.mediaType = "image/jpg"
@@ -273,11 +272,10 @@
       async getVideoUrl() {
         // This function gets the video URL then initializes the video player
         const token = await this.$Amplify.Auth.currentSession().then(data =>{
-          var accessToken = data.getIdToken().getJwtToken()
-          return accessToken
-        })
-        var bucket = this.s3_uri.split("/")[2];
-        var key = this.s3_uri.split(this.s3_uri.split("/")[2] + '/')[1];
+          return data.getIdToken().getJwtToken();
+        });
+        const bucket = this.s3_uri.split("/")[2];
+        const key = this.s3_uri.split(this.s3_uri.split("/")[2] + '/')[1];
         // get URL to video file in S3
         fetch(this.DATAPLANE_API_ENDPOINT + '/download', {
           method: 'POST',

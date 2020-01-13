@@ -14,7 +14,7 @@ import { AmplifyPlugin } from "aws-amplify-vue";
 const getRuntimeConfig = async () => {
   const runtimeConfig = await fetch('/runtimeConfig.json');
   return await runtimeConfig.json()
-}
+};
 
 getRuntimeConfig().then(function(json) {
   const awsconfig = {
@@ -35,9 +35,9 @@ getRuntimeConfig().then(function(json) {
       ]
     }
   };
-  console.log("Runtime config: " + JSON.stringify(json))
+  console.log("Runtime config: " + JSON.stringify(json));
   Amplify.configure(awsconfig);
-  Vue.config.productionTip = false
+  Vue.config.productionTip = false;
   Vue.mixin({
     data() {
       return {
@@ -52,7 +52,7 @@ getRuntimeConfig().then(function(json) {
   });
 
   Vue.use(AmplifyPlugin, AmplifyModules);
-  Vue.use(BootstrapVue)
+  Vue.use(BootstrapVue);
 
   new Vue({
     router,

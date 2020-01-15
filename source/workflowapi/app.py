@@ -973,9 +973,14 @@ def create_stage(stage):
         response = SFN_CLIENT.create_state_machine(
             name=Name,
             definition=json.dumps(stageAsl),
-            roleArn=stageStateMachineExecutionRoleArn
+            roleArn=stageStateMachineExecutionRoleArn,
+            tags=[
+                {
+                    'key': 'environment',
+                    'value': 'mie'
+                },
+            ]
         )
-
         stage["StateMachineArn"] = response["stateMachineArn"]
 
         stage["Version"] = "v0"
@@ -1270,7 +1275,13 @@ def create_workflow(trigger, workflow):
         response = SFN_CLIENT.create_state_machine(
             name=workflow["Name"],
             definition=json.dumps(workflow["WorkflowAsl"]),
-            roleArn=STAGE_EXECUTION_ROLE
+            roleArn=STAGE_EXECUTION_ROLE,
+            tags=[
+                {
+                    'key': 'environment',
+                    'value': 'mie'
+                },
+            ]
         )    
 
         workflow.pop("WorkflowAsl")

@@ -161,6 +161,13 @@ Mappings:
       TemplateKeyPrefix: "media-insights-solution/%%VERSION%%/cf"
 
 Resources:
+  # Custom log group
+  MieLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties: 
+      LogGroupName: MediaInsightsLogs
+      RetentionInDays: 14
+
   # IAM Roles
   StepFunctionsServiceRole:
     Type: AWS::IAM::Role
@@ -213,8 +220,6 @@ Resources:
               - Effect: Allow
                 Action:
                   - states:StartExecution
-                # TODO: Security - Scope this down (should implement tagging on step functions, but this is fine for now
-                # since we are only giving start execution access)
                 Resource:
                   - !Join [
                     "",
@@ -227,6 +232,9 @@ Resources:
                       "*",
                     ],
                   ]
+                Condition:
+                  StringEquals:
+                    aws:ResourceTag/environment: mie
               - Effect: Allow
                 Action:
                   - "dynamodb:GetItem"
@@ -334,8 +342,6 @@ Resources:
         - PolicyName: !Sub "${AWS::StackName}-operation-lambda-role"
           PolicyDocument:
             Statement:
-              # TODO: Security - Scope this down (should implement tagging on step functions, but this is fine for now
-              # since we are only giving start execution access)
               - Effect: Allow
                 Action:
                   - states:StartExecution
@@ -351,6 +357,9 @@ Resources:
                       "*",
                     ],
                   ]
+                Condition:
+                  StringEquals:
+                    aws:ResourceTag/environment: mie
               - Effect: Allow
                 Action:
                   - "dynamodb:GetItem"

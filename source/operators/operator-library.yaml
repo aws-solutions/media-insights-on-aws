@@ -399,16 +399,30 @@ Resources:
                 Resource: !Ref DataPlaneHandlerArn
                 Effect: "Allow"
 
-  rekognitionRole:
+  rekognitionSNSRole:
     Type: "AWS::IAM::Role"
     Properties:
-      ManagedPolicyArns:
-        # TODO: Security - Scope this down
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/AmazonSNSFullAccess
-        - arn:aws:iam::aws:policy/AmazonRekognitionFullAccess
-        - arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
-        - arn:aws:iam::aws:policy/AmazonSQSFullAccess
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action:
+              - "sts:AssumeRole"
+            Effect: "Allow"
+            Principal:
+              Service: "rekognition.amazonaws.com"
+      Policies:
+      - PolicyName: "RekognitionSNSPublishPolicy"
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Action:
+                - sns:Publish
+              Resource: !Ref "snsRekognitionTopic"
+              Effect: "Allow"
+
+  rekognitionLambdaRole:
+    Type: "AWS::IAM::Role"
+    Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -418,25 +432,50 @@ Resources:
             Principal:
               Service: "lambda.amazonaws.com"
       Policies:
-        - PolicyName: "RekogPassRolePolicy"
+        - PolicyName: "rekognitionAccess"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              # TODO: Security - Scope this down
               - Action:
                   - iam:PassRole
-                Resource: "*"
+                Resource: !GetAtt "rekognitionSNSRole.Arn"
                 Effect: "Allow"
               - Action: "lambda:InvokeFunction"
                 Resource: !Ref DataPlaneHandlerArn
                 Effect: "Allow"
-        - PolicyName: "RekognitionSNSPublishPolicy"
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
               - Action:
-                  - sns:Publish
-                Resource: !Ref "snsRekognitionTopic"
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: "arn:aws:logs:*:*:*:*"
+                Effect: "Allow"
+              - Action:
+                  - "s3:GetObject"
+                Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
+                Effect: "Allow"
+              - Action:
+                  [
+                    "rekognition:DescribeCollection",
+                    "rekognition:DetectFaces",
+                    "rekognition:DetectLabels",
+                    "rekognition:DetectModerationLabels",
+                    "rekognition:GetCelebrityRecognition",
+                    "rekognition:GetContentModeration",
+                    "rekognition:GetFaceDetection",
+                    "rekognition:GetFaceSearch",
+                    "rekognition:GetLabelDetection",
+                    "rekognition:GetPersonTracking",
+                    "rekognition:RecognizeCelebrities",
+                    "rekognition:SearchFaces",
+                    "rekognition:SearchFacesByImage",
+                    "rekognition:StartCelebrityRecognition",
+                    "rekognition:StartContentModeration",
+                    "rekognition:StartFaceDetection",
+                    "rekognition:StartFaceSearch",
+                    "rekognition:StartLabelDetection",
+                    "rekognition:StartPersonTracking"
+                  ]
+                Resource: "*"
                 Effect: "Allow"
 
   StepFunctionRole:
@@ -602,7 +641,7 @@ Resources:
       Handler: "start_celebrity_recognition.lambda_handler"
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -618,7 +657,7 @@ Resources:
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "celebrityRecognition"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
@@ -630,7 +669,7 @@ Resources:
       Handler: "check_celebrity_recognition_status.lambda_handler"
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -645,7 +684,7 @@ Resources:
       Timeout: 120
       Environment:
         Variables:
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "celebrityRecognition"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
@@ -657,7 +696,7 @@ Resources:
       Handler: "start_content_moderation.lambda_handler"
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -673,7 +712,7 @@ Resources:
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "contentModeration"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
@@ -685,7 +724,7 @@ Resources:
       Handler: "check_content_moderation_status.lambda_handler"
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -700,7 +739,7 @@ Resources:
       Timeout: 120
       Environment:
         Variables:
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "contentModeration"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
@@ -712,7 +751,7 @@ Resources:
       Handler: "start_face_detection.lambda_handler"
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -729,7 +768,7 @@ Resources:
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "faceDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
@@ -741,7 +780,7 @@ Resources:
       Handler: "check_face_detection_status.lambda_handler"
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -757,7 +796,7 @@ Resources:
       MemorySize: 512
       Environment:
         Variables:
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "faceDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
@@ -769,7 +808,7 @@ Resources:
       Handler: "start_face_search.lambda_handler"
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -786,7 +825,7 @@ Resources:
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "faceSearch"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
@@ -798,7 +837,7 @@ Resources:
       Handler: "check_face_search_status.lambda_handler"
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -814,7 +853,7 @@ Resources:
       MemorySize: 256
       Environment:
         Variables:
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "faceSearch"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
@@ -826,7 +865,7 @@ Resources:
       Handler: "start_label_detection.lambda_handler"
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -841,7 +880,7 @@ Resources:
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "labelDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
@@ -853,7 +892,7 @@ Resources:
       Handler: "check_label_detection_status.lambda_handler"
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -869,7 +908,7 @@ Resources:
       MemorySize: 256
       Environment:
         Variables:
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "labelDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
@@ -881,7 +920,7 @@ Resources:
       Handler: "start_person_tracking.lambda_handler"
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -896,7 +935,7 @@ Resources:
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "personTracking"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
 
@@ -906,7 +945,7 @@ Resources:
       Handler: "check_person_tracking_status.lambda_handler"
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -922,7 +961,7 @@ Resources:
       MemorySize: 256
       Environment:
         Variables:
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "personTracking"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"

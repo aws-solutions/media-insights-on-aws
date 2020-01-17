@@ -108,7 +108,7 @@ Resources:
                     "mediaconvert:DescribeEndpoints",
                     "mediaconvert:CreateJob"
                   ]
-                Resource: "*"
+                Resource: "arn:aws:lambda:*:*:function:*"
                 Effect: "Allow"
               - Action:
                   - "logs:CreateLogGroup"
@@ -155,7 +155,7 @@ Resources:
                     "transcribe:ListTranscriptionJobs",
                     "transcribe:ListVocabularies"
                   ]
-                Resource: "*"
+                Resource: "arn:aws:lambda:*:*:function:*"
                 Effect: "Allow"
               - Action:
                   - "logs:CreateLogGroup"
@@ -223,7 +223,7 @@ Resources:
                 "translate:ImportTerminology",
                 "translate:TranslateText"
               ]
-                Resource: "*"
+                Resource: "arn:aws:lambda:*:*:function:*"
                 Effect: "Allow"
               - Action:
                   - "logs:CreateLogGroup"
@@ -270,7 +270,7 @@ Resources:
                     "polly:GetLexicon",
                     "polly:DescribeVoices"
                   ]
-                Resource: "*"
+                Resource: "arn:aws:lambda:*:*:function:*"
                 Effect: "Allow"
               - Action:
                   - "logs:CreateLogGroup"
@@ -285,7 +285,7 @@ Resources:
                 Effect: "Allow"
               - Action:
                   - "comprehend:DetectDominantLanguage"
-                Resource: "*"
+                Resource: "arn:aws:lambda:*:*:function:*"
                 Effect: "Allow"
               - Action: "lambda:InvokeFunction"
                 Resource: !Ref DataPlaneHandlerArn
@@ -363,7 +363,6 @@ Resources:
                     "comprehend:DetectDominantLanguage",
                     "comprehend:CreateDocumentClassifier",
                     "comprehend:ListEntityRecognizers",
-                    "iam:PassRole",
                     "comprehend:ListSentimentDetectionJobs",
                     "comprehend:BatchDetectSyntax",
                     "comprehend:StartSentimentDetectionJob",
@@ -393,7 +392,7 @@ Resources:
                     "comprehend:DetectEntities",
                     "comprehend:DetectKeyPhrases"
                   ]
-                Resource: "*"
+                Resource: "arn:aws:lambda:*:*:function:*"
                 Effect: "Allow"
               - Action: "lambda:InvokeFunction"
                 Resource: !Ref DataPlaneHandlerArn
@@ -475,7 +474,7 @@ Resources:
                     "rekognition:StartLabelDetection",
                     "rekognition:StartPersonTracking"
                   ]
-                Resource: "*"
+                Resource: "arn:aws:lambda:*:*:function:*"
                 Effect: "Allow"
 
   StepFunctionRole:

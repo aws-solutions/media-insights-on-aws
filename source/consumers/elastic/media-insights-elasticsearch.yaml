@@ -163,7 +163,7 @@ Resources:
                   - "logs:CreateLogGroup"
                   - "logs:CreateLogStream"
                   - "logs:PutLogEvents"
-                Resource: "*"
+                Resource: "arn:aws:logs:*:*:*:*"
               - Effect: Allow
                 Action:
                   - "es:ESHttpPost"

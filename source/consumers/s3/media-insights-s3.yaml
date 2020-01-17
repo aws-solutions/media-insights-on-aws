@@ -56,10 +56,9 @@ Resources:
                   - "kinesis:GetShardIterator"
                   - "kinesis:GetRecords"
                 Resource: !Ref AnalyticsStreamArn
-              # TODO: Security - Scope this down
               - Effect: Allow
                 Action:
-                  - s3:*
+                  - "s3:GetObject"
                 Resource:
                   - !Join ["", [!Ref AnalyticsS3Bucket, "/analytics"]]
                   - !Join ["", [!Ref AnalyticsS3Bucket, "/analytics/*"]]

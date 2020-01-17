@@ -56,14 +56,16 @@ Resources:
               Statement:
                 - Effect: Allow
                   Action:
-                    - "s3:*"
+                    - "s3:GetObject"
+                    - "s3:PutObject"
                   Resource: !Sub
                     - arn:aws:s3:::${code}/*
                     - code:
                         Fn::FindInMap: ["SourceCode", "General", "S3Bucket"]
                 - Effect: Allow
                   Action:
-                    - "s3:*"
+                    - "s3:GetObject"
+                    - "s3:PutObject"
                   # TODO: Security - Scope this down
                   Resource: "*"
                 - Effect: Allow
@@ -130,7 +132,8 @@ Resources:
           Statement:
             - Effect: "Allow"
               Action:
-                - "s3:*"
+                - "s3:GetObject"
+                - "s3:PutObject"
               Resource:
                 - !Sub '${MediaInsightsWebsiteBucket.Arn}/*'
               Principal:

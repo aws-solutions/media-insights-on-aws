@@ -32,6 +32,7 @@ Resources:
     Type: "AWS::SNS::Topic"
     Properties:
       DisplayName: "SNS Role for Rekognition"
+      KmsMasterKeyId: "alias/aws/sns"
 
   # IAM Roles:
 
@@ -45,7 +46,7 @@ Resources:
         Version: "2012-10-17"
         Statement:
           - Action:
-              - "sts:AssumeRole"
+            - "sts:AssumeRole"
             Effect: "Allow"
             Principal:
               Service: "lambda.amazonaws.com"
@@ -55,8 +56,8 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Action:
-                  - "s3:GetObject"
-                  - "s3:PutObject"
+                - "s3:GetObject"
+                - "s3:PutObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
                 Effect: "Allow"
               - Action: "lambda:InvokeFunction"
@@ -81,8 +82,8 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Action:
-                  - "s3:GetObject"
-                  - "s3:PutObject"
+                - "s3:GetObject"
+                - "s3:PutObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
                 Effect: "Allow"
 
@@ -102,27 +103,27 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Action:
-                  [
-                    "mediaconvert:GetJob",
-                    "mediaconvert:ListJobs",
-                    "mediaconvert:DescribeEndpoints",
-                    "mediaconvert:CreateJob"
-                  ]
-                Resource: "arn:aws:lambda:*:*:function:*"
+                - "mediaconvert:GetJob"
+                - "mediaconvert:ListJobs"
+                - "mediaconvert:DescribeEndpoints"
+                - "mediaconvert:CreateJob"
+                # This wildcard is present because the MediaConvert job
+                # IDs are randomly generated.
+                Resource: !Sub "arn:aws:mediaconvert:${AWS::Region}:${AWS::AccountId}:*"
                 Effect: "Allow"
               - Action:
-                  - "logs:CreateLogGroup"
-                  - "logs:CreateLogStream"
-                  - "logs:PutLogEvents"
+                - "logs:CreateLogGroup"
+                - "logs:CreateLogStream"
+                - "logs:PutLogEvents"
                 Resource: "arn:aws:logs:*:*:*:*"
                 Effect: "Allow"
               - Action:
-                  - "iam:PassRole"
+                - "iam:PassRole"
                 Resource: !GetAtt "mediaConvertS3Role.Arn"
                 Effect: "Allow"
               - Action:
-                  - "s3:GetObject"
-                  - "s3:PutObject"
+                - "s3:GetObject"
+                - "s3:PutObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
                 Effect: "Allow"
               - Action: "lambda:InvokeFunction"
@@ -145,27 +146,26 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Action:
-                  [
-                    "transcribe:GetVocabulary",
-                    "transcribe:GetTranscriptionJob",
-                    "transcribe:CreateVocabulary",
-                    "transcribe:StartStreamTranscription",
-                    "transcribe:StartTranscriptionJob",
-                    "transcribe:UpdateVocabulary",
-                    "transcribe:ListTranscriptionJobs",
-                    "transcribe:ListVocabularies"
-                  ]
-                Resource: "arn:aws:lambda:*:*:function:*"
+                - "transcribe:GetVocabulary"
+                - "transcribe:GetTranscriptionJob"
+                - "transcribe:CreateVocabulary"
+                - "transcribe:StartStreamTranscription"
+                - "transcribe:StartTranscriptionJob"
+                - "transcribe:UpdateVocabulary"
+                - "transcribe:ListTranscriptionJobs"
+                - "transcribe:ListVocabularies"
+                # These actions only support Resource: “*”
+                Resource: "*"
                 Effect: "Allow"
               - Action:
-                  - "logs:CreateLogGroup"
-                  - "logs:CreateLogStream"
-                  - "logs:PutLogEvents"
+                - "logs:CreateLogGroup"
+                - "logs:CreateLogStream"
+                - "logs:PutLogEvents"
                 Resource: "arn:aws:logs:*:*:*:*"
                 Effect: Allow
               - Action:
-                  - "s3:GetObject"
-                  - "s3:PutObject"
+                - "s3:GetObject"
+                - "s3:PutObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
                 Effect: "Allow"
               - Action: "lambda:InvokeFunction"
@@ -188,14 +188,14 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Action:
-                  - "logs:CreateLogGroup"
-                  - "logs:CreateLogStream"
-                  - "logs:PutLogEvents"
+                - "logs:CreateLogGroup"
+                - "logs:CreateLogStream"
+                - "logs:PutLogEvents"
                 Resource: "arn:aws:logs:*:*:*:*"
                 Effect: Allow
               - Action:
-                  - "s3:GetObject"
-                  - "s3:PutObject"
+                - "s3:GetObject"
+                - "s3:PutObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
                 Effect: "Allow"
               - Action: "lambda:InvokeFunction"
@@ -217,23 +217,24 @@ Resources:
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              - Action: [
-                "translate:GetTerminology",
-                "translate:ListTerminologies",
-                "translate:ImportTerminology",
-                "translate:TranslateText"
-              ]
-                Resource: "arn:aws:lambda:*:*:function:*"
+              - Action:
+                - "translate:GetTerminology"
+                - "translate:ListTerminologies"
+                - "translate:ImportTerminology"
+                - "translate:TranslateText"
+                # We must use Resource: “*” because Translate does not support specifying
+                # anything else.
+                Resource: "*"
                 Effect: "Allow"
               - Action:
-                  - "logs:CreateLogGroup"
-                  - "logs:CreateLogStream"
-                  - "logs:PutLogEvents"
+                - "logs:CreateLogGroup"
+                - "logs:CreateLogStream"
+                - "logs:PutLogEvents"
                 Resource: "arn:aws:logs:*:*:*:*"
                 Effect: Allow
               - Action:
-                  - "s3:GetObject"
-                  - "s3:PutObject"
+                - "s3:GetObject"
+                - "s3:PutObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
                 Effect: "Allow"
               - Action: "lambda:InvokeFunction"
@@ -260,32 +261,30 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Action:
-                  [
-                    "polly:SynthesizeSpeech",
-                    "polly:StartSpeechSynthesisTask",
-                    "polly:ListLexicons",
-                    "polly:GetSpeechSynthesisTask",
-                    "polly:ListSpeechSynthesisTasks",
-                    "comprehend:DetectDominantLanguage",
-                    "polly:GetLexicon",
-                    "polly:DescribeVoices"
-                  ]
-                Resource: "arn:aws:lambda:*:*:function:*"
+                - "polly:DescribeVoices"
+                - "polly:GetSpeechSynthesisTask"
+                - "polly:ListSpeechSynthesisTasks"
+                - "polly:StartSpeechSynthesisTask"
+                - "polly:SynthesizeSpeech"
+                - "comprehend:DetectDominantLanguage"
+                # These actions only support Resource: “*”
+                Resource: "*"
                 Effect: "Allow"
               - Action:
-                  - "logs:CreateLogGroup"
-                  - "logs:CreateLogStream"
-                  - "logs:PutLogEvents"
+                - "polly:ListLexicons"
+                - "polly:GetLexicon"
+                Resource: "arn:aws:polly:region:account-id:lexicon/*"
+                Effect: "Allow"
+              - Action:
+                - "logs:CreateLogGroup"
+                - "logs:CreateLogStream"
+                - "logs:PutLogEvents"
                 Resource: "arn:aws:logs:*:*:*:*"
                 Effect: Allow
               - Action:
-                  - "s3:GetObject"
-                  - "s3:PutObject"
+                - "s3:GetObject"
+                - "s3:PutObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
-                Effect: "Allow"
-              - Action:
-                  - "comprehend:DetectDominantLanguage"
-                Resource: "arn:aws:lambda:*:*:function:*"
                 Effect: "Allow"
               - Action: "lambda:InvokeFunction"
                 Resource: !Ref DataPlaneHandlerArn
@@ -309,12 +308,12 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Action:
-                  - "s3:GetObject"
-                  - "s3:PutObject"
+                - "s3:GetObject"
+                - "s3:PutObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
                 Effect: "Allow"
               - Action:
-                  - "s3:ListBucket"
+                - "s3:ListBucket"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}"
                 Effect: "Allow"
 
@@ -334,65 +333,64 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Action:
-                  - iam:PassRole
+                - iam:PassRole
                 Resource: !GetAtt "comprehendS3Role.Arn"
                 Effect: "Allow"
               - Action:
-                  - "logs:CreateLogGroup"
-                  - "logs:CreateLogStream"
-                  - "logs:PutLogEvents"
+                - "logs:CreateLogGroup"
+                - "logs:CreateLogStream"
+                - "logs:PutLogEvents"
                 Resource: "arn:aws:logs:*:*:*:*"
                 Effect: "Allow"
               - Action:
-                  - "s3:GetObject"
-                  - "s3:PutObject"
+                - "s3:GetObject"
+                - "s3:PutObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
                 Effect: "Allow"
               - Action:
-                  [
-                    "comprehend:StartEntitiesDetectionJob",
-                    "comprehend:DetectSentiment",
-                    "comprehend:DescribeEntityRecognizer",
-                    "comprehend:ListTopicsDetectionJobs",
-                    "comprehend:DescribeDominantLanguageDetectionJob",
-                    "comprehend:StopTrainingEntityRecognizer",
-                    "comprehend:DescribeDocumentClassificationJob",
-                    "comprehend:StopSentimentDetectionJob",
-                    "comprehend:StartDominantLanguageDetectionJob",
-                    "comprehend:StartTopicsDetectionJob",
-                    "comprehend:DetectDominantLanguage",
-                    "comprehend:CreateDocumentClassifier",
-                    "comprehend:ListEntityRecognizers",
-                    "comprehend:ListSentimentDetectionJobs",
-                    "comprehend:BatchDetectSyntax",
-                    "comprehend:StartSentimentDetectionJob",
-                    "comprehend:ListDominantLanguageDetectionJobs",
-                    "comprehend:ListDocumentClassifiers",
-                    "comprehend:DescribeKeyPhrasesDetectionJob",
-                    "comprehend:CreateEntityRecognizer",
-                    "comprehend:ListKeyPhrasesDetectionJobs",
-                    "comprehend:DescribeSentimentDetectionJob",
-                    "comprehend:DescribeTopicsDetectionJob",
-                    "comprehend:StopDominantLanguageDetectionJob",
-                    "comprehend:BatchDetectSentiment",
-                    "comprehend:StartKeyPhrasesDetectionJob",
-                    "comprehend:BatchDetectEntities",
-                    "comprehend:BatchDetectKeyPhrases",
-                    "comprehend:ListEntitiesDetectionJobs",
-                    "comprehend:StopKeyPhrasesDetectionJob",
-                    "comprehend:ListDocumentClassificationJobs",
-                    "comprehend:DetectSyntax",
-                    "comprehend:DescribeEntitiesDetectionJob",
-                    "comprehend:StopTrainingDocumentClassifier",
-                    "comprehend:ListTagsForResource",
-                    "comprehend:DescribeDocumentClassifier",
-                    "comprehend:StopEntitiesDetectionJob",
-                    "comprehend:BatchDetectDominantLanguage",
-                    "comprehend:StartDocumentClassificationJob",
-                    "comprehend:DetectEntities",
-                    "comprehend:DetectKeyPhrases"
-                  ]
-                Resource: "arn:aws:lambda:*:*:function:*"
+                - "comprehend:StartEntitiesDetectionJob"
+                - "comprehend:DetectSentiment"
+                - "comprehend:DescribeEntityRecognizer"
+                - "comprehend:ListTopicsDetectionJobs"
+                - "comprehend:DescribeDominantLanguageDetectionJob"
+                - "comprehend:StopTrainingEntityRecognizer"
+                - "comprehend:DescribeDocumentClassificationJob"
+                - "comprehend:StopSentimentDetectionJob"
+                - "comprehend:StartDominantLanguageDetectionJob"
+                - "comprehend:StartTopicsDetectionJob"
+                - "comprehend:DetectDominantLanguage"
+                - "comprehend:CreateDocumentClassifier"
+                - "comprehend:ListEntityRecognizers"
+                - "comprehend:ListSentimentDetectionJobs"
+                - "comprehend:BatchDetectSyntax"
+                - "comprehend:StartSentimentDetectionJob"
+                - "comprehend:ListDominantLanguageDetectionJobs"
+                - "comprehend:ListDocumentClassifiers"
+                - "comprehend:DescribeKeyPhrasesDetectionJob"
+                - "comprehend:CreateEntityRecognizer"
+                - "comprehend:ListKeyPhrasesDetectionJobs"
+                - "comprehend:DescribeSentimentDetectionJob"
+                - "comprehend:DescribeTopicsDetectionJob"
+                - "comprehend:StopDominantLanguageDetectionJob"
+                - "comprehend:BatchDetectSentiment"
+                - "comprehend:StartKeyPhrasesDetectionJob"
+                - "comprehend:BatchDetectEntities"
+                - "comprehend:BatchDetectKeyPhrases"
+                - "comprehend:ListEntitiesDetectionJobs"
+                - "comprehend:StopKeyPhrasesDetectionJob"
+                - "comprehend:ListDocumentClassificationJobs"
+                - "comprehend:DetectSyntax"
+                - "comprehend:DescribeEntitiesDetectionJob"
+                - "comprehend:StopTrainingDocumentClassifier"
+                - "comprehend:ListTagsForResource"
+                - "comprehend:DescribeDocumentClassifier"
+                - "comprehend:StopEntitiesDetectionJob"
+                - "comprehend:BatchDetectDominantLanguage"
+                - "comprehend:StartDocumentClassificationJob"
+                - "comprehend:DetectEntities"
+                - "comprehend:DetectKeyPhrases"
+                # These actions only support Resource: “*”
+                Resource: "*"
                 Effect: "Allow"
               - Action: "lambda:InvokeFunction"
                 Resource: !Ref DataPlaneHandlerArn
@@ -405,7 +403,7 @@ Resources:
         Version: "2012-10-17"
         Statement:
           - Action:
-              - "sts:AssumeRole"
+            - "sts:AssumeRole"
             Effect: "Allow"
             Principal:
               Service: "rekognition.amazonaws.com"
@@ -426,7 +424,7 @@ Resources:
         Version: "2012-10-17"
         Statement:
           - Action:
-              - "sts:AssumeRole"
+            - "sts:AssumeRole"
             Effect: "Allow"
             Principal:
               Service: "lambda.amazonaws.com"
@@ -436,45 +434,49 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Action:
-                  - iam:PassRole
+                - iam:PassRole
                 Resource: !GetAtt "rekognitionSNSRole.Arn"
                 Effect: "Allow"
               - Action: "lambda:InvokeFunction"
                 Resource: !Ref DataPlaneHandlerArn
                 Effect: "Allow"
               - Action:
-                  - "logs:CreateLogGroup"
-                  - "logs:CreateLogStream"
-                  - "logs:PutLogEvents"
+                - "logs:CreateLogGroup"
+                - "logs:CreateLogStream"
+                - "logs:PutLogEvents"
                 Resource: "arn:aws:logs:*:*:*:*"
                 Effect: "Allow"
               - Action:
-                  - "s3:GetObject"
+                - "s3:GetObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
                 Effect: "Allow"
               - Action:
-                  [
-                    "rekognition:DescribeCollection",
-                    "rekognition:DetectFaces",
-                    "rekognition:DetectLabels",
-                    "rekognition:DetectModerationLabels",
-                    "rekognition:GetCelebrityRecognition",
-                    "rekognition:GetContentModeration",
-                    "rekognition:GetFaceDetection",
-                    "rekognition:GetFaceSearch",
-                    "rekognition:GetLabelDetection",
-                    "rekognition:GetPersonTracking",
-                    "rekognition:RecognizeCelebrities",
-                    "rekognition:SearchFaces",
-                    "rekognition:SearchFacesByImage",
-                    "rekognition:StartCelebrityRecognition",
-                    "rekognition:StartContentModeration",
-                    "rekognition:StartFaceDetection",
-                    "rekognition:StartFaceSearch",
-                    "rekognition:StartLabelDetection",
-                    "rekognition:StartPersonTracking"
-                  ]
-                Resource: "arn:aws:lambda:*:*:function:*"
+                - "rekognition:DetectFaces"
+                - "rekognition:DetectLabels"
+                - "rekognition:DetectModerationLabels"
+                - "rekognition:GetCelebrityRecognition"
+                - "rekognition:GetContentModeration"
+                - "rekognition:GetFaceDetection"
+                - "rekognition:GetFaceSearch"
+                - "rekognition:GetLabelDetection"
+                - "rekognition:GetPersonTracking"
+                - "rekognition:RecognizeCelebrities"
+                - "rekognition:StartCelebrityRecognition"
+                - "rekognition:StartContentModeration"
+                - "rekognition:StartFaceDetection"
+                - "rekognition:StartFaceSearch"
+                - "rekognition:StartLabelDetection"
+                - "rekognition:StartPersonTracking"
+                # These Rekognition actions do not support resource-level permissions, so we must
+                # use Resource: “*”
+                Resource: "*"
+                Effect: "Allow"
+              - Action:
+                - "rekognition:DescribeCollection"
+                - "rekognition:SearchFaces"
+                - "rekognition:SearchFacesByImage"
+                Resource:
+                  - !Sub "arn:aws:rekognition:${AWS::Region}:${AWS::AccountId}:collection/*"
                 Effect: "Allow"
 
   StepFunctionRole:

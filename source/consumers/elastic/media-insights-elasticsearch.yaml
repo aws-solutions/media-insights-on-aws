@@ -59,6 +59,11 @@ Resources:
 
   ESDomain:
     Type: "AWS::Elasticsearch::Domain"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W28
+            reason: "We use the mie-es explicit DomainName for this resource so that we can scope the AccessPolicy to just the mie-es index. If users need to replace ESDomain then they will need to specify a new DomainName."
     Condition: DeployESCluster
     Properties:
       AccessPolicies:
@@ -87,6 +92,8 @@ Resources:
         Iops: 0
         VolumeSize: 10
         VolumeType: gp2
+      EncryptionAtRestOptions:
+        Enabled: true
       ElasticsearchClusterConfig:
         DedicatedMasterEnabled: false
         InstanceCount:

@@ -29,21 +29,12 @@ import os
 from jsonschema import validate
 
 # local imports
-import api 
 import validation
 
-REGION = os.environ['REGION']
-BUCKET_NAME = os.environ['BUCKET_NAME']
-MIE_STACK_NAME = os.environ['MIE_STACK_NAME']
-VIDEO_FILENAME = os.environ['VIDEO_FILENAME']
-IMAGE_FILENAME = os.environ['IMAGE_FILENAME']
-AUDIO_FILENAME = os.environ['AUDIO_FILENAME']
-TEXT_FILENAME = os.environ['TEXT_FILENAME']
 
-
-
-def test_operation_api(operation_configs, stack_resources, api_schema):
-
+def test_operation_api(api, api_schema, operation_configs):
+    api = api()
+    schema = api_schema
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     print("Running /workflow/operation API tests")
@@ -52,33 +43,33 @@ def test_operation_api(operation_configs, stack_resources, api_schema):
         print("\nTEST CONFIGURATION: {}".format(config))
 
         # Create the operation
-        create_operation_response = api.create_operation_request(config, stack_resources)
+        create_operation_response = api.create_operation_request(config)
         operation = create_operation_response.json()
         
         assert create_operation_response.status_code == 200
         #validation.schema(operation, api_schema["create_operation_response"])
         validation.schema(operation, api_schema["create_operation_response"])
 
-        get_operation_response = api.get_operation_request(operation, stack_resources)
+        get_operation_response = api.get_operation_request(operation)
         operation = create_operation_response.json()
         assert get_operation_response.status_code == 200
         validation.schema(operation, api_schema["create_operation_response"])
 
         # Create a singleton workflow to test executing this operation
-        create_workflow_response = api.create_operation_workflow_request(operation, stack_resources)
+        create_workflow_response = api.create_operation_workflow_request(operation)
         workflow = create_workflow_response.json()
         assert create_workflow_response.status_code == 200
         # FIXME - need to update schema manually
         # #validation.schema(workflow, api_schema["create_workflow_response"])
 
         # Execute the operation and wait for it to complete
-        create_workflow_execution_response = api.create_workflow_execution_request(workflow, config, stack_resources)
+        create_workflow_execution_response = api.create_workflow_execution_request(workflow, config)
         workflow_execution = create_workflow_execution_response.json()
         assert create_workflow_execution_response.status_code == 200
         assert workflow_execution['Status'] == 'Queued'
         # FIXME - need schema
         # #validation.schema(workflow_execution, api_schema["create_workflow_execution_response"])
-        workflow_execution = api.wait_for_workflow_execution(workflow_execution, stack_resources, 120)
+        workflow_execution = api.wait_for_workflow_execution(workflow_execution, 120)
         if config["Status"] == "OK":
             assert workflow_execution["Status"] == "Complete"
 
@@ -87,14 +78,14 @@ def test_operation_api(operation_configs, stack_resources, api_schema):
         else:
             assert workflow_execution["Status"] == "Error"
 
-        validation.operation_execution(workflow_execution, config, stack_resources, api_schema)
+        validation.operation_execution(workflow_execution, config, schema)
 
         # Delete the workflow
-        delete_workflow_response = api.delete_operation_workflow_request(workflow, stack_resources)
+        delete_workflow_response = api.delete_operation_workflow_request(workflow)
         assert delete_workflow_response.status_code == 200
         
         #Delete the operation
-        delete_operation_response = api.delete_operation_request(operation, stack_resources)
+        delete_operation_response = api.delete_operation_request(operation)
         assert delete_operation_response.status_code == 200
 
 

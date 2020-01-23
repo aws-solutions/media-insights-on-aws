@@ -31,19 +31,10 @@ import time
 import threading
 
 # local imports
-import api
 import validation
 
-REGION = os.environ['REGION']
-BUCKET_NAME = os.environ['BUCKET_NAME']
-MIE_STACK_NAME = os.environ['MIE_STACK_NAME']
-VIDEO_FILENAME = os.environ['VIDEO_FILENAME']
-IMAGE_FILENAME = os.environ['IMAGE_FILENAME']
-AUDIO_FILENAME = os.environ['AUDIO_FILENAME']
-TEXT_FILENAME = os.environ['TEXT_FILENAME']
-token = os.environ["MIE_ACCESS_TOKEN"]
 
-def start_frame_workflows(nframes, stack_resources):
+def start_frame_workflows(nframes, stack_resources, testing_env_variables):
     print("starting {} workflows".format(nframes))
 
     body = {
@@ -60,8 +51,8 @@ def start_frame_workflows(nframes, stack_resources):
         "Input": {
             "Media": {
                 "Image": {
-                    "S3Bucket": BUCKET_NAME,
-                    "S3Key": IMAGE_FILENAME
+                    "S3Bucket": testing_env_variables['BUCKET_NAME'],
+                    "S3Key": testing_env_variables['SAMPLE_IMAGE']
                     }
                 }
             }
@@ -69,14 +60,15 @@ def start_frame_workflows(nframes, stack_resources):
 
     # Start nframe workflows
     for i in range(1,nframes):
-        headers = {"Content-Type": "application/json", "Authorization": token}
+        headers = {"Content-Type": "application/json", "Authorization": testing_env_variables['token']}
         start_request = requests.post(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution', headers=headers, json=body, verify=False)
         assert start_request.status_code == 200
         assert start_request.json()['Status'] == 'Queued'
 
-def test_concurreny(stack_resources, api_schema):
+def test_concurreny(api, stack_resources, api_schema, testing_env_variables):
+    api = api()
 
-    headers = {"Content-Type": "application/json", "Authorization": token}
+    headers = {"Content-Type": "application/json", "Authorization": testing_env_variables['token']}
 
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -100,18 +92,18 @@ def test_concurreny(stack_resources, api_schema):
     for max in [1, 9, 10, 15, 20, 25]:
         print("\nTest setting MaxConcurrentWorkflows to {}\n".format(max))
 
-        set_max_concurrent_response = api.set_max_concurrent_request(stack_resources, max)
+        set_max_concurrent_response = api.set_max_concurrent_request(max)
         assert set_max_concurrent_response.status_code == 200
         # It can take up to one run of the lambda for a configuration change to take effect
         time.sleep(20)
 
-        get_configuration_response = api.get_configuration_request(stack_resources)
+        get_configuration_response = api.get_configuration_request()
         assert get_configuration_response.status_code == 200
         configs = get_configuration_response.json()
         config = next(config for config in configs if config["Name"] == "MaxConcurrentWorkflows")
         assert config["Value"] == max
 
-        start_frame_workflows(20, stack_resources)
+        start_frame_workflows(20, stack_resources, testing_env_variables)
 
         # At most "max" workflow should run at a time
         get_workflows_by_status_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/status/Started', headers=headers, verify=False)
@@ -142,9 +134,9 @@ def test_concurreny(stack_resources, api_schema):
 
 
 
-def test_frame_flood(stack_resources, api_schema):
-
-    headers = {"Content-Type": "application/json", "Authorization": token}
+def test_frame_flood(api, stack_resources, api_schema, testing_env_variables):
+    api = api()
+    headers = {"Content-Type": "application/json", "Authorization": testing_env_variables['token']}
 
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -171,12 +163,12 @@ def test_frame_flood(stack_resources, api_schema):
 
         print("\nTest processing {} frames with MaxConcurrentWorkflow = {}\n".format(frames, max))
 
-        set_max_concurrent_response = api.set_max_concurrent_request(stack_resources, max)
+        set_max_concurrent_response = api.set_max_concurrent_request(max)
         assert set_max_concurrent_response.status_code == 200
         # It can take up to one run of the lambda for a configuration change to take effect
         time.sleep(20)
 
-        get_configuration_response = api.get_configuration_request(stack_resources)
+        get_configuration_response = api.get_configuration_request()
         assert get_configuration_response.status_code == 200
         configs = get_configuration_response.json()
         config = next(config for config in configs if config["Name"] == "MaxConcurrentWorkflows")
@@ -185,7 +177,7 @@ def test_frame_flood(stack_resources, api_schema):
         threads = []
         num_threads = frames//2
         for i in range(num_threads):
-            t = threading.Thread(target=start_frame_workflows, args=(2, stack_resources,))
+            t = threading.Thread(target=start_frame_workflows, args=(2, stack_resources, testing_env_variables))
             threads.append(t)
             t.start()
 

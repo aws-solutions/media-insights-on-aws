@@ -29,41 +29,29 @@ import os
 from jsonschema import validate
 
 # local imports
-import api 
 import validation
 
-REGION = os.environ['REGION']
-BUCKET_NAME = os.environ['BUCKET_NAME']
-MIE_STACK_NAME = os.environ['MIE_STACK_NAME']
-VIDEO_FILENAME = os.environ['VIDEO_FILENAME']
-IMAGE_FILENAME = os.environ['IMAGE_FILENAME']
-AUDIO_FILENAME = os.environ['AUDIO_FILENAME']
-TEXT_FILENAME = os.environ['TEXT_FILENAME']
-token = os.environ["MIE_ACCESS_TOKEN"]
-
-
-def test_duplicate_operation(operations,stack_resources, api_schema):
-
+def test_duplicate_operation(api, session_operation_configs):
+    api = api()
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     print("\nTest creating a duplicate operation")
 
-    config = operations[0]
-
+    config = session_operation_configs[0]
+    
     # Create the operation again
-    create_operation_response = api.create_operation_request(config, stack_resources)
+    create_operation_response = api.create_operation_request(config)
     assert create_operation_response.status_code == 409
 
-def test_schema_errors(operations, stack_resources, api_schema):
-
+def test_schema_errors(session_operation_configs, testing_env_variables, stack_resources):
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     print("----------------------------------------")
     print("\nTest create operation schema errors\n")
 
-    config = operations[0]
+    config = session_operation_configs[0]
     start_lambda = config["Input"]+config["Type"]+config["Status"]+"Lambda"
-    headers = {"Content-Type": "application/json", "Authorization": token}
+    headers = {"Content-Type": "application/json", "Authorization": testing_env_variables['token']}
     body = {
         "StartLambdaArn": stack_resources[start_lambda],
         "Configuration": {

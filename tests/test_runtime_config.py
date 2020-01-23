@@ -28,20 +28,10 @@ import re
 import os
 from jsonschema import validate
 
-# local imports
-import api 
-import validation
 
-REGION = os.environ['REGION']
-BUCKET_NAME = os.environ['BUCKET_NAME']
-MIE_STACK_NAME = os.environ['MIE_STACK_NAME']
-VIDEO_FILENAME = os.environ['VIDEO_FILENAME']
-IMAGE_FILENAME = os.environ['IMAGE_FILENAME']
-AUDIO_FILENAME = os.environ['AUDIO_FILENAME']
-TEXT_FILENAME = os.environ['TEXT_FILENAME']
-
-def test_runtime_configuration(operations, stages, stack_resources, api_schema):
-
+def test_runtime_configuration(api, session_stage_configs, stack_resources):
+    stages = session_stage_configs
+    api = api()
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     print("Testing stage['Configuration'][operator]['Enable'] with different combinations of enabled and diasbled operators within a single stage")
@@ -51,12 +41,12 @@ def test_runtime_configuration(operations, stages, stack_resources, api_schema):
     config = next(item for item in stages if item["Name"] == "no-custom-config2")
 
     # Create a singleton workflow to test executing this stage
-    create_workflow_response = api.create_stage_workflow_request(stage, stack_resources)
+    create_workflow_response = api.create_stage_workflow_request(stage)
     workflow = create_workflow_response.json()
     assert create_workflow_response.status_code == 200
 
     # Get the current workflow configuration
-    get_workflow_configuration_response = api.get_workflow_configuration_request(workflow, stack_resources)
+    get_workflow_configuration_response = api.get_workflow_configuration_request(workflow)
     assert get_workflow_configuration_response.status_code == 200
 
     configuration = get_workflow_configuration_response.json()
@@ -134,12 +124,12 @@ def test_runtime_configuration(operations, stages, stack_resources, api_schema):
         config["WorkflowConfiguration"] = test["Configuration"]
         
         # Execute the stage and wait for it to complete
-        create_workflow_execution_response = api.create_workflow_execution_request(workflow, config, stack_resources)
+        create_workflow_execution_response = api.create_workflow_execution_request(workflow, config)
         workflow_execution = create_workflow_execution_response.json()
         assert create_workflow_execution_response.status_code == 200
         assert workflow_execution['Status'] == 'Queued'
         
-        workflow_execution = api.wait_for_workflow_execution(workflow_execution, stack_resources, 120)
+        workflow_execution = api.wait_for_workflow_execution(workflow_execution, 120)
         assert workflow_execution["Status"] == "Complete"
 
         print("Check that expected configuration keys are in operator output")
@@ -159,7 +149,7 @@ def test_runtime_configuration(operations, stages, stack_resources, api_schema):
 
     
     # Delete the workflow
-    delete_workflow_response = api.delete_stage_workflow_request(workflow, stack_resources)
+    delete_workflow_response = api.delete_stage_workflow_request(workflow)
     assert delete_workflow_response.status_code == 200
 
 

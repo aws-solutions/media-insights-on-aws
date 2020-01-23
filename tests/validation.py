@@ -23,7 +23,7 @@ def schema(instance, schema):
 
     return valid
 
-def operation_execution(workflow_execution, operation_config, stack_resources, api_schema):
+def operation_execution(workflow_execution, operation_config, api_schema):
 
     print(workflow_execution)
 

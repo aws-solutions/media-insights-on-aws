@@ -29,21 +29,11 @@ import os
 from jsonschema import validate
 
 # local imports
-import api 
 import validation
 
-REGION = os.environ['REGION']
-BUCKET_NAME = os.environ['BUCKET_NAME']
-MIE_STACK_NAME = os.environ['MIE_STACK_NAME']
-VIDEO_FILENAME = os.environ['VIDEO_FILENAME']
-IMAGE_FILENAME = os.environ['IMAGE_FILENAME']
-AUDIO_FILENAME = os.environ['AUDIO_FILENAME']
-TEXT_FILENAME = os.environ['TEXT_FILENAME']
 
-
-
-def test_stage_api(operations, stage_configs, stack_resources, api_schema):
-
+def test_stage_api(api, api_schema, operations, stages, stage_configs):
+    api = api()
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     print("Running /workflow/stage API tests")
@@ -53,33 +43,35 @@ def test_stage_api(operations, stage_configs, stack_resources, api_schema):
         print("\nTEST STAGE CONFIGURATION: {}".format(config))
 
         # Create the stage
-        create_stage_response = api.create_stage_request(config, stack_resources)
+        create_stage_response = api.create_stage_request(config)
         stage = create_stage_response.json()
         
+        print(stage)
+
         assert create_stage_response.status_code == 200
         validation.schema(stage, api_schema["create_stage_response"])
 
-        get_stage_response = api.get_stage_request(stage, stack_resources)
+        get_stage_response = api.get_stage_request(stage)
         stage = get_stage_response.json()
         assert get_stage_response.status_code == 200
         validation.schema(stage, api_schema["create_stage_response"])
 
         # Create a singleton workflow to test executing this stage
-        create_workflow_response = api.create_stage_workflow_request(stage, stack_resources)
+        create_workflow_response = api.create_stage_workflow_request(stage)
         workflow = create_workflow_response.json()
         assert create_workflow_response.status_code == 200
         #FIXME - validate create_workflow_response
         # validation.schema(workflow, api_schema["create_workflow_response"])
 
         # Execute the stage and wait for it to complete
-        create_workflow_execution_response = api.create_workflow_execution_request(workflow, config, stack_resources)
+        create_workflow_execution_response = api.create_workflow_execution_request(workflow, config)
         workflow_execution = create_workflow_execution_response.json()
         assert create_workflow_execution_response.status_code == 200
         assert workflow_execution['Status'] == 'Queued'
         
         #FIXME - validate create_workflow_response
         #validation.schema(workflow_execution, api_schema["create_workflow_execution_response"])
-        workflow_execution = api.wait_for_workflow_execution(workflow_execution, stack_resources, 120)
+        workflow_execution = api.wait_for_workflow_execution(workflow_execution, 120)
         if config["Status"] == "OK":
             assert workflow_execution["Status"] == "Complete"
             
@@ -101,11 +93,11 @@ def test_stage_api(operations, stage_configs, stack_resources, api_schema):
         #validation.stage_execution(workflow_execution, config, stack_resources, api_schema)
 
         # Delete the workflow
-        delete_workflow_response = api.delete_stage_workflow_request(workflow, stack_resources)
+        delete_workflow_response = api.delete_stage_workflow_request(workflow)
         assert delete_workflow_response.status_code == 200
         
         #Delete the stage
-        delete_stage_response = api.delete_stage_request(stage, stack_resources)
+        delete_stage_response = api.delete_stage_request(stage)
         assert delete_stage_response.status_code == 200
 
 

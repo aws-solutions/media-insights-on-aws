@@ -16,6 +16,7 @@
 ###############################################################################
 # User-defined environment variables
 # User-defined environment variables
+
 echo "What region is your MIE Stack in?"
 read region
 export REGION=$region
@@ -24,22 +25,17 @@ echo "What is the name of your MIE Stack?"
 read stackname
 export MIE_STACK_NAME=$stackname
 
-echo "Enter the MIE User pool id (stack outputs)"
-read pool_id
-export MIE_POOL_ID=$pool_id
-
-echo "Enter the MIE Admin Client id (stack outputs)"
-read client_id
-export MIE_CLIENT_ID=$client_id
-
 echo "Enter your MIE Admin Username"
 read username
 export MIE_USERNAME=$username
+
 read -p "Enter your password (enter temp password if your account is unverified)" -s password
 export MIE_PASSWORD=$password
 
-export TEST="test_concurrency.py"
-
+# Retrieve exports from mie stack
+export BUCKET_NAME=`aws cloudformation list-stack-resources --profile default --stack-name $MIE_STACK_NAME --region $REGION --output text --query 'StackResourceSummaries[?LogicalResourceId == \`Dataplane\`]'.PhysicalResourceId`
+export MIE_CLIENT_ID=`aws cloudformation list-stack-resources --profile default --stack-name $MIE_STACK_NAME --region $REGION --output text --query 'StackResourceSummaries[?LogicalResourceId == \`MieAdminClient\`]'.PhysicalResourceId`
+export MIE_POOL_ID=`aws cloudformation list-stack-resources --profile default --stack-name $MIE_STACK_NAME --region $REGION --output text --query 'StackResourceSummaries[?LogicalResourceId == \`MieUserPool\`]'.PhysicalResourceId`
 
 #################### Nothing for users to change below here ####################
 # Create and activate a temporary Python environment for this script.
@@ -66,7 +62,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # Authenticate with Cognito
-token=$(python3 '../getAccessToken.py')
+token=$(python3 './getAccessToken.py')
 if [ $? -eq 0 ]; then
     export MIE_ACCESS_TOKEN=$token
 else
@@ -76,14 +72,14 @@ fi
 
 echo "------------------------------------------------------------------------------"
 echo "Setup test environment variables"
-# FIXME - these should be inputs to the test script
-export BUCKET_NAME="burkleaa-files"
-export IMAGE_FILENAME="test-media/sample-image.jpg"
-export VIDEO_FILENAME="test-media/sample-video.mp4"
-export VIDEO_WITH_AUDIO_FILENAME="test-media/polly_example.mp4"
-export AUDIO_FILENAME="test-media/sample-audio.m4a"
-export TEXT_FILENAME="test-media/sample-text.txt"
 
+export SAMPLE_IMAGE="test-media/sample-image.jpg"
+export SAMPLE_VIDEO="test-media/sample-video.mp4"
+export SAMPLE_AUDIO="test-media/sample-audio.m4a"
+export SAMPLE_TEXT="test-media/sample-text.txt"
+export SAMPLE_JSON="test-media/sample-data.json"
+export SAMPLE_FACE_IMAGE="test-media/sample-face.jpg"
+export FACE_COLLECTION_ID="temporary_face_collection"
 
 echo "------------------------------------------------------------------------------"
 echo "Running tests"

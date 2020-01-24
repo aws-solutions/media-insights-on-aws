@@ -32,7 +32,17 @@ Resources:
     Type: "AWS::SNS::Topic"
     Properties:
       DisplayName: "SNS Role for Rekognition"
-      KmsMasterKeyId: "alias/aws/sns"
+      KmsMasterKeyId:
+        !Join [
+          ":",
+          [
+            "arn:aws:kms:",
+            Ref: "AWS::Region",
+            ":",
+            Ref: "AWS::AccountId",
+            ":alias/aws/sns"
+          ],
+        ]
 
   # IAM Roles:
 
@@ -132,6 +142,11 @@ Resources:
 
   transcribeRole:
     Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "the policy actions used in this role require * resource"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -204,6 +219,11 @@ Resources:
 
   translateRole:
     Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "the policy actions used in this role require * resource"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -243,6 +263,11 @@ Resources:
 
   pollyRole:
     Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "the policy actions used in this role require * resource"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -319,6 +344,11 @@ Resources:
 
   comprehendRole:
     Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "the policy actions used in this role require * resource"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -419,6 +449,11 @@ Resources:
 
   rekognitionLambdaRole:
     Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "the policy actions used in this role require * resource"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"

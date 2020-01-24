@@ -494,6 +494,11 @@ Resources:
 
   SystemTable:
     Type: AWS::DynamoDB::Table
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W28
+            reason: "Table name is constructed with stack name. On update, we need to keep the existing table name."
     Properties:
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
@@ -506,6 +511,11 @@ Resources:
 
   WorkflowTable:
     Type: AWS::DynamoDB::Table
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W28
+            reason: "Table name is constructed with stack name. On update, we need to keep the existing table name."
     Properties:
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
@@ -518,6 +528,11 @@ Resources:
 
   StageTable:
     Type: AWS::DynamoDB::Table
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W28
+            reason: "Table name is constructed with stack name. On update, we need to keep the existing table name."
     Properties:
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
@@ -530,6 +545,11 @@ Resources:
 
   OperationTable:
     Type: AWS::DynamoDB::Table
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W28
+            reason: "Table name is constructed with stack name. On update, we need to keep the existing table name."
     Properties:
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
@@ -542,6 +562,11 @@ Resources:
 
   HistoryTable:
     Type: AWS::DynamoDB::Table
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W28
+            reason: "Table name is constructed with stack name. On update, we need to keep the existing table name."
     Properties:
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
@@ -558,6 +583,11 @@ Resources:
 
   WorkflowExecutionTable:
     Type: AWS::DynamoDB::Table
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W28
+            reason: "Table name is constructed with stack name. On update, we need to keep the existing table name."
     Properties:
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
@@ -587,6 +617,11 @@ Resources:
 
   DataplaneTable:
     Type: AWS::DynamoDB::Table
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W28
+            reason: "Table name is constructed with stack name. On update, we need to keep the existing table name."
     Properties:
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
@@ -611,6 +646,25 @@ Resources:
             AllowedMethods: ["GET", "POST"]
             AllowedOrigins: ["*"]
             Id: AllowUploadsFromWebApp
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+  DataplaneBucketPolicy:
+    Type: "AWS::S3::BucketPolicy"
+    Properties:
+      Bucket: !Ref Dataplane
+      PolicyDocument:
+        Statement:
+          -
+            Effect: Deny
+            Principal: "*"
+            Action: "*"
+            Resource: !Sub "arn:aws:s3:::${Dataplane}/*"
+            Condition:
+              Bool:
+                "aws:SecureTransport": false
 
   # Service - cognito / security infrastructure
 
@@ -739,6 +793,11 @@ Resources:
 
   CognitStandardAuthDefaultRole:
     Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: F38
+            reason: "* resource is used to deny access in this policy"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -860,12 +919,34 @@ Resources:
     Properties:
       QueueName: "WorkflowExecutionLambdaDLQ"
       MessageRetentionPeriod: 43200 # #Maximum, 12 hours in seconds.
+      KmsMasterKeyId:
+        !Join [
+          ":",
+          [
+            "arn:aws:kms:",
+            Ref: "AWS::Region",
+            ":",
+            Ref: "AWS::AccountId",
+            ":alias/aws/sqs"
+          ],
+        ]
 
   StageExecutionDeadLetterQueue:
     Type: "AWS::SQS::Queue"
     Properties:
       QueueName: "StageExecutionDLQ"
       MessageRetentionPeriod: 43200 # #Maximum, 12 hours in seconds.
+      KmsMasterKeyId:
+        !Join [
+          ":",
+          [
+            "arn:aws:kms:",
+            Ref: "AWS::Region",
+            ":",
+            Ref: "AWS::AccountId",
+            ":alias/aws/sqs"
+          ],
+        ]
 
   StageExecutionQueue:
     Type: AWS::SQS::Queue
@@ -879,6 +960,17 @@ Resources:
             - StageExecutionDeadLetterQueue
             - Arn
         maxReceiveCount: 1 # Don't retry if stage times out
+      KmsMasterKeyId:
+        !Join [
+          ":",
+          [
+            "arn:aws:kms:",
+            Ref: "AWS::Region",
+            ":",
+            Ref: "AWS::AccountId",
+            ":alias/aws/sqs"
+          ],
+        ]
 
   # Lambda Layers:
 

@@ -919,34 +919,14 @@ Resources:
     Properties:
       QueueName: "WorkflowExecutionLambdaDLQ"
       MessageRetentionPeriod: 43200 # #Maximum, 12 hours in seconds.
-      KmsMasterKeyId:
-        !Join [
-          ":",
-          [
-            "arn:aws:kms:",
-            Ref: "AWS::Region",
-            ":",
-            Ref: "AWS::AccountId",
-            ":alias/aws/sqs"
-          ],
-        ]
+      KmsMasterKeyId: "alias/aws/sqs"
 
   StageExecutionDeadLetterQueue:
     Type: "AWS::SQS::Queue"
     Properties:
       QueueName: "StageExecutionDLQ"
       MessageRetentionPeriod: 43200 # #Maximum, 12 hours in seconds.
-      KmsMasterKeyId:
-        !Join [
-          ":",
-          [
-            "arn:aws:kms:",
-            Ref: "AWS::Region",
-            ":",
-            Ref: "AWS::AccountId",
-            ":alias/aws/sqs"
-          ],
-        ]
+      KmsMasterKeyId: "alias/aws/sqs"
 
   StageExecutionQueue:
     Type: AWS::SQS::Queue
@@ -960,17 +940,7 @@ Resources:
             - StageExecutionDeadLetterQueue
             - Arn
         maxReceiveCount: 1 # Don't retry if stage times out
-      KmsMasterKeyId:
-        !Join [
-          ":",
-          [
-            "arn:aws:kms:",
-            Ref: "AWS::Region",
-            ":",
-            Ref: "AWS::AccountId",
-            ":alias/aws/sqs"
-          ],
-        ]
+      KmsMasterKeyId: "alias/aws/sqs"
 
   # Lambda Layers:
 

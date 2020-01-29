@@ -1295,6 +1295,7 @@ Resources:
         DataPlaneBucket: !Ref Dataplane
         MediaInsightsEnginePython37Layer: !Ref MediaInsightsEnginePython37Layer
         StepfunctionRole: !GetAtt StepFunctionRole.Arn
+        ShortUUID: !GetAtt GetShortUUID.Data
 
   InstantTranslateWorkflow:
     Condition: DeployInstantTranslateWorkflowCondition

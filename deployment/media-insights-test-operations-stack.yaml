@@ -17,6 +17,9 @@ Parameters:
   StepfunctionRole:
     Type: String
     Description: "Arn of the MIE stepfunction execution role"
+  ShortUUID:
+    Type: String
+    Description: "A short UUID that is going to be appended to resource names"
 
 Mappings:
     SourceCode:
@@ -379,7 +382,7 @@ Resources:
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Operation"
-      Name: "video-sync-ok"
+      Name: !Sub "video-sync-ok-${ShortUUID}"
       Type: "Sync"
       Configuration:
           {
@@ -394,7 +397,7 @@ Resources:
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Operation"
-      Name: "video-async-ok"
+      Name: !Sub "video-async-ok-${ShortUUID}"
       Type: "Async"
       Configuration:
           {
@@ -410,7 +413,7 @@ Resources:
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Operation"
-      Name: "audio-async-ok"
+      Name: !Sub "audio-async-ok-${ShortUUID}"
       Type: "Async"
       Configuration:
           {
@@ -431,7 +434,7 @@ Resources:
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Stage"
-      Name: "audio-video-async-ok-stage"
+      Name: !Sub "audio-video-async-ok-stage-${ShortUUID}"
       Operations:
         - !GetAtt AudioAsyncOperationCustomResource.Name
         - !GetAtt VideoAsyncOperationCustomResource.Name
@@ -446,7 +449,7 @@ Resources:
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Workflow"
-      Name: "TestWorkflowSingleStage"
+      Name: !Sub "TestWorkflowSingleStage-${ShortUUID}"
       Stages: !Sub
         - |-
           {
@@ -467,7 +470,7 @@ Resources:
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Workflow"
-      Name: "TestWorkflowMultiStage"
+      Name: !Sub "TestWorkflowMultiStage-${ShortUUID}"
       Stages: !Sub
         - |-
           {
@@ -496,7 +499,7 @@ Resources:
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Workflow"
-      Name: "TestWorkflowMultiStage2"
+      Name: !Sub "TestWorkflowMultiStage2-${ShortUUID}"
       Stages: !Sub
         - |-
           {

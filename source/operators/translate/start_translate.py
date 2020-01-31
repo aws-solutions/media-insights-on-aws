@@ -5,7 +5,6 @@ import boto3
 import os
 import json
 from botocore import config
-import math
 import nltk.data
 
 from MediaInsightsEngineLambdaHelper import DataPlane

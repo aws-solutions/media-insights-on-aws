@@ -46,7 +46,12 @@ fi
 # Check to see if AWS CLI and Docker are installed
 docker --version
 if [ $? -ne 0 ]; then
-    echo "ERROR: install and start Docker before running this script"
+    echo "ERROR: install Docker before running this script"
+    exit 1
+fi
+pgrep -f docker
+if [ $? -ne 0 ]; then
+    echo "ERROR: start Docker before running this script"
     exit 1
 fi
 
@@ -111,7 +116,7 @@ if [ ! -z $S3_FQDN ]; then
     # create temp working dir for zip files
     aws s3 mb s3://$LAMBDA_LAYERS_BUCKET > /dev/null
     # Warn user if layer already exists
-    aws lambda list-layer-versions --layer-name $LAYER_NAME_36 | grep -q "\"LayerVersions\": \[" 
+    aws lambda list-layer-versions --layer-name $LAYER_NAME_36 | grep -q "\"LayerVersions\": \["
     if [ $? -eq 0 ]; then
         echo "WARNING: AWS Layer with name $LAYER_NAME_36 already exists."
         read -r -p "Are you sure you want to overwrite $LAYER_NAME_36? [y/N] " response
@@ -120,7 +125,7 @@ if [ ! -z $S3_FQDN ]; then
             aws s3 cp lambda_layer-python3.6.zip s3://$LAMBDA_LAYERS_BUCKET
             aws lambda publish-layer-version --layer-name $LAYER_NAME_36 --content S3Bucket=$LAMBDA_LAYERS_BUCKET,S3Key=lambda_layer-python3.6.zip --compatible-runtimes python3.6
             aws s3 rm s3://$LAMBDA_LAYERS_BUCKET/lambda_layer-python3.6.zip
-            arn36=$(aws lambda list-layer-versions --layer-name lambda_layer-python36 --output text --query 'LayerVersions[0].LayerVersionArn')            
+            arn36=$(aws lambda list-layer-versions --layer-name lambda_layer-python36 --output text --query 'LayerVersions[0].LayerVersionArn')
         fi
     fi
     aws lambda list-layer-versions --layer-name $LAYER_NAME_37 | grep "\"LayerVersions\": \["
@@ -148,7 +153,7 @@ if [ ! -z $S3_FQDN ]; then
         fi
     fi
     # remove temp working dir for zip files
-    aws s3 rb s3://$LAMBDA_LAYERS_BUCKET/ > /dev/null    
+    aws s3 rb s3://$LAMBDA_LAYERS_BUCKET/ > /dev/null
     echo "Lambda layers have been published. Use the following ARNs to attach them to Lambda functions:"
     echo $arn36
     echo $arn37

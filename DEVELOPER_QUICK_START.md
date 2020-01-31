@@ -64,7 +64,7 @@ Background:
 
 * Operator outputs include the execution status, and S3 locators for the newly derived media and metadata objects saved in S3. These outputs get passed to other operators in downstream workflow stages.
 
-* Operators should interact with the MIE data persistence layer via the `MediaInsightsEngineLambdaHelper`, which is located under [lib/MediaInsightsEngineLambdaHelper/](./lib/MediaInsightsEngineLambdaHelper/MediaInsightsEngineLambdaHelper/__init__.py).  
+* Operators should interact with the MIE data persistence layer via the `MediaInsightsEngineLambdaHelper`, which is located under [source/lib/MediaInsightsEngineLambdaHelper/](source/lib/MediaInsightsEngineLambdaHelper/MediaInsightsEngineLambdaHelper/__init__.py). 
 
 ### Step 1: Write operator Lambda functions
 ***(Difficulty: >1 hour)***

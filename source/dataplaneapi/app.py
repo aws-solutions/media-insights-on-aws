@@ -223,8 +223,9 @@ def download():
         ChaliceViewError - 500
     """
     print('/download request: '+app.current_request.raw_body.decode())
-    s3 = boto3.client('s3')
-    # expire the URL in
+    region = os.environ['AWS_REGION']
+    s3 = boto3.client('s3', region_name=region, config = Config(signature_version = 's3v4', s3={'addressing_style': 'virtual'}))
+    # expire the URL in 1 hour
     try:
         response = s3.generate_presigned_url('get_object',
                                              Params={'Bucket': app.current_request.json_body['S3Bucket'],

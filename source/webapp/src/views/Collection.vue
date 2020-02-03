@@ -321,7 +321,7 @@
         });
         return await response.json();
       },
-      async getAssetThumbNail (token, bucket, s3Key) {
+      async getAssetThumbnail (token, bucket, s3Key) {
         const data = { "S3Bucket": bucket, "S3Key": s3Key };
         let response = await fetch(this.DATAPLANE_API_ENDPOINT + '/download', {
             method: 'POST',
@@ -401,7 +401,7 @@
           // source/operators/thumbnail/start_thumbnail.py
           thumbnailS3Key = 'private/assets/' + assetId + '/' + filename.substring(0, filename.lastIndexOf(".")) + '_thumbnail.0000001.jpg'
         }
-        let [thumbnail, workflowStatus] = await Promise.all([this.getAssetThumbNail(token, bucket, thumbnailS3Key), this.getAssetWorkflowStatus(token, assetId)]);
+        let [thumbnail, workflowStatus] = await Promise.all([this.getAssetThumbnail(token, bucket, thumbnailS3Key), this.getAssetWorkflowStatus(token, assetId)]);
         if (workflowStatus[0] && thumbnail)
         {
           this.asset_list.push({

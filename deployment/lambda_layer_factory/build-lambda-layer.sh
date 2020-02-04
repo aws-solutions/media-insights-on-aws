@@ -46,20 +46,23 @@ fi
 # Check to see if AWS CLI and Docker are installed
 docker --version
 if [ $? -ne 0 ]; then
-    echo "ERROR: install Docker before running this script"
-    exit 1
-fi
-pgrep -f docker
-if [ $? -ne 0 ]; then
-    echo "ERROR: start Docker before running this script"
-    exit 1
+  echo "ERROR: install Docker before running this script"
+  exit 1
+else
+  pgrep -f docker
+  if [ $? -ne 0 ]; then
+      echo "ERROR: start Docker before running this script"
+      exit 1
+  fi
 fi
 
 echo "------------------------------------------------------------------------------"
 echo "Building Lambda Layer zip file"
 echo "------------------------------------------------------------------------------"
-docker build --tag=lambda_layer_factory:latest .
-docker run --rm -it -v $(pwd):/packages lambda_layer_factory
+docker build --tag=lambda_layer_factory:latest . 2>&1 > /dev/null
+if [ $? -eq 0 ]; then
+  docker run --rm -it -v $(pwd):/packages lambda_layer_factory
+fi
 if [[ ! -f ./lambda_layer-python3.6.zip ]] || [[ ! -f ./lambda_layer-python3.7.zip ]] || [[ ! -f ./lambda_layer-python3.8.zip ]]; then
     echo "ERROR: Failed to build lambda layer zip file."
     exit 1

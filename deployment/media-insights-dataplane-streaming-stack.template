@@ -41,6 +41,9 @@ Resources:
     Type: "AWS::Kinesis::Stream"
     Properties:
         ShardCount: !Ref KinesisShardCount
+        StreamEncryption:
+          EncryptionType: "KMS"
+          KeyId: "alias/aws/kinesis"
 
 # ddb stream lambda
 

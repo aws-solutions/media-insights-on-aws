@@ -20,14 +20,17 @@
 echo "What region is your MIE Stack in?"
 read region
 export REGION=$region
+echo $REGION
 
 echo "What is the name of your MIE Stack?"
 read stackname
 export MIE_STACK_NAME=$stackname
+echo $MIE_STACK_NAME
 
 echo "Enter your MIE Admin Username"
 read username
 export MIE_USERNAME=$username
+echo $MIE_USERNAME
 
 read -p "Enter your password (enter temp password if your account is unverified)" -s password
 export MIE_PASSWORD=$password

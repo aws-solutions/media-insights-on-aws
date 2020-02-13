@@ -466,7 +466,7 @@ def api(stack_resources, testing_env_variables):
 @pytest.fixture(scope='session')
 def api_schema():
 
-    schema_dir = "../source/workflowapi/chalicelib/apischema"
+    schema_dir = "../../source/workflowapi/chalicelib/apischema"
     
     schemata = {}
     for f in os.listdir(schema_dir):

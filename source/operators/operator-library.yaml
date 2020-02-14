@@ -456,7 +456,37 @@ Resources:
             Statement:
               # TODO: Security - Need to scope this down (no good answer for this yet)
               - Action: "lambda:InvokeFunction"
-                Resource: "arn:aws:lambda:*:*:function:*"
+                Resource:
+                  - !GetAtt startGenericDataLookup.Arn
+                  - !GetAtt startKeyPhrases.Arn
+                  - !GetAtt getKeyPhrases.Arn
+                  - !GetAtt startEntityDetection.Arn
+                  - !GetAtt getEntityDetection.Arn
+                  - !GetAtt startCelebrityRecognition.Arn
+                  - !GetAtt checkCelebrityRecognition.Arn
+                  - !GetAtt startContentModeration.Arn
+                  - !GetAtt checkContentModeration.Arn
+                  - !GetAtt startFaceDetection.Arn
+                  - !GetAtt checkFaceDetection.Arn
+                  - !GetAtt startFaceSearch.Arn
+                  - !GetAtt checkFaceSearch.Arn
+                  - !GetAtt startLabelDetection.Arn
+                  - !GetAtt checkLabelDetection.Arn
+                  - !GetAtt startPersonTracking.Arn
+                  - !GetAtt checkPersonTracking.Arn
+                  - !GetAtt StartMediaConvertFunction.Arn
+                  - !GetAtt StartThumbnailFunction.Arn
+                  - !GetAtt CheckMediaConvertFunction.Arn
+                  - !GetAtt StartTranscribeFunction.Arn
+                  - !GetAtt CheckTranscribeFunction.Arn
+                  - !GetAtt WebCaptionsFunction.Arn
+                  - !GetAtt CreateSRTCaptionsFunction.Arn
+                  - !GetAtt CreateVTTCaptionsFunction.Arn
+                  - !GetAtt WebToSRTCaptionsFunction.Arn
+                  - !GetAtt WebToVTTCaptionsFunction.Arn
+                  - !GetAtt TranslateFunction.Arn
+                  - !GetAtt StartPollyFunction.Arn
+                  - !GetAtt CheckPollyFunction.Arn
                 Effect: "Allow"
 
   # Lambda functions

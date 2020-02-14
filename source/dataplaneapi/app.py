@@ -1032,12 +1032,11 @@ def delete_asset(asset_id):
             delete = delete_s3_objects(keys)
             if delete["Status"] == "Success":
                 # Now delete the assets directory
-                logger.info("Delete metadata objects from s3")
-                bucket = s3_resource.Bucket(dataplane_s3_bucket)
+                logger.info("Deleted metadata objects from s3")
                 asset_path = base_s3_uri + asset_id + '/'
                 try:
                     logger.info("Cleaning up asset directory after metadata deletion")
-                    bucket.objects.filter(Prefix=asset_path).delete()
+                    s3_resource.Object(dataplane_s3_bucket, asset_path).delete()
                 except ClientError as e:
                     error = e.response['Error']['Message']
                     logger.error("Exception occurred during request to delete asset: {e}".format(e=error))

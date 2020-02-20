@@ -10,7 +10,10 @@ module.exports = {
         hashFuncNames: ['sha256', 'sha384'],
         enabled: true
       }),
-    ]
+    ],
+    performance: {
+      hints: false
+    }
   },
   devServer: {
     https: false

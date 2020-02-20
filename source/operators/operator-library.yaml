@@ -63,6 +63,34 @@ Resources:
                 Resource: !Ref DataPlaneHandlerArn
                 Effect: "Allow"
 
+  mediainfoLambdaRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action:
+              - "sts:AssumeRole"
+            Effect: "Allow"
+            Principal:
+              Service: "lambda.amazonaws.com"
+      Policies:
+        - PolicyName: "mediainfoLambdaAccess"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  - "s3:GetObject"
+                  - "s3:PutObject"
+                Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
+                Effect: "Allow"
+              - Action: "lambda:InvokeFunction"
+                Resource: !Ref DataPlaneHandlerArn
+                Effect: "Allow"
+
   mediaConvertS3Role:
     Type: "AWS::IAM::Role"
     Properties:
@@ -516,6 +544,34 @@ Resources:
           OPERATOR_NAME: "GenericDataLookup"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DataLookupRole: !GetAtt genericDataLookupLambdaRole.Arn
+
+  # Mediainfo
+
+  Mediainfo:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "mediainfo.lambda_handler"
+      Layers:
+        - !Ref MediaInsightsEnginePython37Layer
+      Role: !GetAtt mediainfoLambdaRole.Arn
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "mediainfo.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Timeout: 300
+      Environment:
+        Variables:
+          OPERATOR_NAME: "Mediainfo"
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DataLookupRole: !GetAtt mediainfoLambdaRole.Arn
+          LD_LIBRARY_PATH: "/opt/python/"
 
   # Comprehend
 
@@ -1301,6 +1357,17 @@ Resources:
       StartLambdaArn: !GetAtt startGenericDataLookup.Arn
       StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
+  MediainfoOperation:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "Mediainfo"
+      Type: "Sync"
+      Configuration: { "MediaType": "Video", "Enabled": true }
+      StartLambdaArn: !GetAtt Mediainfo.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
   MediaconvertOperation:
     Type: Custom::CustomResource
     Properties:
@@ -1580,6 +1647,11 @@ Outputs:
     Value: !GetAtt GenericDataLookupOperation.Name
     Export:
       Name: !Join [":", [!Ref "AWS::StackName", GenericDataLookup]]
+  MediainfoOperation:
+    Description: "Operation name of Mediainfo"
+    Value: !GetAtt MediainfoOperation.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", Mediainfo]]
   MediaconvertOperation:
     Description: "Operation name of mediaconvert"
     Value: !GetAtt MediaconvertOperation.Name

@@ -442,8 +442,7 @@ echo "Building test operators"
 cd "$source_dir/operators/test" || exit
 [ -e dist ] && rm -r dist
 mkdir -p dist
-zip -g ./dist/test_operations.zip ./test.py
-echo "copy echo test_operations.zip to dist_dir"
+zip -q -g ./dist/test_operations.zip ./test.py
 cp "./dist/test_operations.zip" "$dist_dir/test_operations.zip"
 
 echo "------------------------------------------------------------------------------"
@@ -604,20 +603,17 @@ fi
 rm -f ./dist/*
 
 echo "------------------------------------------------------------------------------"
-echo "Demo website helper Function"
+echo "Demo website stack"
 echo "------------------------------------------------------------------------------"
 
-echo "Building Demo website helper function"
+echo "Building website helper function"
 cd "$webapp_dir/helper" || exit 1
 [ -e dist ] && rm -r dist
 mkdir -p dist
 zip -q -g ./dist/websitehelper.zip ./website_helper.py
 cp "./dist/websitehelper.zip" "$dist_dir/websitehelper.zip"
 
-echo "------------------------------------------------------------------------------"
-echo "Building Vue.js website "
-echo "------------------------------------------------------------------------------"
-
+echo "Building Vue.js website"
 cd "$webapp_dir/" || exit 1
 echo "Installing node dependencies"
 npm install

@@ -113,18 +113,6 @@ This assumes that MIE has been full deployed at this point.
 
     ![alt](doc/images/workflow-analysis-results.png)
 
-## 5.4. The Analytics Page
-
-1. Click on the **Analytics** link on the top right menu. This page will send you to Kibana, which allows you to search and visualize the data that's been collected and stored in Elasticsearch.
-1. Click on the **Discover** link from the left-hand side menu. This should take you to a page for creating an index pattern if you haven't created one already. 
-1. To create an index pattern, enter `mie*` in the **Index pattern** textbox. This will include all the indices that has already been created.
-    
-    ![alt](doc/images/kibana-create-index.png)
-
-1. Click on **Next Step**.
-1. Click on **Create Index Pattern**.
-1. At this point you're ready to run some queries and visualizations. 
-
 # 6. Developer Quick Start Guide
 
 This document will show you how to build, distribute, and deploy Media Insights Engine (MIE) on AWS and how to implement new operators within the MIE stack.
@@ -220,18 +208,37 @@ def lambda_handler(event, context):
 
 ##### How to get operator configuration input
 
-Operator configurations can be accessed from the Lambda entrypoint's event object:
+Operator configurations can be accessed from the "Configuration" attribute in the Lambda entrypoint's event object. For example, here's how the face search operator gets the user-specified face collection id:
 
 ```
 collection_id = event["Configuration"]["CollectionId"]
 ```
 
-##### How to get metadata output from other operators
+##### How to write data to downstream operators
 
-Metadata is always passed as input to the next stage in a workflow. Metadata that was output by upstream operators can be accessed from the Lambda entrypoint's event object:
+Metadata derived by an operator can be passed as input to the next stage in a workflow by adding said data to the operator's `output_object`. Do this with the `add_workflow_metadata` function in the OutputHelper, like this:
 
 ```
-job_id = event["MetaData"]["FaceSearchJobId"]
+from MediaInsightsEngineLambdaHelper import OutputHelper
+output_object = OutputHelper(operator_name)
+
+def lambda_handler(event, context):
+    ...
+    # Passing MyData objects to downstream operators 
+    output_object.add_workflow_metadata(MyData1=my_data_1)
+    output_object.add_workflow_metadata(MyData2=my_data_2)
+    # Multiple key value pairs can also be specified as a list, like this:
+    output_object.add_workflow_metadata(MyData3=my_data_3, MyData4=my_data_4)
+    ...
+    return output_object.return_output_object()
+```        
+
+##### How to read data from upstream operators
+
+Metadata that was output by upstream operators can be accessed from the Lambda entrypoint's event object:
+
+```
+my_data_1 = event["MetaData"]["MyData1"]
 ```
 
 ##### How to store media metadata to the data plane
@@ -356,7 +363,7 @@ It's easiest to create a new workflow by copying end editing `MieCompleteWorkflo
 ### Step 4: Add your operator to the Elasticsearch consumer
 ***(Difficulty: 30 minutes)***
 
-Edit `source/consumers/elastic/lambda_handler.py`. Add your operator name to the list of `supported_operators`. Define a method to flatten your JSON metadata into Elasticsearch records. Call that method from the `lambda_handler()` entrypoint. 
+Edit `source/consumers/elastic/lambda_handler.py`. Add your operator name to the list of `supported_operators`. Define a processing method to create Elasticsearch records from metadata JSON objects. This method should concatenate pages, flatten JSON arrays, add the operator name, add the workflow name, and add any other fields that can be useful for analytics. Call this processing method alongside the other processing methods referenced in the `lambda_handler()` entrypoint.
 
 ### Step 5: Update the build script to deploy your operator to AWS Lambda
 ***(Difficulty: 5 minutes)***
@@ -420,6 +427,36 @@ Monitor your test workflow with the following logs:
 * Your operator lambda. To find this log, search the Lambda functions for your operator name.
 * The dataplane API lambda. To find this log, search Lambda functions for "MediaInsightsDataplaneApiStack".
 * The Elasticsearch consumer lambda. To find this log, search Lambda functions for "ElasticsearchConsumer".
+
+#### Validate metadata in dataplane
+
+When your operator finishes successfully then you can see data saved from the `Dataplane.store_asset_metadata()` function in the following DynamoDB table:  
+
+#### Validate metadata in Elasticsearch
+
+Validating data in Elasticsearch is easiest via the Kibana GUI. However, access to Kibana is disabled by default. To enable it, open your Elasticsearch Service domain in the AWS Console and click the "Modify access policy" under the Actions menu and add a policy that allows connections from your local IP address, such as:
+
+```
+{
+  "Effect": "Allow",
+  "Principal": {
+    "AWS": "*"
+  },
+  "Action": "es:*",
+  "Resource": "arn:aws:es:us-west-2:123456789012:domain/mie-es/*",
+  "Condition": {
+    "IpAddress": {
+      "aws:SourceIp": "52.108.112.178/32"
+    }
+  }
+}
+```
+
+Click Submit to save the new policy. After your domain is finished updating, click on the link to open Kibana. Now click on the **Discover** link from the left-hand side menu. This should take you to a page for creating an index pattern if you haven't created one already. Create an `mie*` index pattern in the **Index pattern** textbox. This will include all the indices that were created in the MIE stack.
+    
+    ![alt](doc/images/kibana-create-index.png)
+
+Now you can use Kibana to validate that your operator's data is present in Elasticsearch. You can validate this by running a workflow where your operator is the only enabled operator, then searching for the asset_id produced by that workflow in Kibana.
 
 # 7. API Documentation
 

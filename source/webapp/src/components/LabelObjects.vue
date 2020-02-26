@@ -92,7 +92,6 @@
 <script>
   import Loading from '@/components/Loading.vue'
   import { mapState } from 'vuex'
-
   export default {
     name: "LabelObjects",
     components: {
@@ -152,6 +151,7 @@
       },
     },
     deactivated: function () {
+      console.log('deactivated component:', this.operator);
       this.boxes_available = [];
       this.selectedLabel = '';
       clearInterval(this.canvasRefreshInterval);
@@ -161,6 +161,7 @@
       if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
     },
     activated: function () {
+      console.log('activated component:', this.operator)
       this.fetchAssetData();
     },
     beforeDestroy: function () {

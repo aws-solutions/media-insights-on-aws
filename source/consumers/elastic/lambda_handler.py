@@ -328,8 +328,14 @@ def process_mediainfo(asset, workflow, results):
     # This function puts mediainfo data in Elasticsearch.
     metadata = json.loads(results)
     es = connect_es(es_endpoint)
-    # Mediainfo data is not paged and does not need to be flattened
-    bulk_index(es, asset, "mediainfo", metadata["tracks"])
+    extracted_items = []
+    # Objects in arrays are not well supported by Elastic, so we flatten the tracks array here.
+    if isinstance(metadata['tracks'], list):
+        for item in metadata['tracks']:
+            item["Operator"] = "mediainfo"
+            item["Workflow"] = workflow
+            extracted_items.append(item)
+    bulk_index(es, asset, "mediainfo", extracted_items)
 
 def process_generic_data(asset, workflow, results):
     # This function puts generic data in Elasticsearch.

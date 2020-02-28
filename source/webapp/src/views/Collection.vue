@@ -395,11 +395,24 @@
         let s3Key = assetInfo.results.S3Key;
         let s3Uri = 's3://' + bucket + '/' + s3Key;
         let filename = s3Key.split("/").pop();
-        let thumbnailS3Key = 'private/assets/' + assetId + '/input/' + filename;
-        if (filename.substring(filename.lastIndexOf(".")) === ".mp4") {
-          // The thumbnail is created by Media Convert, see:
-          // source/operators/thumbnail/start_thumbnail.py
-          thumbnailS3Key = 'private/assets/' + assetId + '/' + filename.substring(0, filename.lastIndexOf(".")) + '_thumbnail.0000001.jpg'
+        // The thumbnail is created by Media Convert, see:
+        // source/operators/thumbnail/start_thumbnail.py
+        let thumbnailS3Key = 'private/assets/' + assetId + '/' + filename.substring(0, filename.lastIndexOf(".")) + '_thumbnail.0000001.jpg';
+        // If it's an image then Media Convert won't create a thumbnail.
+        // So, just use the image itself as the thumbnail:
+        if (filename.substring(filename.lastIndexOf(".")) === ".JPG" ||
+          filename.substring(filename.lastIndexOf(".")) === ".jpeg" ||
+          filename.substring(filename.lastIndexOf(".")) === ".JPEG" ||
+          filename.substring(filename.lastIndexOf(".")) === ".TIF" ||
+          filename.substring(filename.lastIndexOf(".")) === ".tif" ||
+          filename.substring(filename.lastIndexOf(".")) === ".TIFF" ||
+          filename.substring(filename.lastIndexOf(".")) === ".tiff" ||
+          filename.substring(filename.lastIndexOf(".")) === ".jpg" ||
+          filename.substring(filename.lastIndexOf(".")) === ".PNG" ||
+          filename.substring(filename.lastIndexOf(".")) === ".png" ||
+          filename.substring(filename.lastIndexOf(".")) === ".GIF" ||
+          filename.substring(filename.lastIndexOf(".")) === ".gif" ) {
+          thumbnailS3Key = 'private/assets/' + assetId + '/input/' + filename;
         }
         let [thumbnail, workflowStatus] = await Promise.all([this.getAssetThumbnail(token, bucket, thumbnailS3Key), this.getAssetWorkflowStatus(token, assetId)]);
         if (workflowStatus[0] && thumbnail)

@@ -98,6 +98,11 @@ def lambda_handler(event, context):
             MediainfoError="Metadata must be of type dict. Found " + str(type(metadata_json)) + " instead.")
         raise MasExecutionError(operator_object.return_output_object())
 
+    # Pass metadata to downstream operators
+    # Number of audio tracks is used by the Transcribe operator
+    num_audio_tracks = len(list(filter(lambda i: i['track_type'] == 'Audio', metadata_json['tracks'])))
+    operator_object.add_workflow_metadata(Mediainfo_num_audio_tracks=str(num_audio_tracks))
+
     # Save metadata to dataplane
     operator_object.add_workflow_metadata(AssetId=asset_id,WorkflowExecutionId=workflow_id)
     dataplane = DataPlane()

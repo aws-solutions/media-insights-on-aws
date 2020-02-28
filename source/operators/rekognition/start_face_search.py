@@ -66,8 +66,8 @@ def start_face_search(bucket, key, collection_id):
 def lambda_handler(event, context):
     try:
         if "Video" in event["Input"]["Media"]:
-            s3bucket = event["Input"]["Media"]["Video"]["S3Bucket"]
-            s3key = event["Input"]["Media"]["Video"]["S3Key"]
+            s3bucket = event["Input"]["Media"]["ProxyEncode"]["S3Bucket"]
+            s3key = event["Input"]["Media"]["ProxyEncode"]["S3Key"]
         elif "Image" in event["Input"]["Media"]:
             s3bucket = event["Input"]["Media"]["Image"]["S3Bucket"]
             s3key = event["Input"]["Media"]["Image"]["S3Key"]

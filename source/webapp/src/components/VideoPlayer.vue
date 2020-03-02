@@ -80,7 +80,8 @@ export default {
       this.player.autoplay('muted');
       this.player.currentTime(0);
       this.$store.commit('updatePlayer', this.player);
-
+    });
+    this.player.on('loadeddata', function() {
       // Set canvas size to videoPlayer size
       const canvas = document.getElementById('canvas');
       const video = document.getElementById('videoPlayer');
@@ -88,6 +89,7 @@ export default {
       canvas.height = video.clientHeight;
     });
     window.addEventListener('resize', function () {
+      console.log("resize")
       // Update canvas size when window is resized
       const canvas = document.getElementById('canvas');
       const video = document.getElementById('videoPlayer');

@@ -359,6 +359,15 @@
         return {
           "Name": "MieCompleteWorkflow",
           "Configuration": {
+            "defaultPrelimVideoStage": {
+              "Thumbnail": {
+                "ThumbnailPosition": this.thumbnail_position.toString(),
+                "Enabled": true
+              },
+              "Mediainfo": {
+                "Enabled": true
+              }
+            },
             "defaultVideoStage": {
               "faceDetection": {
                 "Enabled": this.enabledOperators.includes("faceDetection"),
@@ -370,7 +379,7 @@
                 "Enabled": this.enabledOperators.includes("labelDetection"),
               },
               "Mediaconvert": {
-                "Enabled": (this.enabledOperators.includes("Mediaconvert") || this.enabledOperators.includes("Transcribe") || this.enabledOperators.includes("Translate") || this.enabledOperators.includes("ComprehendEntities") || this.enabledOperators.includes("ComprehendKeyPhrases")),
+                "Enabled": false,
               },
               "contentModeration": {
                 "Enabled": this.enabledOperators.includes("contentModeration"),
@@ -383,10 +392,6 @@
                 "Enabled": this.enabledOperators.includes("genericDataLookup"),
                 "Bucket": this.DATAPLANE_BUCKET,
                 "Key": this.genericDataFilename==="" ? "undefined" : this.genericDataFilename
-              },
-              "Thumbnail": {
-                "ThumbnailPosition": this.thumbnail_position.toString(),
-                "Enabled": true
               }
             },
             "defaultAudioStage": {
@@ -458,7 +463,7 @@
         console.log('s3UploadComplete: ');
         console.log(s3_uri);
         let data = {};
-        if (media_type === 'image/jpeg') {
+        if (media_type.match(/image/g)) {
           data = {
             "Name": "ImageWorkflow",
             "Configuration": {
@@ -490,7 +495,7 @@
               }
             }
           };
-        } else if (media_type === 'video/mp4') {
+        } else if (media_type.match(/video/g)) {
           data = vm.workflowConfig;
           data["Input"] = {
             "Media": {

@@ -504,6 +504,7 @@ Resources:
                   - !GetAtt checkPersonTracking.Arn
                   - !GetAtt StartMediaConvertFunction.Arn
                   - !GetAtt StartThumbnailFunction.Arn
+                  - !GetAtt CheckThumbnailFunction.Arn
                   - !GetAtt CheckMediaConvertFunction.Arn
                   - !GetAtt StartTranscribeFunction.Arn
                   - !GetAtt CheckTranscribeFunction.Arn
@@ -1066,6 +1067,31 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
 
+  CheckThumbnailFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "check_thumbnail.lambda_handler"
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
+      Role: !GetAtt "mediaConvertLambdaRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "check_thumbnail.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Timeout: 60
+      Environment:
+        Variables:
+          mediaconvertRole: !GetAtt "mediaConvertS3Role.Arn"
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+
   CheckMediaConvertFunction:
     Type: "AWS::Lambda::Function"
     Properties:
@@ -1375,7 +1401,7 @@ Resources:
       ResourceType: "Operation"
       Name: "Mediaconvert"
       Type: "Async"
-      Configuration: { "MediaType": "Video", "Enabled": true }
+      Configuration: { "MediaType": "Video", "Enabled": false }
       StartLambdaArn: !GetAtt StartMediaConvertFunction.Arn
       MonitorLambdaArn: !GetAtt CheckMediaConvertFunction.Arn
       StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
@@ -1386,9 +1412,10 @@ Resources:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Operation"
       Name: "Thumbnail"
-      Type: "Sync"
+      Type: "Async"
       Configuration: { "MediaType": "Video", "Enabled": true }
       StartLambdaArn: !GetAtt StartThumbnailFunction.Arn
+      MonitorLambdaArn: !GetAtt CheckThumbnailFunction.Arn
       StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
   TranscribeOperation:
@@ -1483,7 +1510,7 @@ Resources:
       ResourceType: "Operation"
       Name: "Polly"
       Type: "Async"
-      Configuration: { "MediaType": "Text", "Enabled": true }
+      Configuration: { "MediaType": "Text", "Enabled": false }
       StartLambdaArn: !GetAtt StartPollyFunction.Arn
       MonitorLambdaArn: !GetAtt CheckPollyFunction.Arn
       StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
@@ -1634,7 +1661,7 @@ Resources:
       ResourceType: "Operation"
       Name: "personTracking"
       Type: "Async"
-      Configuration: { "MediaType": "Video", "Enabled": true }
+      Configuration: { "MediaType": "Video", "Enabled": false }
       StartLambdaArn: !GetAtt startPersonTracking.Arn
       MonitorLambdaArn: !GetAtt checkPersonTracking.Arn
       StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn

@@ -216,7 +216,10 @@ collection_id = event["Configuration"]["CollectionId"]
 
 ##### How to write data to downstream operators
 
-Metadata derived by an operator can be passed as input to the next stage in a workflow by adding said data to the operator's `output_object`. Do this with the `add_workflow_metadata` function in the OutputHelper, like this:
+Metadata derived by an operator can be passed as input to the next stage in a workflow by adding said data to the operator's `output_object`. Do this with the `add_workflow_metadata` function in the OutputHelper, as shown below:
+
+***The values for attributes must be strings.***
+***The values for attributes must not be empty strings.***
 
 ```
 from MediaInsightsEngineLambdaHelper import OutputHelper
@@ -235,10 +238,10 @@ def lambda_handler(event, context):
 
 ##### How to read data from upstream operators
 
-Metadata that was output by upstream operators can be accessed from the Lambda entrypoint's event object:
+Metadata that was output by upstream operators can be accessed from the Lambda entrypoint's event object, like this:
 
 ```
-my_data_1 = event["MetaData"]["MyData1"]
+my_data_1 = event["Input"]["MetaData"]["MyData1"]
 ```
 
 ##### How to store media metadata to the data plane

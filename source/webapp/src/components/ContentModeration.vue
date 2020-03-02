@@ -162,7 +162,7 @@
         this.isBusy = !this.isBusy;
         this.Confidence = event.target.value;
         // TODO: move image processing to a separate component
-        if (this.mediaType === "video/mp4") {
+        if (this.mediaType === "video") {
           // redraw markers on video timeline
           this.player.markers.removeAll();
         }
@@ -184,7 +184,7 @@
           }
         });
         // TODO: move image processing to a separate component
-        if (this.mediaType === "video/mp4") {
+        if (this.mediaType === "video") {
           // redraw markers on video timeline
           this.player.markers.removeAll();
           this.player.markers.add(markers);

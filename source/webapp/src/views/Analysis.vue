@@ -52,7 +52,7 @@
                   </b-container>
                 </b-tab>
                 <b-tab
-                  v-if="mediaType !== 'image/jpg'"
+                  v-if="mediaType !== 'image'"
                   title="Speech Recognition"
                   @click="currentView = 'Transcript'; speechTabs = 0"
                 >
@@ -91,7 +91,7 @@
           </div>
         </b-col>
         <b-col>
-          <div v-if="mediaType === 'image/jpg'">
+          <div v-if="mediaType === 'image'">
             <!-- TODO: rename videoOptions since its not always a video -->
             <div v-if="videoOptions.sources[0].src === ''">
               <Loading />
@@ -257,13 +257,25 @@
               })
             ).then(res => {
               this.s3_uri = 's3://'+res.data.results.S3Bucket+'/'+res.data.results.S3Key;
-              this.filename = this.s3_uri.split("/").pop();
-              if (this.filename.substring(this.filename.lastIndexOf(".")) === ".jpg") {
-                this.mediaType = "image/jpg"
+              let filename = this.s3_uri.split("/").pop();
+              if (filename.substring(filename.lastIndexOf(".")) === ".JPG" ||
+                filename.substring(filename.lastIndexOf(".")) === ".jpeg" ||
+                filename.substring(filename.lastIndexOf(".")) === ".JPEG" ||
+                filename.substring(filename.lastIndexOf(".")) === ".TIF" ||
+                filename.substring(filename.lastIndexOf(".")) === ".tif" ||
+                filename.substring(filename.lastIndexOf(".")) === ".TIFF" ||
+                filename.substring(filename.lastIndexOf(".")) === ".tiff" ||
+                filename.substring(filename.lastIndexOf(".")) === ".jpg" ||
+                filename.substring(filename.lastIndexOf(".")) === ".PNG" ||
+                filename.substring(filename.lastIndexOf(".")) === ".png" ||
+                filename.substring(filename.lastIndexOf(".")) === ".GIF" ||
+                filename.substring(filename.lastIndexOf(".")) === ".gif" ) {
+                this.mediaType = "image"
               }
               if (this.filename.substring(this.filename.lastIndexOf(".")) === ".mp4") {
-                this.mediaType = "video/mp4"
+                this.mediaType = "video"
               }
+              this.filename = filename;
               this.getVideoUrl()
             })
           });

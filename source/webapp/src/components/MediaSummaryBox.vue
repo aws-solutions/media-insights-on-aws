@@ -22,28 +22,48 @@
         >
           <b-row>
             <b-col>
-              <label>Video duration:</label>
-              {{ duration }}<br>
-              <label>Video format:</label>
-              {{ format }}<br>
-              <label>Video file size:</label>
-              {{ file_size }} MB<br>
-              <label>Video bit rate:</label>
-              {{ overall_bit_rate }} Mbps<br>
-              <label>Video frame rate:</label>
-              {{ frame_rate }} fps<br>
-              <label>Video resolution:</label>
-              {{ width }} x {{ height }}<br>
+              <div v-if="duration !== 'undefined'">
+                <label>Video duration:</label>
+                {{ duration }}
+              </div>
+              <div v-if="format !== 'undefined'">
+                <label>Video format:</label>
+                {{ format }}
+              </div>
+              <div v-if="file_size !== 'undefined'">
+                <label>Video file size:</label>
+                {{ file_size }} MB
+              </div>
+              <div v-if="overall_bit_rate !== 'undefined'">
+                <label>Video bit rate:</label>
+                {{ overall_bit_rate }} Mbps
+              </div>
+              <div v-if="frame_rate !== 'undefined'">
+                <label>Video frame rate:</label>
+                {{ frame_rate }} fps
+              </div>
+              <div v-if="width !== 'undefined' && height !== 'undefined' ">
+                <label>Video resolution:</label>
+                {{ width }} x {{ height }}
+              </div>
             </b-col>
             <b-col>
-              <label>Audio bit rate:</label>
-              {{ other_bit_rate }}<br>
-              <label>Audio sampling rate:</label>
-              {{ other_sampling_rate }}<br>
-              <label>Audio Language:</label>
-              {{ other_language }}<br>
-              <label>Encoded date:</label>
-              {{ encoded_date }}<br>
+              <div v-if="other_bit_rate !== 'undefined'">
+                <label>Audio bit rate:</label>
+                {{ other_bit_rate }}
+              </div>
+              <div v-if="other_sampling_rate !== 'undefined'">
+                <label>Audio sampling rate:</label>
+                {{ other_sampling_rate }}
+              </div>
+              <div v-if="other_language !== 'undefined'">
+                <label>Audio Language:</label>
+                {{ other_language }}
+              </div>
+              <div v-if="encoded_date !== 'undefined'">
+                <label>Encoded date:</label>
+                {{ encoded_date }}
+              </div>
             </b-col>
           </b-row>
         </div>

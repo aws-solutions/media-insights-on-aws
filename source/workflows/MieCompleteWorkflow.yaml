@@ -22,6 +22,8 @@ Resources:
       Name: "defaultPrelimVideoStage"
       Operations:
         - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:Thumbnail"
+        - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:Mediainfo"
   defaultVideoStage:
     Type: Custom::CustomResource
@@ -46,8 +48,6 @@ Resources:
             Fn::Sub: "${OperatorLibraryStack}:PersonTracking"
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:Mediaconvert"
-        - Fn::ImportValue:
-            Fn::Sub: "${OperatorLibraryStack}:Thumbnail"
 
   defaultAudioStage:
     Type: Custom::CustomResource

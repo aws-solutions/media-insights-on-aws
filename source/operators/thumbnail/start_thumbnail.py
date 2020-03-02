@@ -3,13 +3,16 @@
 
 ###############################################################################
 # PURPOSE:
-#   This operator is designed to get a thumbnail for a video.
-#   It will grab the frame from 7 seconds into the video. That position can be
-#   configured with the "ThumbnailPosition" argument. This operation is performed by
-#   Media Convert.
+#   This operator uses Mediaconvert to do two things:
+#     1) create a thumbnail for a video
+#     2) transcode the video into an MP4 format supported by Rekognition
+#   For thumbnails, it will grab the frame from 7 seconds into the video.
+#   That position can be configured with the "ThumbnailPosition" argument.
+#   The transcode video is called a "proxy encode" and is used by Rekognition
+#   operators instead of the original video uploaded by a user.
 #
 # OUTPUT:
-#   Thumbnails will be saved to the following path:
+#   Thumbnails and transcoded video will be saved to the following path:
 #       s3://" + $DATAPLANE_BUCKET + "/" + 'private/assets/' + asset_id + "/"
 #   The thumbnail filename will end with "_thumbnail.0000001.jpg".
 #   If the user specifies a thumbnail position that exceeds the video duration
@@ -58,7 +61,9 @@ def lambda_handler(event, context):
         print("No asset id passed in with this workflow", e)
         asset_id = ''
     file_input = "s3://" + bucket + "/" + key
+    audio_destination = "s3://" + bucket + "/" + 'private/assets/' + asset_id + "/workflows/" + workflow_id + "/"
     thumbnail_destination = "s3://" + bucket + "/" + 'private/assets/' + asset_id + "/"
+    proxy_destination = "s3://" + bucket + "/" + 'private/assets/' + asset_id + "/"
 
     # Get user-defined location for generic data file
     if "ThumbnailPosition" in operator_object.configuration:
@@ -89,45 +94,46 @@ def lambda_handler(event, context):
         response = customer_mediaconvert.create_job(
             Role=mediaconvert_role,
             Settings={
-                "OutputGroups": [{
-                    "Name": "File Group",
-                    "Outputs": [{
-                        "ContainerSettings": {
-                            "Container": "MP4",
-                            "Mp4Settings": {
-                                "CslgAtom": "INCLUDE",
-                                "FreeSpaceBox": "EXCLUDE",
-                                "MoovPlacement": "PROGRESSIVE_DOWNLOAD"
-                            }
-                        },
-                        "AudioDescriptions": [{
-                            "AudioTypeControl": "FOLLOW_INPUT",
-                            "AudioSourceName": "Audio Selector 1",
-                            "CodecSettings": {
-                                "Codec": "AAC",
-                                "AacSettings": {
-                                    "AudioDescriptionBroadcasterMix": "NORMAL",
-                                    "Bitrate": 96000,
-                                    "RateControlMode": "CBR",
-                                    "CodecProfile": "LC",
-                                    "CodingMode": "CODING_MODE_2_0",
-                                    "RawFormat": "NONE",
-                                    "SampleRate": 48000,
-                                    "Specification": "MPEG4"
+                "OutputGroups": [
+                    {
+                        "Name": "File Group",
+                        "Outputs": [{
+                            "ContainerSettings": {
+                                "Container": "MP4",
+                                "Mp4Settings": {
+                                    "CslgAtom": "INCLUDE",
+                                    "FreeSpaceBox": "EXCLUDE",
+                                    "MoovPlacement": "PROGRESSIVE_DOWNLOAD"
                                 }
                             },
-                            "LanguageCodeControl": "FOLLOW_INPUT"
+                            "AudioDescriptions": [{
+                                "AudioTypeControl": "FOLLOW_INPUT",
+                                "AudioSourceName": "Audio Selector 1",
+                                "CodecSettings": {
+                                    "Codec": "AAC",
+                                    "AacSettings": {
+                                        "AudioDescriptionBroadcasterMix": "NORMAL",
+                                        "Bitrate": 96000,
+                                        "RateControlMode": "CBR",
+                                        "CodecProfile": "LC",
+                                        "CodingMode": "CODING_MODE_2_0",
+                                        "RawFormat": "NONE",
+                                        "SampleRate": 48000,
+                                        "Specification": "MPEG4"
+                                    }
+                                },
+                                "LanguageCodeControl": "FOLLOW_INPUT"
+                            }],
+                            "Extension": "mp4",
+                            "NameModifier": "_audio"
                         }],
-                        "Extension": "mp4",
-                        "NameModifier": "_audio"
-                    }],
-                    "OutputGroupSettings": {
-                        "Type": "FILE_GROUP_SETTINGS",
-                        "FileGroupSettings": {
-                            "Destination": thumbnail_destination
+                        "OutputGroupSettings": {
+                            "Type": "FILE_GROUP_SETTINGS",
+                            "FileGroupSettings": {
+                                "Destination": audio_destination
+                            }
                         }
-                    }
-                },
+                    },
                     {
                         "CustomName": "thumbnail",
                         "Name": "File Group",
@@ -153,6 +159,7 @@ def lambda_handler(event, context):
                                     "DropFrameTimecode": "ENABLED",
                                     "ColorMetadata": "INSERT"
                                 },
+                                "Extension": "jpg",
                                 "NameModifier": "_thumbnail"
                             }
                         ],
@@ -162,7 +169,101 @@ def lambda_handler(event, context):
                                 "Destination": thumbnail_destination
                             }
                         }
-                    }],
+                    },
+                    {
+                        "CustomName": "proxy",
+                        "Name": "File Group",
+                        "Outputs": [
+                            {
+                                "VideoDescription": {
+                                    "ScalingBehavior": "DEFAULT",
+                                    "TimecodeInsertion": "DISABLED",
+                                    "AntiAlias": "ENABLED",
+                                    "Sharpness": 50,
+                                    "CodecSettings": {
+                                        "Codec": "H_264",
+                                        "H264Settings": {
+                                            "InterlaceMode": "PROGRESSIVE",
+                                            "NumberReferenceFrames": 3,
+                                            "Syntax": "DEFAULT",
+                                            "Softness": 0,
+                                            "GopClosedCadence": 1,
+                                            "GopSize": 90,
+                                            "Slices": 1,
+                                            "GopBReference": "DISABLED",
+                                            "SlowPal": "DISABLED",
+                                            "SpatialAdaptiveQuantization": "ENABLED",
+                                            "TemporalAdaptiveQuantization": "ENABLED",
+                                            "FlickerAdaptiveQuantization": "DISABLED",
+                                            "EntropyEncoding": "CABAC",
+                                            "Bitrate": 5000000,
+                                            "FramerateControl": "SPECIFIED",
+                                            "RateControlMode": "CBR",
+                                            "CodecProfile": "MAIN",
+                                            "Telecine": "NONE",
+                                            "MinIInterval": 0,
+                                            "AdaptiveQuantization": "HIGH",
+                                            "CodecLevel": "AUTO",
+                                            "FieldEncoding": "PAFF",
+                                            "SceneChangeDetect": "ENABLED",
+                                            "QualityTuningLevel": "SINGLE_PASS",
+                                            "FramerateConversionAlgorithm": "DUPLICATE_DROP",
+                                            "UnregisteredSeiTimecode": "DISABLED",
+                                            "GopSizeUnits": "FRAMES",
+                                            "ParControl": "SPECIFIED",
+                                            "NumberBFramesBetweenReferenceFrames": 2,
+                                            "RepeatPps": "DISABLED",
+                                            "FramerateNumerator": 30,
+                                            "FramerateDenominator": 1,
+                                            "ParNumerator": 1,
+                                            "ParDenominator": 1
+                                        }
+                                    },
+                                    "AfdSignaling": "NONE",
+                                    "DropFrameTimecode": "ENABLED",
+                                    "RespondToAfd": "NONE",
+                                    "ColorMetadata": "INSERT"
+                                },
+                                "AudioDescriptions": [
+                                    {
+                                        "AudioTypeControl": "FOLLOW_INPUT",
+                                        "CodecSettings": {
+                                            "Codec": "AAC",
+                                            "AacSettings": {
+                                                "AudioDescriptionBroadcasterMix": "NORMAL",
+                                                "RateControlMode": "CBR",
+                                                "CodecProfile": "LC",
+                                                "CodingMode": "CODING_MODE_2_0",
+                                                "RawFormat": "NONE",
+                                                "SampleRate": 48000,
+                                                "Specification": "MPEG4",
+                                                "Bitrate": 64000
+                                            }
+                                        },
+                                        "LanguageCodeControl": "FOLLOW_INPUT",
+                                        "AudioSourceName": "Audio Selector 1"
+                                    }
+                                ],
+                                "ContainerSettings": {
+                                    "Container": "MP4",
+                                    "Mp4Settings": {
+                                        "CslgAtom": "INCLUDE",
+                                        "FreeSpaceBox": "EXCLUDE",
+                                        "MoovPlacement": "PROGRESSIVE_DOWNLOAD"
+                                    }
+                                },
+                                "Extension": "mp4",
+                                "NameModifier": "_proxy"
+                            }
+                        ],
+                        "OutputGroupSettings": {
+                            "Type": "FILE_GROUP_SETTINGS",
+                            "FileGroupSettings": {
+                                "Destination": proxy_destination
+                            }
+                        }
+                    }
+                    ],
                 "Inputs": [{
                     "AudioSelectors": {
                         "Audio Selector 1": {
@@ -178,6 +279,7 @@ def lambda_handler(event, context):
                 }]
             }
         )
+
     # TODO: Add support for boto client error handling
     except Exception as e:
         print("Exception:\n", e)
@@ -185,5 +287,7 @@ def lambda_handler(event, context):
         operator_object.add_workflow_metadata(ThumbnailError=str(e))
         raise MasExecutionError(operator_object.return_output_object())
     else:
-        operator_object.update_workflow_status("Complete")
+        job_id = response['Job']['Id']
+        operator_object.update_workflow_status("Executing")
+        operator_object.add_workflow_metadata(MediaconvertJobId=job_id, MediaconvertInputFile=file_input, AssetId=asset_id, WorkflowExecutionId=workflow_id)
         return operator_object.return_output_object()

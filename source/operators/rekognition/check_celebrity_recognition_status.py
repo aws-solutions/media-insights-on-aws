@@ -23,7 +23,7 @@ config = config.Config(**mie_config)
 rek = boto3.client('rekognition', config=config)
 
 def lambda_handler(event, context):
-    print(json.dumps(event))
+    print("We got the following event:\n", event)
     try:
         status = event["Status"]
         asset_id = event['MetaData']['AssetId']

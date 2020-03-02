@@ -48,6 +48,7 @@ def start_person_tracking(bucket, key):
 
 # Lambda function entrypoint:
 def lambda_handler(event, context):
+    print("We got the following event:\n", event)
     try:
         if "Video" in event["Input"]["Media"]:
             s3bucket = event["Input"]["Media"]["ProxyEncode"]["S3Bucket"]

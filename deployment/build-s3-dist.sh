@@ -266,12 +266,19 @@ cd "$source_dir/operators/thumbnail" || exit 1
 mkdir -p dist
 if ! [ -d ./dist/start_thumbnail.zip ]; then
   zip -q -r9 ./dist/start_thumbnail.zip .
-
 elif [ -d ./dist/start_thumbnail.zip ]; then
   echo "Package already present"
 fi
 zip -q -g dist/start_thumbnail.zip start_thumbnail.py
 cp "./dist/start_thumbnail.zip" "$dist_dir/start_thumbnail.zip"
+
+if ! [ -d ./dist/check_thumbnail.zip ]; then
+  zip -q -r9 ./dist/check_thumbnail.zip .
+elif [ -d ./dist/check_thumbnail.zip ]; then
+  echo "Package already present"
+fi
+zip -q -g dist/check_thumbnail.zip check_thumbnail.py
+cp "./dist/check_thumbnail.zip" "$dist_dir/check_thumbnail.zip"
 
 # ------------------------------------------------------------------------------"
 # Transcribe Operations

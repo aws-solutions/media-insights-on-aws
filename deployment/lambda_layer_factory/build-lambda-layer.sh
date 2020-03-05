@@ -130,7 +130,7 @@ if [ -n "$S3_FQDN" ]; then
             aws s3 cp lambda_layer-python3.6.zip s3://"$LAMBDA_LAYERS_BUCKET"
             aws lambda publish-layer-version --layer-name $LAYER_NAME_36 --content S3Bucket="$LAMBDA_LAYERS_BUCKET",S3Key=lambda_layer-python3.6.zip --compatible-runtimes python3.6
             aws s3 rm s3://"$LAMBDA_LAYERS_BUCKET"/lambda_layer-python3.6.zip
-            arn36=$(aws lambda list-layer-versions --layer-name lambda_layer-python36 --output text --query 'LayerVersions[0].LayerVersionArn')
+            arn36=$(aws lambda list-layer-versions --layer-name $LAYER_NAME_36 --output text --query 'LayerVersions[0].LayerVersionArn')
         fi
     fi
     aws lambda list-layer-versions --layer-name $LAYER_NAME_37 | grep "\"LayerVersions\": \["
@@ -142,7 +142,7 @@ if [ -n "$S3_FQDN" ]; then
             aws s3 cp lambda_layer-python3.7.zip s3://"$LAMBDA_LAYERS_BUCKET"
             aws lambda publish-layer-version --layer-name $LAYER_NAME_37 --content S3Bucket="$LAMBDA_LAYERS_BUCKET",S3Key=lambda_layer-python3.7.zip --compatible-runtimes python3.7
             aws s3 rm s3://"$LAMBDA_LAYERS_BUCKET"/lambda_layer-python3.7.zip
-            arn37=$(aws lambda list-layer-versions --layer-name lambda_layer-python37 --output text --query 'LayerVersions[0].LayerVersionArn')
+            arn37=$(aws lambda list-layer-versions --layer-name $LAYER_NAME_37 --output text --query 'LayerVersions[0].LayerVersionArn')
         fi
     fi
     aws lambda list-layer-versions --layer-name $LAYER_NAME_38 | grep "\"LayerVersions\": \["
@@ -154,7 +154,7 @@ if [ -n "$S3_FQDN" ]; then
             aws s3 cp lambda_layer-python3.8.zip s3://"$LAMBDA_LAYERS_BUCKET"
             aws lambda publish-layer-version --layer-name $LAYER_NAME_38 --content S3Bucket="$LAMBDA_LAYERS_BUCKET",S3Key=lambda_layer-python3.8.zip --compatible-runtimes python3.8
             aws s3 rm s3://"$LAMBDA_LAYERS_BUCKET"/lambda_layer-python3.8.zip
-            arn38=$(aws lambda list-layer-versions --layer-name lambda_layer-python37 --output text --query 'LayerVersions[0].LayerVersionArn')
+            arn38=$(aws lambda list-layer-versions --layer-name $LAYER_NAME_38 --output text --query 'LayerVersions[0].LayerVersionArn')
         fi
     fi
     # remove temp working dir for zip files

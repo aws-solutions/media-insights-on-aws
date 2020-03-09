@@ -341,23 +341,29 @@ def create_asset():
 
     new_key = directory + 'input' + '/' + source_key
 
-    # copy input media into newly created dataplane s3 directory
+    # Move input media into newly created dataplane s3 directory.
 
     try:
+        # copy input media from upload/ to private/assets/[asset_id]/input/
         s3_client.copy_object(
             Bucket=dataplane_s3_bucket,
             Key=new_key,
             CopySource={'Bucket': source_bucket, 'Key': source_key}
         )
+        # remove input media from upload/
+        s3_client.delete_object(
+            Bucket=source_bucket,
+            Key=source_key
+        )
     except ClientError as e:
         error = e.response['Error']['Message']
         logger.error("Exception occurred during asset creation: {e}".format(e=error))
-        raise ChaliceViewError("Unable to copy input media to the dataplane bucket: {e}".format(e=error))
+        raise ChaliceViewError("Unable to move uploaded media to the dataplane bucket: {e}".format(e=error))
     except Exception as e:
         logger.error("Exception occurred during asset creation: {e}".format(e=e))
-        raise ChaliceViewError("Exception when creating s3 object for asset: {e}".format(e=e))
+        raise ChaliceViewError("Exception when moving s3 object for asset: {e}".format(e=e))
     else:
-        logger.info("Copied input media into dataplane bucket: {key}".format(key=new_key))
+        logger.info("Moved input media into dataplane bucket: {key}".format(key=new_key))
 
     # build ddb item of the asset
 

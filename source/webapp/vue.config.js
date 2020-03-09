@@ -15,7 +15,4 @@ module.exports = {
       hints: false
     }
   },
-  devServer: {
-    https: false
-  }
 };

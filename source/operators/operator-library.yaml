@@ -85,6 +85,7 @@ Resources:
               - Action:
                   - "s3:GetObject"
                   - "s3:PutObject"
+                  - "s3:DeleteObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
                 Effect: "Allow"
               - Action: "lambda:InvokeFunction"
@@ -1394,6 +1395,17 @@ Resources:
       StartLambdaArn: !GetAtt Mediainfo.Arn
       StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
+  MediainfoOperationImage:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "MediainfoImage"
+      Type: "Sync"
+      Configuration: { "MediaType": "Image", "Enabled": true }
+      StartLambdaArn: !GetAtt Mediainfo.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
   MediaconvertOperation:
     Type: Custom::CustomResource
     Properties:
@@ -1679,6 +1691,11 @@ Outputs:
     Value: !GetAtt MediainfoOperation.Name
     Export:
       Name: !Join [":", [!Ref "AWS::StackName", Mediainfo]]
+  MediainfoOperationImage:
+    Description: "Operation name of MediainfoImage"
+    Value: !GetAtt MediainfoOperationImage.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", MediainfoImage]]
   MediaconvertOperation:
     Description: "Operation name of mediaconvert"
     Value: !GetAtt MediaconvertOperation.Name

@@ -1830,7 +1830,7 @@ def create_workflow_execution(trigger, workflow_execution):
     create_asset = None
 
 
-    if "Media" in workflow_execution["Input"]:
+    if "Input" in workflow_execution and "Media" in workflow_execution["Input"]:
         create_asset = True
     else:
         create_asset = False

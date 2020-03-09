@@ -2,7 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 ###############################################################################
 # PURPOSE:
-#   Get MediaInfo output for a media file.
+#   Get MediaInfo output for a media file in S3. If the media file does not
+#   contain video, audio, image, or text data, or if the Mediainfo fails to
+#   process the file, then remove the file from S3.
 # USAGE:
 #   Make sure the LD_LIBRARY_PATH environment variable points to a directory
 #   holding MediaInfo ".so" library files
@@ -20,14 +22,7 @@
 #                 }
 #             },
 #             "MetaData": {}
-#         },
-#         "Configuration": {
-#             "MediaType": "Video",
-#             "Enabled": "True"
-#         },
-#         "Status": "Started",
-#         "MetaData": {},
-#         "Media": {}
+#         }
 #     }
 ###############################################################################
 
@@ -43,26 +38,33 @@ from botocore.config import Config
 
 region = os.environ['AWS_REGION']
 
-def get_signed_url(expires_in, bucket, obj):
+
+def get_signed_url(s3_cli, expires_in, bucket, obj):
     """
-    Generate a signed URL
+    Generate a signed URL for reading a file from S3 via HTTPS
+    :param s3_cli:      Boto3 S3 client object
     :param expires_in:  URL Expiration time in seconds
     :param bucket:
     :param obj:         S3 Key name
     :return:            Signed URL
     """
-    s3_cli = boto3.client("s3", region_name=region, config = Config(signature_version = 's3v4', s3={'addressing_style': 'virtual'}))
     presigned_url = s3_cli.generate_presigned_url('get_object', Params={'Bucket': bucket, 'Key': obj}, ExpiresIn=expires_in)
     return presigned_url
+
 
 def lambda_handler(event, context):
     print("We got the following event:\n", event)
     operator_object = MediaInsightsOperationHelper(event)
-
+    bucket = ''
+    key = ''
     try:
+        if "Video" in event["Input"]["Media"]:
+            bucket = event["Input"]["Media"]["Video"]["S3Bucket"]
+            key = event["Input"]["Media"]["Video"]["S3Key"]
+        elif "Image" in event["Input"]["Media"]:
+            bucket = event["Input"]["Media"]["Image"]["S3Bucket"]
+            key = event["Input"]["Media"]["Image"]["S3Key"]
         workflow_id = str(operator_object.workflow_execution_id)
-        bucket = operator_object.input["Media"]["Video"]["S3Bucket"]
-        key = operator_object.input["Media"]["Video"]["S3Key"]
     except KeyError as e:
         operator_object.update_workflow_status("Error")
         operator_object.add_workflow_metadata(MediaconvertError="Missing a required metadata key {e}".format(e=e))
@@ -76,15 +78,39 @@ def lambda_handler(event, context):
         asset_id = ''
 
     # Get metadata
+    s3_cli = boto3.client("s3", region_name=region, config=Config(signature_version='s3v4', s3={'addressing_style': 'virtual'}))
+    metadata_json = {}
     try:
         # The number of seconds that the Signed URL is valid:
         signed_url_expiration = 300
-        # Generate a signed URL for the uploaded asset
-        signed_url = get_signed_url(signed_url_expiration, bucket, key)
+        # Generate a signed URL for reading a file from S3 via HTTPS
+        signed_url = s3_cli.generate_presigned_url('get_object', Params={'Bucket': bucket, 'Key': key}, ExpiresIn=signed_url_expiration)
         # Launch MediaInfo
         media_info = MediaInfo.parse(signed_url)
         # Save the result
         metadata_json = json.loads(media_info.to_json())
+        # If there's no Video, Audio, Image, or Text data then delete the file.
+        track_types = [track['track_type'] for track in metadata_json['tracks']]
+        if ('Video' not in track_types and
+                'Audio' not in track_types and
+                'Image' not in track_types and
+                'Text' not in track_types):
+            print("ERROR: File does not contain valid video, audio, image, or text content")
+            print("Deleting file s3://" + bucket + "/" + key)
+            s3_cli.delete_object(Bucket=bucket, Key=key)
+            operator_object.update_workflow_status("Error")
+            operator_object.add_workflow_metadata(MediainfoError="File does not contain valid video, audio, image, or text content")
+            raise MasExecutionError(operator_object.return_output_object())
+    except RuntimeError as e:
+        # If MediaInfo could not run then we assume it is not a valid
+        # media file and delete it
+        print("Exception:\n", e)
+        print("ERROR: File does not contain valid video, audio, image, or text content")
+        print("Deleting file s3://" + bucket + "/" + key)
+        s3_cli.delete_object(Bucket=bucket, Key=key)
+        operator_object.update_workflow_status("Error")
+        operator_object.add_workflow_metadata(MediainfoError="File does not contain valid video, audio, image, or text content")
+        raise MasExecutionError(operator_object.return_output_object())
     except Exception as e:
         print("Exception:\n", e)
         operator_object.update_workflow_status("Error")
@@ -92,7 +118,7 @@ def lambda_handler(event, context):
         raise MasExecutionError(operator_object.return_output_object())
 
     # Verify that the metadata is a dict, as required by the dataplane
-    if (type(metadata_json) != dict):
+    if type(metadata_json) != dict:
         operator_object.update_workflow_status("Error")
         operator_object.add_workflow_metadata(
             MediainfoError="Metadata must be of type dict. Found " + str(type(metadata_json)) + " instead.")
@@ -104,7 +130,7 @@ def lambda_handler(event, context):
     operator_object.add_workflow_metadata(Mediainfo_num_audio_tracks=str(num_audio_tracks))
 
     # Save metadata to dataplane
-    operator_object.add_workflow_metadata(AssetId=asset_id,WorkflowExecutionId=workflow_id)
+    operator_object.add_workflow_metadata(AssetId=asset_id, WorkflowExecutionId=workflow_id)
     dataplane = DataPlane()
     metadata_upload = dataplane.store_asset_metadata(asset_id, operator_object.name, workflow_id, metadata_json)
 

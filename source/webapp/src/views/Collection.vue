@@ -399,19 +399,11 @@
         // source/operators/thumbnail/start_thumbnail.py
         let thumbnailS3Key = 'private/assets/' + assetId + '/' + filename.substring(0, filename.lastIndexOf(".")) + '_thumbnail.0000001.jpg';
         // If it's an image then Media Convert won't create a thumbnail.
-        // So, just use the image itself as the thumbnail:
-        if (filename.substring(filename.lastIndexOf(".")) === ".JPG" ||
-          filename.substring(filename.lastIndexOf(".")) === ".jpeg" ||
-          filename.substring(filename.lastIndexOf(".")) === ".JPEG" ||
-          filename.substring(filename.lastIndexOf(".")) === ".TIF" ||
-          filename.substring(filename.lastIndexOf(".")) === ".tif" ||
-          filename.substring(filename.lastIndexOf(".")) === ".TIFF" ||
-          filename.substring(filename.lastIndexOf(".")) === ".tiff" ||
-          filename.substring(filename.lastIndexOf(".")) === ".jpg" ||
-          filename.substring(filename.lastIndexOf(".")) === ".PNG" ||
-          filename.substring(filename.lastIndexOf(".")) === ".png" ||
-          filename.substring(filename.lastIndexOf(".")) === ".GIF" ||
-          filename.substring(filename.lastIndexOf(".")) === ".gif" ) {
+        // In that case we use the uploaded image as the thumbnail.
+        let supported_image_types = [".jpg", ".jpeg", ".tif", ".tiff", ".png", ".apng", ".gif", ".bmp", ".svg"];
+        let media_type = filename.substring(filename.lastIndexOf(".")).toLowerCase();
+        if (supported_image_types.includes(media_type)) {
+          // use the uploaded image as a thumbnail
           thumbnailS3Key = 'private/assets/' + assetId + '/input/' + filename;
         }
         let [thumbnail, workflowStatus] = await Promise.all([this.getAssetThumbnail(token, bucket, thumbnailS3Key), this.getAssetWorkflowStatus(token, assetId)]);

@@ -164,7 +164,7 @@ Resources:
   # Custom log group
   MieLogGroup:
     Type: AWS::Logs::LogGroup
-    Properties: 
+    Properties:
       LogGroupName: MediaInsightsLogs
       RetentionInDays: 14
 
@@ -504,6 +504,8 @@ Resources:
   SystemTable:
     Type: AWS::DynamoDB::Table
     Properties:
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: Name
@@ -516,6 +518,8 @@ Resources:
   WorkflowTable:
     Type: AWS::DynamoDB::Table
     Properties:
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: Name
@@ -528,6 +532,8 @@ Resources:
   StageTable:
     Type: AWS::DynamoDB::Table
     Properties:
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: Name
@@ -540,6 +546,8 @@ Resources:
   OperationTable:
     Type: AWS::DynamoDB::Table
     Properties:
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: Name
@@ -552,6 +560,8 @@ Resources:
   HistoryTable:
     Type: AWS::DynamoDB::Table
     Properties:
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: Id
@@ -568,6 +578,8 @@ Resources:
   WorkflowExecutionTable:
     Type: AWS::DynamoDB::Table
     Properties:
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: Id
@@ -597,6 +609,8 @@ Resources:
   DataplaneTable:
     Type: AWS::DynamoDB::Table
     Properties:
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: AssetId
@@ -620,6 +634,23 @@ Resources:
             AllowedMethods: ["GET", "POST"]
             AllowedOrigins: ["*"]
             Id: AllowUploadsFromWebApp
+      VersioningConfiguration:
+        Status: "Enabled"
+
+  DataplaneBucketPolicy:
+    Type: "AWS::S3::BucketPolicy"
+    Properties:
+      Bucket:
+        Ref: "Dataplane"
+      PolicyDocument:
+        Statement:
+          - Effect: Deny
+            Principal: "*"
+            Action: "*"
+            Resource: !Sub "arn:aws:s3:::${Dataplane}/*"
+            Condition:
+              Bool:
+                aws:SecureTransport: false
 
   # Service - cognito / security infrastructure
 

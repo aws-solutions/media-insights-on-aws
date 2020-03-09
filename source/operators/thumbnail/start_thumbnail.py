@@ -3,9 +3,10 @@
 
 ###############################################################################
 # PURPOSE:
-#   This operator uses Mediaconvert to do two things:
+#   This operator uses Mediaconvert to do three things:
 #     1) create a thumbnail for a video
-#     2) transcode the video into an MP4 format supported by Rekognition
+#     2) extract audio track from video
+#     3) transcode the video into an MP4 format supported by Rekognition
 #   For thumbnails, it will grab the frame from 7 seconds into the video.
 #   That position can be configured with the "ThumbnailPosition" argument.
 #   The transcode video is called a "proxy encode" and is used by Rekognition
@@ -96,6 +97,42 @@ def lambda_handler(event, context):
             Settings={
                 "OutputGroups": [
                     {
+                        "CustomName": "thumbnail",
+                        "Name": "File Group",
+                        "Outputs": [
+                            {
+                                "ContainerSettings": {
+                                    "Container": "RAW"
+                                },
+                                "VideoDescription": {
+                                    "ScalingBehavior": "DEFAULT",
+                                    "TimecodeInsertion": "DISABLED",
+                                    "AntiAlias": "ENABLED",
+                                    "Sharpness": 50,
+                                    "CodecSettings": {
+                                        "Codec": "FRAME_CAPTURE",
+                                        "FrameCaptureSettings": {
+                                            "FramerateNumerator": 1,
+                                            "FramerateDenominator": thumbnail_position,
+                                            "MaxCaptures": 2,
+                                            "Quality": 80
+                                        }
+                                    },
+                                    "DropFrameTimecode": "ENABLED",
+                                    "ColorMetadata": "INSERT"
+                                },
+                                "Extension": "jpg",
+                                "NameModifier": "_thumbnail"
+                            }
+                        ],
+                        "OutputGroupSettings": {
+                            "Type": "FILE_GROUP_SETTINGS",
+                            "FileGroupSettings": {
+                                "Destination": thumbnail_destination
+                            }
+                        }
+                    },
+                    {
                         "Name": "File Group",
                         "Outputs": [{
                             "ContainerSettings": {
@@ -131,42 +168,6 @@ def lambda_handler(event, context):
                             "Type": "FILE_GROUP_SETTINGS",
                             "FileGroupSettings": {
                                 "Destination": audio_destination
-                            }
-                        }
-                    },
-                    {
-                        "CustomName": "thumbnail",
-                        "Name": "File Group",
-                        "Outputs": [
-                            {
-                                "ContainerSettings": {
-                                    "Container": "RAW"
-                                },
-                                "VideoDescription": {
-                                    "ScalingBehavior": "DEFAULT",
-                                    "TimecodeInsertion": "DISABLED",
-                                    "AntiAlias": "ENABLED",
-                                    "Sharpness": 50,
-                                    "CodecSettings": {
-                                        "Codec": "FRAME_CAPTURE",
-                                        "FrameCaptureSettings": {
-                                            "FramerateNumerator": 1,
-                                            "FramerateDenominator": thumbnail_position,
-                                            "MaxCaptures": 2,
-                                            "Quality": 80
-                                        }
-                                    },
-                                    "DropFrameTimecode": "ENABLED",
-                                    "ColorMetadata": "INSERT"
-                                },
-                                "Extension": "jpg",
-                                "NameModifier": "_thumbnail"
-                            }
-                        ],
-                        "OutputGroupSettings": {
-                            "Type": "FILE_GROUP_SETTINGS",
-                            "FileGroupSettings": {
-                                "Destination": thumbnail_destination
                             }
                         }
                     },

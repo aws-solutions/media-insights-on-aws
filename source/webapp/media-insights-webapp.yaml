@@ -81,6 +81,8 @@ Resources:
             ExpirationInDays: 30
             AbortIncompleteMultipartUpload:
               DaysAfterInitiation: 1
+      VersioningConfiguration:
+        Status: "Enabled"
 
   WebBucketPolicy:
     Type: AWS::S3::BucketPolicy
@@ -88,14 +90,13 @@ Resources:
       Bucket: !Ref MediaInsightsWebsiteBucket
       PolicyDocument:
         Statement:
-          -
-            Effect: Deny
+          - Effect: Deny
             Principal: "*"
             Action: "*"
             Resource: !Sub "arn:aws:s3:::${MediaInsightsWebsiteBucket}/*"
             Condition:
               Bool:
-                "aws:SecureTransport": false
+                aws:SecureTransport: false
 
   WebsiteHelperRole:
     Type: AWS::IAM::Role

@@ -80,7 +80,7 @@ def lambda_handler(event, context):
     print("Processing s3://"+s3bucket+"/"+s3key)
     valid_video_types = [".avi", ".mp4", ".mov"]
     valid_image_types = [".png", ".jpg", ".jpeg"]
-    file_type = os.path.splitext(s3key)[1]
+    file_type = os.path.splitext(s3key)[1].lower()
     if file_type in valid_image_types:
         # Image processing is synchronous.
         response = detect_moderation_labels(s3bucket, urllib.parse.unquote_plus(s3key))

@@ -65,7 +65,7 @@ def lambda_handler(event, context):
     print("Processing s3://"+s3bucket+"/"+s3key)
     valid_video_types = [".avi", ".mp4", ".mov"]
     valid_image_types = [".png", ".jpg", ".jpeg"]
-    file_type = os.path.splitext(s3key)[1]
+    file_type = os.path.splitext(s3key)[1].lower()
     if file_type in valid_image_types:
         # TODO: implement image handling
         output_object.update_workflow_status("Complete")

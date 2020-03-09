@@ -4,19 +4,19 @@
     <br>
     <b-container>
       <b-alert
-          :show="dismissCountDown"
-          dismissible
-          variant="danger"
-          @dismissed="dismissCountDown=0"
-          @dismiss-count-down="countDownChanged"
+        :show="dismissCountDown"
+        dismissible
+        variant="danger"
+        @dismissed="dismissCountDown=0"
+        @dismiss-count-down="countDownChanged"
       >
         {{ uploadErrorMessage }}
       </b-alert>
       <b-alert
-          :show="showInvalidFile"
-          variant="danger"
+        :show="showInvalidFile"
+        variant="danger"
       >
-        {{ invalidFileMessage }}
+        {{ invalidFileMessages[invalidFileMessages.length-1] }}
       </b-alert>
       <h1>Upload Videos</h1>
       <p>{{ description }}</p>
@@ -174,7 +174,6 @@
           }
         ],
         thumbnail_position: 10,
-        invalid_file_types: 0,
         upload_in_progress: false,
         enabledOperators: ['labelDetection', 'celebrityRecognition', 'contentModeration', 'faceDetection', 'thumbnail', 'Transcribe', 'Translate', 'ComprehendKeyPhrases', 'ComprehendEntities'],
         videoOperators: [
@@ -292,6 +291,7 @@
         targetLanguageCode: "es",
         uploadErrorMessage: "",
         invalidFileMessage: "",
+        invalidFileMessages: [],
         showInvalidFile: false,
         dismissSecs: 8,
         dismissCountDown: 0,
@@ -466,16 +466,18 @@
       fileAdded: function( file )
       {
         if (!(file.type).match(/image\/.+|video\/.+|application\/json/g)) {
-          this.invalid_file_types++;
-          this.invalidFileMessage = "Unsupported file type: " + file.type;
+          if (file.type === "")
+            this.invalidFileMessages.push("Unsupported file type: unknown" + file.type);
+          else
+            this.invalidFileMessages.push("Unsupported file type: " + file.type);
           this.showInvalidFile = true
         }
       },
       fileRemoved: function( file )
       {
         if (!(file.type).match(/image\/.+|video\/.+|application\/json/g)) {
-          this.invalid_file_types--;
-          if (this.invalid_file_types === 0 ) this.showInvalidFile = false;
+          this.invalidFileMessages.pop();
+          if (this.invalidFileMessages.length === 0 ) this.showInvalidFile = false;
         }
       },
       s3UploadComplete: async function (location) {
@@ -493,6 +495,11 @@
           data = {
             "Name": "ImageWorkflow",
             "Configuration": {
+              "ValidationStage": {
+                "MediainfoImage": {
+                  "Enabled": true
+                }
+              },
               "RekognitionStage": {
                 "faceSearchImage": {
                   "Enabled": this.enabledOperators.includes("faceSearch"),

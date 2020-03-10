@@ -465,20 +465,27 @@
       },
       fileAdded: function( file )
       {
+        let errorMessage = '';
         if (!(file.type).match(/image\/.+|video\/.+|application\/json/g)) {
           if (file.type === "")
-            this.invalidFileMessages.push("Unsupported file type: unknown" + file.type);
+            errorMessage = "Unsupported file type: unknown";
           else
-            this.invalidFileMessages.push("Unsupported file type: " + file.type);
+            errorMessage = "Unsupported file type: " + file.type;
+          this.invalidFileMessages.push(errorMessage);
           this.showInvalidFile = true
         }
       },
       fileRemoved: function( file )
       {
+        let errorMessage = '';
         if (!(file.type).match(/image\/.+|video\/.+|application\/json/g)) {
-          this.invalidFileMessages.pop();
-          if (this.invalidFileMessages.length === 0 ) this.showInvalidFile = false;
+          if (file.type === "")
+            errorMessage = "Unsupported file type: unknown";
+          else
+            errorMessage = "Unsupported file type: " + file.type;
         }
+        this.invalidFileMessages = this.invalidFileMessages.filter(function(value){ return value != errorMessage})
+        if (this.invalidFileMessages.length === 0 ) this.showInvalidFile = false;
       },
       s3UploadComplete: async function (location) {
         const token = await this.$Amplify.Auth.currentSession().then(data =>{

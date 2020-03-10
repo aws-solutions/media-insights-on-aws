@@ -1168,7 +1168,7 @@ Resources:
             - DataplaneTable
             - StreamArn
         DynamoTableArn: !GetAtt DataplaneTable.Arn
-        DeployElasticConsumer: 'Yes'
+        DeployElasticConsumer: Yes
         DataplaneBucket: !Ref Dataplane
         MieAdminRole: !GetAtt MieDeveloperRole.Arn
 

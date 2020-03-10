@@ -34,8 +34,9 @@ Resources:
     DeletionPolicy: Retain
     Properties:
       AccessControl: LogDeliveryWrite
-      BucketName: !Transform
-        - Name: 'String'
+      BucketName:
+        Fn::Transform:
+          Name: 'String'
           Parameters:
             InputString: !Sub "${AWS::StackName}-website"
             Operation: Lower
@@ -47,12 +48,12 @@ Resources:
         IndexDocument: "index.html"
         ErrorDocument: "index.html"
       LoggingConfiguration:
-        DestinationBucketName: !Transform
-          - Name: 'String'
+        DestinationBucketName:
+          Fn::Transform:
+            Name: 'String'
             Parameters:
               InputString: !Sub "${AWS::StackName}-website"
               Operation: Lower
-
         LogFilePrefix: "access_logs/"
       LifecycleConfiguration:
         Rules:

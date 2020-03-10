@@ -1168,7 +1168,7 @@ Resources:
             - DataplaneTable
             - StreamArn
         DynamoTableArn: !GetAtt DataplaneTable.Arn
-        DeployElasticConsumer: Yes
+        DeployElasticConsumer: 'Yes'
         DataplaneBucket: !Ref Dataplane
         MieAdminRole: !GetAtt MieDeveloperRole.Arn
 
@@ -1421,9 +1421,25 @@ Resources:
 
   # Auto build/deploy webapp
 
+  StringFunctions:
+    Condition: DeployDemoSiteCondition
+    Type: "AWS::CloudFormation::Stack"
+    Properties:
+      TemplateURL:
+        !Join [
+          "/",
+          [
+            "https://s3.amazonaws.com",
+            !FindInMap ["SourceCode", "General", "S3Bucket"],
+            !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
+            "string.template",
+          ],
+        ]
+
   MediaInsightsWebApp:
     Condition: DeployDemoSiteCondition
     DependsOn:
+      - StringFunctions
       - Analytics
       - MediaInsightsWorkflowApi
       - MediaInsightsDataplaneApiStack

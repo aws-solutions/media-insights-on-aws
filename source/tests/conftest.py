@@ -64,7 +64,7 @@ def stack_resources(testing_env_variables):
     assert "TestStack" in resources
 
     api_endpoint_regex = ".*.execute-api."+testing_env_variables['REGION']+".amazonaws.com/api/.*"
-    
+
     assert re.match(api_endpoint_regex, resources["DataplaneApiEndpoint"])
     assert re.match(api_endpoint_regex, resources["WorkflowApiEndpoint"])
 
@@ -86,7 +86,7 @@ def stack_resources(testing_env_variables):
     assert "TextSyncOKLambda" in resources
     assert "TextAsyncOKLambda" in resources
     assert "TextAsyncOKMonitorLambda" in resources
-    
+
     return resources
 
 # This fixture uploads the sample media objects for testing.
@@ -101,7 +101,6 @@ def upload_media(testing_env_variables):
     s3.upload_file(testing_env_variables['SAMPLE_IMAGE'], testing_env_variables['BUCKET_NAME'], testing_env_variables['SAMPLE_IMAGE'])
     s3.upload_file(testing_env_variables['SAMPLE_FACE_IMAGE'], testing_env_variables['BUCKET_NAME'], testing_env_variables['SAMPLE_FACE_IMAGE'])
     s3.upload_file(testing_env_variables['SAMPLE_VIDEO'], testing_env_variables['BUCKET_NAME'], testing_env_variables['SAMPLE_VIDEO'])
-    subprocess.run(["aws", "s3", "ls", "s3://"+testing_env_variables['BUCKET_NAME'], "--region", testing_env_variables['REGION']])
     # Wait for fixture to go out of scope:
     yield upload_media
 
@@ -149,7 +148,7 @@ class API:
         body = {
             "Name":"MaxConcurrentWorkflows",
             "Value": max_concurrent
-        } 
+        }
 
         print ("POST /system/configuration {}".format(json.dumps(body)))
         set_configuration_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/system/configuration', headers=headers, json=body, verify=False)
@@ -158,15 +157,15 @@ class API:
 
     def get_configuration_request(self):
         headers = {"Authorization": self.env_vars['token']}
-        
+
         get_configuration_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/system/configuration', verify=False, headers=headers)
 
         return get_configuration_response
 
     def create_operation_request(self, config):
-        
+
         start_lambda = config["Input"]+config["Type"]+config["Status"]+"Lambda"
-        
+
         headers = {"Content-Type": "application/json", "Authorization": self.env_vars['token']}
         body = {
             "StartLambdaArn": self.stack_resources[start_lambda],
@@ -177,7 +176,7 @@ class API:
             "StateMachineExecutionRoleArn": self.stack_resources["StepFunctionRole"],
             "Type": config["Type"],
             "Name": config["Name"]
-        }   
+        }
 
         if (config["Type"] == "Async"):
             monitor_lambda = config["Input"]+config["Type"]+config["Status"]+"MonitorLambda"
@@ -216,10 +215,10 @@ class API:
             "Stages": {
                 operation["StageName"]: {
                     "End": True
-                    
+
                 }
             }
-        } 
+        }
 
         print ("POST /workflow {}".format(json.dumps(body)))
         create_workflow_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/workflow', headers=headers, json=body, verify=False)
@@ -234,48 +233,49 @@ class API:
         return delete_workflow_response
 
     def create_workflow_execution_request(self, workflow, config):
-        
+
         headers = {"Content-Type": "application/json", "Authorization": self.env_vars['token']}
-        
         body = {
             "Name": workflow["Name"],
             "Input": {
                 "Media": {
-                    
                 }
             }
-            
         }
 
         if "WorkflowConfiguration" in config:
             body["Configuration"] = config["WorkflowConfiguration"]
-
+        s3 = boto3.client('s3', region_name=self.env_vars['REGION'])
         if config["Input"] == "Video":
             body["Input"]["Media"]["Video"] = {}
             body["Input"]["Media"]["Video"]["S3Bucket"] = self.env_vars['BUCKET_NAME']
             body["Input"]["Media"]["Video"]["S3Key"] = self.env_vars['SAMPLE_VIDEO']
-        elif config["Input"] == "Audio": 
+            s3.upload_file(self.env_vars['SAMPLE_VIDEO'], self.env_vars['BUCKET_NAME'], self.env_vars['SAMPLE_VIDEO'])
+        elif config["Input"] == "Audio":
             body["Input"]["Media"]["Audio"] = {}
             body["Input"]["Media"]["Audio"]["S3Bucket"] = self.env_vars['BUCKET_NAME']
             body["Input"]["Media"]["Audio"]["S3Key"] = self.env_vars['SAMPLE_AUDIO']
-        elif config["Input"] == "Image": 
+            s3.upload_file(self.env_vars['SAMPLE_AUDIO'], self.env_vars['BUCKET_NAME'], self.env_vars['SAMPLE_AUDIO'])
+        elif config["Input"] == "Image":
             body["Input"]["Media"]["Image"] = {}
             body["Input"]["Media"]["Image"]["S3Bucket"] = self.env_vars['BUCKET_NAME']
             body["Input"]["Media"]["Image"]["S3Key"] = self.env_vars['SAMPLE_IMAGE']
-        elif config["Input"] == "Text": 
+            s3.upload_file(self.env_vars['SAMPLE_IMAGE'], self.env_vars['BUCKET_NAME'], self.env_vars['SAMPLE_IMAGE'])
+        elif config["Input"] == "Text":
             body["Input"]["Media"]["Text"] = {}
             body["Input"]["Media"]["Text"]["S3Bucket"] = self.env_vars['BUCKET_NAME']
             body["Input"]["Media"]["Text"]["S3Key"] = self.env_vars['SAMPLE_TEXT']
+            s3.upload_file(self.env_vars['SAMPLE_TEXT'], self.env_vars['BUCKET_NAME'], self.env_vars['SAMPLE_TEXT'])
 
         print ("POST /workflow/execution {}".format(json.dumps(body)))
-        
+
         create_workflow_execution_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/execution', headers=headers, json=body, verify=False)
 
         return create_workflow_execution_response
 
     def wait_for_workflow_execution(self, workflow_execution, wait_seconds):
         headers = {"Authorization": self.env_vars['token']}
-        
+
         # disable unsigned HTTPS certificate warnings
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -299,13 +299,13 @@ class API:
         return workflow_execution
 
     def create_stage_request(self, config):
-        
+
         headers = {"Content-Type": "application/json", "Authorization": self.env_vars['token']}
         body = {
             "Name": config["Name"],
             "Operations": config["Operations"]
         }
-            
+
         print ("POST /workflow/stage {}".format(json.dumps(body)))
         create_stage_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/stage', headers=headers, json=body, verify=False)
 
@@ -313,14 +313,14 @@ class API:
 
     def get_stage_request(self, stage):
         headers = {"Authorization": self.env_vars['token']}
-        
+
         get_stage_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/stage/'+stage["Name"], verify=False, headers=headers)
 
         return get_stage_response
 
     def delete_stage_request(self, stage):
         headers = {"Authorization": self.env_vars['token']}
-        
+
         delete_stage_response = requests.delete(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/stage/'+stage["Name"], verify=False, headers=headers)
 
         return delete_stage_response
@@ -334,10 +334,10 @@ class API:
             "Stages": {
                 stage["Name"]: {
                     "End": True
-                    
+
                 }
             }
-        } 
+        }
 
         print ("POST /workflow {}".format(json.dumps(body)))
         create_workflow_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/workflow', headers=headers, json=body, verify=False)
@@ -351,7 +351,7 @@ class API:
         body = {
             "Name": workflow_config["Name"],
             "StartAt": stages[0],
-        } 
+        }
 
         workflow_stages = {}
         num_stages = len(stages)
@@ -366,9 +366,9 @@ class API:
                     "Next": stages[i]
                     }
             i = i + 1
-            
+
         body["Stages"] = workflow_stages
-        
+
         print ("POST /workflow {}".format(json.dumps(body)))
         create_workflow_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/workflow', headers=headers, json=body, verify=False)
 
@@ -376,14 +376,14 @@ class API:
 
     def get_workflow_configuration_request(self, workflow):
         headers = {"Authorization": self.env_vars['token']}
-        
+
         get_workflow_configuration_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/configuration/'+workflow["Name"], verify=False, headers=headers)
 
         return get_workflow_configuration_response
 
     def delete_stage_workflow_request(self, workflow):
         headers = {"Authorization": self.env_vars['token']}
-        
+
         delete_workflow_response = requests.delete(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/'+workflow["Name"], verify=False, headers=headers)
 
         return delete_workflow_response
@@ -400,8 +400,7 @@ class API:
         }
 
         print("POST /create")
-        create_asset_response = requests.post(self.stack_resources["DataplaneApiEndpoint"] + '/create', headers=headers,
-                                            json=body, verify=False)
+        create_asset_response = requests.post(self.stack_resources["DataplaneApiEndpoint"] + '/create', headers=headers, json=body, verify=False)
         return create_asset_response
 
     def post_metadata(self, asset_id, metadata, paginate=False, end=False):
@@ -467,13 +466,13 @@ def api(stack_resources, testing_env_variables):
 def api_schema():
 
     schema_dir = "../../source/workflowapi/chalicelib/apischema"
-    
+
     schemata = {}
     for f in os.listdir(schema_dir):
-        with open(schema_dir+"/"+f) as schema_file:  
+        with open(schema_dir+"/"+f) as schema_file:
             schema = json.load(schema_file)
             schemata[schema['title']] = schema
-    
+
     return schemata
 
 # This fixture is used for testing various operation configurations.
@@ -510,7 +509,7 @@ def operations(api, session_operation_configs, api_schema):
 
     print("Creating test operations")
     for config in session_operation_configs:
-        
+
         print("\nOPERATION CONFIGURATION: {}".format(config))
 
         # Create the operation
@@ -526,7 +525,7 @@ def operations(api, session_operation_configs, api_schema):
     #     #Delete the operation
     #     operation = {}
     #     operation["Name"] = config["Name"]
-        
+
     #     delete_operation_response = api.delete_operation_request(operation)
     #     assert delete_operation_response.status_code == 200
 
@@ -537,23 +536,23 @@ def stages(api, operations, session_stage_configs, api_schema):
 
     print("Creating test stages")
     for config in session_stage_configs:
-        
+
         print("\nSTAGE CONFIGURATION: {}".format(config))
 
         # Create the stage
         create_stage_response = api.create_stage_request(config)
         stage = create_stage_response.json()
-        
+
         assert create_stage_response.status_code == 200
         validation.schema(stage, api_schema["create_stage_response"])
 
     # yield session_stage_configs
 
-    # for config in session_stage_configs:    
+    # for config in session_stage_configs:
     #     #Delete the stage
     #     stage = {}
     #     stage["Name"] = config["Name"]
-        
+
     #     delete_stage_response = api.delete_stage_request(stage)
     #     assert delete_stage_response.status_code == 200
 

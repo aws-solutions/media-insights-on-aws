@@ -37,29 +37,13 @@ import validation
 def start_frame_workflows(nframes, stack_resources, testing_env_variables):
     print("starting {} workflows".format(nframes))
 
-    body = {
-        "Name":"ImageWorkflow",
-        "Configuration": {
-            "RekognitionStage": {
-                "faceSearchImage": {
-                    "MediaType": "Image",
-                    "Enabled": False,
-                    "CollectionId": "FOO"
-                    }
-                }
-            },
-        "Input": {
-            "Media": {
-                "Image": {
-                    "S3Bucket": testing_env_variables['BUCKET_NAME'],
-                    "S3Key": testing_env_variables['SAMPLE_IMAGE']
-                    }
-                }
-            }
-        }
+    body = json.loads('{"Name":"ImageWorkflow","Configuration": {"ValidationStage": {"MediainfoImage": {"Enabled": true}},"RekognitionStage": {"faceSearchImage": {"MediaType": "Image","Enabled": false, "CollectionId": "' + testing_env_variables['FACE_COLLECTION_ID'] + '"},"labelDetectionImage": {"MediaType": "Image","Enabled": true},"celebrityRecognitionImage": {"MediaType": "Image","Enabled": true},"contentModerationImage": {"MediaType": "Image","Enabled": true},"faceDetectionImage": {"MediaType": "Image","Enabled": true}}},"Input": {"Media": {"Image": {"S3Bucket":"' + testing_env_variables['BUCKET_NAME'] +'","S3Key":"' + testing_env_variables['SAMPLE_IMAGE'] + '"}}}}')
 
     # Start nframe workflows
     for i in range(1,nframes):
+        print('uploading test media')
+        s3 = boto3.client('s3', region_name=testing_env_variables['REGION'])
+        s3.upload_file(testing_env_variables['SAMPLE_IMAGE'], testing_env_variables['BUCKET_NAME'], testing_env_variables['SAMPLE_IMAGE'])
         headers = {"Content-Type": "application/json", "Authorization": testing_env_variables['token']}
         start_request = requests.post(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution', headers=headers, json=body, verify=False)
         assert start_request.status_code == 200
@@ -143,12 +127,6 @@ def test_frame_flood(api, stack_resources, api_schema, testing_env_variables):
     # Maximum concurrent for this test
     max = 50
 
-    # Check the number of Error worklfow at start - we'll check again at the end to make sure
-    # our workflows are sucessful
-    get_workflows_by_status_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/status/Error', headers=headers, verify=False)
-    assert get_workflows_by_status_response.status_code == 200
-    start_errors = len(get_workflows_by_status_response.json())
-
     # Make sure no workflows are running
     get_workflows_by_status_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/status/Started', headers=headers, verify=False)
     num_started = len(get_workflows_by_status_response.json())
@@ -159,7 +137,12 @@ def test_frame_flood(api, stack_resources, api_schema, testing_env_variables):
         assert get_workflows_by_status_response.status_code == 200
         time.sleep(1)
 
-    for frames in [100, 200]:
+    # Check the number of failed workflows at start. We'll check again at the end to make sure our workflows are successful
+    get_workflows_by_status_response = requests.get(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/status/Error', headers=headers, verify=False)
+    assert get_workflows_by_status_response.status_code == 200
+    start_errors = len(get_workflows_by_status_response.json())
+
+    for frames in [50, 100]:
 
         print("\nTest processing {} frames with MaxConcurrentWorkflow = {}\n".format(frames, max))
 

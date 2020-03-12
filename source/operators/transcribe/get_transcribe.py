@@ -22,8 +22,7 @@ def lambda_handler(event, context):
     print("We got this event:\n", event)
     operator_object = MediaInsightsOperationHelper(event)
     # If Transcribe wasn't run due to silent audio, then we're done
-    num_audio_tracks = event["Input"]["MetaData"]["Mediainfo_num_audio_tracks"]
-    if num_audio_tracks == "0":
+    if "Mediainfo_num_audio_tracks" in event["Input"]["MetaData"] and event["Input"]["MetaData"]["Mediainfo_num_audio_tracks"] == 0:
         operator_object.update_workflow_status("Complete")
         return operator_object.return_output_object()
     try:

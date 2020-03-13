@@ -166,9 +166,9 @@ def create_system_configuration_api():
     """
 
     try:
-        config = app.current_request.json_body
+        config = json.loads(app.current_request.raw_body.decode())
 
-        logger.info(app.current_request.json_body)
+        logger.info(json.loads(app.current_request.raw_body.decode()))
         system_table = DYNAMO_RESOURCE.Table(SYSTEM_TABLE_NAME)
 
         # Check allowed values for known configuration parameters
@@ -300,9 +300,9 @@ def create_operation_api():
 
     operation = None
 
-    operation = app.current_request.json_body
+    operation = json.loads(app.current_request.raw_body.decode())
 
-    logger.info(app.current_request.json_body)
+    logger.info(json.loads(app.current_request.raw_body.decode()))
 
     operation = create_operation(operation)
 
@@ -890,9 +890,9 @@ def create_stage_api():
 
     stage = None
 
-    stage = app.current_request.json_body
+    stage = json.loads(app.current_request.raw_body.decode())
 
-    logger.info(app.current_request.json_body)
+    logger.info(json.loads(app.current_request.raw_body.decode()))
 
     stage = create_stage(stage)
 
@@ -1240,7 +1240,7 @@ def create_workflow_api():
         500: Internal server error
     """
 
-    workflow = app.current_request.json_body
+    workflow = json.loads(app.current_request.raw_body.decode())
     logger.info(json.dumps(workflow))
 
     return create_workflow("api", workflow)
@@ -1471,7 +1471,7 @@ def update_workflow_api():
         400: Bad Request - one of the input stages was not found or was invalid
         500: Internal server error
     """
-    workflow = app.current_request.json_body
+    workflow = json.loads(app.current_request.raw_body.decode())
     logger.info(json.dumps(workflow))
 
     return update_workflow("api", workflow)
@@ -1817,8 +1817,7 @@ def create_workflow_execution_api():
         500: Internal server error
     """
 
-    logger.info(app.current_request.json_body)
-    workflow_execution = app.current_request.json_body
+    workflow_execution = json.loads(app.current_request.raw_body.decode())
 
     return create_workflow_execution("api", workflow_execution)
 
@@ -1829,12 +1828,11 @@ def create_workflow_execution(trigger, workflow_execution):
 
     create_asset = None
 
-
+    logger.info('create_workflow_execution workflow config: ' + str(workflow_execution))
     if "Input" in workflow_execution and "Media" in workflow_execution["Input"]:
         create_asset = True
     else:
         create_asset = False
-
     try:
         Name = workflow_execution["Name"]
 
@@ -1957,12 +1955,12 @@ def initialize_workflow_execution(trigger, Name, input, Configuration, asset_id)
     for stage, sconfig in Configuration.items():
         if stage in workflow["Stages"]:
             for operation, oconfig in sconfig.items():
-                    if operation in workflow["Stages"][stage]["Configuration"]:
-                        for key, value in oconfig.items():
-                            workflow["Stages"][stage]["Configuration"][operation][key] = value
-                    else:
-                        workflow_execution["Workflow"] = None
-                        raise ChaliceViewError("Exception: Invalid operation '%s'" % operation)
+                if operation in workflow["Stages"][stage]["Configuration"]:
+                    for key, value in oconfig.items():
+                        workflow["Stages"][stage]["Configuration"][operation][key] = value
+                else:
+                    workflow_execution["Workflow"] = None
+                    raise ChaliceViewError("Exception: Invalid operation '%s'" % operation)
         else:
             workflow_execution["Workflow"] = None
             raise ChaliceViewError("Exception: Invalid stage found in Configuration '%s'" % stage)
@@ -2410,13 +2408,3 @@ def send_response(event, context, response_status, response_data):
 def timeout_handler(_signal, _frame):
     '''Handle SIGALRM'''
     raise Exception('Time exceeded')
-
-
-
-
-
-
-
-
-
-

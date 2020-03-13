@@ -192,8 +192,8 @@ def upload():
     max_upload_size = 5368709120
     try:
         response = s3.generate_presigned_post(
-            Bucket=(app.current_request.json_body['S3Bucket']),
-            Key=(app.current_request.json_body['S3Key']),
+            Bucket=(json.loads(app.current_request.raw_body.decode())['S3Bucket']),
+            Key=(json.loads(app.current_request.raw_body.decode())['S3Key']),
             Conditions=[["content-length-range", 0, max_upload_size ]],
             ExpiresIn=3600
         )
@@ -227,8 +227,8 @@ def download():
     # expire the URL in
     try:
         response = s3.generate_presigned_url('get_object',
-                                             Params={'Bucket': app.current_request.json_body['S3Bucket'],
-                                                     'Key': app.current_request.json_body['S3Key']},
+                                             Params={'Bucket': json.loads(app.current_request.raw_body.decode())['S3Bucket'],
+                                                     'Key': json.loads(app.current_request.raw_body.decode())['S3Key']},
                                              ExpiresIn=3600)
     except ClientError as e:
         logging.info(e)
@@ -301,7 +301,7 @@ def create_asset():
     bucket = dataplane_s3_bucket
     uri = base_s3_uri
 
-    asset = app.current_request.json_body
+    asset = json.loads(app.current_request.raw_body.decode())
     logger.info(asset)
 
     # create a uuid for the asset
@@ -437,7 +437,7 @@ def put_asset_metadata(asset_id):
     table_name = dataplane_table_name
     asset = asset_id
 
-    body = app.current_request.json_body
+    body = json.loads(app.current_request.raw_body.decode())
     query_params = app.current_request.query_params
 
     paginated = False

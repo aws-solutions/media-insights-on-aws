@@ -186,17 +186,11 @@ The Media Insights Engine is built to be extended for new use cases. You can:
 * Create new workflows using the existing operators and/or your own operators.
 * Add new data consumers to provide data management that suits the needs of your application.
 
-See the [Developer Guide](DEVELOPER_QUICK_START.md) for more information on extending the application for a custom use case.
-
-API Reference - Coming soon!
-
-Builder's guide - Coming soon!
+See the [Implementation Guide](https://github.com/awslabs/aws-media-insights-engine/blob/master/IMPLEMENTATION_GUIDE.md) for the MIE API reference and builder's guide.
 
 # Known Issues
 
 Visit the Issue page in this repository for known issues and feature requests.
-
-# Release History
 
 # Contributing
 
@@ -206,6 +200,6 @@ See the [CONTRIBUTING](CONTRIBUTING.md) file for how to contribute.
 
 See the [LICENSE](LICENSE) file for our project's licensing.
 
-Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 

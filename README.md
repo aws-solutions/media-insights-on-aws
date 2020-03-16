@@ -56,7 +56,7 @@ Translate ($0.000015 per character)
 [Elasticsearch](https://aws.amazon.com/elasticsearch-service/pricing/)(r4.large.elasticsearch) $0.196 per Hour
 [S3](https://aws.amazon.com/s3/pricing/) $0.023 per GB
 
-# Lambda, API Gateway, DynamoDB, and DynamoDB Streams 
+## Lambda, API Gateway, DynamoDB, and DynamoDB Streams 
 The free-tier for Lambda, API Gateway, DynamoDB, and DynamoDB Streams should cover most common MIE use cases.
 
 ## Pricing Example:

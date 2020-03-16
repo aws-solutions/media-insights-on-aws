@@ -705,6 +705,8 @@ zip -q -r9 start_label_detection.zip start_label_detection.py
 zip -q -r9 check_label_detection_status.zip check_label_detection_status.py
 zip -q -r9 start_person_tracking.zip start_person_tracking.py
 zip -q -r9 check_person_tracking_status.zip check_person_tracking_status.py
+zip -q -r9 start_text_detection.zip start_text_detection.py
+zip -q -r9 check_text_detection_status.zip check_text_detection_status.py
 
 mv -f ./*.zip "$dist_dir"
 

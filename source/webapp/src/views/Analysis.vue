@@ -46,6 +46,10 @@
                             title="Faces"
                             @click="currentView = 'FaceDetection'"
                           />
+                          <b-tab
+                            title="Words"
+                            @click="currentView = 'TextDetection'"
+                          />
                         </b-tabs>
                       </div>
                     </b-row>
@@ -161,7 +165,14 @@
         }),
         loading: Loading,
       }),
-
+      TextDetection: () => ({
+        component: new Promise(function(resolve) {
+          setTimeout(function() {
+            resolve(import('@/components/TextDetection.vue'));
+        }, 1000);
+        }),
+        loading: Loading,
+      }),
       ContentModeration: () => ({
         component: new Promise(function(resolve) {
           setTimeout(function() {

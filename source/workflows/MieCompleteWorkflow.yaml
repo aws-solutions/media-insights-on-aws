@@ -36,6 +36,8 @@ Resources:
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:PersonTracking"
         - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:TextDetection"
+        - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:Mediaconvert"
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:Thumbnail"

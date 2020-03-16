@@ -850,6 +850,63 @@ Resources:
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
 
+
+  startTextDetection:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "start_text_detection.lambda_handler"
+      Layers:
+        - !Ref MediaInsightsEnginePython37Layer
+      Role: !GetAtt "rekognitionRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "start_text_detection.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Environment:
+        Variables:
+          REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          OPERATOR_NAME: "textDetection"
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+
+  checkTextDetection:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "check_text_detection_status.lambda_handler"
+      Layers:
+        - !Ref MediaInsightsEnginePython37Layer
+      Role: !GetAtt "rekognitionRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "check_text_detection_status.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Timeout: 240
+      MemorySize: 256
+      Environment:
+        Variables:
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          OPERATOR_NAME: "textDetection"
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+
+
   startLabelDetection:
     Type: "AWS::Lambda::Function"
     Properties:
@@ -1549,6 +1606,29 @@ Resources:
       MonitorLambdaArn: !GetAtt checkLabelDetection.Arn
       StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
+  textDetectionOperation:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "textDetection"
+      Type: "Async"
+      Configuration: { "MediaType": "Video", "Enabled": true }
+      StartLambdaArn: !GetAtt startTextDetection.Arn
+      MonitorLambdaArn: !GetAtt checkTextDetection.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
+  textDetectionOperationImage:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "textDetectionImage"
+      Type: "Sync"
+      Configuration: { "MediaType": "Image", "Enabled": true }
+      StartLambdaArn: !GetAtt startTextDetection.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
   labelDetectionOperationImage:
     Type: Custom::CustomResource
     Properties:
@@ -1667,6 +1747,11 @@ Outputs:
     Value: !GetAtt labelDetectionOperation.Name
     Export:
       Name: !Join [":", [!Ref "AWS::StackName", LabelDetection]]
+  TextDetection:
+    Description: "Text detection operator"
+    Value: !GetAtt textDetectionOperation.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", TextDetection]]
   PersonTracking:
     Description: "Person tracking"
     Value: !GetAtt personTrackingOperation.Name
@@ -1699,5 +1784,10 @@ Outputs:
     Value: !GetAtt labelDetectionOperationImage.Name
     Export:
       Name: !Join [":", [!Ref "AWS::StackName", LabelDetectionImage]]
+  TextDetectionOperationImage:
+    Description: "Text Detection image operator"
+    Value: !GetAtt textDetectionOperationImage.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", TextDetectionImage]]
   StackName:
     Value: !Ref AWS::StackName

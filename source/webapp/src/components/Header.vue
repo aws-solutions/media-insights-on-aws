@@ -6,7 +6,7 @@
       variant="dark"
     >
       <b-navbar-brand to="/">
-        Media Insights Engine
+        AWS Content Analysis
       </b-navbar-brand>
       <b-navbar-toggle target="nav-collapse" />
 

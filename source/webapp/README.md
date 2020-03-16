@@ -65,6 +65,9 @@ npm install
 npm run serve
 ```
 
+Note, hot-reload won't work when webpack-subresource-integrity is enabled. To disable it, set the `enabled` property for the SriPlugin to false in `vue.config.js`.  
+
+
 ### Define CORS policy to allow uploads to DATAPLANE_BUCKET
 
 Files will not upload through the MIE webapp until you add a CORS rule to the DATAPLANE_BUCKET for the IP address that the webapp is running on. If you run the webapp on localhost or from AWS CloudFront then add CORS rules like this:

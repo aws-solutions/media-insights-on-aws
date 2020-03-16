@@ -7,8 +7,7 @@
 # PURPOSE: This script runs our pytest regression test suite.
 #
 # PRELIMINARY:
-#  You must have a functioning MIE deployment. The `./deploy.sh` script may
-#  help you do that easily.
+#  You must have a functioning MIE deployment.
 #
 # USAGE:
 #  ./run_tests.sh
@@ -87,7 +86,6 @@ export FACE_COLLECTION_ID="temporary_face_collection"
 echo "------------------------------------------------------------------------------"
 echo "Running tests"
 pytest -s -W ignore::DeprecationWarning -p no:cacheprovider
-#python -m py.test -s -W ignore::DeprecationWarning -p no:cacheprovider
 
 echo "------------------------------------------------------------------------------"
 echo "Cleaning up"

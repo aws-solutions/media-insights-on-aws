@@ -56,7 +56,7 @@ HISTORY_TABLE_NAME = os.environ["HISTORY_TABLE_NAME"]
 STAGE_EXECUTION_QUEUE_URL = os.environ["STAGE_EXECUTION_QUEUE_URL"]
 STAGE_EXECUTION_ROLE = os.environ["STAGE_EXECUTION_ROLE"]
 # FIXME testing NoQ execution
-COMPLETE_STAGE_LAMBDA_ARN = os.environ["COMPLETE_STAGE_LAMBDA_ARN"] 
+COMPLETE_STAGE_LAMBDA_ARN = os.environ["COMPLETE_STAGE_LAMBDA_ARN"]
 FILTER_OPERATION_LAMBDA_ARN = os.environ["FILTER_OPERATION_LAMBDA_ARN"]
 OPERATOR_FAILED_LAMBDA_ARN = os.environ["OPERATOR_FAILED_LAMBDA_ARN"]
 WORKFLOW_SCHEDULER_LAMBDA_ARN = os.environ["WORKFLOW_SCHEDULER_LAMBDA_ARN"]
@@ -118,35 +118,35 @@ SCHEMA = load_apischema()
 def index():
     return {'hello': 'world'}
 
-############################################################################## 
-#   ____            _                   ____       _               
-#  / ___| _   _ ___| |_ ___ _ __ ___   / ___|  ___| |_ _   _ _ __  
-#  \___ \| | | / __| __/ _ \ '_ ` _ \  \___ \ / _ \ __| | | | '_ \ 
+##############################################################################
+#   ____            _                   ____       _
+#  / ___| _   _ ___| |_ ___ _ __ ___   / ___|  ___| |_ _   _ _ __
+#  \___ \| | | / __| __/ _ \ '_ ` _ \  \___ \ / _ \ __| | | | '_ \
 #   ___) | |_| \__ \ ||  __/ | | | | |  ___) |  __/ |_| |_| | |_) |
-#  |____/ \__, |___/\__\___|_| |_| |_| |____/ \___|\__|\__,_| .__/ 
-#         |___/                                             |_|    
+#  |____/ \__, |___/\__\___|_| |_| |_| |____/ \___|\__|\__,_| .__/
+#         |___/                                             |_|
 #
 ##############################################################################
 @app.route('/system/configuration', cors=True, methods=['POST'], authorizer=authorizer)
 def create_system_configuration_api():
     """ Add a new system configuration parameter
-    
+
     - Updates the MIE system configuration with a new parameter or changes the value of
-      existing parameters 
-    
+      existing parameters
+
     Body:
 
     .. code-block:: python
 
         {
             "Name": "ParameterName",
-            "Value": "ParameterValue" 
+            "Value": "ParameterValue"
         }
 
     Supported parameters:
 
         MaxConcurrentWorkflows
-            
+
             Sets the maximum number of workflows that are allowed to run concurrently.
             Any new workflows that are added after MaxConcurrentWorkflows is reached are
             placed on a queue until capacity is freed by completing workflows.  Use this
@@ -160,15 +160,15 @@ def create_system_configuration_api():
 
     Raises:
         200: The system configuration was set successfully successfully.
-        400: Bad Request 
+        400: Bad Request
              - an input value is invalid
-        500: Internal server error 
+        500: Internal server error
     """
 
     try:
-        config = app.current_request.json_body
+        config = json.loads(app.current_request.raw_body.decode())
 
-        logger.info(app.current_request.json_body)
+        logger.info(json.loads(app.current_request.raw_body.decode()))
         system_table = DYNAMO_RESOURCE.Table(SYSTEM_TABLE_NAME)
 
         # Check allowed values for known configuration parameters
@@ -186,11 +186,11 @@ def create_system_configuration_api():
 @app.route('/system/configuration', cors=True, methods=['GET'], authorizer=authorizer)
 def get_system_configuration_api():
     """ Get the current MIE system configuration
-    
+
     - Gets the current MIE system configuration parameter settings
 
     Returns:
-        A list of dict containing the current MIE system configuration key-value pairs. 
+        A list of dict containing the current MIE system configuration key-value pairs.
 
         .. code-block:: python
 
@@ -202,7 +202,7 @@ def get_system_configuration_api():
 
     Raises:
         200: The system configuration was returned successfully.
-        500: Internal server error 
+        500: Internal server error
     """
 
     try:
@@ -212,7 +212,7 @@ def get_system_configuration_api():
         # Check if any configuration has been added yet
         response = system_table.scan(
             ConsistentRead=True)
-    
+
     except Exception as e:
         logger.info("Exception {}".format(e))
         operation = None
@@ -232,21 +232,21 @@ def get_system_configuration_api():
 @app.route('/workflow/operation', cors=True, methods=['POST'], authorizer=authorizer)
 def create_operation_api():
     """ Create a new operation
-    
-    - Generates an operation state machine using the operation lambda(s) provided 
-    - Creates a singleton operator stage that can be used to run the operator as a single-operator 
+
+    - Generates an operation state machine using the operation lambda(s) provided
+    - Creates a singleton operator stage that can be used to run the operator as a single-operator
       stage in a workflow.
 
-    Operators can be synchronous (Sync) or asynchronous (Async). Synchronous operators complete 
-    before returning control to the invoker, while asynchronous operators return control to the invoker 
-    when the operation is successfully initiated, but not complete. Asynchronous operators require 
+    Operators can be synchronous (Sync) or asynchronous (Async). Synchronous operators complete
+    before returning control to the invoker, while asynchronous operators return control to the invoker
+    when the operation is successfully initiated, but not complete. Asynchronous operators require
     an additional monitoring task to check the status of the operation.
 
     For more information on how to implemenent lambdas to be used in MIE operators, please
     refer to the MIE Developer Quick Start.
-      
-       
-    
+
+
+
     Body:
 
     .. code-block:: python
@@ -267,7 +267,7 @@ def create_operation_api():
             }
 
     Returns:
-        A dict mapping keys to the corresponding operation. 
+        A dict mapping keys to the corresponding operation.
 
         .. code-block:: python
 
@@ -290,19 +290,19 @@ def create_operation_api():
 
     Raises:
         200: The operation and stage was created successfully.
-        400: Bad Request 
+        400: Bad Request
              - one of the input lambdas was not found
              - one or more of the required input keys is missing
              - an input value is invalid
         409: Conflict
-        500: Internal server error 
+        500: Internal server error
     """
 
     operation = None
 
-    operation = app.current_request.json_body
+    operation = json.loads(app.current_request.raw_body.decode())
 
-    logger.info(app.current_request.json_body)
+    logger.info(json.loads(app.current_request.raw_body.decode()))
 
     operation = create_operation(operation)
 
@@ -318,7 +318,7 @@ def create_operation(operation):
 
         validate(instance=operation, schema=SCHEMA["create_operation_request"])
         logger.info("Operation schema is valid")
-        
+
         Name = operation["Name"]
 
         # FIXME - can jsonschema validate this?
@@ -340,7 +340,7 @@ def create_operation(operation):
             raise ConflictError(
                 "A operation with the name '%s' already exists" % Name)
 
-        # Build the operation state machine. 
+        # Build the operation state machine.
 
         if operation["Type"] == "Async":
             operationAsl = ASYNC_OPERATION_ASL
@@ -394,7 +394,7 @@ def create_operation(operation):
 
             operation_table.put_item(Item=operation)
 
-        
+
         except Exception as e:
             logger.error("Error creating default stage for operation {}: {}".format(operation["Name"], e))
             response = operation_table.delete_item(
@@ -406,10 +406,10 @@ def create_operation(operation):
 
     except ConflictError as e:
         logger.error ("got CoonflictError: {}".format (e))
-        raise 
+        raise
     except ValidationError as e:
         logger.error("got bad request error: {}".format(e))
-        raise BadRequestError(e) 
+        raise BadRequestError(e)
     except Exception as e:
         logger.info("Exception {}".format(e))
         operation = None
@@ -461,7 +461,7 @@ ASYNC_OPERATION_ASL =         {
                 "ResultPath": "$.Outputs"
             }
             ]
-            
+
         },
         "Skip %%OPERATION_NAME%%? (%%STAGE_NAME%%)": {
             "Type": "Choice",
@@ -586,7 +586,7 @@ SYNC_OPERATION_ASL = {
                 "ResultPath": "$.Outputs"
             }
             ]
-            
+
         },
         "Skip %%OPERATION_NAME%%? (%%STAGE_NAME%%)": {
             "Type": "Choice",
@@ -653,7 +653,7 @@ SYNC_OPERATION_ASL = {
 
 @app.route('/workflow/operation', cors=True, methods=['PUT'], authorizer=authorizer)
 def update_operation():
-    """ Update operation NOT IMPLEMENTED 
+    """ Update operation NOT IMPLEMENTED
 
     """
     operation = {"Message": "Update on stages in not implemented"}
@@ -669,7 +669,7 @@ def list_operations():
 
     Raises:
         200: All operations returned sucessfully.
-        500: Internal server error 
+        500: Internal server error
     """
 
     table = DYNAMO_RESOURCE.Table(OPERATION_TABLE_NAME)
@@ -693,7 +693,7 @@ def get_operation_by_name(Name):
     Raises:
         200: All operations returned sucessfully.
         404: Not found
-        500: Internal server error 
+        500: Internal server error
     """
     operation_table = DYNAMO_RESOURCE.Table(OPERATION_TABLE_NAME)
     operation = None
@@ -715,12 +715,12 @@ def get_operation_by_name(Name):
 def delete_operation_api(Name):
     """ Delete a an operation
 
-    Returns:  
+    Returns:
 
     Raises:
         200: Operation deleted sucessfully.
         400: Bad Request - there are dependent workflows and query parameter force=false
-        500: Internal server error 
+        500: Internal server error
     """
     Force = False
     params = app.current_request.query_params
@@ -732,7 +732,7 @@ def delete_operation_api(Name):
 
     return operation
 
-    
+
 def delete_operation(Name, Force):
 
     table = DYNAMO_RESOURCE.Table(OPERATION_TABLE_NAME)
@@ -765,25 +765,25 @@ def delete_operation(Name, Force):
 
             operation = response["Item"]
 
-            delete_stage(operation["StageName"], True)  
+            delete_stage(operation["StageName"], True)
 
             response = table.delete_item(
                 Key={
                     'Name': Name
                 })
 
-            # Flag dependent workflows 
+            # Flag dependent workflows
             flag_operation_dependent_workflows(Name)
 
         else:
 
             operation["Message"] = "Warning: operation '{}' not found".format(Name)
             # raise NotFoundError(
-            #    "Exception: operation '%s' not found" % Name) 
+            #    "Exception: operation '%s' not found" % Name)
 
     except BadRequestError as e:
         logger.error("got bad request error: {}".format(e))
-        raise 
+        raise
     except Exception as e:
 
         operation = None
@@ -809,10 +809,10 @@ def flag_operation_dependent_workflows(OperationName):
                 },
                 ReturnValues="UPDATED_NEW"
             )
-        
+
     except Exception as e:
 
-        
+
         logger.info("Exception flagging workflows dependent on dropped operations {}".format(e))
         raise ChaliceViewError("Exception: '%s'" % e)
 
@@ -830,11 +830,11 @@ def flag_operation_dependent_workflows(OperationName):
 
 @app.route('/workflow/stage', cors=True, methods=['POST'], authorizer=authorizer)
 def create_stage_api():
-    """ Create a stage state machine from a list of existing operations.  
-    
+    """ Create a stage state machine from a list of existing operations.
+
     A stage is a set of operations that are grouped so they can be executed in parallel.
     When the stage is executed as part of a workflow, operations within a stage are executed as
-    branches in a parallel Step Functions state.  The generated state machines status is tracked by the 
+    branches in a parallel Step Functions state.  The generated state machines status is tracked by the
     workflow engine control plane during execution.
 
     An optional Configuration for each operator in the stage can be input to override the
@@ -850,14 +850,14 @@ def create_stage_api():
             }
 
     Returns:
-        A dict mapping keys to the corresponding stage created including 
-        the ARN of the state machine created. 
+        A dict mapping keys to the corresponding stage created including
+        the ARN of the state machine created.
 
         {
             "Name": string,
             "Operations": [
                 "operation-name1",
-                "operation-name2", 
+                "operation-name2",
                 ...
             ],
             "Configuration": {
@@ -885,14 +885,14 @@ def create_stage_api():
         200: The stage was created successfully.
         400: Bad Request - one of the input state machines was not found or was invalid
         409: Conflict
-        500: Internal server error 
+        500: Internal server error
     """
 
     stage = None
 
-    stage = app.current_request.json_body
+    stage = json.loads(app.current_request.raw_body.decode())
 
-    logger.info(app.current_request.json_body)
+    logger.info(json.loads(app.current_request.raw_body.decode()))
 
     stage = create_stage(stage)
 
@@ -905,7 +905,7 @@ def create_stage(stage):
         Configuration = {}
 
         logger.info(stage)
-        
+
         validate(instance=stage, schema=SCHEMA["create_stage_request"])
         logger.info("Stage schema is valid")
 
@@ -922,11 +922,11 @@ def create_stage(stage):
             raise ConflictError(
                 "A stage with the name '%s' already exists" % Name)
 
-        # Build the stage state machine.  The stage machine consists of a parallel state with 
-        # branches for each operator and a call to the stage completion lambda at the end.  
+        # Build the stage state machine.  The stage machine consists of a parallel state with
+        # branches for each operator and a call to the stage completion lambda at the end.
         # The parallel state takes a stage object as input.  Each
-        # operator returns and operatorOutput object. The outputs for each operator are 
-        # returned from the parallel state as elements of the "outputs" array.    
+        # operator returns and operatorOutput object. The outputs for each operator are
+        # returned from the parallel state as elements of the "outputs" array.
         stageAsl = {
             "StartAt": "Preprocess Media",
             "States": {
@@ -948,7 +948,7 @@ def create_stage(stage):
             ]
         }
 
-        # Add a branch to the stage state machine for each operation, build up default 
+        # Add a branch to the stage state machine for each operation, build up default
         # Configuration for the stage based on the operator Configuration
 
         for op in stage["Operations"]:
@@ -961,7 +961,7 @@ def create_stage(stage):
             Configuration[op] = operation["Configuration"]
 
             stageStateMachineExecutionRoleArn = operation["StateMachineExecutionRoleArn"]
-        
+
         stageAslString = json.dumps(stageAsl)
         stageAslString = stageAslString.replace("%%STAGE_NAME%%", stage["Name"])
         stageAsl = json.loads(stageAslString)
@@ -990,7 +990,7 @@ def create_stage(stage):
         stage["ApiVersion"] = API_VERSION
 
         stage_table.put_item(Item=stage)
-    
+
     except ValidationError as e:
         logger.error("got bad request error: {}".format(e))
         raise BadRequestError(e)
@@ -1004,7 +1004,7 @@ def create_stage(stage):
 
 @app.route('/workflow/stage', cors=True, methods=['PUT'], authorizer=authorizer)
 def update_stage():
-    """ Update a stage NOT IMPLEMENTED 
+    """ Update a stage NOT IMPLEMENTED
 
     XXX
 
@@ -1022,7 +1022,7 @@ def list_stages():
 
     Raises:
         200: All operations returned sucessfully.
-        500: Internal server error 
+        500: Internal server error
     """
 
     table = DYNAMO_RESOURCE.Table(STAGE_TABLE_NAME)
@@ -1046,7 +1046,7 @@ def get_stage_by_name(Name):
     Raises:
         200: All stages returned sucessfully.
         404: Not found
-        500: Internal server error 
+        500: Internal server error
     """
     stage_table = DYNAMO_RESOURCE.Table(STAGE_TABLE_NAME)
     stage = None
@@ -1068,13 +1068,13 @@ def get_stage_by_name(Name):
 def delete_stage_api(Name):
     """ Delete a stage
 
-    Returns:  
+    Returns:
 
     Raises:
         200: Stage deleted sucessfully.
         400: Bad Request - there are dependent workflows and query parameter force=False
         404: Not found
-        500: Internal server error 
+        500: Internal server error
     """
     Force = False
     params = app.current_request.query_params
@@ -1117,9 +1117,9 @@ def delete_stage(Name, Force):
 
                 raise BadRequestError(Message)
 
-            
 
-            # Delete the stage state machine 
+
+            # Delete the stage state machine
             response = SFN_CLIENT.delete_state_machine(
                 stateMachineArn=stage["StateMachineArn"]
             )
@@ -1136,7 +1136,7 @@ def delete_stage(Name, Force):
 
     except BadRequestError as e:
         logger.error("got bad request error: {}".format(e))
-        raise 
+        raise
     except Exception as e:
 
         stage = None
@@ -1162,7 +1162,7 @@ def flag_stage_dependent_workflows(StageName):
                 },
                 ReturnValues="UPDATED_NEW"
             )
-        
+
     except Exception as e:
 
         logger.info("Exception flagging workflows dependent on dropped stage {}".format(e))
@@ -1181,10 +1181,10 @@ def flag_stage_dependent_workflows(StageName):
 
 @app.route('/workflow', cors=True, methods=['POST'], authorizer=authorizer)
 def create_workflow_api():
-    """ Create a workflow from a list of existing stages.  
-    
-    A workflow is a pipeline of stages that are executed sequentially to transform and 
-    extract metadata for a set of MediaType objects.  Each stage must contain either a 
+    """ Create a workflow from a list of existing stages.
+
+    A workflow is a pipeline of stages that are executed sequentially to transform and
+    extract metadata for a set of MediaType objects.  Each stage must contain either a
     "Next" key indicating the next stage to execute or and "End" key indicating it
     is the last stage.
 
@@ -1205,11 +1205,11 @@ def create_workflow_api():
                 }
             }
         }
-    
+
 
     Returns:
-        A dict mapping keys to the corresponding workflow created including the 
-        AWS resources used to execute each stage.        
+        A dict mapping keys to the corresponding workflow created including the
+        AWS resources used to execute each stage.
 
         .. code-block:: python
 
@@ -1232,15 +1232,15 @@ def create_workflow_api():
                     }
                 }
             }
-        
+
 
     Raises:
         200: The workflow was created successfully.
         400: Bad Request - one of the input stages was not found or was invalid
-        500: Internal server error 
+        500: Internal server error
     """
 
-    workflow = app.current_request.json_body
+    workflow = json.loads(app.current_request.raw_body.decode())
     logger.info(json.dumps(workflow))
 
     return create_workflow("api", workflow)
@@ -1270,7 +1270,7 @@ def create_workflow(trigger, workflow):
         checkRequiredInput("Stages", workflow, "Workflow Definition")
 
         workflow = build_workflow(workflow)
-            
+
         # Build state machine
         response = SFN_CLIENT.create_state_machine(
             name=workflow["Name"],
@@ -1282,12 +1282,12 @@ def create_workflow(trigger, workflow):
                     'value': 'mie'
                 },
             ]
-        )    
+        )
 
         workflow.pop("WorkflowAsl")
         workflow["StateMachineArn"] = response["stateMachineArn"]
 
-        
+
         workflow_table.put_item(
             Item=workflow,
             ConditionExpression="attribute_not_exists(#workflow_name)",
@@ -1308,7 +1308,7 @@ def create_workflow(trigger, workflow):
         if "StateMachineArn" in workflow:
             response = SFN_CLIENT.delete_state_machine(
             workflow["StateMachineArn"]
-        ) 
+        )
         logger.info("Exception {}".format(e))
         workflow = None
         raise ChaliceViewError("Exception '%s'" % e)
@@ -1347,7 +1347,7 @@ def build_workflow(workflow):
         s["stateMachineAsl"] = json.loads(response["definition"])
         stage.update(s)
 
-        # save the operators for this stage to the list of operators in the 
+        # save the operators for this stage to the list of operators in the
         # workflow.  This list is maintained to make finding workflows that
         # use an operator easier later
         workflow["Operations"].extend(stage["Operations"])
@@ -1406,15 +1406,15 @@ def build_workflow(workflow):
         logger.info("IN LOOP WORKFLOW")
         logger.info(json.dumps(workflowAsl))
 
-    logger.info(json.dumps(workflowAsl))  
+    logger.info(json.dumps(workflowAsl))
     workflow["WorkflowAsl"] = workflowAsl
 
     return workflow
 
 @app.route('/workflow', cors=True, methods=['PUT'], authorizer=authorizer)
 def update_workflow_api():
-    """ Update a workflow from a list of existing stages.  
-    
+    """ Update a workflow from a list of existing stages.
+
     Update the definition of an existing workflow.
 
 
@@ -1435,11 +1435,11 @@ def update_workflow_api():
                 }
             }
         }
-    
+
 
     Returns:
-        A dict mapping keys to the corresponding workflow updated including the 
-        AWS resources used to execute each stage.        
+        A dict mapping keys to the corresponding workflow updated including the
+        AWS resources used to execute each stage.
 
         .. code-block:: python
 
@@ -1464,21 +1464,21 @@ def update_workflow_api():
                     }
                 }
             }
-        
+
 
     Raises:
         200: The workflow was updated successfully.
         400: Bad Request - one of the input stages was not found or was invalid
-        500: Internal server error 
+        500: Internal server error
     """
-    workflow = app.current_request.json_body
+    workflow = json.loads(app.current_request.raw_body.decode())
     logger.info(json.dumps(workflow))
 
     return update_workflow("api", workflow)
 
 def update_workflow(trigger, new_workflow):
 
-    
+
     try:
         workflow_table = DYNAMO_RESOURCE.Table(WORKFLOW_TABLE_NAME)
         history_table = DYNAMO_RESOURCE.Table(HISTORY_TABLE_NAME)
@@ -1486,11 +1486,11 @@ def update_workflow(trigger, new_workflow):
         checkRequiredInput("Name", new_workflow, "Workflow Definition")
 
         workflow = get_workflow_by_name(new_workflow["Name"])
-        
+
         workflow["Operations"] = []
         workflow["StaleOperations"] = []
         workflow["StaleStages"] = []
-        
+
         revisions = int(workflow["Revisions"])
 
         old_version = workflow["Version"]
@@ -1504,7 +1504,7 @@ def update_workflow(trigger, new_workflow):
 
         logger.info(json.dumps(workflow))
 
-        # We rebuild the workfow regardless of whether new stages were passed in.  This will update the workflow 
+        # We rebuild the workfow regardless of whether new stages were passed in.  This will update the workflow
         # with the most recent state machine definitions for operators and stages.
         workflow = build_workflow(workflow)
 
@@ -1513,11 +1513,11 @@ def update_workflow(trigger, new_workflow):
             stateMachineArn=workflow["StateMachineArn"],
             definition=json.dumps(workflow["WorkflowAsl"]),
             roleArn=STAGE_EXECUTION_ROLE
-        )    
+        )
 
         # We saved the Asl in the state machine and we can generate it too. declutter.
         workflow.pop("WorkflowAsl")
-            
+
         workflow_table.put_item(
             Item=workflow
             # ,
@@ -1557,7 +1557,7 @@ def list_workflows():
 
     Raises:
         200: All workflows returned sucessfully.
-        500: Internal server error 
+        500: Internal server error
     """
 
     table = DYNAMO_RESOURCE.Table(WORKFLOW_TABLE_NAME)
@@ -1579,7 +1579,7 @@ def list_workflows_by_operator(OperatorName):
 
     Raises:
         200: All workflows returned sucessfully.
-        500: Internal server error 
+        500: Internal server error
     """
 
     table = DYNAMO_RESOURCE.Table(WORKFLOW_TABLE_NAME)
@@ -1604,7 +1604,7 @@ def list_workflows_by_stage(StageName):
 
     Raises:
         200: All workflows returned sucessfully.
-        500: Internal server error 
+        500: Internal server error
     """
 
     table = DYNAMO_RESOURCE.Table(WORKFLOW_TABLE_NAME)
@@ -1632,7 +1632,7 @@ def get_workflow_by_name(Name):
     Raises:
         200: All workflows returned sucessfully.
         404: Not found
-        500: Internal server error 
+        500: Internal server error
     """
     table = DYNAMO_RESOURCE.Table(WORKFLOW_TABLE_NAME)
     workflow = None
@@ -1660,7 +1660,7 @@ def get_workflow_configuration_by_name(Name):
     Raises:
         200: All workflows returned sucessfully.
         404: Not found
-        500: Internal server error 
+        500: Internal server error
     """
     table = DYNAMO_RESOURCE.Table(WORKFLOW_TABLE_NAME)
     workflow = None
@@ -1686,12 +1686,12 @@ def get_workflow_configuration_by_name(Name):
 def delete_workflow_api(Name):
     """ Delete a workflow
 
-    Returns:  
+    Returns:
 
     Raises:
         200: Workflow deleted sucessfully.
         404: Not found
-        500: Internal server error 
+        500: Internal server error
     """
 
     stage = delete_workflow(Name)
@@ -1714,7 +1714,7 @@ def delete_workflow(Name):
         if "Item" in response:
             workflow = response["Item"]
 
-            # Delete the stage state machine 
+            # Delete the stage state machine
             response = SFN_CLIENT.delete_state_machine(
                 stateMachineArn=workflow["StateMachineArn"]
             )
@@ -1751,10 +1751,10 @@ def find(key, dictionary):
 
 @app.route('/workflow/execution', cors=True, methods=['POST'], authorizer=authorizer)
 def create_workflow_execution_api():
-    """ Execute a workflow.  
-    
-    The Body contains the name of the workflow to execute, at least one input 
-    media type within the media object.  A dictionary of stage configuration 
+    """ Execute a workflow.
+
+    The Body contains the name of the workflow to execute, at least one input
+    media type within the media object.  A dictionary of stage configuration
     objects can be passed in to override the default configuration of the operations
     within the stages.
 
@@ -1782,12 +1782,12 @@ def create_workflow_execution_api():
            ...
            }
         }
-    
+
 
     Returns:
-        A dict mapping keys to the corresponding workflow execution created including 
+        A dict mapping keys to the corresponding workflow execution created including
         the WorkflowExecutionId, the AWS queue and state machine resources assiciated with
-        the workflow execution and the current execution status of the workflow. 
+        the workflow execution and the current execution status of the workflow.
 
         .. code-block:: python
 
@@ -1814,11 +1814,10 @@ def create_workflow_execution_api():
     Raises:
         200: The workflow execution was created successfully.
         400: Bad Request - the input workflow was not found or was invalid
-        500: Internal server error  
+        500: Internal server error
     """
 
-    logger.info(app.current_request.json_body)
-    workflow_execution = app.current_request.json_body
+    workflow_execution = json.loads(app.current_request.raw_body.decode())
 
     return create_workflow_execution("api", workflow_execution)
 
@@ -1829,17 +1828,16 @@ def create_workflow_execution(trigger, workflow_execution):
 
     create_asset = None
 
-
-    if "Media" in workflow_execution["Input"]:
+    logger.info('create_workflow_execution workflow config: ' + str(workflow_execution))
+    if "Input" in workflow_execution and "Media" in workflow_execution["Input"]:
         create_asset = True
     else:
         create_asset = False
-
     try:
         Name = workflow_execution["Name"]
 
         Configuration = workflow_execution["Configuration"] if "Configuration" in workflow_execution  else {}
-        
+
         # BRANDON - make an asset
         dataplane = DataPlane()
         if create_asset is True:
@@ -1921,7 +1919,7 @@ def create_workflow_execution(trigger, workflow_execution):
 
 
 def initialize_workflow_execution(trigger, Name, input, Configuration, asset_id):
-    
+
     workflow_table = DYNAMO_RESOURCE.Table(WORKFLOW_TABLE_NAME)
 
     workflow_execution = {}
@@ -1951,18 +1949,18 @@ def initialize_workflow_execution(trigger, Name, input, Configuration, asset_id)
             "Exception: workflow name '%s' not found" % Name)
 
     print(workflow)
-    # Override the default configuration with Configuration key-value pairs that are input to the 
-    # /workflow/execution API.  Update only keys that are passed in, leaving the 
+    # Override the default configuration with Configuration key-value pairs that are input to the
+    # /workflow/execution API.  Update only keys that are passed in, leaving the
     # defaults for any key that is not specified
     for stage, sconfig in Configuration.items():
         if stage in workflow["Stages"]:
             for operation, oconfig in sconfig.items():
-                    if operation in workflow["Stages"][stage]["Configuration"]:
-                        for key, value in oconfig.items():
-                            workflow["Stages"][stage]["Configuration"][operation][key] = value
-                    else:
-                        workflow_execution["Workflow"] = None
-                        raise ChaliceViewError("Exception: Invalid operation '%s'" % operation)     
+                if operation in workflow["Stages"][stage]["Configuration"]:
+                    for key, value in oconfig.items():
+                        workflow["Stages"][stage]["Configuration"][operation][key] = value
+                else:
+                    workflow_execution["Workflow"] = None
+                    raise ChaliceViewError("Exception: Invalid operation '%s'" % operation)
         else:
             workflow_execution["Workflow"] = None
             raise ChaliceViewError("Exception: Invalid stage found in Configuration '%s'" % stage)
@@ -1984,7 +1982,7 @@ def initialize_workflow_execution(trigger, Name, input, Configuration, asset_id)
 
     # setup the current stage for execution
     workflow_execution["Workflow"]["Stages"][current_stage]["Input"] = workflow_execution["Globals"]
-    
+
     workflow_execution["Workflow"]["Stages"][current_stage]["Status"] = awsmie.STAGE_STATUS_STARTED
 
     return workflow_execution
@@ -1992,7 +1990,7 @@ def initialize_workflow_execution(trigger, Name, input, Configuration, asset_id)
 
 @app.route('/workflow/execution', cors=True, methods=['PUT'], authorizer=authorizer)
 def update_workflow_execution():
-    """ Update a workflow execution NOT IMPLEMENTED 
+    """ Update a workflow execution NOT IMPLEMENTED
 
     XXX
 
@@ -2010,7 +2008,7 @@ def list_workflow_executions():
 
     Raises:
         200: All workflow executions returned sucessfully.
-        500: Internal server error 
+        500: Internal server error
     """
 
     table = DYNAMO_RESOURCE.Table(WORKFLOW_EXECUTION_TABLE_NAME)
@@ -2033,13 +2031,13 @@ def list_workflow_executions_by_status(Status):
     Raises:
         200: All workflows returned sucessfully.
         404: Not found
-        500: Internal server error 
+        500: Internal server error
     """
     table = DYNAMO_RESOURCE.Table(WORKFLOW_EXECUTION_TABLE_NAME)
     projection_expression = "Id, AssetId, CurrentStage, StateMachineExecutionArn, #workflow_status, Workflow.#workflow_name"
 
     response = table.query(
-        IndexName='WorkflowExecutionStatus', 
+        IndexName='WorkflowExecutionStatus',
         ExpressionAttributeNames={
             '#workflow_status': "Status",
             '#workflow_name': "Name"
@@ -2050,10 +2048,22 @@ def list_workflow_executions_by_status(Status):
         KeyConditionExpression='#workflow_status = :workflow_status',
         ProjectionExpression = projection_expression
         )
-    
+
     workflow_executions = response['Items']
     while 'LastEvaluatedKey' in response:
-        response = table.query(ExclusiveStartKey=response['LastEvaluatedKey'])
+        response = table.query(
+            ExclusiveStartKey=response['LastEvaluatedKey'],
+            IndexName='WorkflowExecutionStatus',
+            ExpressionAttributeNames={
+                '#workflow_status': "Status",
+                '#workflow_name': "Name"
+            },
+            ExpressionAttributeValues={
+                ':workflow_status': Status
+            },
+            KeyConditionExpression='#workflow_status = :workflow_status',
+            ProjectionExpression = projection_expression
+        )
         workflow_executions.extend(response['Items'])
 
     return workflow_executions
@@ -2068,14 +2078,14 @@ def list_workflow_executions_by_assetid(AssetId):
     Raises:
         200: Workflow executions returned sucessfully.
         404: Not found
-        500: Internal server error 
+        500: Internal server error
     """
     table = DYNAMO_RESOURCE.Table(WORKFLOW_EXECUTION_TABLE_NAME)
 
     projection_expression = "Id, AssetId, CurrentStage, StateMachineExecutionArn, #workflow_status, Workflow.#workflow_name"
 
     response = table.query(
-        IndexName='WorkflowExecutionAssetId', 
+        IndexName='WorkflowExecutionAssetId',
         ExpressionAttributeNames={
             '#workflow_status': "Status",
             '#workflow_name': "Name"
@@ -2086,10 +2096,22 @@ def list_workflow_executions_by_assetid(AssetId):
         KeyConditionExpression='AssetId = :assetid',
         ProjectionExpression = projection_expression
         )
-    
+
     workflow_executions = response['Items']
     while 'LastEvaluatedKey' in response:
-        response = table.query(ExclusiveStartKey=response['LastEvaluatedKey'])
+        response = table.query(
+            ExclusiveStartKey=response['LastEvaluatedKey'],
+            IndexName='WorkflowExecutionAssetId',
+            ExpressionAttributeNames={
+                '#workflow_status': "Status",
+                '#workflow_name': "Name"
+            },
+            ExpressionAttributeValues={
+                ':assetid': AssetId
+            },
+            KeyConditionExpression='AssetId = :assetid',
+            ProjectionExpression = projection_expression
+        )
         workflow_executions.extend(response['Items'])
 
     return workflow_executions
@@ -2104,7 +2126,7 @@ def get_workflow_execution_by_id(Id):
     Raises:
         200: Workflow executions returned sucessfully.
         404: Not found
-        500: Internal server error 
+        500: Internal server error
     """
     table = DYNAMO_RESOURCE.Table(WORKFLOW_EXECUTION_TABLE_NAME)
     workflow_execution = None
@@ -2127,12 +2149,12 @@ def get_workflow_execution_by_id(Id):
 def delete_workflow_execution(Id):
     """ Delete a workflow executions
 
-    Returns:  
+    Returns:
 
     Raises:
         200: Workflow execution deleted sucessfully.
         404: Not found
-        500: Internal server error 
+        500: Internal server error
     """
     table = DYNAMO_RESOURCE.Table(WORKFLOW_EXECUTION_TABLE_NAME)
 
@@ -2172,7 +2194,7 @@ def update_workflow_execution_status(id, status, message):
     """
     print("Update workflow execution {} set status = {}".format(id, status))
     execution_table = DYNAMO_RESOURCE.Table(WORKFLOW_EXECUTION_TABLE_NAME)
-    
+
     if status == awsmie.WORKFLOW_STATUS_ERROR:
         response = execution_table.update_item(
             Key={
@@ -2211,8 +2233,8 @@ def update_workflow_execution_status(id, status, message):
 
 
 # ================================================================================================
-#   ____          _                    ____                                    
-#   / ___|   _ ___| |_ ___  _ __ ___   |  _ \ ___  ___  ___  _   _ _ __ ___ ___ 
+#   ____          _                    ____
+#   / ___|   _ ___| |_ ___  _ __ ___   |  _ \ ___  ___  ___  _   _ _ __ ___ ___
 #  | |  | | | / __| __/ _ \| '_ ` _ \  | |_) / _ \/ __|/ _ \| | | | '__/ __/ _ \
 #  | |__| |_| \__ \ || (_) | | | | | | |  _ <  __/\__ \ (_) | |_| | | | (_|  __/
 #   \____\__,_|___/\__\___/|_| |_| |_| |_| \_\___||___/\___/ \__,_|_|  \___\___|
@@ -2386,13 +2408,3 @@ def send_response(event, context, response_status, response_data):
 def timeout_handler(_signal, _frame):
     '''Handle SIGALRM'''
     raise Exception('Time exceeded')
-
-
-
-        
-
-        
-            
-
-
-

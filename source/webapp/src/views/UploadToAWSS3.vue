@@ -12,6 +12,12 @@
       >
         {{ uploadErrorMessage }}
       </b-alert>
+      <b-alert
+        :show="showInvalidFile"
+        variant="danger"
+      >
+        {{ invalidFileMessages[invalidFileMessages.length-1] }}
+      </b-alert>
       <h1>Upload Videos</h1>
       <p>{{ description }}</p>
       <vue-dropzone
@@ -20,6 +26,8 @@
         :awss3="awss3"
         :options="dropzoneOptions"
         @vdropzone-s3-upload-error="s3UploadError"
+        @vdropzone-file-added="fileAdded"
+        @vdropzone-removed-file="fileRemoved"
         @vdropzone-success="s3UploadComplete"
         @vdropzone-sending="upload_in_progress=true"
         @vdropzone-queue-complete="upload_in_progress=false"
@@ -282,6 +290,9 @@
         sourceLanguageCode: "en",
         targetLanguageCode: "es",
         uploadErrorMessage: "",
+        invalidFileMessage: "",
+        invalidFileMessages: [],
+        showInvalidFile: false,
         dismissSecs: 8,
         dismissCountDown: 0,
         executed_assets: [],
@@ -352,13 +363,22 @@
       },
       validForm() {
         let validStatus = true;
-        if (this.textFormError || this.audioFormError || this.videoFormError) validStatus = false;
+        if (this.invalid_file_types || this.textFormError || this.audioFormError || this.videoFormError) validStatus = false;
         return validStatus;
       },
       workflowConfig() {
         return {
           "Name": "MieCompleteWorkflow",
           "Configuration": {
+            "defaultPrelimVideoStage": {
+              "Thumbnail": {
+                "ThumbnailPosition": this.thumbnail_position.toString(),
+                "Enabled": true
+              },
+              "Mediainfo": {
+                "Enabled": true
+              }
+            },
             "defaultVideoStage": {
               "faceDetection": {
                 "Enabled": this.enabledOperators.includes("faceDetection"),
@@ -370,7 +390,7 @@
                 "Enabled": this.enabledOperators.includes("labelDetection"),
               },
               "Mediaconvert": {
-                "Enabled": (this.enabledOperators.includes("Mediaconvert") || this.enabledOperators.includes("Transcribe") || this.enabledOperators.includes("Translate") || this.enabledOperators.includes("ComprehendEntities") || this.enabledOperators.includes("ComprehendKeyPhrases")),
+                "Enabled": false,
               },
               "contentModeration": {
                 "Enabled": this.enabledOperators.includes("contentModeration"),
@@ -383,10 +403,6 @@
                 "Enabled": this.enabledOperators.includes("genericDataLookup"),
                 "Bucket": this.DATAPLANE_BUCKET,
                 "Key": this.genericDataFilename==="" ? "undefined" : this.genericDataFilename
-              },
-              "Thumbnail": {
-                "ThumbnailPosition": this.thumbnail_position.toString(),
-                "Enabled": true
               }
             },
             "defaultAudioStage": {
@@ -447,6 +463,30 @@
         this.uploadErrorMessage = error;
         this.dismissCountDown = this.dismissSecs;
       },
+      fileAdded: function( file )
+      {
+        let errorMessage = '';
+        if (!(file.type).match(/image\/.+|video\/.+|application\/json/g)) {
+          if (file.type === "")
+            errorMessage = "Unsupported file type: unknown";
+          else
+            errorMessage = "Unsupported file type: " + file.type;
+          this.invalidFileMessages.push(errorMessage);
+          this.showInvalidFile = true
+        }
+      },
+      fileRemoved: function( file )
+      {
+        let errorMessage = '';
+        if (!(file.type).match(/image\/.+|video\/.+|application\/json/g)) {
+          if (file.type === "")
+            errorMessage = "Unsupported file type: unknown";
+          else
+            errorMessage = "Unsupported file type: " + file.type;
+        }
+        this.invalidFileMessages = this.invalidFileMessages.filter(function(value){ return value != errorMessage})
+        if (this.invalidFileMessages.length === 0 ) this.showInvalidFile = false;
+      },
       s3UploadComplete: async function (location) {
         const token = await this.$Amplify.Auth.currentSession().then(data =>{
           return data.getIdToken().getJwtToken();
@@ -458,10 +498,15 @@
         console.log('s3UploadComplete: ');
         console.log(s3_uri);
         let data = {};
-        if (media_type === 'image/jpeg') {
+        if (media_type.match(/image/g)) {
           data = {
             "Name": "ImageWorkflow",
             "Configuration": {
+              "ValidationStage": {
+                "MediainfoImage": {
+                  "Enabled": true
+                }
+              },
               "RekognitionStage": {
                 "faceSearchImage": {
                   "Enabled": this.enabledOperators.includes("faceSearch"),
@@ -490,7 +535,7 @@
               }
             }
           };
-        } else if (media_type === 'video/mp4') {
+        } else if (media_type.match(/video/g)) {
           data = vm.workflowConfig;
           data["Input"] = {
             "Media": {
@@ -506,7 +551,7 @@
           console.log("Data file has been uploaded to s3://" + location.s3ObjectLocation.fields.key);
           return;
         } else {
-          vm.s3UploadError("Unsupported media type, " + media_type + ". Please upload a jpg or mp4.")
+          vm.s3UploadError("Unsupported media type, " + media_type + ".")
         }
         console.log(JSON.stringify(data));
         fetch(this.WORKFLOW_API_ENDPOINT + 'workflow/execution', {

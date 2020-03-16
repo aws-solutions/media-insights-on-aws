@@ -14,7 +14,7 @@ dataplane_bucket = os.environ['DataplaneBucket']
 s3 = boto3.client('s3')
 
 # These names are the lowercase version of OPERATOR_NAME defined in /source/operators/operator-library.yaml
-supported_operators = ["transcribe", "translate", "genericdatalookup", "labeldetection", "celebrityrecognition", "facesearch", "contentmoderation", "facedetection", "key_phrases", "entities", "key_phrases"]
+supported_operators = ["mediainfo", "transcribe", "translate", "genericdatalookup", "labeldetection", "celebrityrecognition", "facesearch", "contentmoderation", "facedetection", "key_phrases", "entities", "key_phrases"]
 
 
 def normalize_confidence(confidence_value):
@@ -323,6 +323,19 @@ def process_face_detection(asset, workflow, results):
                 item["Workflow"] = workflow
                 extracted_items.append(item)
     bulk_index(es, asset, "face_detection", extracted_items)
+
+def process_mediainfo(asset, workflow, results):
+    # This function puts mediainfo data in Elasticsearch.
+    metadata = json.loads(results)
+    es = connect_es(es_endpoint)
+    extracted_items = []
+    # Objects in arrays are not well supported by Elastic, so we flatten the tracks array here.
+    if isinstance(metadata['tracks'], list):
+        for item in metadata['tracks']:
+            item["Operator"] = "mediainfo"
+            item["Workflow"] = workflow
+            extracted_items.append(item)
+    bulk_index(es, asset, "mediainfo", extracted_items)
 
 def process_generic_data(asset, workflow, results):
     # This function puts generic data in Elasticsearch.
@@ -723,6 +736,8 @@ def lambda_handler(event, context):
                             process_transcribe(asset_id, workflow, metadata["Results"])
                         if operator == "translate":
                             process_translate(asset_id, workflow, metadata["Results"])
+                        if operator == "mediainfo":
+                            process_mediainfo(asset_id, workflow, metadata["Results"])
                         if operator == "genericdatalookup":
                             process_generic_data(asset_id, workflow, metadata["Results"])
                         if operator == "labeldetection":

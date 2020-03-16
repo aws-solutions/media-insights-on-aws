@@ -34,6 +34,7 @@ from MediaInsightsEngineLambdaHelper import DataPlane
 
 # Lambda function entrypoint:
 def lambda_handler(event, context):
+    print("We got the following event:\n", event)
     operator_object = MediaInsightsOperationHelper(event)
     # Get operator parameters
     try:

@@ -14,6 +14,17 @@ Parameters:
     Type: String
 
 Resources:
+  PreliminaryStage:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Stage"
+      Name: "defaultPrelimVideoStage"
+      Operations:
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:Thumbnail"
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:Mediainfo"
   defaultVideoStage:
     Type: Custom::CustomResource
     Properties:
@@ -37,8 +48,6 @@ Resources:
             Fn::Sub: "${OperatorLibraryStack}:PersonTracking"
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:Mediaconvert"
-        - Fn::ImportValue:
-            Fn::Sub: "${OperatorLibraryStack}:Thumbnail"
 
   defaultAudioStage:
     Type: Custom::CustomResource
@@ -76,6 +85,7 @@ Resources:
 
   MieCompleteWorkflow:
     DependsOn:
+      - PreliminaryStage
       - defaultVideoStage
       - defaultAudioStage
       - defaultTextStage
@@ -85,10 +95,13 @@ Resources:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Workflow"
       Name: "MieCompleteWorkflow"
-      StartAt: !GetAtt defaultVideoStage.Name
+      StartAt: !GetAtt PreliminaryStage.Name
       Stages: !Sub
         - |-
           {
+            "${PreliminaryStage}":{
+              "Next": "${defaultVideoStage}"
+              },
             "${defaultVideoStage}":{
               "Next": "${defaultAudioStage}"
               },
@@ -103,6 +116,7 @@ Resources:
               }
           }
         - {
+          PreliminaryStage: !GetAtt PreliminaryStage.Name,
           defaultVideoStage: !GetAtt defaultVideoStage.Name,
           defaultAudioStage: !GetAtt defaultAudioStage.Name,
           defaultTextStage: !GetAtt defaultTextStage.Name,

@@ -395,11 +395,16 @@
         let s3Key = assetInfo.results.S3Key;
         let s3Uri = 's3://' + bucket + '/' + s3Key;
         let filename = s3Key.split("/").pop();
-        let thumbnailS3Key = 'private/assets/' + assetId + '/input/' + filename;
-        if (filename.substring(filename.lastIndexOf(".")) === ".mp4") {
-          // The thumbnail is created by Media Convert, see:
-          // source/operators/thumbnail/start_thumbnail.py
-          thumbnailS3Key = 'private/assets/' + assetId + '/' + filename.substring(0, filename.lastIndexOf(".")) + '_thumbnail.0000001.jpg'
+        // The thumbnail is created by Media Convert, see:
+        // source/operators/thumbnail/start_thumbnail.py
+        let thumbnailS3Key = 'private/assets/' + assetId + '/' + filename.substring(0, filename.lastIndexOf(".")) + '_thumbnail.0000001.jpg';
+        // If it's an image then Media Convert won't create a thumbnail.
+        // In that case we use the uploaded image as the thumbnail.
+        let supported_image_types = [".jpg", ".jpeg", ".tif", ".tiff", ".png", ".apng", ".gif", ".bmp", ".svg"];
+        let media_type = filename.substring(filename.lastIndexOf(".")).toLowerCase();
+        if (supported_image_types.includes(media_type)) {
+          // use the uploaded image as a thumbnail
+          thumbnailS3Key = 'private/assets/' + assetId + '/input/' + filename;
         }
         let [thumbnail, workflowStatus] = await Promise.all([this.getAssetThumbnail(token, bucket, thumbnailS3Key), this.getAssetWorkflowStatus(token, assetId)]);
         if (workflowStatus[0] && thumbnail)

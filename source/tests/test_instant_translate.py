@@ -27,16 +27,18 @@ from botocore.exceptions import ClientError
 import re
 import os
 from jsonschema import validate
-
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 def test_instant_translate(api, testing_env_variables, stack_resources):
     api = api()
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-    # InstantTranslate workflow must be deployed
-    
-    print("Testing InstantTranslate workflow.  BUCKET_NAME = "+testing_env_variables['BUCKET_NAME']+" SAMPLE_VIDEO = "+ testing_env_variables['SAMPLE_VIDEO'])
+    print('uploading test media')
+    s3 = boto3.client('s3', region_name=testing_env_variables['REGION'])
+    s3.upload_file(testing_env_variables['SAMPLE_VIDEO'], testing_env_variables['BUCKET_NAME'], testing_env_variables['SAMPLE_VIDEO'])
 
+    print("NOTE: InstantTranslate workflow must be deployed or this test will fail")
+    print("Testing InstantTranslate workflow.  BUCKET_NAME = "+testing_env_variables['BUCKET_NAME']+" SAMPLE_VIDEO = "+ testing_env_variables['SAMPLE_VIDEO'])
     body = {
         "Name":"InstantTranslateWorkflow",
         "Input": {
@@ -48,19 +50,16 @@ def test_instant_translate(api, testing_env_variables, stack_resources):
                 }
             }
         }
-    
     get_workflow_configuration_response = api.get_workflow_configuration_request(body)
-
     configuration = get_workflow_configuration_response.json()
     print("Default Workflow Configuration = {}".format(configuration))
-
     headers = {"Content-Type": "application/json", "Authorization": testing_env_variables['token']}
     start_request = requests.post(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution', headers=headers, json=body, verify=False)
     assert start_request.status_code == 200
     assert start_request.json()['Status'] == 'Queued'
-    
+
     workflow_execution = start_request.json()
-    
+
     workflow_execution = api.wait_for_workflow_execution(workflow_execution, 600)
     assert workflow_execution["Status"] == "Complete"
 
@@ -81,7 +80,7 @@ def test_instant_translate(api, testing_env_variables, stack_resources):
     #     else:
     #         more_results = False
     # print("Successfully retrieved all metadata for asset: {asset}".format(asset=asset_id))
-    
+
     print("Retrieving sample metadata for the asset: {asset}".format(asset=asset_id))
 
     for operator_name in ["Transcribe", "Translate"]:

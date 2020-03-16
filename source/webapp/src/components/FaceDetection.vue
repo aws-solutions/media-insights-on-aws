@@ -282,7 +282,7 @@
       updateConfidence (event) {
         this.isBusy = true;
         this.Confidence = event.target.value;
-        if (this.mediaType === "video/mp4") {
+        if (this.mediaType === "video") {
           // redraw markers on video timeline
           this.player.markers.removeAll();
         }
@@ -319,7 +319,7 @@
             // Save bounding box info if it exists
             if (record.BoundingBox) {
               // TODO: move image processing to a separate component
-              if (this.mediaType === "image/jpg") {
+              if (this.mediaType === "image") {
                 const boxinfo = {
                   'instance': i,
                   'name': record.Name,
@@ -367,7 +367,7 @@
           this.drawBoxes(boxMap);
         }
         // TODO: move image processing to a separate component
-        if (this.mediaType === "video/mp4") {
+        if (this.mediaType === "video") {
           // redraw markers on video timeline
           this.player.markers.removeAll();
           this.player.markers.add(markers);
@@ -377,7 +377,7 @@
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         // TODO: move image processing to a separate component
-        if (this.mediaType === "image/jpg") {
+        if (this.mediaType === "image") {
           ctx.clearRect(0, 0, canvas.width, canvas.height);
           ctx.beginPath();
           ctx.strokeStyle = "red";

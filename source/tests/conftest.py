@@ -162,6 +162,45 @@ class API:
 
         return get_configuration_response
 
+    def create_duplicate_operation_request(self, config):
+
+        start_lambda = config["Input"]+config["Type"]+config["Status"]+"Lambda"
+
+        headers = {"Content-Type": "application/json", "Authorization": self.env_vars['token']}
+        body = {
+            "StartLambdaArn": self.stack_resources[start_lambda],
+            "Configuration": {
+                "MediaType": config["Input"],
+                "Enabled": True
+            },
+            "StateMachineExecutionRoleArn": self.stack_resources["StepFunctionRole"],
+            "Type": config["Type"],
+            "Name": config["Name"]
+        }
+
+        if (config["Type"] == "Async"):
+            monitor_lambda = config["Input"]+config["Type"]+config["Status"]+"MonitorLambda"
+            body["MonitorLambdaArn"] = self.stack_resources[monitor_lambda]
+
+        if "OutputMediaType" in config:
+            body["Configuration"]["OutputMediaType"] = config["OutputMediaType"]
+
+        if "TestCustomConfig" in config:
+            body["Configuration"]["TestCustomConfig"] = config["TestCustomConfig"]
+
+        print ("POST /workflow/operation {}".format(json.dumps(body)))
+        create_operation_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/operation', headers=headers, json=body, verify=False)
+        print(create_operation_response.text)
+        return create_operation_response
+
+
+    def get_operation_request(self, operation):
+        headers = {"Authorization": self.env_vars['token']}
+        get_operation_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/operation/'+operation["Name"], verify=False, headers=headers)
+
+        return get_operation_response
+
+
     def create_operation_request(self, config):
 
         start_lambda = config["Input"]+config["Type"]+config["Status"]+"Lambda"
@@ -188,10 +227,43 @@ class API:
         if "TestCustomConfig" in config:
             body["Configuration"]["TestCustomConfig"] = config["TestCustomConfig"]
 
-
-        print ("POST /workflow/operation {}".format(json.dumps(body)))
-        create_operation_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/operation', headers=headers, json=body, verify=False)
-        print(create_operation_response.text)
+        # Create the operation
+        # HTTP 409 or 500 errors can happen if the previous test didn't
+        # clean up properly. If we see those then we'll try to clean up
+        # and restart a maximum of 10 times.
+        client = boto3.client(service_name='stepfunctions', region_name=self.env_vars['REGION'])
+        for i in range(1, 10):
+            print ("CREATE REQUEST: /workflow/operation {}".format(json.dumps(body)))
+            create_operation_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/operation', headers=headers, json=body, verify=False)
+            print ("CREATE RESPONSE: " + create_operation_response.text)
+            response_message = create_operation_response.json()
+            if create_operation_response.status_code == 409:
+                print('Operator already exists: ' + config["Name"])
+                print('Deleting operator: ' + config["Name"])
+                operation = {"Name": config["Name"]}
+                self.delete_operation_request(operation)
+                time.sleep(45)
+                print('Trying again...')
+            elif create_operation_response.status_code == 500 and \
+                    (re.match('.*StateMachineAlreadyExists.*', response_message['Message']) is not None or
+                     re.match('.*StateMachineDeleting.*', response_message['Message']) is not None):
+                arn_pattern = re.compile('(arn:aws:states:.+:stateMachine:[a-zA-Z0-9-_]+)')
+                statemachine_arn = arn_pattern.findall(response_message['Message'])[0]
+                print('State machine already exists: ' + statemachine_arn)
+                print('Deleting state machine: ' + statemachine_arn)
+                client.delete_state_machine(stateMachineArn=statemachine_arn)
+                # wait up to 15 minutes for StateMachineDeleting
+                for x in range(1,90):
+                    print('.', end='')
+                    time.sleep(10)
+                    try:
+                        client.describe_state_machine(stateMachineArn=statemachine_arn)
+                    except:
+                        print('\nDeleted state machine: ' + statemachine_arn)
+                        break
+            # For all other HTTP status codes, break out of the for loop
+            else:
+                break
         return create_operation_response
 
     def get_operation_request(self, operation):
@@ -201,9 +273,25 @@ class API:
         return get_operation_response
 
     def delete_operation_request(self, operation):
+        client = boto3.client(service_name='stepfunctions', region_name=self.env_vars['REGION'])
         headers = {"Authorization": self.env_vars['token']}
         delete_operation_response = requests.delete(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/operation/'+operation["Name"], verify=False, headers=headers)
-
+        print("DELETE RESPONSE: " + str(delete_operation_response))
+        # Delete will fail if StateMachineDeleting, so retry up to 10 times
+        for i in range(1, 10):
+            if delete_operation_response.status_code == 500 and (re.match('.*StateMachineDeleting.*', delete_operation_response['Message']) is not None):
+                arn_pattern = re.compile('(arn:aws:states:.+:stateMachine:[a-zA-Z0-9-_]+)')
+                statemachine_arn = arn_pattern.findall(delete_operation_response['Message'])[0]
+                print('Waiting for StateMachineDeleting to complete: ' + statemachine_arn)
+                # wait up to 30 minutes
+                for x in range(1,180):
+                    print('.', end='')
+                    time.sleep(10)
+                    try:
+                        client.describe_state_machine(stateMachineArn=statemachine_arn)
+                    except:
+                        print('\nStateMachineDeleting is complete: ' + statemachine_arn)
+                        break
         return delete_operation_response
 
     def create_operation_workflow_request(self, operation):
@@ -516,7 +604,6 @@ def operations(api, session_operation_configs, api_schema):
         create_operation_response = api.create_operation_request(config)
         operation = create_operation_response.json()
         assert create_operation_response.status_code == 200
-        #validation.schema(operation, api_schema["create_operation_response"])
         validation.schema(operation, api_schema["create_operation_response"])
 
     # yield session_operation_configs

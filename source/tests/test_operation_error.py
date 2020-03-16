@@ -38,9 +38,9 @@ def test_duplicate_operation(api, session_operation_configs):
     print("\nTest creating a duplicate operation")
 
     config = session_operation_configs[0]
-    
+
     # Create the operation again
-    create_operation_response = api.create_operation_request(config)
+    create_operation_response = api.create_duplicate_operation_request(config)
     assert create_operation_response.status_code == 409
 
 def test_schema_errors(session_operation_configs, testing_env_variables, stack_resources):
@@ -61,7 +61,7 @@ def test_schema_errors(session_operation_configs, testing_env_variables, stack_r
         "StateMachineExecutionRoleArn": stack_resources["StepFunctionRole"],
         "Type": config["Type"],
         "Name": config["Name"]
-    }   
+    }
 
     if (config["Type"] == "Async"):
         monitor_lambda = config["Input"]+config["Type"]+config["Status"]+"MonitorLambda"
@@ -74,7 +74,7 @@ def test_schema_errors(session_operation_configs, testing_env_variables, stack_r
         bad_body.pop(param_key)
         create_operation_response = requests.post(stack_resources["WorkflowApiEndpoint"]+'/workflow/operation', headers=headers, json=bad_body, verify=False)
         assert create_operation_response.status_code == 400
-    
+
     # mess it up by missing keys from the "Configuration" block
     for param_key in ["MediaType", "Enabled"]:
         print ("Missing {}".format(param_key))
@@ -109,7 +109,7 @@ def test_schema_errors(session_operation_configs, testing_env_variables, stack_r
     bad_body["Configuration"]["Enabled"] = "this is no boolean"
     create_operation_response = requests.post(stack_resources["WorkflowApiEndpoint"]+'/workflow/operation', headers=headers, json=bad_body, verify=False)
     assert create_operation_response.status_code == 400
-    
+
     # mess it up by musing the wrong type
     print ("Wrong type for StateMachineExecutionRoleArn")
     bad_body = dict(body)

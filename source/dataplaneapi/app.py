@@ -192,8 +192,8 @@ def upload():
     max_upload_size = 5368709120
     try:
         response = s3.generate_presigned_post(
-            Bucket=(app.current_request.json_body['S3Bucket']),
-            Key=(app.current_request.json_body['S3Key']),
+            Bucket=(json.loads(app.current_request.raw_body.decode())['S3Bucket']),
+            Key=(json.loads(app.current_request.raw_body.decode())['S3Key']),
             Conditions=[["content-length-range", 0, max_upload_size ]],
             ExpiresIn=3600
         )
@@ -227,8 +227,8 @@ def download():
     # expire the URL in
     try:
         response = s3.generate_presigned_url('get_object',
-                                             Params={'Bucket': app.current_request.json_body['S3Bucket'],
-                                                     'Key': app.current_request.json_body['S3Key']},
+                                             Params={'Bucket': json.loads(app.current_request.raw_body.decode())['S3Bucket'],
+                                                     'Key': json.loads(app.current_request.raw_body.decode())['S3Key']},
                                              ExpiresIn=3600)
     except ClientError as e:
         logging.info(e)
@@ -301,7 +301,7 @@ def create_asset():
     bucket = dataplane_s3_bucket
     uri = base_s3_uri
 
-    asset = app.current_request.json_body
+    asset = json.loads(app.current_request.raw_body.decode())
     logger.info(asset)
 
     # create a uuid for the asset
@@ -341,23 +341,29 @@ def create_asset():
 
     new_key = directory + 'input' + '/' + source_key
 
-    # copy input media into newly created dataplane s3 directory
+    # Move input media into newly created dataplane s3 directory.
 
     try:
+        # copy input media from upload/ to private/assets/[asset_id]/input/
         s3_client.copy_object(
             Bucket=dataplane_s3_bucket,
             Key=new_key,
             CopySource={'Bucket': source_bucket, 'Key': source_key}
         )
+        # remove input media from upload/
+        s3_client.delete_object(
+            Bucket=source_bucket,
+            Key=source_key
+        )
     except ClientError as e:
         error = e.response['Error']['Message']
         logger.error("Exception occurred during asset creation: {e}".format(e=error))
-        raise ChaliceViewError("Unable to copy input media to the dataplane bucket: {e}".format(e=error))
+        raise ChaliceViewError("Unable to move uploaded media to the dataplane bucket: {e}".format(e=error))
     except Exception as e:
         logger.error("Exception occurred during asset creation: {e}".format(e=e))
-        raise ChaliceViewError("Exception when creating s3 object for asset: {e}".format(e=e))
+        raise ChaliceViewError("Exception when moving s3 object for asset: {e}".format(e=e))
     else:
-        logger.info("Copied input media into dataplane bucket: {key}".format(key=new_key))
+        logger.info("Moved input media into dataplane bucket: {key}".format(key=new_key))
 
     # build ddb item of the asset
 
@@ -431,7 +437,7 @@ def put_asset_metadata(asset_id):
     table_name = dataplane_table_name
     asset = asset_id
 
-    body = app.current_request.json_body
+    body = json.loads(app.current_request.raw_body.decode())
     query_params = app.current_request.query_params
 
     paginated = False

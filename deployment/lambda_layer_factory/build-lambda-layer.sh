@@ -48,7 +48,7 @@ if [ $? -ne 0 ]; then
   echo "ERROR: install Docker before running this script"
   exit 1
 else
-  pgrep -f docker
+  pgrep -f docker > /dev/null
   if [ $? -ne 0 ]; then
       echo "ERROR: start Docker before running this script"
       exit 1
@@ -58,6 +58,12 @@ fi
 echo "------------------------------------------------------------------------------"
 echo "Building Lambda Layer zip file"
 echo "------------------------------------------------------------------------------"
+rm -rf ./lambda_layer-python-3.6/
+rm -rf ./lambda_layer-python-3.7/
+rm -rf ./lambda_layer-python-3.8/
+rm -f ./lambda_layer-python3.6.zip
+rm -f ./lambda_layer-python3.7.zip
+rm -f ./lambda_layer-python3.8.zip
 docker build --tag=lambda_layer_factory:latest . 2>&1 > /dev/null
 if [ $? -eq 0 ]; then
   docker run --rm -it -v "$PWD":/packages lambda_layer_factory
@@ -81,14 +87,11 @@ UNZIPPED_SIZE_37=$(du -sm ./lambda_layer-python-3.7/ | cut -f 1)
 ZIPPED_SIZE_37=$(du -sm ./lambda_layer-python3.7.zip | cut -f 1)
 UNZIPPED_SIZE_38=$(du -sm ./lambda_layer-python-3.8/ | cut -f 1)
 ZIPPED_SIZE_38=$(du -sm ./lambda_layer-python3.8.zip | cut -f 1)
+rm -rf ./lambda_layer-python-3.6/
+rm -rf ./lambda_layer-python-3.7/
+rm -rf ./lambda_layer-python-3.8/
 if (( $UNZIPPED_SIZE_36 > $UNZIPPED_LIMIT || $ZIPPED_SIZE_36 > $ZIPPED_LIMIT || $UNZIPPED_SIZE_37 > $UNZIPPED_LIMIT || $ZIPPED_SIZE_37 > $ZIPPED_LIMIT || $UNZIPPED_SIZE_38 > $UNZIPPED_LIMIT || $ZIPPED_SIZE_38 > $ZIPPED_LIMIT)); then
 	echo "ERROR: Deployment package exceeds AWS Lambda layer size limits.";
-	rm -f ./lambda_layer-python3.6.zip
-	rm -f ./lambda_layer-python3.7.zip
-  rm -f ./lambda_layer-python3.8.zip
-	rm -rf ./lambda_layer-python-3.6/
-	rm -rf ./lambda_layer-python-3.7/
-  rm -rf ./lambda_layer-python-3.8/
 	exit 1
 fi
 echo "Lambda layers have been saved to ./lambda_layer-python3.6.zip, ./lambda_layer-python3.7.zip, and ./lambda_layer-python3.8.zip."
@@ -127,7 +130,7 @@ if [ -n "$S3_FQDN" ]; then
             aws s3 cp lambda_layer-python3.6.zip s3://"$LAMBDA_LAYERS_BUCKET"
             aws lambda publish-layer-version --layer-name $LAYER_NAME_36 --content S3Bucket="$LAMBDA_LAYERS_BUCKET",S3Key=lambda_layer-python3.6.zip --compatible-runtimes python3.6
             aws s3 rm s3://"$LAMBDA_LAYERS_BUCKET"/lambda_layer-python3.6.zip
-            arn36=$(aws lambda list-layer-versions --layer-name lambda_layer-python36 --output text --query 'LayerVersions[0].LayerVersionArn')
+            arn36=$(aws lambda list-layer-versions --layer-name $LAYER_NAME_36 --output text --query 'LayerVersions[0].LayerVersionArn')
         fi
     fi
     aws lambda list-layer-versions --layer-name $LAYER_NAME_37 | grep "\"LayerVersions\": \["
@@ -139,7 +142,7 @@ if [ -n "$S3_FQDN" ]; then
             aws s3 cp lambda_layer-python3.7.zip s3://"$LAMBDA_LAYERS_BUCKET"
             aws lambda publish-layer-version --layer-name $LAYER_NAME_37 --content S3Bucket="$LAMBDA_LAYERS_BUCKET",S3Key=lambda_layer-python3.7.zip --compatible-runtimes python3.7
             aws s3 rm s3://"$LAMBDA_LAYERS_BUCKET"/lambda_layer-python3.7.zip
-            arn37=$(aws lambda list-layer-versions --layer-name lambda_layer-python37 --output text --query 'LayerVersions[0].LayerVersionArn')
+            arn37=$(aws lambda list-layer-versions --layer-name $LAYER_NAME_37 --output text --query 'LayerVersions[0].LayerVersionArn')
         fi
     fi
     aws lambda list-layer-versions --layer-name $LAYER_NAME_38 | grep "\"LayerVersions\": \["
@@ -151,7 +154,7 @@ if [ -n "$S3_FQDN" ]; then
             aws s3 cp lambda_layer-python3.8.zip s3://"$LAMBDA_LAYERS_BUCKET"
             aws lambda publish-layer-version --layer-name $LAYER_NAME_38 --content S3Bucket="$LAMBDA_LAYERS_BUCKET",S3Key=lambda_layer-python3.8.zip --compatible-runtimes python3.8
             aws s3 rm s3://"$LAMBDA_LAYERS_BUCKET"/lambda_layer-python3.8.zip
-            arn38=$(aws lambda list-layer-versions --layer-name lambda_layer-python37 --output text --query 'LayerVersions[0].LayerVersionArn')
+            arn38=$(aws lambda list-layer-versions --layer-name $LAYER_NAME_38 --output text --query 'LayerVersions[0].LayerVersionArn')
         fi
     fi
     # remove temp working dir for zip files

@@ -52,7 +52,6 @@ if ! [ -x "$(command -v wget)" ]; then
 fi
 
 # Build source S3 Bucket
-
 if [[ ! -x "$(command -v aws)" ]]; then
 echo "ERROR: This script requires the AWS CLI to be installed. Please install it then run again."
 exit 1
@@ -64,7 +63,6 @@ dist_dir="$template_dir/dist"
 source_dir="$template_dir/../source"
 workflows_dir="$template_dir/../source/workflows"
 webapp_dir="$template_dir/../source/webapp"
-
 echo "template_dir: ${template_dir}"
 
 # Create and activate a temporary Python environment for this script.
@@ -87,7 +85,6 @@ source "$VENV"/bin/activate
 pip install --quiet boto3 chalice docopt pyyaml jsonschema
 export PYTHONPATH="$PYTHONPATH:$source_dir/lib/MediaInsightsEngineLambdaHelper/"
 echo "PYTHONPATH=$PYTHONPATH"
-
 if [ $? -ne 0 ]; then
     echo "ERROR: Failed to install required Python libraries."
     exit 1
@@ -96,6 +93,7 @@ fi
 echo "------------------------------------------------------------------------------"
 echo "Create distribution directory"
 echo "------------------------------------------------------------------------------"
+
 # Setting up directories
 echo "rm -rf $dist_dir"
 rm -rf "$dist_dir"
@@ -106,15 +104,14 @@ mkdir -p "$dist_dir"
 echo "------------------------------------------------------------------------------"
 echo "Building MIEHelper package"
 echo "------------------------------------------------------------------------------"
+
 cd "$source_dir"/lib/MediaInsightsEngineLambdaHelper || exit 1
 rm -rf build
 rm -rf dist
 rm -rf Media_Insights_Engine_Lambda_Helper.egg-info
 python3 setup.py bdist_wheel > /dev/null
-
 echo -n "Created: "
 find "$source_dir"/lib/MediaInsightsEngineLambdaHelper/dist/
-
 cd "$template_dir"/ || exit 1
 
 echo "------------------------------------------------------------------------------"
@@ -148,6 +145,7 @@ echo "/packages/$file" >> requirements.txt;
 # Build Lambda layer zip files and rename them to the filenames expected by media-insights-stack.yaml. The Lambda layer build script runs in Docker.
 # If Docker is not installed, then we'll use prebuilt Lambda layer zip files.
 echo "Running build-lambda-layer.sh"
+rm -rf lambda_layer-python-* lambda_layer-python*.zip
 ./build-lambda-layer.sh requirements.txt > /dev/null
 if [ $? -eq 0 ]; then
   mv lambda_layer-python3.6.zip media_insights_engine_lambda_layer_python3.6.zip
@@ -187,6 +185,7 @@ cp "$workflows_dir/comprehend.yaml" "$dist_dir/comprehend.template"
 cp "$workflows_dir/MieCompleteWorkflow.yaml" "$dist_dir/MieCompleteWorkflow.template"
 cp "$source_dir/operators/operator-library.yaml" "$dist_dir/media-insights-operator-library.template"
 cp "$template_dir/media-insights-stack.yaml" "$dist_dir/media-insights-stack.template"
+cp "$template_dir/string.yaml" "$dist_dir/string.template"
 cp "$template_dir/media-insights-test-operations-stack.yaml" "$dist_dir/media-insights-test-operations-stack.template"
 cp "$template_dir/media-insights-dataplane-streaming-stack.template" "$dist_dir/media-insights-dataplane-streaming-stack.template"
 cp "$workflows_dir/rekognition.yaml" "$dist_dir/rekognition.template"
@@ -194,9 +193,7 @@ cp "$workflows_dir/MieCompleteWorkflow.yaml" "$dist_dir/MieCompleteWorkflow.temp
 cp "$source_dir/consumers/elastic/media-insights-elasticsearch.yaml" "$dist_dir/media-insights-elasticsearch.template"
 cp "$source_dir/consumers/elastic/media-insights-elasticsearch.yaml" "$dist_dir/media-insights-s3.template"
 cp "$webapp_dir/media-insights-webapp.yaml" "$dist_dir/media-insights-webapp.template"
-
 find "$dist_dir"
-
 echo "Updating code source bucket in template files with '$bucket'"
 echo "Updating solution version in template files with '$version'"
 new_bucket="s/%%BUCKET_NAME%%/$bucket/g"
@@ -218,381 +215,150 @@ sed -i.orig -e "$new_bucket" "$dist_dir/media-insights-webapp.template"
 sed -i.orig -e "$new_version" "$dist_dir/media-insights-webapp.template"
 
 echo "------------------------------------------------------------------------------"
-echo "Operator Failed Lambda"
+echo "Operators"
 echo "------------------------------------------------------------------------------"
+
+# ------------------------------------------------------------------------------"
+# Operator Failed Lambda
+# ------------------------------------------------------------------------------"
 
 echo "Building 'operator failed' function"
 cd "$source_dir/operators/operator_failed" || exit 1
-
 [ -e dist ] && rm -r dist
 mkdir -p dist
-
-[ -e package ] && rm -r package
-mkdir -p package
-
-echo "create requirements for lambda"
-
-# Make lambda package
-
-pushd package || exit 1
-echo "create lambda package"
-
-# Handle distutils install errors
-
-touch ./setup.cfg
-
-echo "[install]" > ./setup.cfg
-echo "prefix= " >> ./setup.cfg
-
-# Try and handle failure if pip version mismatch
-if [ -x "$(command -v pip)" ]; then
-  pip install --quiet -r ../requirements.txt --target .
-
-elif [ -x "$(command -v pip3)" ]; then
-  echo "pip not found, trying with pip3"
-  pip3 install --quiet -r ../requirements.txt --target .
-
-elif ! [ -x "$(command -v pip)" ] && ! [ -x "$(command -v pip3)" ]; then
- echo "No version of pip installed. This script requires pip. Cleaning up and exiting."
- exit 1
-fi
-
-if ! [ -d ../dist/operator_failed.zip ]; then
-  zip -q -r9 ../dist/operator_failed.zip .
-
-elif [ -d ../dist/operator_failed.zip ]; then
-  echo "Package already present"
-fi
-
-popd || exit 1
-
-zip -q -g dist/operator_failed.zip operator_failed.py
-
+zip -q dist/operator_failed.zip operator_failed.py
 cp "./dist/operator_failed.zip" "$dist_dir/operator_failed.zip"
 
-echo "------------------------------------------------------------------------------"
-echo "Mediaconvert Operations"
-echo "------------------------------------------------------------------------------"
+# ------------------------------------------------------------------------------"
+# Mediainfo Operation
+# ------------------------------------------------------------------------------"
+
+echo "Building Mediainfo function"
+cd "$source_dir/operators/mediainfo" || exit 1
+# Make lambda package
+[ -e dist ] && rm -r dist
+mkdir -p dist
+# Add the app code to the dist zip.
+zip -q dist/mediainfo.zip mediainfo.py
+# Zip is ready. Copy it to the distribution directory.
+cp "./dist/mediainfo.zip" "$dist_dir/mediainfo.zip"
+
+# ------------------------------------------------------------------------------"
+# Mediaconvert Operations
+# ------------------------------------------------------------------------------"
 
 echo "Building Media Convert function"
 cd "$source_dir/operators/mediaconvert" || exit 1
-
 [ -e dist ] && rm -r dist
 mkdir -p dist
-
-[ -e package ] && rm -r package
-mkdir -p package
-
-echo "create requirements for lambda"
-
-# Make lambda package
-
-pushd package || exit 1
-echo "create lambda package"
-
-# Handle distutils install errors
-
-touch ./setup.cfg
-
-echo "[install]" > ./setup.cfg
-echo "prefix= " >> ./setup.cfg
-
-# Try and handle failure if pip version mismatch
-if [ -x "$(command -v pip)" ]; then
-  pip install --quiet -r ../requirements.txt --target .
-
-elif [ -x "$(command -v pip3)" ]; then
-  echo "pip not found, trying with pip3"
-  pip3 install --quiet -r ../requirements.txt --target .
-
-elif ! [ -x "$(command -v pip)" ] && ! [ -x "$(command -v pip3)" ]; then
- echo "No version of pip installed. This script requires pip. Cleaning up and exiting."
- exit 1
-fi
-
-if ! [ -d ../dist/start_media_convert.zip ]; then
-  zip -q -r9 ../dist/start_media_convert.zip .
-
-elif [ -d ../dist/start_media_convert.zip ]; then
-  echo "Package already present"
-fi
-
-if ! [ -d ../dist/get_media_convert.zip ]; then
-  zip -q -r9 ../dist/get_media_convert.zip .
-
-elif [ -d ../dist/get_media_convert.zip ]; then
-  echo "Package already present"
-fi
-
-popd || exit 1
-
-zip -q -g dist/start_media_convert.zip start_media_convert.py
-zip -q -g dist/get_media_convert.zip get_media_convert.py
-
+zip -q dist/start_media_convert.zip start_media_convert.py
+zip -q dist/get_media_convert.zip get_media_convert.py
 cp "./dist/start_media_convert.zip" "$dist_dir/start_media_convert.zip"
 cp "./dist/get_media_convert.zip" "$dist_dir/get_media_convert.zip"
 
-echo "------------------------------------------------------------------------------"
-echo "Thumbnail Operations"
-echo "------------------------------------------------------------------------------"
+# ------------------------------------------------------------------------------"
+# Thumbnail Operations
+# ------------------------------------------------------------------------------"
 
 echo "Building Thumbnail function"
 cd "$source_dir/operators/thumbnail" || exit 1
-
 # Make lambda package
 [ -e dist ] && rm -r dist
 mkdir -p dist
-
 if ! [ -d ./dist/start_thumbnail.zip ]; then
   zip -q -r9 ./dist/start_thumbnail.zip .
-
 elif [ -d ./dist/start_thumbnail.zip ]; then
   echo "Package already present"
 fi
-
 zip -q -g dist/start_thumbnail.zip start_thumbnail.py
 cp "./dist/start_thumbnail.zip" "$dist_dir/start_thumbnail.zip"
 
-echo "------------------------------------------------------------------------------"
-echo "Transcribe Operations"
-echo "------------------------------------------------------------------------------"
+if ! [ -d ./dist/check_thumbnail.zip ]; then
+  zip -q -r9 ./dist/check_thumbnail.zip .
+elif [ -d ./dist/check_thumbnail.zip ]; then
+  echo "Package already present"
+fi
+zip -q -g dist/check_thumbnail.zip check_thumbnail.py
+cp "./dist/check_thumbnail.zip" "$dist_dir/check_thumbnail.zip"
+
+# ------------------------------------------------------------------------------"
+# Transcribe Operations
+# ------------------------------------------------------------------------------"
 
 echo "Building Transcribe functions"
 cd "$source_dir/operators/transcribe" || exit 1
-
 [ -e dist ] && rm -r dist
 mkdir -p dist
-
-[ -e package ] && rm -r package
-mkdir -p package
-
-echo "create requirements for lambda"
-
-#pipreqs . --force
-
-# Make lambda package
-
-pushd package || exit 1
-echo "create lambda package"
-
-# Handle distutils install errors
-
-touch ./setup.cfg
-
-echo "[install]" > ./setup.cfg
-echo "prefix= " >> ./setup.cfg
-
-# Try and handle failure if pip version mismatch
-if [ -x "$(command -v pip)" ]; then
-  pip install --quiet -r ../requirements.txt --target .
-
-elif [ -x "$(command -v pip3)" ]; then
-  echo "pip not found, trying with pip3"
-  pip3 install --quiet -r ../requirements.txt --target .
-
-elif ! [ -x "$(command -v pip)" ] && ! [ -x "$(command -v pip3)" ]; then
- echo "No version of pip installed. This script requires pip. Cleaning up and exiting."
- exit 1
-fi
-
-if ! [ -d ../dist/start_transcribe.zip ]; then
-  zip -q -r9 ../dist/start_transcribe.zip .
-
-elif [ -d ../dist/start_transcribe.zip ]; then
-  echo "Package already present"
-fi
-
-if ! [ -d ../dist/get_transcribe.zip ]; then
-  zip -q -r9 ../dist/get_transcribe.zip .
-
-elif [ -d ../dist/get_transcribe.zip ]; then
-  echo "Package already present"
-fi
-
-popd || exit 1
-
-zip -q -g dist/start_transcribe.zip start_transcribe.py
-zip -q -g dist/get_transcribe.zip get_transcribe.py
-
+zip -q -g ./dist/start_transcribe.zip ./start_transcribe.py
+zip -q -g ./dist/get_transcribe.zip ./get_transcribe.py
 cp "./dist/start_transcribe.zip" "$dist_dir/start_transcribe.zip"
 cp "./dist/get_transcribe.zip" "$dist_dir/get_transcribe.zip"
 
-echo "------------------------------------------------------------------------------"
-echo "Create Captions Operations"
-echo "------------------------------------------------------------------------------"
+# ------------------------------------------------------------------------------"
+# Create Captions Operations
+# ------------------------------------------------------------------------------"
 
 echo "Building Stage completion function"
 cd "$source_dir/operators/captions" || exit
-
 [ -e dist ] && rm -r dist
 mkdir -p dist
-
-[ -e package ] && rm -r package
-mkdir -p package
-
-echo "create requirements for lambda"
-
-#pipreqs . --force
-
-# Make lambda package
-
-pushd package || exit 1
-echo "create lambda package"
-
-# Handle distutils install errors
-
-touch ./setup.cfg
-
-echo "[install]" > ./setup.cfg
-echo "prefix= " >> ./setup.cfg
-
-# Try and handle failure if pip version mismatch
-if [ -x "$(command -v pip)" ]; then
-  pip install -r ../requirements.txt --target .
-
-elif [ -x "$(command -v pip3)" ]; then
-  echo "pip not found, trying with pip3"
-  pip3 install -r ../requirements.txt --target .
-
-elif ! [ -x "$(command -v pip)" ] && ! [ -x "$(command -v pip3)" ]; then
- echo "No version of pip installed. This script requires pip. Cleaning up and exiting."
- exit 1
-fi
-
-if ! [ -d ../dist/get_captions.zip ]; then
-  zip -r9 ../dist/get_captions.zip .
-
-elif [ -d ../dist/get_captions.zip ]; then
-  echo "Package already present"
-fi
-
-popd || exit 1
-
-zip -g dist/get_captions.zip get_captions.py
-
+zip -g ./dist/get_captions.zip ./get_captions.py
 cp "./dist/get_captions.zip" "$dist_dir/get_captions.zip"
 
-echo "------------------------------------------------------------------------------"
-echo "Translate Operations"
-echo "------------------------------------------------------------------------------"
+# ------------------------------------------------------------------------------"
+# Translate Operations
+# ------------------------------------------------------------------------------"
 
 echo "Building Translate function"
 cd "$source_dir/operators/translate" || exit 1
-
 [ -e dist ] && rm -r dist
 mkdir -p dist
-
 [ -e package ] && rm -r package
 mkdir -p package
-
 echo "create requirements for lambda"
-
-#pipreqs . --force
-
 # Make lambda package
-
 pushd package || exit 1
 echo "create lambda package"
-
 # Handle distutils install errors
-
 touch ./setup.cfg
-
 echo "[install]" > ./setup.cfg
 echo "prefix= " >> ./setup.cfg
-
 # Try and handle failure if pip version mismatch
 if [ -x "$(command -v pip)" ]; then
   pip install --quiet -r ../requirements.txt --target .
-
 elif [ -x "$(command -v pip3)" ]; then
   echo "pip not found, trying with pip3"
   pip3 install --quiet -r ../requirements.txt --target .
-
 elif ! [ -x "$(command -v pip)" ] && ! [ -x "$(command -v pip3)" ]; then
  echo "No version of pip installed. This script requires pip. Cleaning up and exiting."
  exit 1
 fi
-
 if ! [ -d ../dist/start_translate.zip ]; then
   zip -q -r9 ../dist/start_translate.zip .
 
 elif [ -d ../dist/start_translate.zip ]; then
   echo "Package already present"
 fi
-
 popd || exit 1
-
-zip -q -g dist/start_translate.zip start_translate.py
-
+zip -q -g ./dist/start_translate.zip ./start_translate.py
 cp "./dist/start_translate.zip" "$dist_dir/start_translate.zip"
 
-echo "------------------------------------------------------------------------------"
-echo "Polly operators"
-echo "------------------------------------------------------------------------------"
+# ------------------------------------------------------------------------------"
+# Polly operators
+# ------------------------------------------------------------------------------"
 
 echo "Building Polly function"
 cd "$source_dir/operators/polly" || exit 1
-
 [ -e dist ] && rm -r dist
 mkdir -p dist
-
-[ -e package ] && rm -r package
-mkdir -p package
-
-echo "create requirements for lambda"
-
-# Make lambda package
-
-pushd package || exit 1
-echo "create lambda package"
-
-# Handle distutils install errors
-
-touch ./setup.cfg
-
-echo "[install]" > ./setup.cfg
-echo "prefix= " >> ./setup.cfg
-
-# Try and handle failure if pip version mismatch
-if [ -x "$(command -v pip)" ]; then
-  pip install --quiet -r ../requirements.txt --target .
-
-elif [ -x "$(command -v pip3)" ]; then
-  echo "pip not found, trying with pip3"
-  pip3 install --quiet -r ../requirements.txt --target .
-
-elif ! [ -x "$(command -v pip)" ] && ! [ -x "$(command -v pip3)" ]; then
- echo "No version of pip installed. This script requires pip. Cleaning up and exiting."
- exit 1
-fi
-
-if ! [ -d ../dist/start_polly.zip ]; then
-  zip -q -r9 ../dist/start_polly.zip .
-
-elif [ -d ../dist/start_polly.zip ]; then
-  echo "Package already present"
-fi
-
-if ! [ -d ../dist/get_polly.zip ]; then
-  zip -q -r9 ../dist/get_polly.zip .
-
-elif [ -d ../dist/get_polly.zip ]; then
-  echo "Package already present"
-fi
-
-
-popd || exit 1
-
-zip -q -g dist/start_polly.zip start_polly.py
-zip -q -g dist/get_polly.zip get_polly.py
-
+zip -q -g ./dist/start_polly.zip ./start_polly.py
+zip -q -g ./dist/get_polly.zip ./get_polly.py
 cp "./dist/start_polly.zip" "$dist_dir/start_polly.zip"
 cp "./dist/get_polly.zip" "$dist_dir/get_polly.zip"
 
-echo "------------------------------------------------------------------------------"
-echo "Comprehend operators"
-echo "------------------------------------------------------------------------------"
+# ------------------------------------------------------------------------------"
+# Comprehend operators
+# ------------------------------------------------------------------------------"
 
 echo "Building Comprehend function"
 cd "$source_dir/operators/comprehend" || exit 1
@@ -600,98 +366,67 @@ cd "$source_dir/operators/comprehend" || exit 1
 [ -e dist ] && rm -r dist
 [ -e package ] && rm -r package
 for dir in ./*;
-    do
-        echo "$dir"
-        cd "$dir" || exit 1
-        mkdir -p dist
-        mkdir -p package
+  do
+    echo "$dir"
+    cd "$dir" || exit 1
+    mkdir -p dist
+    mkdir -p package
+    echo "creating requirements for lambda"
+    # Package dependencies listed in requirements.txt
+    pushd package || exit 1
+    # Handle distutils install errors with setup.cfg
+    touch ./setup.cfg
+    echo "[install]" > ./setup.cfg
+    echo "prefix= " >> ./setup.cfg
+    if [[ $dir == "./key_phrases" ]]; then
+      if ! [ -d ../dist/start_key_phrases.zip ]; then
+        zip -q -r9 ../dist/start_key_phrases.zip .
+      elif [ -d ../dist/start_key_phrases.zip ]; then
+        echo "Package already present"
+      fi
+      if ! [ -d ../dist/get_key_phrases.zip ]; then
+        zip -q -r9 ../dist/get_key_phrases.zip .
 
-        echo "create requirements for lambda"
+      elif [ -d ../dist/get_key_phrases.zip ]; then
+        echo "Package already present"
+      fi
+      popd || exit 1
+      zip -q -g dist/start_key_phrases.zip start_key_phrases.py
+      zip -q -g dist/get_key_phrases.zip get_key_phrases.py
+      echo "$PWD"
+      cp ./dist/start_key_phrases.zip "$dist_dir/start_key_phrases.zip"
+      cp ./dist/get_key_phrases.zip "$dist_dir/get_key_phrases.zip"
+      mv -f ./dist/*.zip "$dist_dir"
+    elif [[ "$dir" == "./entities" ]]; then
+      if ! [ -d ../dist/start_entity_detection.zip ]; then
+      zip -q -r9 ../dist/start_entity_detection.zip .
+      elif [ -d ../dist/start_entity_detection.zip ]; then
+      echo "Package already present"
+      fi
+      if ! [ -d ../dist/get_entity_detection.zip ]; then
+      zip -q -r9 ../dist/get_entity_detection.zip .
+      elif [ -d ../dist/get_entity_detection.zip ]; then
+      echo "Package already present"
+      fi
+      popd || exit 1
+      echo "$PWD"
+      zip -q -g dist/start_entity_detection.zip start_entity_detection.py
+      zip -q -g dist/get_entity_detection.zip get_entity_detection.py
+      mv -f ./dist/*.zip "$dist_dir"
+    fi
+    cd ..
+  done;
 
-        #pipreqs . --force
-
-        # Make lambda package
-
-        pushd package || exit 1
-        echo "create lambda package"
-
-        # Handle     distutils install errors
-
-        touch ./setup.cfg
-
-        echo "[install]" > ./setup.cfg
-        echo "prefix= " >> ./setup.cfg
-
-        if [[ $dir == "./key_phrases" ]]; then
-            if ! [ -d ../dist/start_key_phrases.zip ]; then
-              zip -q -r9 ../dist/start_key_phrases.zip .
-
-            elif [ -d ../dist/start_key_phrases.zip ]; then
-              echo "Package already present"
-            fi
-
-            if ! [ -d ../dist/get_key_phrases.zip ]; then
-              zip -q -r9 ../dist/get_key_phrases.zip .
-
-            elif [ -d ../dist/get_key_phrases.zip ]; then
-              echo "Package already present"
-            fi
-
-            popd || exit 1
-
-            zip -q -g dist/start_key_phrases.zip start_key_phrases.py
-            zip -q -g dist/get_key_phrases.zip get_key_phrases.py
-
-            echo "$PWD"
-
-            cp ./dist/start_key_phrases.zip "$dist_dir/start_key_phrases.zip"
-            cp ./dist/get_key_phrases.zip "$dist_dir/get_key_phrases.zip"
-
-            mv -f ./dist/*.zip "$dist_dir"
-
-         elif [[ "$dir" == "./entities" ]]; then
-            if ! [ -d ../dist/start_entity_detection.zip ]; then
-            zip -q -r9 ../dist/start_entity_detection.zip .
-
-            elif [ -d ../dist/start_entity_detection.zip ]; then
-            echo "Package already present"
-            fi
-
-            if ! [ -d ../dist/get_entity_detection.zip ]; then
-            zip -q -r9 ../dist/get_entity_detection.zip .
-
-            elif [ -d ../dist/get_entity_detection.zip ]; then
-            echo "Package already present"
-            fi
-
-            popd || exit 1
-
-            echo "$PWD"
-
-            zip -q -g dist/start_entity_detection.zip start_entity_detection.py
-            zip -q -g dist/get_entity_detection.zip get_entity_detection.py
-
-            mv -f ./dist/*.zip "$dist_dir"
-
-        fi
-
-        cd ..
-     done;
-
-echo "------------------------------------------------------------------------------"
-echo "Rekognition operators"
-echo "------------------------------------------------------------------------------"
+# ------------------------------------------------------------------------------"
+# Rekognition operators
+# ------------------------------------------------------------------------------"
 
 echo "Building Rekognition functions"
 cd "$source_dir/operators/rekognition" || exit 1
-
 # Make lambda package
-
-echo "create lambda package"
-
+echo "creating lambda packages"
 # All the Python dependencies for Rekognition functions are in the Lambda layer, so
 # we can deploy the zipped source file without dependencies.
-
 zip -q -r9 generic_data_lookup.zip generic_data_lookup.py
 zip -q -r9 start_celebrity_recognition.zip start_celebrity_recognition.py
 zip -q -r9 check_celebrity_recognition_status.zip check_celebrity_recognition_status.py
@@ -710,51 +445,48 @@ zip -q -r9 check_text_detection_status.zip check_text_detection_status.py
 
 mv -f ./*.zip "$dist_dir"
 
+# ------------------------------------------------------------------------------"
+# Test operators
+# ------------------------------------------------------------------------------"
+
+echo "Building test operators"
+cd "$source_dir/operators/test" || exit
+[ -e dist ] && rm -r dist
+mkdir -p dist
+zip -q -g ./dist/test_operations.zip ./test.py
+cp "./dist/test_operations.zip" "$dist_dir/test_operations.zip"
+
 echo "------------------------------------------------------------------------------"
-echo "DDB Stream Function"
+echo "DynamoDB Stream Function"
 echo "------------------------------------------------------------------------------"
 
 echo "Building DDB Stream function"
 cd "$source_dir/dataplanestream" || exit 1
-
 [ -e dist ] && rm -r dist
 mkdir -p dist
-
 [ -e package ] && rm -r package
 mkdir -p package
-
-echo "Create requirements for lambda"
-
-# Make lambda package
+echo "preparing packages from requirements.txt"
+# Package dependencies listed in requirements.txt
 pushd package || exit 1
-echo "Create lambda package"
-
-# Handle distutils install errors
-
+# Handle distutils install errors with setup.cfg
 touch ./setup.cfg
-
 echo "[install]" > ./setup.cfg
 echo "prefix= " >> ./setup.cfg
-
 # Try and handle failure if pip version mismatch
 if [ -x "$(command -v pip)" ]; then
   pip install --quiet -r ../requirements.txt --target .
-
 elif [ -x "$(command -v pip3)" ]; then
   echo "pip not found, trying with pip3"
   pip3 install --quiet -r ../requirements.txt --target .
-
 elif ! [ -x "$(command -v pip)" ] && ! [ -x "$(command -v pip3)" ]; then
   echo "No version of pip installed. This script requires pip. Cleaning up and exiting."
   exit 1
 fi
-
 zip -q -r9 ../dist/ddbstream.zip .
-
 popd || exit 1
 
 zip -q -g dist/ddbstream.zip ./*.py
-
 cp "./dist/ddbstream.zip" "$dist_dir/ddbstream.zip"
 
 echo "------------------------------------------------------------------------------"
@@ -766,288 +498,145 @@ cd "$source_dir/consumers/elastic" || exit 1
 
 [ -e dist ] && rm -r dist
 mkdir -p dist
-
 [ -e package ] && rm -r package
 mkdir -p package
-
-echo "Create requirements for lambda"
-
-#pipreqs . --force
-
-# Make lambda package
+echo "preparing packages from requirements.txt"
+# Package dependencies listed in requirements.txt
 pushd package || exit 1
-echo "Create lambda package"
-
-# Handle distutils install errors
-
+# Handle distutils install errors with setup.cfg
 touch ./setup.cfg
-
 echo "[install]" > ./setup.cfg
 echo "prefix= " >> ./setup.cfg
-
 # Try and handle failure if pip version mismatch
 if [ -x "$(command -v pip)" ]; then
   pip install --quiet -r ../requirements.txt --target .
-
 elif [ -x "$(command -v pip3)" ]; then
   echo "pip not found, trying with pip3"
   pip3 install --quiet -r ../requirements.txt --target .
-
 elif ! [ -x "$(command -v pip)" ] && ! [ -x "$(command -v pip3)" ]; then
   echo "No version of pip installed. This script requires pip. Cleaning up and exiting."
   exit 1
 fi
-
 zip -q -r9 ../dist/esconsumer.zip .
-
 popd || exit 1
 
 zip -q -g dist/esconsumer.zip ./*.py
-
 cp "./dist/esconsumer.zip" "$dist_dir/esconsumer.zip"
-
 
 echo "------------------------------------------------------------------------------"
 echo "Workflow Scheduler"
 echo "------------------------------------------------------------------------------"
 
+echo "Building Workflow scheduler"
 cd "$source_dir/workflow" || exit 1
-
 [ -e dist ] && rm -r dist
 mkdir -p dist
-
 [ -e package ] && rm -r package
 mkdir -p package
-
-echo "Create requirements for lambda"
-
-#pipreqs . --force
-
-# Make lambda package
+echo "preparing packages from requirements.txt"
+# Package dependencies listed in requirements.txt
 cd package || exit 1
-echo "Create lambda package"
-
-# Handle distutils install errors
-
+# Handle distutils install errors with setup.cfg
 touch ./setup.cfg
-
 echo "[install]" > ./setup.cfg
 echo "prefix= " >> ./setup.cfg
-
 cd ..
 # Try and handle failure if pip version mismatch
 if [ -x "$(command -v pip)" ]; then
   pip install --quiet -r ./requirements.txt --target package/
-
 elif [ -x "$(command -v pip3)" ]; then
   echo "pip not found, trying with pip3"
   pip3 install --quiet -r ./requirements.txt --target package/
-
 elif ! [ -x "$(command -v pip)" ] && ! [ -x "$(command -v pip3)" ]; then
   echo "No version of pip installed. This script requires pip. Cleaning up and exiting."
   exit 1
 fi
-
 cd package || exit 1
 zip -q -r9 ../dist/workflow.zip .
 cd ..
 zip -q -g dist/workflow.zip ./*.py
-
 cp "./dist/workflow.zip" "$dist_dir/workflow.zip"
 
 echo "------------------------------------------------------------------------------"
-echo "Demo website helper Function"
+echo "Workflow API Stack"
 echo "------------------------------------------------------------------------------"
 
-echo "Building Demo website helper function"
-cd "$webapp_dir/helper" || exit 1
-
-[ -e dist ] && rm -r dist
-mkdir -p dist
-
-[ -e package ] && rm -r package
-mkdir -p package
-
-echo "Create requirements for lambda"
-
-#pipreqs . --force
-
-# Make lambda package
-pushd package || exit 1
-echo "Create lambda package"
-
-# Handle distutils install errors
-
-touch ./setup.cfg
-
-echo "[install]" > ./setup.cfg
-echo "prefix= " >> ./setup.cfg
-
-# Try and handle failure if pip version mismatch
-if [ -x "$(command -v pip)" ]; then
-  pip install --quiet -r ../requirements.txt --target .
-
-elif [ -x "$(command -v pip3)" ]; then
-  echo "pip not found, trying with pip3"
-  pip3 install --quiet -r ../requirements.txt --target .
-
-elif ! [ -x "$(command -v pip)" ] && ! [ -x "$(command -v pip3)" ]; then
-  echo "No version of pip installed. This script requires pip. Cleaning up and exiting."
-  exit 1
-fi
-
-zip -q -r9 ../dist/websitehelper.zip .
-
-popd || exit 1
-
-zip -q -g dist/websitehelper.zip ./*.py
-
-cp "./dist/websitehelper.zip" "$dist_dir/websitehelper.zip"
-
-echo "------------------------------------------------------------------------------"
-echo "Workflow API Function"
-echo "------------------------------------------------------------------------------"
 echo "Building Workflow Lambda function"
 cd "$source_dir/workflowapi" || exit 1
-
 [ -e dist ] && rm -r dist
 mkdir -p dist
-
 if ! [ -x "$(command -v chalice)" ]; then
   echo 'Chalice is not installed. It is required for this solution. Exiting.'
   exit 1
 fi
-
 echo "running chalice..."
 chalice package --merge-template external_resources.json dist
 echo "...chalice done"
-
 echo "cp ./dist/sam.json $dist_dir/media-insights-workflowapi-stack.template"
 cp dist/sam.json "$dist_dir"/media-insights-workflowapi-stack.template
 if [ $? -ne 0 ]; then
   echo "ERROR: Failed to build workflow api template"
   exit 1
 fi
-
 echo "cp ./dist/deployment.zip $dist_dir/workflowapi.zip"
 cp ./dist/deployment.zip "$dist_dir"/workflowapi.zip
 if [ $? -ne 0 ]; then
   echo "ERROR: Failed to build workflow api template"
   exit 1
 fi
-
 rm -f ./dist/*
 
 echo "------------------------------------------------------------------------------"
 echo "Dataplane API Stack"
 echo "------------------------------------------------------------------------------"
+
 echo "Building Dataplane Stack"
 cd "$source_dir/dataplaneapi" || exit 1
-
 [ -e dist ] && rm -r dist
 mkdir -p dist
-
 if ! [ -x "$(command -v chalice)" ]; then
   echo 'Chalice is not installed. It is required for this solution. Exiting.'
   exit 1
 fi
-
 chalice package --merge-template external_resources.json dist
-
 echo "cp ./dist/sam.json $dist_dir/media-insights-dataplane-api-stack.template"
 cp dist/sam.json "$dist_dir"/media-insights-dataplane-api-stack.template
 if [ $? -ne 0 ]; then
   echo "ERROR: Failed to build dataplane api template"
   exit 1
 fi
-
 echo "cp ./dist/deployment.zip $dist_dir/dataplaneapi.zip"
 cp ./dist/deployment.zip "$dist_dir"/dataplaneapi.zip
 if [ $? -ne 0 ]; then
   echo "ERROR: Failed to build dataplane api template"
   exit 1
 fi
-
 rm -f ./dist/*
 
 echo "------------------------------------------------------------------------------"
-echo "Test operators"
+echo "Demo website stack"
 echo "------------------------------------------------------------------------------"
 
-echo "Building test operators"
-cd "$source_dir/operators/test" || exit
-
+echo "Building website helper function"
+cd "$webapp_dir/helper" || exit 1
 [ -e dist ] && rm -r dist
 mkdir -p dist
+zip -q -g ./dist/websitehelper.zip ./website_helper.py
+cp "./dist/websitehelper.zip" "$dist_dir/websitehelper.zip"
 
-[ -e package ] && rm -r package
-mkdir -p package
-
-echo "create requirements for lambda"
-
-# Make lambda package
-
-pushd package || exit 1
-echo "create lambda package"
-
-# Handle distutils install errors
-
-touch ./setup.cfg
-
-echo "[install]" > ./setup.cfg
-echo "prefix= " >> ./setup.cfg
-
-# Try and handle failure if pip version mismatch
-if [ -x "$(command -v pip)" ]; then
-  pip install -r ../requirements.txt --target .
-
-elif [ -x "$(command -v pip3)" ]; then
-  echo "pip not found, trying with pip3"
-  pip3 install -r ../requirements.txt --target .
-
-elif ! [ -x "$(command -v pip)" ] && ! [ -x "$(command -v pip3)" ]; then
- echo "No version of pip installed. This script requires pip. Cleaning up and exiting."
- exit 1
-fi
-
-if ! [ -d ../dist/test_operations.zip ]; then
-  echo "test_operations.zip zip file doesn't exist"
-  zip -r9 ../dist/test_operations.zip .
-
-elif [ -d ../dist/test_operations.zip ]; then
-  echo "test_operations.zip Package already present"
-
-fi
-
-popd || exit 1
-
-zip -g dist/test_operations.zip ./*.py
-
-echo "copy echo test_operations.zip to dist_dir"
-cp "./dist/test_operations.zip" "$dist_dir/test_operations.zip"
-
-echo "------------------------------------------------------------------------------"
-echo "Build vue website "
-echo "------------------------------------------------------------------------------"
-
+echo "Building Vue.js website"
 cd "$webapp_dir/" || exit 1
-
 echo "Installing node dependencies"
-
-npm i
-
+npm install
 echo "Compiling the vue app"
-
 npm run build
-
 echo "Built demo webapp"
 
 echo "------------------------------------------------------------------------------"
 echo "Copy dist to S3"
 echo "------------------------------------------------------------------------------"
 
-echo "We are copying your source into the S3 bucket"
-
+echo "Copying the prepared distribution to S3..."
 for file in "$dist_dir"/*.zip
 do
   if [ -n "$profile" ]; then
@@ -1056,7 +645,6 @@ do
     aws s3 cp "$file" s3://"$bucket"/media-insights-solution/"$version"/code/
   fi
 done
-
 for file in "$dist_dir"/*.template
 do
   if [ -n "$profile" ]; then
@@ -1065,9 +653,7 @@ do
     aws s3 cp "$file" s3://"$bucket"/media-insights-solution/"$version"/cf/
   fi
 done
-
-echo "We are uploading the MIE web app"
-
+echo "Uploading the MIE web app..."
 if [ -n "$profile" ]; then
   aws s3 cp "$webapp_dir"/dist s3://"$bucket"/media-insights-solution/"$version"/code/website --recursive --profile "$profile"
 else

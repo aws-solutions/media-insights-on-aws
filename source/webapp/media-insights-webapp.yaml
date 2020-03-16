@@ -34,18 +34,12 @@ Resources:
     DeletionPolicy: Retain
     Properties:
       AccessControl: LogDeliveryWrite
-      BucketName: !Join
-        - "-"
-        - - "mie-website"
-          - !Select
-            - 0
-            - !Split
-              - "-"
-              - !Select
-                - 2
-                - !Split
-                  - "/"
-                  - !Ref "AWS::StackId"
+      BucketName:
+        Fn::Transform:
+          Name: 'String'
+          Parameters:
+            InputString: !Sub "${AWS::StackName}-website"
+            Operation: Lower
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
@@ -54,18 +48,12 @@ Resources:
         IndexDocument: "index.html"
         ErrorDocument: "index.html"
       LoggingConfiguration:
-        DestinationBucketName: !Join
-          - "-"
-          - - "mie-website"
-            - !Select
-              - 0
-              - !Split
-                - "-"
-                - !Select
-                  - 2
-                  - !Split
-                    - "/"
-                    - !Ref "AWS::StackId"
+        DestinationBucketName:
+          Fn::Transform:
+            Name: 'String'
+            Parameters:
+              InputString: !Sub "${AWS::StackName}-website"
+              Operation: Lower
         LogFilePrefix: "access_logs/"
       LifecycleConfiguration:
         Rules:
@@ -81,6 +69,8 @@ Resources:
             ExpirationInDays: 30
             AbortIncompleteMultipartUpload:
               DaysAfterInitiation: 1
+      VersioningConfiguration:
+        Status: "Enabled"
 
   WebBucketPolicy:
     Type: AWS::S3::BucketPolicy
@@ -88,14 +78,13 @@ Resources:
       Bucket: !Ref MediaInsightsWebsiteBucket
       PolicyDocument:
         Statement:
-          -
-            Effect: Deny
+          - Effect: Deny
             Principal: "*"
             Action: "*"
             Resource: !Sub "arn:aws:s3:::${MediaInsightsWebsiteBucket}/*"
             Condition:
               Bool:
-                "aws:SecureTransport": false
+                aws:SecureTransport: false
 
   WebsiteHelperRole:
     Type: AWS::IAM::Role
@@ -238,20 +227,20 @@ Resources:
             - HEAD
             - OPTIONS
           ForwardedValues:
-            QueryString: 'false'
+            QueryString: false
           ViewerProtocolPolicy: redirect-to-https
         DefaultRootObject: "index.html"
         CustomErrorResponses:
-          - ErrorCode: '404'
+          - ErrorCode: 404
             ResponsePagePath: "/index.html"
-            ResponseCode: '200'
-          - ErrorCode: '403'
+            ResponseCode: 200
+          - ErrorCode: 403
             ResponsePagePath: "/index.html"
-            ResponseCode: '200'
-        IPV6Enabled: 'true'
+            ResponseCode: 200
+        IPV6Enabled: true
         ViewerCertificate:
-          CloudFrontDefaultCertificate: 'true'
-        Enabled: 'true'
+          CloudFrontDefaultCertificate: true
+        Enabled: true
         HttpVersion: 'http2'
 
 Outputs:

@@ -1,18 +1,73 @@
 # Media Insights Engine
 
-Welcome to the preview of the Media Insights Engine (MIE) project!
+Welcome to the Media Insights Engine (MIE) project!
 
-MIE is a _serverless_ framework to accelerate the development of applications that discover next-generation insights in your video, audio, text, and image resources by utilizing AWS Machine Learning services.  MIE lets builders: 
+MIE is a framework to accelerate the development of serverless applications that process video, images, audio, and text with artificial intelligence services and multimedia services on AWS. MIE is most often used to: 
 
-1. Create media analysis workflows from a library of base operations built on AWS Machine Learning and Media Services such as [Amazon Rekognition](https://aws.amazon.com/rekognition/), [Amazon Transcribe](https://aws.amazon.com/transcribe/), [Amazon Translate](https://aws.amazon.com/translate/), [Amazon Cognito](https://aws.amazon.com/cognito/), [Amazon Polly](https://aws.amazon.com/polly/), and [AWS Elemental MediaConvert](https://aws.amazon.com/mediaconvert/).
-2. Execute workflows and store the resulting media and analysis for later use.
-3. Query analysis extracted from media.
-4. Interactively explore some of the capabilities of MIE using the included content and analysis and search web application.
-5. Extend MIE for new applications by adding custom operators and custom data stores. 
+1. Create media analysis workflows using [Amazon Rekognition](https://aws.amazon.com/rekognition/), [Amazon Transcribe](https://aws.amazon.com/transcribe/), [Amazon Translate](https://aws.amazon.com/translate/), [Amazon Cognito](https://aws.amazon.com/cognito/), [Amazon Polly](https://aws.amazon.com/polly/), and [AWS Elemental MediaConvert](https://aws.amazon.com/mediaconvert/).
+2. Build analytical applications on top of data extracted by workflows and saved in the [Amazon Elasticsearch Service](https://aws.amazon.com/elasticsearch-service/)
+
+MIE includes a demo GUI for video content analysis and search. The [Implementation Guide](https://github.com/awslabs/aws-media-insights-engine/blob/master/IMPLEMENTATION_GUIDE.md) explains how to build other applications with MIE. 
+
+***NOTE:*** *Some of the services used by MIE are not in the AWS free tier. Assume you will pay money when you run videos through MIE. It can get expensive to process videos longer than a few minutes.*
+
+# Installation
+You can deploy MIE and the demo GUI in your AWS account with the following one-click deploy buttons:
+
+Region| Launch
+------|-----
+US East (N. Virginia) | [![Launch in us-east-1](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-east-1.s3.amazonaws.com/media-insights-solution/v0.1.6/cf/media-insights-stack.template)
+US West (Oregon) | [![Launch in us-west-2](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-west-2.s3.amazonaws.com/media-insights-solution/v0.1.6/cf/media-insights-stack.template)
+
+The default settings for the template will deploy MIE and the demo GUI. You must set the parameters for `Stack name` and `AdminEmail`.
+
+For more information about stack deployment, see the section on [installation parameters](#installation-parameters).
+
+
+# Cost
+
+Most AWS accounts include a free tier for the services used in MIE. However, if your usage exceeds the free tier allotments then you will be responsible for the cost of the AWS services used while running MIE. 
+
+The cost depends on the number of and length of uploaded videos, and data transfer fees, which will vary depending on the number of users and frequency of viewing. Cost also depends on video content. For example, videos with lots of speech will incur higher costs for text operations. You will also be charged for storing media files in S3.
+
+As of the date of publication, the costs for running this solution in the us-east-1 (N. Virginia) region are estimated below. Prices for services are tiered to distinguish between heavy and lite users. The estimates below are based on prices for lite users.
+
+## Video Operators 
+See [https://aws.amazon.com/rekognition/pricing/](https://aws.amazon.com/rekognition/pricing/).
+
+Object Detection ($0.10 per min)
+Celebrity Recognition ($0.10 per min)
+Content Moderation ($0.10 per min)
+Face Detection ($0.10 per min)
+Face Search ($0.10 per min)
+
+## Audio Operators
+See [https://aws.amazon.com/transcribe/pricing/](https://aws.amazon.com/rekognition/pricing/).
+
+Transcribe ($.024 per min)
+
+## Text Operators
+Comprehend Key Phrases ($0.000001 per character)
+Comprehend Entities ($0.000001 per character)
+Polly ($0.000004 per character)
+Translate ($0.000015 per character)
+
+## Data Plane and Control Plane
+[Elasticsearch](https://aws.amazon.com/elasticsearch-service/pricing/)(r4.large.elasticsearch) $0.196 per Hour
+[S3](https://aws.amazon.com/s3/pricing/) $0.023 per GB
+
+## Lambda, API Gateway, DynamoDB, and DynamoDB Streams 
+The free-tier for Lambda, API Gateway, DynamoDB, and DynamoDB Streams should cover most common MIE use cases.
+
+## Pricing Example:
+
+The cost to analyzing 4 hours of video with 64 pages (~165k characters) of speech through every operator is $128.
+
+This scenario is loosely based on "A Christmas Carol" by Charles Dickens, which includes ~165k characters and ~3 hours 50 min speech duration ([reference](https://aws.amazon.com/polly/pricing/)).
 
 # Limits
 
-This preview version of MIE can support workflows on videos up to 120 minutes in duration. 
+The latest MIE release has been verified to support videos up to 2 hours in duration. 
 
 # Architecture Overview
 
@@ -48,16 +103,9 @@ Stores metadata for an asset that can be retrieved as a single block or pages of
 
 A lambda function that consumes data from the data plane pipeline and stores it (or acts on it) in another downstream data store.  Data can be stored in different kind of data stores to fit the data management and query needs of the application.  There can be 0 or more pipeline consumers in a MIE application. 
 
-# Installation / Deployment
-Deploy the demo architecture and application in your AWS account and start exploring your media.  
+# Installation Parameters
 
-Region| Launch
-------|-----
-US East (N. Virginia) | [![Launch in us-east-1](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-east-1.s3.amazonaws.com/media-insights-solution/v0.1.5/cf/media-insights-stack.template)
-US West (Oregon) | [![Launch in us-west-2](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-west-2.s3.amazonaws.com/media-insights-solution/v0.1.5/cf/media-insights-stack.template)
-
-
-The default settings for the template are configured to deploy the sample web application and all the back-end components it requires.  In addition, you must set the required parameter below.
+You can deploy MIE and the demo GUI in your AWS account with the [one-click deploy buttons](#installation) shown above. 
 
 ## Required parameters
 
@@ -72,7 +120,7 @@ The default settings for the template are configured to deploy the sample web ap
 **Workflows**
 * **DeployTestWorkflow**: If set to true, deploys test workflow which contains operator, stage and workflow stubs for integration testing. Defaults to `false`.
 * **DeployInstantTranslateWorkflow**: If set to true, deploys Instant Translate Workflow which takes a video as input and transcribes, translates and creates an audio file in the new language. Defaults to `false`.
-* **DeployRekognitionWorkflow**: If set to true, deploys Rekognition Workflows which takes a video as input and transcribes, translates and creates an audio file in the new language. Defaults to `false`.
+* **DeployRekognitionWorkflow**: If set to true, deploys Rekognition Workflows which process videos and images through Rekognition, Transcribe, Translate, etc. Defaults to `true`.
 * **DeployComprehendWorkflow**: If set to true, deploys a Comprehend Workflow which takes text as input and identifies key entities and phrases. Defaults to `false`.
 * **DeployKitchenSinkWorkflow**: If set to true, deploys the Kitchen Sink Workflow which contains all MIE operators. Defaults to `true`.
 
@@ -138,17 +186,11 @@ The Media Insights Engine is built to be extended for new use cases. You can:
 * Create new workflows using the existing operators and/or your own operators.
 * Add new data consumers to provide data management that suits the needs of your application.
 
-See the [Developer Guide](DEVELOPER_QUICK_START.md) for more information on extending the application for a custom use case.
-
-API Reference - Coming soon!
-
-Builder's guide - Coming soon!
+See the [Implementation Guide](https://github.com/awslabs/aws-media-insights-engine/blob/master/IMPLEMENTATION_GUIDE.md) for the MIE API reference and builder's guide.
 
 # Known Issues
 
 Visit the Issue page in this repository for known issues and feature requests.
-
-# Release History
 
 # Contributing
 
@@ -158,6 +200,6 @@ See the [CONTRIBUTING](CONTRIBUTING.md) file for how to contribute.
 
 See the [LICENSE](LICENSE) file for our project's licensing.
 
-Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 

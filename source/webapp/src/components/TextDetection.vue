@@ -128,11 +128,12 @@
       sorted_unique_word_detections() {
         // This function sorts and counts unique words for mouse over events on buttons
         const es_data = this.elasticsearch_data;
+        console.log(es_data)
         const unique_words = new Map();
         //const unique_lines = new Map();
         // sort and count unique words for mouse over events
         es_data.forEach(function (record) {
-          if (record.TextType == 'WORD') {
+          if (record.Type == 'WORD') {
             unique_words.set(record.DetectedText, unique_words.get(record.DetectedText) ? unique_words.get(record.DetectedText) + 1 : 1);
           }
           // if (record.TextType == 'LINE') {
@@ -208,7 +209,7 @@
       updateConfidence (event) {
         this.isBusy = true;
         this.Confidence = event.target.value;
-        if (this.mediaType === "video/mp4") {
+        if (this.mediaType === "video") {
           // redraw markers on video timeline
           this.player.markers.removeAll();
         }
@@ -222,7 +223,7 @@
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.strokeStyle = "red";
+        ctx.strokeStyle = "red";  
         ctx.font = "15px Arial";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
@@ -244,7 +245,7 @@
             if (record.BoundingBox) {
                 const item = record;
                 // TODO: move image processing to a separate component
-                if (this.mediaType === "image/jpg") {
+                if (this.mediaType === "image") {
                   // use timestamp to index boxes in the boxMap collection
                   const boxinfo = {
                     'name': item.DetectedText,
@@ -274,7 +275,7 @@
           this.drawBoxes(boxMap);
         }
         // TODO: move image processing to a separate component
-        if (this.mediaType === "video/mp4") {
+        if (this.mediaType === "video") {
           // redraw markers on video timeline
           this.player.markers.removeAll();
           this.player.markers.add(markers);
@@ -314,7 +315,7 @@
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         // TODO: move image processing to a separate component
-        if (this.mediaType === "image/jpg") {
+        if (this.mediaType === "image") {
           ctx.clearRect(0, 0, canvas.width, canvas.height);
           ctx.beginPath();
           ctx.strokeStyle = "red";

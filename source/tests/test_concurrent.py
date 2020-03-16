@@ -18,34 +18,30 @@
 import pytest
 import boto3
 import json
-import time
-import math
 import requests
 import urllib3
-import logging
-from botocore.exceptions import ClientError
-import re
-import os
-from jsonschema import validate
 import time
 import threading
-
-# local imports
-import validation
+import uuid
 
 
 def start_frame_workflows(nframes, stack_resources, testing_env_variables):
     print("starting {} workflows".format(nframes))
 
-    body = json.loads('{"Name":"ImageWorkflow","Configuration": {"ValidationStage": {"MediainfoImage": {"Enabled": true}},"RekognitionStage": {"faceSearchImage": {"MediaType": "Image","Enabled": false, "CollectionId": "' + testing_env_variables['FACE_COLLECTION_ID'] + '"},"labelDetectionImage": {"MediaType": "Image","Enabled": true},"celebrityRecognitionImage": {"MediaType": "Image","Enabled": true},"contentModerationImage": {"MediaType": "Image","Enabled": true},"faceDetectionImage": {"MediaType": "Image","Enabled": true}}},"Input": {"Media": {"Image": {"S3Bucket":"' + testing_env_variables['BUCKET_NAME'] +'","S3Key":"' + testing_env_variables['SAMPLE_IMAGE'] + '"}}}}')
-
     # Start nframe workflows
     for i in range(1,nframes):
-        print('uploading test media')
+        uid = uuid.uuid1().hex
         s3 = boto3.client('s3', region_name=testing_env_variables['REGION'])
-        s3.upload_file(testing_env_variables['SAMPLE_IMAGE'], testing_env_variables['BUCKET_NAME'], testing_env_variables['SAMPLE_IMAGE'])
+        s3.upload_file(testing_env_variables['SAMPLE_IMAGE'], testing_env_variables['BUCKET_NAME'], uid + testing_env_variables['SAMPLE_IMAGE'])
         headers = {"Content-Type": "application/json", "Authorization": testing_env_variables['token']}
+        body = json.loads('{"Name":"ImageWorkflow","Configuration":{"ValidationStage":{"MediainfoImage":{"Enabled":true}},"RekognitionStage":{"faceSearchImage":{"Enabled":false, "CollectionId":"undefined"},"labelDetectionImage":{"Enabled":true},"celebrityRecognitionImage":{"Enabled":true},"contentModerationImage":{"Enabled":true},"faceDetectionImage":{"Enabled":true}}},"Input":{"Media":{"Image":{"S3Bucket":"' + testing_env_variables['BUCKET_NAME'] + '","S3Key":"' + uid + testing_env_variables['SAMPLE_IMAGE'] + '"}}}}')
         start_request = requests.post(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution', headers=headers, json=body, verify=False)
+        if start_request.status_code != 200:
+            print('error on workflow #' + str(i))
+            print("Request url:\n"+str(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution'))
+            print("Request header:\n"+json.dumps(headers))
+            print("Request body:\n"+json.dumps(body))
+            print("Request response:\n"+str(start_request))
         assert start_request.status_code == 200
         assert start_request.json()['Status'] == 'Queued'
 

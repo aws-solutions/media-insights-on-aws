@@ -8,8 +8,10 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              Service: [lambda.amazonaws.com]
-            Action: ['sts:AssumeRole']
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
       Path: /
       Policies:
         - PolicyName: root
@@ -17,7 +19,10 @@ Resources:
             Version: 2012-10-17
             Statement:
               - Effect: Allow
-                Action: ['logs:*']
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
                 Resource: 'arn:aws:logs:*:*:*'
   TransformFunction:
     Type: AWS::Lambda::Function
@@ -25,7 +30,6 @@ Resources:
       Code:
         ZipFile: |
           import traceback
-
 
           def handler(event, context):
               response = {
@@ -67,7 +71,7 @@ Resources:
               return response
 
       Handler: index.handler
-      Runtime: python3.6
+      Runtime: python3.8
       Role: !GetAtt TransformExecutionRole.Arn
   TransformFunctionPermissions:
     Type: AWS::Lambda::Permission

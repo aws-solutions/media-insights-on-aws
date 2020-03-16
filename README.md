@@ -7,9 +7,9 @@ MIE is a framework to accelerate the development of serverless applications that
 1. Create media analysis workflows using [Amazon Rekognition](https://aws.amazon.com/rekognition/), [Amazon Transcribe](https://aws.amazon.com/transcribe/), [Amazon Translate](https://aws.amazon.com/translate/), [Amazon Cognito](https://aws.amazon.com/cognito/), [Amazon Polly](https://aws.amazon.com/polly/), and [AWS Elemental MediaConvert](https://aws.amazon.com/mediaconvert/).
 2. Build analytical applications on top of data extracted by workflows and saved in the [Amazon Elasticsearch Service](https://aws.amazon.com/elasticsearch-service/)
 
-MIE includes a demo GUI for video content analysis and search. The [Implementation Guide](https://github.com/awslabs/aws-media-insights-engine/blob/development/IMPLEMENTATION_GUIDE.md) explains how to build other applications with MIE. 
+MIE includes a demo GUI for video content analysis and search. The [Implementation Guide](https://github.com/awslabs/aws-media-insights-engine/blob/master/IMPLEMENTATION_GUIDE.md) explains how to build other applications with MIE. 
 
-***NOTE:*** *Some of the services used by MIE are not in the AWS free tier. Assume you will pay money when you run videos through MIE. It can get expensive to process videos longer than a few minutes.*
+***NOTE: *Some of the services used by MIE are not in the AWS free tier. Assume you will pay money when you run videos through MIE. It can get expensive to process videos longer than a few minutes.* ***
 
 # Installation
 You can deploy MIE and the demo GUI in your AWS account with the following one-click deploy buttons:
@@ -26,11 +26,11 @@ For more information about stack deployment, see the section on [installation pa
 
 # Cost
 
-Most AWS accounts include a free tier for the services used in MIE. However, if your usage exceeds the free tier allotments then you will be responsible for the cost of the AWS services used while running the MIE solution. 
+Most AWS accounts include a free tier for the services used in MIE. However, if your usage exceeds the free tier allotments then you will be responsible for the cost of the AWS services used while running MIE. 
 
-The cost depends on the number of and length of uploaded videos, and data transfer fees, which will vary depending on the number of users and frequency of viewing. Cost also depends on video content. For example, videos with lots of speech will incur higher costs for text operations. You will also be charged for stored media files stored in S3.
+The cost depends on the number of and length of uploaded videos, and data transfer fees, which will vary depending on the number of users and frequency of viewing. Cost also depends on video content. For example, videos with lots of speech will incur higher costs for text operations. You will also be charged for storing media files in S3.
 
-As of the date of publication, the costs for running this solution in the US East (N. Virginia) region are estimated below. Prices for services are tiered to distinguish between heavy and lite users. The estimates below are based on prices for lite users.
+As of the date of publication, the costs for running this solution in the us-east-1 (N. Virginia) region are estimated below. Prices for services are tiered to distinguish between heavy and lite users. The estimates below are based on prices for lite users.
 
 ## Video Operators 
 See [https://aws.amazon.com/rekognition/pricing/](https://aws.amazon.com/rekognition/pricing/).
@@ -53,10 +53,11 @@ Polly ($0.000004 per character)
 Translate ($0.000015 per character)
 
 ## Data Plane and Control Plane
-[Elasticsearch](https://aws.amazon.com/elasticsearch-service/pricing/)](r4.large.elasticsearch) $0.196 per Hour
+[Elasticsearch](https://aws.amazon.com/elasticsearch-service/pricing/)(r4.large.elasticsearch) $0.196 per Hour
 [S3](https://aws.amazon.com/s3/pricing/) $0.023 per GB
 
-The free-tier for Lambda, API Gateway, DynamoDB, and DynamoDB Streams should cover most common MIE use-cases.
+# Lambda, API Gateway, DynamoDB, and DynamoDB Streams 
+The free-tier for Lambda, API Gateway, DynamoDB, and DynamoDB Streams should cover most common MIE use cases.
 
 ## Pricing Example:
 

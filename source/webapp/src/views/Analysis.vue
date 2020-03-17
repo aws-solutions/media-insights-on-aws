@@ -270,7 +270,7 @@
             ).then(res => {
               this.s3_uri = 's3://'+res.data.results.S3Bucket+'/'+res.data.results.S3Key;
               let filename = this.s3_uri.split("/").pop();
-              let fileType = filename.split('.')[1]
+              let fileType = filename.split('.').slice(-1)[0]
               if (this.supportedImageFormats.includes(fileType.toLowerCase()) ) {
                 this.mediaType = "image"
               }

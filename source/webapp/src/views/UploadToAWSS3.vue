@@ -175,12 +175,13 @@
         ],
         thumbnail_position: 10,
         upload_in_progress: false,
-        enabledOperators: ['labelDetection', 'celebrityRecognition', 'contentModeration', 'faceDetection', 'thumbnail', 'Transcribe', 'Translate', 'ComprehendKeyPhrases', 'ComprehendEntities'],
+        enabledOperators: ['labelDetection', 'celebrityRecognition', 'textDetection', 'contentModeration', 'faceDetection', 'thumbnail', 'Transcribe', 'Translate', 'ComprehendKeyPhrases', 'ComprehendEntities'],
         videoOperators: [
           {text: 'Object Detection', value: 'labelDetection'},
           {text: 'Celebrity Recognition', value: 'celebrityRecognition'},
           {text: 'Content Moderation', value: 'contentModeration'},
           {text: 'Face Detection', value: 'faceDetection'},
+          {text: 'Word Detection', value: 'textDetection'},
           {text: 'Face Search', value: 'faceSearch'},
           {text: 'Generic Data Lookup (video only)', value: 'genericDataLookup'},
         ],
@@ -398,6 +399,9 @@
               "faceSearch": {
                 "Enabled": this.enabledOperators.includes("faceSearch"),
                 "CollectionId": this.faceCollectionId==="" ? "undefined" : this.faceCollectionId
+              },
+              "textDetection": {
+                "Enabled": this.enabledOperators.includes("textDetection")
               },
               "GenericDataLookup": {
                 "Enabled": this.enabledOperators.includes("genericDataLookup"),

@@ -46,6 +46,10 @@
                             title="Faces"
                             @click="currentView = 'FaceDetection'"
                           />
+                          <b-tab
+                            title="Words"
+                            @click="currentView = 'TextDetection'"
+                          />
                         </b-tabs>
                       </div>
                     </b-row>
@@ -161,7 +165,14 @@
         }),
         loading: Loading,
       }),
-
+      TextDetection: () => ({
+        component: new Promise(function(resolve) {
+          setTimeout(function() {
+            resolve(import('@/components/TextDetection.vue'));
+        }, 1000);
+        }),
+        loading: Loading,
+      }),
       ContentModeration: () => ({
         component: new Promise(function(resolve) {
           setTimeout(function() {
@@ -220,6 +231,7 @@
         showElasticSearchAlert: false,
         mlTabs: 0,
         speechTabs: 0,
+        supportedImageFormats: ["jpg", "jpeg", "tif", "tiff", "png", "gif"],
         mediaType: "",
         videoOptions: {
           preload: 'auto',
@@ -258,21 +270,11 @@
             ).then(res => {
               this.s3_uri = 's3://'+res.data.results.S3Bucket+'/'+res.data.results.S3Key;
               let filename = this.s3_uri.split("/").pop();
-              if (filename.substring(filename.lastIndexOf(".")) === ".JPG" ||
-                filename.substring(filename.lastIndexOf(".")) === ".jpeg" ||
-                filename.substring(filename.lastIndexOf(".")) === ".JPEG" ||
-                filename.substring(filename.lastIndexOf(".")) === ".TIF" ||
-                filename.substring(filename.lastIndexOf(".")) === ".tif" ||
-                filename.substring(filename.lastIndexOf(".")) === ".TIFF" ||
-                filename.substring(filename.lastIndexOf(".")) === ".tiff" ||
-                filename.substring(filename.lastIndexOf(".")) === ".jpg" ||
-                filename.substring(filename.lastIndexOf(".")) === ".PNG" ||
-                filename.substring(filename.lastIndexOf(".")) === ".png" ||
-                filename.substring(filename.lastIndexOf(".")) === ".GIF" ||
-                filename.substring(filename.lastIndexOf(".")) === ".gif" ) {
+              let fileType = filename.split('.').slice(-1)[0]
+              if (this.supportedImageFormats.includes(fileType.toLowerCase()) ) {
                 this.mediaType = "image"
               }
-              if (this.filename.substring(this.filename.lastIndexOf(".")) === ".mp4") {
+              if (fileType.toLowerCase() === "mp4") {
                 this.mediaType = "video"
               }
               this.filename = filename;

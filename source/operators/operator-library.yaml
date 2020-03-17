@@ -63,6 +63,35 @@ Resources:
                 Resource: !Ref DataPlaneHandlerArn
                 Effect: "Allow"
 
+  mediainfoLambdaRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action:
+              - "sts:AssumeRole"
+            Effect: "Allow"
+            Principal:
+              Service: "lambda.amazonaws.com"
+      Policies:
+        - PolicyName: "mediainfoLambdaAccess"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  - "s3:GetObject"
+                  - "s3:PutObject"
+                  - "s3:DeleteObject"
+                Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
+                Effect: "Allow"
+              - Action: "lambda:InvokeFunction"
+                Resource: !Ref DataPlaneHandlerArn
+                Effect: "Allow"
+
   mediaConvertS3Role:
     Type: "AWS::IAM::Role"
     Properties:
@@ -456,7 +485,38 @@ Resources:
             Statement:
               # TODO: Security - Need to scope this down (no good answer for this yet)
               - Action: "lambda:InvokeFunction"
-                Resource: "arn:aws:lambda:*:*:function:*"
+                Resource:
+                  - !GetAtt startGenericDataLookup.Arn
+                  - !GetAtt startKeyPhrases.Arn
+                  - !GetAtt getKeyPhrases.Arn
+                  - !GetAtt startEntityDetection.Arn
+                  - !GetAtt getEntityDetection.Arn
+                  - !GetAtt startCelebrityRecognition.Arn
+                  - !GetAtt checkCelebrityRecognition.Arn
+                  - !GetAtt startContentModeration.Arn
+                  - !GetAtt checkContentModeration.Arn
+                  - !GetAtt startFaceDetection.Arn
+                  - !GetAtt checkFaceDetection.Arn
+                  - !GetAtt startFaceSearch.Arn
+                  - !GetAtt checkFaceSearch.Arn
+                  - !GetAtt startLabelDetection.Arn
+                  - !GetAtt checkLabelDetection.Arn
+                  - !GetAtt startPersonTracking.Arn
+                  - !GetAtt checkPersonTracking.Arn
+                  - !GetAtt StartMediaConvertFunction.Arn
+                  - !GetAtt StartThumbnailFunction.Arn
+                  - !GetAtt CheckThumbnailFunction.Arn
+                  - !GetAtt CheckMediaConvertFunction.Arn
+                  - !GetAtt StartTranscribeFunction.Arn
+                  - !GetAtt CheckTranscribeFunction.Arn
+                  - !GetAtt WebCaptionsFunction.Arn
+                  - !GetAtt CreateSRTCaptionsFunction.Arn
+                  - !GetAtt CreateVTTCaptionsFunction.Arn
+                  - !GetAtt WebToSRTCaptionsFunction.Arn
+                  - !GetAtt WebToVTTCaptionsFunction.Arn
+                  - !GetAtt TranslateFunction.Arn
+                  - !GetAtt StartPollyFunction.Arn
+                  - !GetAtt CheckPollyFunction.Arn
                 Effect: "Allow"
 
   # Lambda functions
@@ -486,6 +546,34 @@ Resources:
           OPERATOR_NAME: "GenericDataLookup"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DataLookupRole: !GetAtt genericDataLookupLambdaRole.Arn
+
+  # Mediainfo
+
+  Mediainfo:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "mediainfo.lambda_handler"
+      Layers:
+        - !Ref MediaInsightsEnginePython37Layer
+      Role: !GetAtt mediainfoLambdaRole.Arn
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "mediainfo.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Timeout: 300
+      Environment:
+        Variables:
+          OPERATOR_NAME: "Mediainfo"
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DataLookupRole: !GetAtt mediainfoLambdaRole.Arn
+          LD_LIBRARY_PATH: "/opt/python/"
 
   # Comprehend
 
@@ -820,6 +908,63 @@ Resources:
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
 
+
+  startTextDetection:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "start_text_detection.lambda_handler"
+      Layers:
+        - !Ref MediaInsightsEnginePython37Layer
+      Role: !GetAtt "rekognitionRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "start_text_detection.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Environment:
+        Variables:
+          REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          OPERATOR_NAME: "textDetection"
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+
+  checkTextDetection:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "check_text_detection_status.lambda_handler"
+      Layers:
+        - !Ref MediaInsightsEnginePython37Layer
+      Role: !GetAtt "rekognitionRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "check_text_detection_status.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Timeout: 240
+      MemorySize: 256
+      Environment:
+        Variables:
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          OPERATOR_NAME: "textDetection"
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+
+
   startLabelDetection:
     Type: "AWS::Lambda::Function"
     Properties:
@@ -970,6 +1115,31 @@ Resources:
             [
             !FindInMap ["SourceCode", "General", "KeyPrefix"],
             "start_thumbnail.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Timeout: 60
+      Environment:
+        Variables:
+          mediaconvertRole: !GetAtt "mediaConvertS3Role.Arn"
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+
+  CheckThumbnailFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "check_thumbnail.lambda_handler"
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
+      Role: !GetAtt "mediaConvertLambdaRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "check_thumbnail.zip",
             ],
           ]
       Runtime: "python3.7"
@@ -1271,6 +1441,28 @@ Resources:
       StartLambdaArn: !GetAtt startGenericDataLookup.Arn
       StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
+  MediainfoOperation:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "Mediainfo"
+      Type: "Sync"
+      Configuration: { "MediaType": "Video", "Enabled": true }
+      StartLambdaArn: !GetAtt Mediainfo.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
+  MediainfoOperationImage:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "MediainfoImage"
+      Type: "Sync"
+      Configuration: { "MediaType": "Image", "Enabled": true }
+      StartLambdaArn: !GetAtt Mediainfo.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
   MediaconvertOperation:
     Type: Custom::CustomResource
     Properties:
@@ -1278,7 +1470,7 @@ Resources:
       ResourceType: "Operation"
       Name: "Mediaconvert"
       Type: "Async"
-      Configuration: { "MediaType": "Video", "Enabled": true }
+      Configuration: { "MediaType": "Video", "Enabled": false }
       StartLambdaArn: !GetAtt StartMediaConvertFunction.Arn
       MonitorLambdaArn: !GetAtt CheckMediaConvertFunction.Arn
       StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
@@ -1289,9 +1481,10 @@ Resources:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Operation"
       Name: "Thumbnail"
-      Type: "Sync"
+      Type: "Async"
       Configuration: { "MediaType": "Video", "Enabled": true }
       StartLambdaArn: !GetAtt StartThumbnailFunction.Arn
+      MonitorLambdaArn: !GetAtt CheckThumbnailFunction.Arn
       StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
   TranscribeOperation:
@@ -1386,7 +1579,7 @@ Resources:
       ResourceType: "Operation"
       Name: "Polly"
       Type: "Async"
-      Configuration: { "MediaType": "Text", "Enabled": true }
+      Configuration: { "MediaType": "Text", "Enabled": false }
       StartLambdaArn: !GetAtt StartPollyFunction.Arn
       MonitorLambdaArn: !GetAtt CheckPollyFunction.Arn
       StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
@@ -1519,6 +1712,29 @@ Resources:
       MonitorLambdaArn: !GetAtt checkLabelDetection.Arn
       StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
+  textDetectionOperation:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "textDetection"
+      Type: "Async"
+      Configuration: { "MediaType": "Video", "Enabled": true }
+      StartLambdaArn: !GetAtt startTextDetection.Arn
+      MonitorLambdaArn: !GetAtt checkTextDetection.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
+  textDetectionOperationImage:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "textDetectionImage"
+      Type: "Sync"
+      Configuration: { "MediaType": "Image", "Enabled": true }
+      StartLambdaArn: !GetAtt startTextDetection.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
   labelDetectionOperationImage:
     Type: Custom::CustomResource
     Properties:
@@ -1537,7 +1753,7 @@ Resources:
       ResourceType: "Operation"
       Name: "personTracking"
       Type: "Async"
-      Configuration: { "MediaType": "Video", "Enabled": true }
+      Configuration: { "MediaType": "Video", "Enabled": false }
       StartLambdaArn: !GetAtt startPersonTracking.Arn
       MonitorLambdaArn: !GetAtt checkPersonTracking.Arn
       StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
@@ -1550,6 +1766,16 @@ Outputs:
     Value: !GetAtt GenericDataLookupOperation.Name
     Export:
       Name: !Join [":", [!Ref "AWS::StackName", GenericDataLookup]]
+  MediainfoOperation:
+    Description: "Operation name of Mediainfo"
+    Value: !GetAtt MediainfoOperation.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", Mediainfo]]
+  MediainfoOperationImage:
+    Description: "Operation name of MediainfoImage"
+    Value: !GetAtt MediainfoOperationImage.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", MediainfoImage]]
   MediaconvertOperation:
     Description: "Operation name of mediaconvert"
     Value: !GetAtt MediaconvertOperation.Name
@@ -1637,6 +1863,11 @@ Outputs:
     Value: !GetAtt labelDetectionOperation.Name
     Export:
       Name: !Join [":", [!Ref "AWS::StackName", LabelDetection]]
+  TextDetection:
+    Description: "Text detection operator"
+    Value: !GetAtt textDetectionOperation.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", TextDetection]]
   PersonTracking:
     Description: "Person tracking"
     Value: !GetAtt personTrackingOperation.Name
@@ -1669,5 +1900,10 @@ Outputs:
     Value: !GetAtt labelDetectionOperationImage.Name
     Export:
       Name: !Join [":", [!Ref "AWS::StackName", LabelDetectionImage]]
+  TextDetectionOperationImage:
+    Description: "Text Detection image operator"
+    Value: !GetAtt textDetectionOperationImage.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", TextDetectionImage]]
   StackName:
     Value: !Ref AWS::StackName

@@ -17,6 +17,16 @@ Resources:
 
   # Stages
 
+  ValidationStage:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Stage"
+      Name: "ValidationStage"
+      Operations:
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:MediainfoImage"
+
   parallelRekognitionStage:
     Type: Custom::CustomResource
     Properties:
@@ -96,91 +106,30 @@ Resources:
 
   # Workflows
 
-# Do we need a sequential rekognition workflow?
-
-#  SequentialRekognitionWorkflow:
-#    DependsOn:
-#    Type: Custom::CustomResource
-#    Properties:
-#      ServiceToken: !Ref WorkflowCustomResourceArn
-#      ResourceType: "Workflow"
-#      Name: "SequentialRekognitionWorkflow"
-#      StartAt: !GetAtt celebrityRecognitionOperation.StageName
-#      Stages: !Sub
-#        - |-
-#          {
-#            "${celebrityRecognitionStage}":{
-#              "Next": "${contentModerationStage}"
-#              },
-#            "${contentModerationStage}":{
-#              "Next": "${faceDetectionStage}"
-#              },
-#            "${faceDetectionStage}":{
-#              "Next": "${faceSearchStage}"
-#              },
-#            "${faceSearchStage}":{
-#              "Next": "${labelDetectionStage}"
-#              },
-#            "${labelDetectionStage}":{
-#              "Next": "${personTrackingStage}"
-#              },
-#            "${personTrackingStage}":{
-#              "End": true
-#              }
-#          }
-#        - {
-#          celebrityRecognitionStage: !GetAtt celebrityRecognitionOperation.StageName,
-#          contentModerationStage: !GetAtt contentModerationOperation.StageName,
-#          faceDetectionStage: !GetAtt faceDetectionOperation.StageName,
-#          faceSearchStage: !GetAtt faceSearchOperation.StageName,
-#          labelDetectionStage: !GetAtt labelDetectionOperation.StageName,
-#          personTrackingStage: !GetAtt personTrackingOperation.StageName
-#        }
-
-
-  ParallelRekognitionWorkflow:
-    DependsOn:
-      - parallelRekognitionStage
-    Type: Custom::CustomResource
-    Properties:
-      ServiceToken: !Ref WorkflowCustomResourceArn
-      ResourceType: "Workflow"
-      Name: "ParallelRekognitionWorkflow"
-      Stages: !Sub
-        - |-
-          {
-            "${rekognitionSuite}":
-            {
-              "End": true
-            }
-          }
-        - {
-          rekognitionSuite: !GetAtt parallelRekognitionStage.Name
-        }
-      StartAt: !GetAtt parallelRekognitionStage.Name
-
-
-
   ImageWorkflow:
     DependsOn:
+      - ValidationStage
       - RekognitionStage
     Type: Custom::CustomResource
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Workflow"
       Name: "ImageWorkflow"
+      StartAt: !GetAtt ValidationStage.Name
       Stages: !Sub
         - |-
           {
-            "${rekognitionSuite}":
-            {
+            "${ValidationStage}":{
+              "Next": "${rekognitionSuite}"
+              },
+            "${rekognitionSuite}":{
               "End": true
-            }
+              }
           }
         - {
+          ValidationStage: !GetAtt ValidationStage.Name,
           rekognitionSuite: !GetAtt RekognitionStage.Name
         }
-      StartAt: !GetAtt RekognitionStage.Name
 
   RekognitionVideoWorkflow:
     DependsOn:

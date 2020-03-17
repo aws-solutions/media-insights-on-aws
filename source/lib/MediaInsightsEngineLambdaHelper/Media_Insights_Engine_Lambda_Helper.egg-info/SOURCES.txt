@@ -1,0 +1,8 @@
+README.md
+setup.py
+MediaInsightsEngineLambdaHelper/__init__.py
+Media_Insights_Engine_Lambda_Helper.egg-info/PKG-INFO
+Media_Insights_Engine_Lambda_Helper.egg-info/SOURCES.txt
+Media_Insights_Engine_Lambda_Helper.egg-info/dependency_links.txt
+Media_Insights_Engine_Lambda_Helper.egg-info/requires.txt
+Media_Insights_Engine_Lambda_Helper.egg-info/top_level.txt

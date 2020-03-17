@@ -48,10 +48,11 @@ def start_person_tracking(bucket, key):
 
 # Lambda function entrypoint:
 def lambda_handler(event, context):
+    print("We got the following event:\n", event)
     try:
         if "Video" in event["Input"]["Media"]:
-            s3bucket = event["Input"]["Media"]["Video"]["S3Bucket"]
-            s3key = event["Input"]["Media"]["Video"]["S3Key"]
+            s3bucket = event["Input"]["Media"]["ProxyEncode"]["S3Bucket"]
+            s3key = event["Input"]["Media"]["ProxyEncode"]["S3Key"]
         elif "Image" in event["Input"]["Media"]:
             s3bucket = event["Input"]["Media"]["Image"]["S3Bucket"]
             s3key = event["Input"]["Media"]["Image"]["S3Key"]
@@ -64,7 +65,7 @@ def lambda_handler(event, context):
     print("Processing s3://"+s3bucket+"/"+s3key)
     valid_video_types = [".avi", ".mp4", ".mov"]
     valid_image_types = [".png", ".jpg", ".jpeg"]
-    file_type = os.path.splitext(s3key)[1]
+    file_type = os.path.splitext(s3key)[1].lower()
     if file_type in valid_image_types:
         # TODO: implement image handling
         output_object.update_workflow_status("Complete")

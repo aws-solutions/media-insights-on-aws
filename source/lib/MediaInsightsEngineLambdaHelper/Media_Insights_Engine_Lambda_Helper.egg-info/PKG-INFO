@@ -1,0 +1,36 @@
+Metadata-Version: 2.1
+Name: Media-Insights-Engine-Lambda-Helper
+Version: 0.0.3
+Summary: Helper classes for developing Media Insights Engine Lambda Functions
+Home-page: https://code.amazon.com/packages/MediaInsightsEngine
+Author: Brandon Dold
+Author-email: brandold@amazon.com
+License: UNKNOWN
+Description: # Media Insights Engine Lambda Helper
+        
+        This package serves as a helper library for developing the lambda functions that compose an operator
+        in the Media Insights Engine application.
+        
+        Classes are provided for 4 common needs:
+        
+        * Valid Status Syntax
+        * Output formatting
+        * Dataplane Interaction (Media / Metadata Persistence)
+        * Custom Errors
+        
+        
+        # Usage
+        
+        Use the python `import` command. For example:
+        
+        ```
+        from MediaInsightsEngineLambdaHelper import OutputHelper
+        from MediaInsightsEngineLambdaHelper import MasExecutionError
+        from MediaInsightsEngineLambdaHelper import DataPlane
+        ```
+        
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: Other/Proprietary License
+Classifier: Operating System :: OS Independent
+Description-Content-Type: text/markdown

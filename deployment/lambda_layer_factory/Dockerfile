@@ -2,12 +2,12 @@ FROM amazonlinux
 
 WORKDIR /
 RUN yum update -y
-RUN yum install gcc openssl-devel bzip2-devel libffi-devel wget tar gzip zip make -y
+RUN yum install gcc gcc-c++ openssl-devel bzip2-devel libffi-devel wget tar gzip zip make -y
 
 # Install Python 3.8
 WORKDIR /
 RUN wget https://www.python.org/ftp/python/3.8.0/Python-3.8.0.tgz
-RUN tar -xzvf Python-3.8.0.tgz
+RUN tar -xzf Python-3.8.0.tgz
 WORKDIR /Python-3.8.0
 RUN ./configure --enable-optimizations
 RUN make install

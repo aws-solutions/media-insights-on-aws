@@ -14,7 +14,7 @@ dataplane_bucket = os.environ['DataplaneBucket']
 s3 = boto3.client('s3')
 
 # These names are the lowercase version of OPERATOR_NAME defined in /source/operators/operator-library.yaml
-supported_operators = ["transcribe", "translate", "genericdatalookup", "labeldetection", "celebrityrecognition", "facesearch", "contentmoderation", "facedetection", "key_phrases", "entities", "key_phrases"]
+supported_operators = ["textdetection", "mediainfo", "transcribe", "translate", "genericdatalookup", "labeldetection", "celebrityrecognition", "facesearch", "contentmoderation", "facedetection", "key_phrases", "entities", "key_phrases"]
 
 
 def normalize_confidence(confidence_value):
@@ -25,6 +25,47 @@ def normalize_confidence(confidence_value):
 def convert_to_milliseconds(time_value):
     converted = float(time_value) * 1000
     return str(converted)
+
+def process_text_detection(asset, workflow, results):
+    metadata = json.loads(results)
+    es = connect_es(es_endpoint)
+    extracted_items = []
+    # We can tell if json results are paged by checking to see if the json results are an instance of the list type.
+    if isinstance(metadata, list):
+        # handle paged results
+        for page in metadata:
+            if len(page["TextDetections"]) > 0:
+                for item in page["TextDetections"]:
+                    try:
+                        text_detection = item["TextDetection"]
+                        text_detection["Timestamp"] = item["Timestamp"]
+                        text_detection["Operator"] = "textDetection"
+                        text_detection["Workflow"] = workflow
+                        # Flatten the bbox Label array
+                        text_detection["BoundingBox"] = text_detection["Geometry"]["BoundingBox"]
+                        del text_detection["Geometry"]
+                        print(text_detection)
+                        extracted_items.append(text_detection)
+                    except KeyError as e:
+                        print("KeyError: " + str(e))
+                        print("Item: " + json.dumps(item))
+    else:
+        # these results are not paged
+        if len(metadata["TextDetections"]) > 0:
+                for item in metadata["TextDetections"]:
+                    try:
+                        text_detection = item["TextDetection"]
+                        text_detection["Timestamp"] = item["Timestamp"]
+                        text_detection["Operator"] = "textDetection"
+                        text_detection["Workflow"] = workflow
+                        # Flatten the bbox Label array
+                        text_detection["BoundingBox"] = text_detection["Geometry"]["BoundingBox"]
+                        del text_detection["Geometry"]
+                        extracted_items.append(text_detection)
+                    except KeyError as e:
+                        print("KeyError: " + str(e))
+                        print("Item: " + json.dumps(item))
+    bulk_index(es, asset, "textDetection", extracted_items)
 
 
 def process_celebrity_detection(asset, workflow, results):
@@ -323,6 +364,19 @@ def process_face_detection(asset, workflow, results):
                 item["Workflow"] = workflow
                 extracted_items.append(item)
     bulk_index(es, asset, "face_detection", extracted_items)
+
+def process_mediainfo(asset, workflow, results):
+    # This function puts mediainfo data in Elasticsearch.
+    metadata = json.loads(results)
+    es = connect_es(es_endpoint)
+    extracted_items = []
+    # Objects in arrays are not well supported by Elastic, so we flatten the tracks array here.
+    if isinstance(metadata['tracks'], list):
+        for item in metadata['tracks']:
+            item["Operator"] = "mediainfo"
+            item["Workflow"] = workflow
+            extracted_items.append(item)
+    bulk_index(es, asset, "mediainfo", extracted_items)
 
 def process_generic_data(asset, workflow, results):
     # This function puts generic data in Elasticsearch.
@@ -723,6 +777,8 @@ def lambda_handler(event, context):
                             process_transcribe(asset_id, workflow, metadata["Results"])
                         if operator == "translate":
                             process_translate(asset_id, workflow, metadata["Results"])
+                        if operator == "mediainfo":
+                            process_mediainfo(asset_id, workflow, metadata["Results"])
                         if operator == "genericdatalookup":
                             process_generic_data(asset_id, workflow, metadata["Results"])
                         if operator == "labeldetection":
@@ -739,6 +795,8 @@ def lambda_handler(event, context):
                             process_entities(asset_id, workflow, metadata["Results"])
                         if operator == "key_phrases":
                             process_keyphrases(asset_id, workflow, metadata["Results"])
+                        if operator == "textdetection":
+                            process_text_detection(asset_id, workflow, metadata["Results"])
                     else:
                         print("We do not store {operator} results".format(operator=operator))
                 else:

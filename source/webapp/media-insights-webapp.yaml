@@ -70,7 +70,7 @@ Resources:
             AbortIncompleteMultipartUpload:
               DaysAfterInitiation: 1
       VersioningConfiguration:
-        Status: "Enabled"
+        Status: "Disabled"
 
   WebBucketPolicy:
     Type: AWS::S3::BucketPolicy

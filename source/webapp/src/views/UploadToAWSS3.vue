@@ -154,7 +154,7 @@
     },
     data() {
       return {
-        valid_media_types: ['cmaf', 'dash', 'hls', 'mp4', 'f4v', 'mxf', 'mov', 'ismv', 'raw', 'av1', 'avc', 'hevc', 'mpeg-2', 'avi', 'mkv'], // see https://docs.aws.amazon.com/mediaconvert/latest/ug/reference-codecs-containers.html
+        valid_media_types: ['cmaf', 'dash', 'hls', 'mp4', 'f4v', 'mxf', 'mov', 'ismv', 'raw', 'av1', 'avc', 'hevc', 'mpeg-2', 'avi', 'mkv', 'webm'], // see https://docs.aws.amazon.com/mediaconvert/latest/ug/reference-codecs-containers.html
         fields: [
           {
             'asset_id': {

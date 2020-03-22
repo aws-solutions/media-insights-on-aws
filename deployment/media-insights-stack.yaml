@@ -32,13 +32,13 @@ Parameters:
     AllowedValues:
       - Yes
       - No
-  #  DeployTranscribeWorkflow:
-  #    Description: Deploy Transcribe Workflow which takes a video as input and transcribes
-  #    Type: String
-  #    Default: No
-  #    AllowedValues:
-  #      - Yes
-  #      - No
+  DeployTranscribeWorkflow:
+    Description: Deploy Transcribe Workflow which takes a video as input and transcribes
+    Type: String
+    Default: No
+    AllowedValues:
+      - Yes
+      - No
   DeployAnalyticsPipeline:
     Type: String
     Description: Deploy a metadata streaming pipeline that can be consumed by downstream analytics plaforms
@@ -79,13 +79,13 @@ Parameters:
     Description: Maximum number of workflows to run concurrently.  When the maximum is reached, additional workflows are added to a wait queue.
     Default: 10
     MinValue: 1
-  #  TranscriberApp:
-  #    Type: String
-  #    Description: Deploy a front end transcriber application that takes custom inputs from the user
-  #    Default: No
-  #    AllowedValues:
-  #      - Yes
-  #      - No
+  TranscriberApp:
+    Type: String
+    Description: Deploy a front end transcriber application that takes custom inputs from the user
+    Default: No
+    AllowedValues:
+      - Yes
+      - No
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -113,7 +113,7 @@ Metadata:
           - DeployTestWorkflow
           - DeployInstantTranslateWorkflow
           - DeployRekognitionWorkflow
-          #          - DeployTranscribeWorkflow
+          - DeployTranscribeWorkflow
           - DeployComprehendWorkflow
           - DeployKitchenSinkWorkflow
           - Label:
@@ -131,8 +131,8 @@ Metadata:
         default: Enable Test Workflow Deployment
       InstantTranslateWorkflow:
         default: Enable Instant Translate Workflow Deployment
-      #      TranscribeWorkflow:
-      #        default: Enable Transcribe Workflow Deployment
+      TranscribeWorkflow:
+        default: Enable Transcribe Workflow Deployment
       RekognitionWorkflow:
         default: Enable Rekognition Workflow Deployment
 
@@ -141,8 +141,8 @@ Conditions:
   DeployTestWorkflowCondition: !Equals [!Ref DeployTestWorkflow, Yes]
   DeployInstantTranslateWorkflowCondition:
     !Equals [!Ref DeployInstantTranslateWorkflow, Yes]
-  #  DeployTranscribeWorkflowCondition:
-  #  !Equals [!Ref DeployTranscribeWorkflow, Yes]
+  DeployTranscribeWorkflowCondition:
+    !Equals [!Ref DeployTranscribeWorkflow, Yes]
   DeployRekognitionWorkflowCondition:
     !Equals [!Ref DeployRekognitionWorkflow, Yes]
   DeployComprehendWorkflowCondition:
@@ -151,7 +151,7 @@ Conditions:
     !Equals [!Ref DeployKitchenSinkWorkflow, Yes]
   DeployAnalyticsPipelineCondition: !Equals [!Ref DeployAnalyticsPipeline, Yes]
   DeployDemoSiteCondition: !Equals [!Ref DeployDemoSite, Yes]
-  #DeployTranscriberApp: !Equals [!Ref TranscriberApp, Yes]
+  DeployTranscriberApp: !Equals [!Ref TranscriberApp, Yes]
 
 Mappings:
   SourceCode:
@@ -1281,29 +1281,29 @@ Resources:
             - Outputs.WorkflowCustomResourceArn
         OperatorLibraryStack: !GetAtt OperatorLibrary.Outputs.StackName
 
-  #  TranscribeWorkflow:
-  #    Condition: DeployTranscribeWorkflowCondition
-  #    DependsOn:
-  #      - MediaInsightsWorkflowApi
-  #      - MediaInsightsDataplaneApiStack
-  #    Type: "AWS::CloudFormation::Stack"
-  #    Properties:
-  #      TemplateURL:
-  #        !Join [
-  #          "/",
-  #          [
-  #            "https://s3.amazonaws.com",
-  #            !FindInMap ["SourceCode", "General", "S3Bucket"],
-  #            !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
-  #            "transcribe.template",
-  #          ],
-  #        ]
-  #      Parameters:
-  #        WorkflowCustomResourceArn:
-  #          Fn::GetAtt:
-  #            - MediaInsightsWorkflowApi
-  #            - Outputs.WorkflowCustomResourceArn
-  #        OperatorLibraryStack: !GetAtt OperatorLibrary.Outputs.StackName
+  TranscribeWorkflow:
+    Condition: DeployTranscribeWorkflowCondition
+    DependsOn:
+      - MediaInsightsWorkflowApi
+      - MediaInsightsDataplaneApiStack
+    Type: "AWS::CloudFormation::Stack"
+    Properties:
+      TemplateURL:
+        !Join [
+          "/",
+          [
+            "https://s3.amazonaws.com",
+            !FindInMap ["SourceCode", "General", "S3Bucket"],
+            !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
+            "transcribe.template",
+          ],
+        ]
+      Parameters:
+        WorkflowCustomResourceArn:
+          Fn::GetAtt:
+            - MediaInsightsWorkflowApi
+            - Outputs.WorkflowCustomResourceArn
+        OperatorLibraryStack: !GetAtt OperatorLibrary.Outputs.StackName
 
   RekognitionWorkflow:
     Condition: DeployRekognitionWorkflowCondition
@@ -1410,32 +1410,32 @@ Resources:
         AwsRegion: !Ref "AWS::Region"
         PoolClientId: !Ref MieWebAppClient
 
-#  TranscriberWebApp:
-#    Condition: DeployTranscriberApp
-#    DependsOn:
-#      - TranscribeWorkflow
-#    Type: "AWS::CloudFormation::Stack"
-#    Properties:
-#      TemplateURL:
-#        !Join [
-#          "/",
-#          [
-#            "https://s3.amazonaws.com",
-#            !FindInMap ["SourceCode", "General", "S3Bucket"],
-#            !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
-#            "transcriber-webapp.template",
-#          ],
-#        ]
-#      Parameters:
-#        ControlPlaneApiEndpoint:
-#          Fn::GetAtt:
-#            - MediaInsightsWorkflowApi
-#            - Outputs.EndpointURL
-#        DataPlaneApiEndpoint:
-#          Fn::GetAtt:
-#            - MediaInsightsDataplaneApiStack
-#            - Outputs.EndpointURL
-#        DataPlaneBucket: !Ref DataplaneBucket
+  TranscriberWebApp:
+    Condition: DeployTranscriberApp
+    DependsOn:
+      - TranscribeWorkflow
+    Type: "AWS::CloudFormation::Stack"
+    Properties:
+      TemplateURL:
+        !Join [
+          "/",
+          [
+            "https://s3.amazonaws.com",
+            !FindInMap ["SourceCode", "General", "S3Bucket"],
+            !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
+            "transcriber-webapp.template",
+          ],
+        ]
+      Parameters:
+        ControlPlaneApiEndpoint:
+          Fn::GetAtt:
+            - MediaInsightsWorkflowApi
+            - Outputs.EndpointURL
+        DataPlaneApiEndpoint:
+          Fn::GetAtt:
+            - MediaInsightsDataplaneApiStack
+            - Outputs.EndpointURL
+        DataPlaneBucket: !Ref Dataplane
 
 Outputs:
   DataplaneBucket:

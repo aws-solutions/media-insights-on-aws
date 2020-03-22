@@ -1003,106 +1003,106 @@ zip -g dist/websitehelper.zip *.py
 
 cp "./dist/websitehelper.zip" "$dist_dir/websitehelper.zip"
 
-#echo "------------------------------------------------------------------------------"
-#echo "Transcriber App Lambdas"
-#echo "------------------------------------------------------------------------------"
-#
-#echo "Building Transcriber App Lambdas"
-#cd "$transcriber_dir/lambda" || exit
-#
-#[ -e dist ] && rm -r dist
-#mkdir -p dist
-#
-#[ -e package ] && rm -r package
-#mkdir -p package
-#
-#echo "Create requirements for lambda"
-#
-##pipreqs . --force
-#
-## Make lambda package
-#pushd package
-#echo "Create lambda package"
-#
-## Handle distutils install errors
-#
-#touch ./setup.cfg
-#
-#echo "[install]" > ./setup.cfg
-#echo "prefix= " >> ./setup.cfg
-#
-## Try and handle failure if pip version mismatch
-#if [ -x "$(command -v pip)" ]; then
-#  pip install -r ../requirements.txt --target .
-#
-#elif [ -x "$(command -v pip3)" ]; then
-#  echo "pip not found, trying with pip3"
-#  pip3 install -r ../requirements.txt --target .
-#
-#elif ! [ -x "$(command -v pip)" ] && ! [ -x "$(command -v pip3)" ]; then
-#  echo "No version of pip installed. This script requires pip. Cleaning up and exiting."
-#  exit 1
-#fi
-#
-#zip -r9 ../dist/transcriberapp.zip .
-#
-#popd
-#
-#zip -rg dist/transcriberapp.zip *.js ../node_modules ../package.json
-#
-#cp "./dist/transcriberapp.zip" "$dist_dir/transcriberapp.zip"
-#
-#echo "------------------------------------------------------------------------------"
-#echo "Transcriber App Lambda Layer"
-#echo "------------------------------------------------------------------------------"
-#
-#echo "Building Transcriber App Lambda Layer"
-#cd "$transcriber_dir/" || exit
-#
-#npm i
-#
-#[ -e dist ] && rm -r dist
-#mkdir -p dist
-#
-#[ -e package ] && rm -r package
-#mkdir -p package
-#
-#echo "Create requirements for lambda"
-#
-##pipreqs . --force
-#
-## Make lambda package
-#pushd package
-#echo "Create lambda package"
-#
-## Handle distutils install errors
-#
-#touch ./setup.cfg
-#
-#echo "[install]" > ./setup.cfg
-#echo "prefix= " >> ./setup.cfg
-#
-## Try and handle failure if pip version mismatch
-#if [ -x "$(command -v pip)" ]; then
-#  pip install -r ../requirements.txt --target .
-#
-#elif [ -x "$(command -v pip3)" ]; then
-#  echo "pip not found, trying with pip3"
-#  pip3 install -r ../requirements.txt --target .
-#
-#elif ! [ -x "$(command -v pip)" ] && ! [ -x "$(command -v pip3)" ]; then
-#  echo "No version of pip installed. This script requires pip. Cleaning up and exiting."
-#  exit 1
-#fi
-#
-#zip -r9 ../dist/transcriber-lambda-layer.zip .
-#
-#popd
-#
-#zip -rg dist/transcriber-lambda-layer.zip node_modules/ package.json
-#
-#cp "./dist/transcriber-lambda-layer.zip" "$dist_dir/transcriber-lambda-layer.zip"
-#
+echo "------------------------------------------------------------------------------"
+echo "Transcriber App Lambdas"
+echo "------------------------------------------------------------------------------"
+
+echo "Building Transcriber App Lambdas"
+cd "$transcriber_dir/lambda" || exit
+
+[ -e dist ] && rm -r dist
+mkdir -p dist
+
+[ -e package ] && rm -r package
+mkdir -p package
+
+echo "Create requirements for lambda"
+
+#pipreqs . --force
+
+# Make lambda package
+pushd package
+echo "Create lambda package"
+
+# Handle distutils install errors
+
+touch ./setup.cfg
+
+echo "[install]" > ./setup.cfg
+echo "prefix= " >> ./setup.cfg
+
+# Try and handle failure if pip version mismatch
+if [ -x "$(command -v pip)" ]; then
+ pip install -r ../requirements.txt --target .
+
+elif [ -x "$(command -v pip3)" ]; then
+ echo "pip not found, trying with pip3"
+ pip3 install -r ../requirements.txt --target .
+
+elif ! [ -x "$(command -v pip)" ] && ! [ -x "$(command -v pip3)" ]; then
+ echo "No version of pip installed. This script requires pip. Cleaning up and exiting."
+ exit 1
+fi
+
+zip -r9 ../dist/transcriberapp.zip .
+
+popd
+
+zip -rg dist/transcriberapp.zip *.js ../node_modules ../package.json
+
+cp "./dist/transcriberapp.zip" "$dist_dir/transcriberapp.zip"
+
+echo "------------------------------------------------------------------------------"
+echo "Transcriber App Lambda Layer"
+echo "------------------------------------------------------------------------------"
+
+echo "Building Transcriber App Lambda Layer"
+cd "$transcriber_dir/" || exit
+
+npm i
+
+[ -e dist ] && rm -r dist
+mkdir -p dist
+
+[ -e package ] && rm -r package
+mkdir -p package
+
+echo "Create requirements for lambda"
+
+#pipreqs . --force
+
+# Make lambda package
+pushd package
+echo "Create lambda package"
+
+# Handle distutils install errors
+
+touch ./setup.cfg
+
+echo "[install]" > ./setup.cfg
+echo "prefix= " >> ./setup.cfg
+
+# Try and handle failure if pip version mismatch
+if [ -x "$(command -v pip)" ]; then
+ pip install -r ../requirements.txt --target .
+
+elif [ -x "$(command -v pip3)" ]; then
+ echo "pip not found, trying with pip3"
+ pip3 install -r ../requirements.txt --target .
+
+elif ! [ -x "$(command -v pip)" ] && ! [ -x "$(command -v pip3)" ]; then
+ echo "No version of pip installed. This script requires pip. Cleaning up and exiting."
+ exit 1
+fi
+
+zip -r9 ../dist/transcriber-lambda-layer.zip .
+
+popd
+
+zip -rg dist/transcriber-lambda-layer.zip node_modules/ package.json
+
+cp "./dist/transcriber-lambda-layer.zip" "$dist_dir/transcriber-lambda-layer.zip"
+
 
 echo "------------------------------------------------------------------------------"
 echo "Workflow API Function"
@@ -1266,8 +1266,8 @@ echo "We are uploading the MIE web app"
 aws s3 cp $webapp_dir/dist s3://$bucket/media-insights-solution/$2/code/website --recursive --profile $profile
 aws s3 cp $webapp_dir/.env s3://$bucket/media-insights-solution/$2/code/website/.env --profile $profile
 
-#echo "We are uploading the transcriber web app"
-#aws s3 cp $transcriber_dir/web s3://$bucket/media-insights-solution/$2/code/transcriberwebsite --recursive --profile $profile
+echo "We are uploading the transcriber web app"
+aws s3 cp $transcriber_dir/web s3://$bucket/media-insights-solution/$2/code/transcriberwebsite --recursive --profile $profile
 
 echo "------------------------------------------------------------------------------"
 echo "S3 Packaging Complete"

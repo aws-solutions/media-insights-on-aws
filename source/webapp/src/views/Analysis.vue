@@ -273,8 +273,7 @@
               let fileType = filename.split('.').slice(-1)[0]
               if (this.supportedImageFormats.includes(fileType.toLowerCase()) ) {
                 this.mediaType = "image"
-              }
-              if (fileType.toLowerCase() === "mp4") {
+              } else {
                 this.mediaType = "video"
               }
               this.filename = filename;
@@ -289,7 +288,17 @@
           return data.getIdToken().getJwtToken();
         });
         const bucket = this.s3_uri.split("/")[2];
-        const key = this.s3_uri.split(this.s3_uri.split("/")[2] + '/')[1];
+        // TODO: Get the path to the proxy mp4 from the mediaconvert operator
+        // Our mediaconvert operator sets proxy encode filename to [key]_proxy.mp4
+        let key="";
+        if (this.mediaType === "image") {
+          key = this.s3_uri.split(this.s3_uri.split("/")[2] + '/')[1];
+        }
+        if (this.mediaType === "video") {
+          const media_key = (this.s3_uri.split(this.s3_uri.split("/")[2] + '/')[1].replace('input/', ''))
+          const proxy_encode_key = media_key.split(".").slice(0,-1).join('.') + "_proxy.mp4";
+          key = proxy_encode_key
+        }
         // get URL to video file in S3
         fetch(this.DATAPLANE_API_ENDPOINT + '/download', {
           method: 'POST',

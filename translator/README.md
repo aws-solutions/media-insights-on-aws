@@ -1,5 +1,5 @@
-# solution-template
-template of solution builder solution
+# Video On Demand Translator
+
 
 ## Running unit tests for customization
 * Clone the repository, then make the desired code changes
@@ -47,16 +47,6 @@ aws s3 cp ./dist/ s3://my-bucket-name-<aws_region>/$SOLUTION_NAME/$VERSION/ --re
     |- lib/                      [ Example function libraries ]
   |-example-function-py          [ Example microservice function in python ]
 
-```
-
-Each microservice follows the structure of:
-
-```
-|-service-name/
-  |-lib/
-    |-[service module libraries and unit tests]
-  |-index.js [injection point for microservice]
-  |-package.json
 ```
 
 ***

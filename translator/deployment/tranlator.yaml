@@ -1,0 +1,87 @@
+# Serverless Limit Monitor Solution
+#
+# template for serverless-limit-monitor-solution
+# **DO NOT DELETE**
+#
+# author: aws-solutions-builder@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: (SOxyz) - Solution - Master Template
+
+Parameters:
+  # Sample parameter 1
+  Param1:
+    Description: Parameter 1.
+    Type: String
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+    - Label:
+        default: Section 1
+      Parameters:
+      - Param1
+    ParameterLabels:
+      Param1:
+        default: Parameter #1
+
+Mappings:
+  MetricsMap:
+    Send-Data:
+      SendAnonymousData: "Yes" # change to 'No' if needed
+
+  SourceCode:
+    General:
+      S3Bucket: %%BUCKET_NAME%%
+      KeyPrefix: "%%SOLUTION_NAME%%/%%VERSION%%"
+
+Resources:
+  #
+  # Hello Function
+  # [HelloFunction, HelloFunctionRole]
+  #
+  HelloFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Example Solution - Lambda function to send greetings
+      Environment:
+        Variables:
+          LOG_LEVEL: 'INFO' # change to WARN, ERROR or DEBUG as needed
+      Handler: index.handler
+      Role: !Sub ${HelloFunctionRole.Arn}
+      Code:
+        S3Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "S3Bucket"], Ref: "AWS::Region"]]
+        S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "KeyPrefix"],  "example-function-js.zip"]]
+      Runtime: nodejs8.10
+      Timeout: 300
+
+  HelloFunctionRole:
+    Type: AWS::IAM::Role
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+        - id: W11
+          reason: Override the IAM role to allow support:* for logs:PutLogEvents resource on its permissions policy
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+      Path: /
+      Policies:
+      - PolicyName: !Sub Hello-Function-Policy-${AWS::StackName}-${AWS::Region}
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*
+            
+Outputs:
+            

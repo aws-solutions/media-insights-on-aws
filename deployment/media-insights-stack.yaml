@@ -634,8 +634,6 @@ Resources:
             AllowedMethods: ["GET", "POST"]
             AllowedOrigins: ["*"]
             Id: AllowUploadsFromWebApp
-      VersioningConfiguration:
-        Status: "Enabled"
 
   DataplaneBucketPolicy:
     Type: "AWS::S3::BucketPolicy"

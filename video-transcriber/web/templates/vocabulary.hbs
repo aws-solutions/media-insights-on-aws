@@ -1,0 +1,53 @@
+<!--
+  Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+  
+  Licensed under the Apache License, Version 2.0 (the "License").
+  You may not use this file except in compliance with the License.
+  A copy of the License is located at
+  
+      http://www.apache.org/licenses/LICENSE-2.0
+  
+  or in the "license" file accompanying this file. This file is distributed 
+  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either 
+  express or implied. See the License for the specific language governing 
+  permissions and limitations under the License.
+-->
+
+{{#if loading}}
+			<div class="text-center"><img src="img/loading.gif" class="img-fluid"/></div>
+{{else}}		
+	<div class="jumbotron">
+	  <p class="lead">A custom vocabulary is used by Amazon Transcribe to improve the quality of transcriptions. Please add your domain specific phrases and terms (up to 50k of text). After saving your vocabulary it takes a minute to be processed by Amazon Transcribe. <a href="https://docs.aws.amazon.com/transcribe/latest/dg/how-it-works.html#how-vocabulary">Read more about the Custom Vocabularies here</a>.</p>
+	</div>
+
+	<div class="px-2">
+		<form>
+            <div id="beingUpdated" style="display:none;">
+                <div class="card">
+                    <div class="card-body">
+                        <img src="img/loading_small.gif"/> Vocabulary is being compiled by Amazon Transcribe...
+                    </div>
+                </div>
+                <br>
+            </div>
+            <div id="failedUpdate" style="display:none;">
+                <div class="card">
+                    <div class="card-body">
+                        <img src="img/error.png"/> Vocabulary failed to compile. Make sure each phrase is on its own line and there are no special characters.
+                    </div>
+                </div>
+                <br>
+            </div>
+			<div class="form-group">
+				<textarea name="vocabulary" id="vocabulary" class="form-control" rows="10" placeholder="One entry per line">{{#each vocabulary}}
+{{this}}{{/each}}</textarea>
+			</div>
+			<div id="bottomButton" class="form-group" style="display:none;">
+				<button type="button" class="btn btn-primary mb-2" onclick="javascript:saveVocabulary($('#vocabulary').val().trim()); return false;">Save vocabulary</button>
+			</div>
+		</form>
+	</div>
+	<script>
+		checkVocabularyReady();
+	</script>	
+{{/if}}

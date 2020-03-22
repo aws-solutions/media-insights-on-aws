@@ -1,0 +1,498 @@
+<!--
+  Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+  
+  Licensed under the Apache License, Version 2.0 (the "License").
+  You may not use this file except in compliance with the License.
+  A copy of the License is located at
+  
+      http://www.apache.org/licenses/LICENSE-2.0
+  
+  or in the "license" file accompanying this file. This file is distributed 
+  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either 
+  express or implied. See the License for the specific language governing 
+  permissions and limitations under the License.
+-->
+
+{{#if loading}}
+	<div class="text-center"><img src="img/loading.gif" class="img-fluid"/></div>
+{{else}}
+	<br/>
+	<div class="container-fluid">
+		<div class="row">
+			<div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
+				<div class="video-container">
+					<video name="video" id="video"
+						poster="img/video_splash.png" 
+						style="max-width:100%; height:auto">
+						<source src="{{{video.s3VideoSignedUrl}}}" type="video/mp4">
+						Your browser does not support playing this type of video.
+					</video>
+					<div class="video-overlay" id="captionOverlay" style="display:none;"></div>
+					<div class="timer-overlay" id="timerOverlay" style="display:none;">0.0s</div>
+					<div class="speed-overlay" id="speedOverlay" style="display:none;">1.0x</div>
+				</div>	
+
+				<div style="display:none;" id="videoControls">
+					<div class="slide-container">
+						<input type="range" min="0" max="0" value="0" class="slider" id="videoProgress"/>
+					</div>
+
+					<div class="text-center">
+						<button type="button" class="btn btn-secondary media-button" 
+							onclick="stepBackward(true, true)">
+							<i class="fa fa-step-backward fa-sm"></i>
+						</button>			
+						<button type="button" class="btn btn-secondary media-button" 
+							onclick="playPause()">
+							<i id="playPauseIcon" class="fa fa-play fa-sm"></i>
+						</button>	
+						<button type="button" class="btn btn-secondary media-button" 
+							onclick="stepForward(true, true)">
+							<i class="fa fa-step-forward fa-sm"></i>
+						</button>
+						<button type="button" class="btn btn-secondary 
+							media-button selected" 
+							onclick="repeatButton()" title="Pause after each caption">
+							<i id="repeatIcon" class="fa fa-redo fa-sm"></i>
+						</button>
+						<button type="button" class="btn btn-secondary 
+							media-button" 
+							onclick="speedUp()" title="Speed up video">
+							<i id="repeatIcon" class="fa fa-plus fa-sm"></i>
+						</button>
+						<button type="button" class="btn btn-secondary 
+							media-button" 
+							onclick="slowDown()" title="Slow down video">
+							<i id="repeatIcon" class="fa fa-minus fa-sm"></i>
+						</button>						
+					</div>	
+				</div>
+			</div>
+			<div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
+				<div style="display:none;" id="editorControls">
+					<div class="text-center control-container">
+						<button type="button" class="btn btn-secondary 
+							control-button" onclick="saveCaptionsLocal()" title="Save captions" id="saveButton">
+							<i class="fa fa-save fa-sm"></i> Save
+						</button>
+						<span class="dropdown show">
+							<a class="btn btn-secondary dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+							<i class="fa fa-cloud-download-alt fa-sm"></i> Download
+							</a>
+
+							<div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+								<a class="dropdown-item" onclick="downloadCaptionsVTTLocal()">WEBVTT</a>
+								<a class="dropdown-item" onclick="downloadCaptionsSRTLocal()">SRT</a>
+							</div>
+						</span>
+					</div>
+					<form class="form">
+						<div class="form-group">
+							<label for="currentTime">Caption timing</label>
+							<input type="text" class="form-control input-sm" id="startTime" placeholder="Start time" readonly/>
+							<input type="text" class="form-control input-sm" id="endTime" placeholder="End time" readonly/>
+						</div>							
+						<div class="form-group">
+							<label for="caption">Caption</label>
+							<textarea rows="3" class="form-control input-sm" id="caption" placeholder="Caption text"/>
+						</div>
+						<div class="form-group">
+							<label for="confidenceHighlight">Highlight words with confidence less than</label>
+							<input type="text" class="form-control input-sm" id="confidenceHighlight" placeholder="Confidence highlight" value="0.75"/>
+						</div>						
+						<div class="form-group float-right">
+							<input type="checkbox" name="autosave" id="autosave" checked>
+								Auto save
+							</input>
+						</div>		
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script>
+
+        toastr.success('Loading video and captions...');
+
+        var decodeHTML = function (html) {
+            var txt = document.createElement('textarea');
+            txt.innerHTML = html;
+            return txt.value;
+        };
+
+        var captionData = decodeHTML('{{ video.Captions }}');
+
+		captionData = JSON.parse(captionData);
+
+		var workflowId = '{{ video.WorkflowId }}';
+		var assetId = '{{ video.AssetId }}';
+		var videoName = '{{ video.Name }}';
+
+		var video = document.getElementById("video"); 
+		var videoProgress = document.getElementById("videoProgress");
+		var startTimeEdit = document.getElementById("startTime");
+		var endTimeEdit = document.getElementById("endTime");
+		var captionEdit = document.getElementById("caption");
+		var captionOverlay = document.getElementById("captionOverlay");
+		var timerOverlay = document.getElementById("timerOverlay");
+		var speedOverlay = document.getElementById("speedOverlay");
+		var autosave = document.getElementById("autosave");
+		var saveButton = document.getElementById("saveButton");
+		var confidenceHighlight = document.getElementById("confidenceHighlight");
+
+		var duration = 0;
+		var progressMax = 10000;
+		var captionIndex = -1;
+		var pausePerCaption = true;
+		var playSpeed = 1.0;
+		var dirty = false;
+		var confidence = 0.75;
+
+		videoProgress.oninput = function() {
+			var time = videoProgress.value / progressMax * duration;
+
+			while (time >= captionData[captionIndex].end)
+			{
+				if (captionIndex == captionData.length - 1)
+				{
+					break;
+				}
+				stepForward(false, false);
+			}
+
+			while (time < captionData[captionIndex].start)
+			{
+				if (captionIndex == 0)
+				{
+					break;
+				}
+				stepBackward(false, false);
+			}
+
+			video.currentTime = time;
+		}
+
+		function renderCaption() {
+
+			var final = captionData[captionIndex].caption.replace(/([\w'-]+)/g, function(m) {
+				var lower = m.toLowerCase();
+				for (var i = 0; i < captionData[captionIndex].wordConfidence.length; i++)
+				{
+					if (captionData[captionIndex].wordConfidence[i].w === lower &&
+						captionData[captionIndex].wordConfidence[i].c < confidence)
+					{
+						return '<mark>' + m + '</mark>';
+					}
+				}
+
+			    return m;
+			});
+
+			captionOverlay.innerHTML = final;
+		}
+
+		function updateCaptionEditor() {
+			captionEdit.value = captionData[captionIndex].caption;
+			startTimeEdit.value = captionData[captionIndex].start;
+			endTimeEdit.value = captionData[captionIndex].end;
+		}
+
+		confidenceHighlight.oninput = function() {
+
+			confidence = parseFloat(this.value);
+
+			if (confidence == NaN)
+			{
+				confidence = 0.75;
+			}
+			else
+			{
+				console.log('[INFO] Got new confidence: ' + confidence);
+			}
+			
+			renderCaption();
+		}
+
+		captionEdit.oninput = function() {
+			captionData[captionIndex].caption = this.value;
+			markDirty(true);
+			renderCaption();
+		}
+
+		startTimeEdit.oninput = function() {
+			captionData[captionIndex].start = this.value;
+			captionSelected(true);
+		}	
+
+		endTimeEdit.oninput = function() {
+			captionData[captionIndex].end = this.value;
+			captionSelected(seek);
+		}	
+
+		video.addEventListener("ended", function() {
+			video.pause();
+			updatePlayPauseUI();
+		});
+
+		video.addEventListener("timeupdate", function() {
+			videoProgress.value = video.currentTime / duration * videoProgress.max;
+			timerOverlay.innerHTML = video.currentTime.toFixed(1) + 's';
+
+			if (!video.paused)
+			{
+				if (pausePerCaption)
+				{
+					if (video.currentTime >= captionData[captionIndex].end)
+					{
+						video.pause();
+						video.currentTime = captionData[captionIndex].start;
+						updatePlayPauseUI();
+					}
+				}
+				else
+				{
+					if (video.currentTime >= captionData[captionIndex].end)
+					{
+						stepForward(false, false);
+					}
+				}
+			}
+		});
+
+		function showControls()
+		{
+			$('#videoControls').show();
+			$('#editorControls').show();
+			$('#captionOverlay').show();
+			$('#timerOverlay').show();
+			$('#speedOverlay').show();
+		}
+
+		video.addEventListener('loadedmetadata', function() {
+			duration = video.duration;
+	   		videoProgress.max = progressMax;
+	   		updatePlayPauseUI();
+	   		showControls();
+
+	   		if (captionData.length == 0)
+	   		{
+				captionData.push({
+					start: 0.0,
+					end: 5.0,
+					caption: ''
+				});
+	   			toastr.error('Caption data is not available yet');
+	   		}
+	   		else
+	   		{
+	   			toastr.success('Video and caption data loaded');
+	   		}
+
+   			stepForward(true, false);
+
+   			if (saveCaptionsTimer)
+   			{
+   				console.log('[INFO] Clearing existing save captions timer');
+   				clearInterval(saveCaptionsTimer);
+   			}
+
+   			/**
+   			 * Hook up auto saving every 20 seconds
+   			 */
+   			saveCaptionsTimer = setInterval(function() {
+
+   				if (autosave.checked && dirty)
+   				{
+   					saveCaptionsLocal();
+   				}
+
+   			}, 20000);
+
+   			console.log('[INFO] Created save captions timer: ' + saveCaptionsTimer);
+
+		}, false);
+
+		function updatePlayPauseUI()
+		{
+			if (video.paused) 
+			{
+				$('#playPauseIcon').removeClass('fa-pause');
+				$('#playPauseIcon').addClass('fa-play');
+			}
+			else
+			{
+				$('#playPauseIcon').removeClass('fa-play');
+				$('#playPauseIcon').addClass('fa-pause');		
+			}
+
+			if (pausePerCaption)
+			{
+				$('#repeatIcon').addClass('option-selected');
+			}
+			else
+			{
+				$('#repeatIcon').removeClass('option-selected');
+			}			
+		}
+
+		function playPause()
+		{ 
+			if (video.paused) 
+			{
+				if (video.currentTime == video.duration)
+				{
+					captionIndex = 0;
+					captionSelected(true);
+					video.play();
+				}
+				else
+				{
+					video.play(); 
+				}
+				
+			}
+			else 
+			{
+				video.pause(); 
+			}
+
+			updatePlayPauseUI();
+		} 
+
+		function muteUnMute()
+		{ 
+			if( !video.muted)
+			{
+		 		video.muted = 'muted';
+			}
+			else
+			{
+				video.muted = false;
+			} 
+		}
+
+		function captionSelected(seek)
+		{
+			updateCaptionEditor();
+			renderCaption();
+
+			if (seek)
+			{
+				video.currentTime = captionData[captionIndex].start;
+			}
+		}
+
+		function stepForward(seek, autoPlay)
+		{
+			// Insert a new caption if we aren't at the end of the video
+			if ((video.currentTime < (video.duration - 5)) && 
+				(captionIndex > captionData.length - 1))
+			{
+				captionData.push({
+					start: captionData[captionData.length - 1].end,
+					end: Number(captionData[captionData.length - 1].end) + 5,
+					caption: ''
+				});
+
+				captionIndex++;
+			}
+
+			if (captionIndex < captionData.length - 1)
+			{
+				captionIndex++;
+			}
+
+			captionSelected(seek);
+
+			if (autoPlay && pausePerCaption && video.paused)
+			{
+				video.play();
+				updatePlayPauseUI();
+			}
+		}
+
+		function stepBackward(seek, autoPlay)
+		{
+			captionIndex--;
+
+			if (captionIndex < 0)
+			{
+				captionIndex = 0;
+			}
+
+			captionSelected(seek);
+
+			if (autoPlay && pausePerCaption && video.paused)
+			{
+				video.play();
+				updatePlayPauseUI();
+			}			
+		}
+
+		function repeatButton()
+		{
+			pausePerCaption = !pausePerCaption;
+			updatePlayPauseUI();
+		}
+
+		function speedUp()
+		{
+			playSpeed += 0.1;
+
+			if (playSpeed > 2.0)
+			{
+				playSpeed = 2.0;
+			}
+
+			video.playbackRate = playSpeed;
+			speedOverlay.innerHTML = playSpeed.toFixed(1) + 'x';
+		}
+
+		function slowDown()
+		{
+			playSpeed -= 0.1;
+
+			if (playSpeed < 0.5)
+			{
+				playSpeed = 0.5;
+			}
+
+			video.playbackRate = playSpeed;
+			speedOverlay.innerHTML = playSpeed.toFixed(1) + 'x';
+		}
+
+		function saveCaptionsLocal()
+		{
+			saveCaptions(assetId, workflowId, captionData);
+			markDirty(false);
+		}
+
+		function downloadCaptionsSRTLocal()
+		{
+			downloadCaptionsSRT(assetId, videoName);
+		}
+
+		function downloadCaptionsVTTLocal()
+		{
+			downloadCaptionsVTT(assetId, videoName);
+		}
+
+		function markDirty(dirtyFlag)
+		{
+			dirty = dirtyFlag;
+
+			if (dirty)
+			{
+				$('#saveButton').removeClass('btn-secondary');
+				$('#saveButton').addClass('btn-primary');
+			}
+			else
+			{
+				$('#saveButton').removeClass('btn-primary');
+				$('#saveButton').addClass('btn-secondary');
+			}
+		}
+
+	</script>
+{{/if}}

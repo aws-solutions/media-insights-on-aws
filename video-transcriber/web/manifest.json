@@ -1,0 +1,41 @@
+{
+	"manifest":
+	{
+		"description": "Manifest of web site files to deploy",
+		"files":
+		[
+			"css/bootstrap-4.0.0.min.css",
+			"css/dataTables.bootstrap4-1.10.18.min.css",
+			"css/dropzone.min.css",
+			"css/toastr.min-2.1.3.css",
+			"css/videotranscriber.css",
+			"favicon.ico",
+			"img/architecture.png",
+			"img/error.png",
+			"img/aws.png",
+			"img/loading.gif",
+			"img/loading_small.gif",
+			"img/transcribe.png",
+			"img/video_splash.png",
+			"index.html",
+			"js/app.js",
+			"js/axios-0.18.0.min.js",
+			"js/bootstrap-4.0.0.min.js",
+			"js/dataTables.bootstrap4-1.10.18.min.js",
+			"js/dropzone-min.js",
+			"js/filesaver-min.js",
+			"js/font-awesome-5.4.1.js",
+			"js/handlebars-4.0.12.min.js",
+			"js/jquery-3.3.1.min.js",
+			"js/jquery.dataTables-1.10.18.min.js",
+			"js/popper-1.12.9.min.js",
+			"js/toastr-2.1.3.min.js",
+			"js/vanilla-router-1.2.7.js",
+			"templates/home.hbs",
+			"templates/tweaks.hbs",
+			"templates/video.hbs",
+			"templates/videos.hbs",
+			"templates/vocabulary.hbs"
+		]
+	}
+}

@@ -1,0 +1,57 @@
+<!--
+  Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+  
+  Licensed under the Apache License, Version 2.0 (the "License").
+  You may not use this file except in compliance with the License.
+  A copy of the License is located at
+  
+      http://www.apache.org/licenses/LICENSE-2.0
+  
+  or in the "license" file accompanying this file. This file is distributed 
+  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either 
+  express or implied. See the License for the specific language governing 
+  permissions and limitations under the License.
+-->
+<div class="jumbotron">
+	<h1 class="display-4">AWS Video Transcriber</h1>
+	<p class="lead">The AWS Video Transcriber provides a simple, serverless framework to generate and edit closed captions for all of your video content.</p>
+	<hr class="my-4">
+	<p>It uses <a href="https://aws.amazon.com/s3/">Amazon S3</a> to store video content, <a href="https://aws.amazon.com/lambda/">AWS Lambda</a> to trigger processing, <a href="https://aws.amazon.com/mediaconvert/">Amazon MediaConvert</a> to extract audio files and <a href="https://aws.amazon.com/transcribe/">Amazon Transcribe</a> to create closed captions.</p>
+	<p>Simply deploy the solution to your account, upload videos to the nominated S3 bucket, fine tune your closed captions and download your completed WEBVTT/SRT captions.</p>
+
+	<div id="loginLogout"></div>
+</div>
+
+<div class="text-center px-2">
+	<img src="img/architecture.png" class="img-fluid" alt="Architecture diagram"/>
+</div>	
+
+<!-- API Key dialog -->
+<div class="modal fade" id="loginModalDialog" tabindex="-1" role="dialog" aria-labelledby="loginModalTitle" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="loginModalTitle">Enter your API key</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body">
+				<label for="loginPassword">API Key:</label>
+				<input class="form-control" type="password" id="loginPassword"/>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+				<button type="button" data-dismiss="modal" class="btn btn-primary" onclick="javascript:login($('#loginPassword'));">Save API Key</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+	$('#loginModalDialog').on('shown.bs.modal', function () {
+		$('#loginPassword').trigger('focus');
+	});
+
+	renderLoginLogout();
+</script>

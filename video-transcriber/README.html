@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+    <html>
+    <head>
+        <meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+        <title>AWS Video Transcriber</title>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.css" integrity="sha384-yFRtMMDnQtDRO8rLpMIKrtPCD5jdktao2TV19YiZYWMDkUR5GQZR/NOVTdquEx1j" crossorigin="anonymous">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/markdown.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/highlight.css">
+        <link href="https://cdn.jsdelivr.net/npm/katex-copytex@latest/dist/katex-copytex.min.css" rel="stylesheet" type="text/css">
+        <style>
+.task-list-item { list-style-type: none; } .task-list-item-checkbox { margin-left: -20px; vertical-align: middle; }
+</style>
+        <style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', 'Ubuntu', 'Droid Sans', sans-serif;
+                font-size: 14px;
+                line-height: 1.6;
+            }
+        </style>
+        
+        <script src="https://cdn.jsdelivr.net/npm/katex-copytex@latest/dist/katex-copytex.min.js"></script>
+    </head>
+    <body>
+        <h2>APIKey for the demo: TranscribeApiKeyTranscribeApiKey</h2>
+        <h1 style="width:1200px;" id="aws-video-transcriber">AWS Video Transcriber</h1>
+<p style="width:1200px;">This solution provides a serverless, single page web application and set of supporting Amazon API Gateway end points and backing AWS Lambda functions which allow users to upload videos into Amazon S3 and compute and edit closed captions.</p>
+<h2 id="on-this-page">On this Page</h2>
+<ul>
+<li><a href="#architecture">Architecture</a></li>
+<li><a href="#deploying-the-solution">Deploying the Solution</a></li>
+<li><a href="#solution-pricing">Solution Pricing</a></li>
+<li><a href="#launching-the-website">Launching the Website</a></li>
+<li><a href="#entering-your-api-key">Entering your API Key</a></li>
+<li><a href="#creating-a-vocabulary">Creating a Vocabulary</a></li>
+<li><a href="#creating-tweaks">Creating Tweaks</a></li>
+<li><a href="#listing-videos">Listing Videos</a></li>
+<li><a href="#uploading-videos">Uploading Videos</a></li>
+<li><a href="#editing-captions">Editing Captions</a></li>
+<li><a href="#downloading-captions">Downloading Captions</a></li>
+<li><a href="#license">License</a></li>
+<li>Support Appendix
+<ul>
+<li><a href="#troubleshooting-deployment">Troubleshooting Deployment</a></li>
+<li><a href="#removing-the-solution">Removing the Solution</a></li>
+<li><a href="#troubleshooting-solution-removal">Troubleshooting Solution Removal</a></li>
+</ul>
+</li>
+<li><a href="#setting-up-your-development-environment">Setting up your Development Environment</a>
+<ul>
+<li><a href="#building-mie-from-source-code">Building MIE from source code</a></li>
+<li><a href="#hosting-the-website-locally">Hosting the Website Locally</a></li>
+<li><a href="#updating-front-end">Updating Front End</a></li>
+<li><a href="#updating-lambdas">Updating Lambdas</a></li>
+</ul>
+</li>
+</ul>
+<h2 id="architecture">Architecture</h2>
+<p><img width=1200 px src="web/img/architecture.png" alt="Architecture"></p>
+<h2 id="deploying-the-solution">Deploying the Solution</h2>
+<p style="width:1200px;">Prebuilt CloudFormation templates have been deployed along with MIE. Update the MIE stack and set the DeployOperatorLibrary, DeployTranscribeWorkflow, and TranscriberApp CloudFormation parameters to <code style="background-color:#eee;padding:3px;">true</code>.</p>
+<p>Once the stack creation is complete, update the TranscriberWebApp stack and modify the API key and choose a locale that Transcribe will use to process your video's audio data.</p>
+<p style="width:1200px;"><em>The API Key is used to provide to users access to the system. You must provide a strong, random, alpha-numeric API key between 20 and 70 characters long. Otherwise the stack will fail to launch and you will see <a href="#invalid-api-key">this error</a>.</em></p>
+<h2 id="launching-the-website">Launching the Website</h2>
+<p>Once you have deployed your stack, the link to your website is displayed in the <em>CloudFormation Outputs tab</em> along with your API Key. Click the <em>Website</em> link to access the site.</p>
+<p><img width=1200 px src="manual/img/CloudFormationParameters.png" alt="CloudFormation outputs"></p>
+<h2 id="entering-your-api-key">Entering your API key</h2>
+<p>On the home page there an <em>Enter API Key</em> button used for entering your API key, locate your API key using the <em>Outputs</em> tab of the CloudFormation service after deployment and enter it.</p>
+<p><img width=1200 px src="manual/img/HomePage.png" alt="Home page and API Key"></p>
+<h2 id="creating-a-vocabulary">Creating a Vocabulary</h2>
+<p>After deployment and before uploading videos, log into your site, click on the <em>Vocabulary</em> page and create a custom vocabulary with at least one term. You might consider using:</p>
+<div style="background-color:#f6f8fa; width:1200px;">
+    <pre><code>A.W.S.</code></pre>
+</div>
+<p>You can enter up to 50kb of custom vocabulary terms, if you get a failure to save make sure each phrase is on its own line and that there are no special characters.</p>
+<p><img width=1200 px src="manual/img/VocabularyPage.png" alt="Vocabulary page"></p>
+<p>You can add common terms for your business here such as brand names and industry specific terms to guide Transcribe in providing the best automated result.</p>
+<p style="width:1200px;">After saving the vocabulary, Transcribe needs to train against the new vocabulary which can take several minutes. You are given visual feedback as to when this process is complete. Videos launched during this time will fail if the vocabulary is not in a ready state.</p>
+<h2 id="creating-tweaks">Creating Tweaks</h2>
+<p>After deployment log into your site, click on the Tweaks tab and create a custom tweak configuration with at least one term. You might consider using:</p>
+<div style="background-color:#f6f8fa;  width:1200px;">
+    <pre><code>A.W.S.=AWS</code></pre>
+</div>
+<p>Tweaks are used to transform common transcription issues you might find and also to correct Amazon Transcribe custom vocabulary verbatim transcriptions.</p>
+<p><img width=1200 px src="manual/img/TweaksPage.png" alt="Tweaks page"></p>
+<h2 id="listing-videos">Listing Videos</h2>
+<p style="width:1200px;">The Videos page shows the current videos in the system and organizes them into tabs based on their processing status. You can search for videos here, start the caption editing process, trigger reprocessing, and delete videos.</p>
+<p><img width=1200 px src="manual/img/VideosPage.png" alt="Videos page"></p>
+<h2 id="uploading-videos">Uploading Videos</h2>
+<p>You can upload videos from any browser and launching the site on mobile allows users to capture and upload videos directly from a mobile phone.</p>
+<p>Click on the <em>Upload Videos...</em> button to start the video upload process.</p>
+<p style="width:1200px;">New AWS accounts have a service limit of 10 concurrent transcription jobs, this limit can be raised with an AWS service ticket. Videos launched above this threshold will fail and can be relaunched from the <em>Errored tab</em>.</p>
+<h2 id="editing-captions">Editing Captions</h2>
+<p style="width:1200px;">Once your video has been transcribed you can tweak the captions to get things perfect. When first viewing the video, the system starts in a mode that pauses between each caption block, toggle this mode to view the video continuously.</p>
+<p>The <em>Auto save</em> function flushes edits regularly to the MIE DataPlane.</p>
+<p><img width=1200 px src="manual/img/VideoPage.png" alt="Video page"></p>
+<h2 id="license">License</h2>
+<p>This library is licensed under the Apache 2.0 License.</p>
+<h2 id="downloading-captions">Downloading Captions</h2>
+<p>You can download completed captions text tracks from the <a href="#editing-captions">Caption editing page</a> in either WEBVTT/SRT formats</p>
+<h2 id="troubleshooting-deployment">Troubleshooting Deployment</h2>
+<h3 id="deploying-multiple-solution-instances-to-a-single-aws-region">Deploying multiple solution instances to a single AWS region</h3>
+<p>This is not currently supported but will be considered if there is customer demand. It will require all resources to be prefixed with the CloudFormation AWS::StackName pseudo parameter.</p>
+<h3 id="invalid-api-key">Invalid API Key</h3>
+<p>If you see the following error while launching your CloudFormation stack:</p>
+<p><img width=1200 px src="manual/img/InvalidKey.png" alt="Invalid API Key"></p>
+<p>Please verify the API Key you provided is between 20 and 70 characters long and only contains Alpha-Numeric characters, it uses the following regex:</p>
+<div style="background-color:#f6f8fa; width:1200px;">
+    <pre><code>[a-zA-Z0-9]{20,70}</code></pre>
+</div>
+<h3 id="cloudwatch-log-group-already-exists">CloudWatch log group already exists</h3>
+<p>If you are deploying to the same region after previously removing the stack you may see the following error:</p>
+<p><img width=1200 px src="manual/img/LogGroupExists.png" alt="Log group exists"></p>
+<p>Simply delete the stack, go to the <a href="https://console.aws.amazon.com/cloudwatch/home#logs">CloudWatch Logs Console</a> in the region and remove the dangling log group:</p>
+<div style="background-color:#f6f8fa; width:1200px;">
+    <pre><code>/aws/lambda/prod-aws-captions-customresource</code></pre>
+</div>
+<p>It can remain after a stack removal due to CloudWatch log flushing recreating the log group. Then simply deploy the CloudFormation stack once again.</p>
+<h3 id="custom-resource-creation-failures">Custom Resource Creation Failures</h3>
+<p>Please raise a GitHub Issue with the error reported in the stack and we will investigate.</p>
+<h2 id="removing-the-solution">Removing the Solution</h2>
+<p>To remove the solution delete the CloudFormation stack. Note that deletion will fail if you have not emptied the video, audio and transcribe buckets created as part of the stack.</p>
+<h2 id="troubleshooting-solution-removal">Troubleshooting Solution Removal</h2>
+<h3 id="cloudwatch-log-group-not-removed">CloudWatch log group not removed</h3>
+<p>After remove the stack, the <a href="https://console.aws.amazon.com/cloudwatch/home#logs">CloudWatch Log Group</a> for the Lambda custom resource is left behind and must be manually removed before redeploying:</p>
+<div style="background-color:#f6f8fa; width:1200px;">
+    <pre><code>/aws/lambda/prod-aws-captions-customresource</code></pre>
+</div>
+<h3 id="s3-buckets-not-empty">S3 buckets not empty</h3>
+<p>CloudFormation will refuse to remove non-empty <a href="https://s3.console.aws.amazon.com/s3/home">S3 buckets</a> so these must be manually emptied before removing the stack:</p>
+<div style="background-color:#f6f8fa; width:1200px;">
+    <pre><code>prod-aws-captions-audio-&lt;region&gt;-&lt;accountId&gt;
+    prod-aws-captions-video-&lt;region&gt;-&lt;accountId&gt;
+    prod-aws-captions-transcribe-&lt;region&gt;-&lt;accountId&gt;</code></pre>
+</div>
+<p>If you get this failure, empty the buckets using the <a href="https://s3.console.aws.amazon.com/s3/home">S3 console</a> and try deleting the stack again.</p>
+<h2 id="setting-up-your-development-environment">Setting up your Development Environment</h2>
+<h3 id="building-mie-from-source-code">Building MIE from source code</h3>
+<h4 id="prerequisites">Prerequisites</h4>
+<ul>
+<li>
+<p>Clone the MIE repository locally</p>
+</li>
+<li>
+<p>Have Node and NPM installed</p>
+</li>
+<li>
+<p>Make sure you have the AWS CLI properly configured</p>
+</li>
+<li>
+<p>Make sure you have Docker installed on your computer</p>
+</li>
+</ul>
+<h4 id="build-and-distribute-the-code-to-aws">Build and distribute the code to AWS</h4>
+<p>Navigate to the <code style="background-color:#eee;padding:3px;">video-transcriber</code> directory and run the following command to install Node dependencies:</p>
+<div style="background-color:#f6f8fa; width:1200px;">
+    <pre><code>npm i</code></pre>
+</div>
+<p>Use the following shell commands to configure the build environment parameters:</p>
+<div style="background-color:#f6f8fa; width:1200px;">
+    <pre><code>DIST_OUTPUT_BUCKET=[enter the name of your bucket here]
+    VERSION=[enter an arbitrary version name here]
+    REGION=[enter the name of the region in which you would like to build MIE]</code></pre>
+</div>
+<p>Create an S3 bucket for the MIE build files named <code style="background-color:#eee;padding:3px;">$DIST_OUTPUT_BUCKET-$REGION</code> using the input you gave above.</p>
+<p>Run the following build command in your terminal from the <code style="background-color:#eee;padding:3px;">deployment</code> directory:</p>
+<div style="background-color:#f6f8fa; width:1200px;">
+    <pre><code>./build-s3-dist.sh $DIST_OUTPUT_BUCKET $VERSION $REGION</code></pre>
+</div>
+<p>After a few minutes the build files should appear in your S3 bucket.</p>
+<h4 id="cloudformation-deployment">CloudFormation Deployment</h4>
+<p style="width:1200px;">From your S3 bucket, navigate to <code style="background-color:#eee;padding:3px;">media-analysis-solution/main/cf/media-analysis-workflow-stack.template</code> and use this CloudFormation template to create your stack and deploy MIE.</p>
+<p><a href="#deploying-the-solution">Deploy the Solution</a> to create the application Lambdas, API Gateway, and the supporting workflow and operators in MIE.</p>
+<h3 id="hosting-the-website-locally">Hosting the Website Locally</h3>
+<p style="width:1200px;">After deploying the application in CloudFormation, find the <code style="background-color:#eee;padding:3px;">site_config.json</code> in the S3 bucket <code style="background-color:#eee;padding:3px;">prod-aws-captions-public-$REGION-$ACCOUNT_NUMBER</code> and download that to the MIE <code style="background-color:#eee;padding:3px;">video-transcriber/web</code> directory.</p>
+<p>Navigate to <code style="background-color:#eee;padding:3px;">video-transcriber/web</code> and run the following command:</p>
+<div style="background-color:#f6f8fa; width:1200px;">
+    <pre><code>python -m SimpleHTTPServer</code></pre>
+</div>
+<p>The application front end templates and js files are now hosted on <code style="background-color:#eee;padding:3px;">localhost:8000</code></p>
+<h3 id="updating-front-end">Updating Front End</h3>
+<p style="width:1200px;">To update front end files served on localhost for testing purposes, open the developer console and under the <em>Network</em> tab select <code style="background-color:#eee;padding:3px;">Disable cache</code>. Now when the developer console is open and you refresh the page it will retrieve the latest changes from your local repo.</p>
+<p style="width:1200px;">To update front end files served from S3, upload the new files to the <code style="background-color:#eee;padding:3px;">prod-aws-captions-public-$REGION-$ACCOUNT_NUMBER</code> website bucket and grant public read access to any new uploaded objects.</p>
+<h3 id="updating-lambdas">Updating Lambdas</h3>
+<p>For testing purposes: simply update your lambdas in the Lambda console.</p>
+<p>Otherwise:</p>
+<ul>
+<li>
+<p>Run the build script again from the  <code style="background-color:#eee;padding:3px;">deployment</code> directory using the following command: <code style="background-color:#eee;padding:3px;">./build-s3-dist.sh $DIST_OUTPUT_BUCKET $VERSION $REGION</code></p>
+</li>
+<li>
+<p>Update the MIE stack parameter for the <em>TranscriberApp</em> to <code style="background-color:#eee;padding:3px;">false</code>, and remove the CloudWatch log group <code style="background-color:#eee;padding:3px;">/aws/lambda/prod-aws-captions-customresource</code>.</p>
+</li>
+<li>
+<p style="width:1200px;">Once the build script finishes, update the MIE stack parameter for the <em>TranscriberApp</em> to <code style="background-color:#eee;padding:3px;">true</code>. Once this is done you will have to download the <code style="background-color:#eee;padding:3px;">site_config.json</code> from the website bucket to host the website locally again.</p>
+</li>
+</ul>
+
+    </body>
+    </html>

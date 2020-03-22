@@ -69,8 +69,6 @@ Resources:
             ExpirationInDays: 30
             AbortIncompleteMultipartUpload:
               DaysAfterInitiation: 1
-      VersioningConfiguration:
-        Status: "Enabled"
 
   WebBucketPolicy:
     Type: AWS::S3::BucketPolicy
@@ -117,7 +115,7 @@ Resources:
                   - !Sub ${MediaInsightsWebsiteBucket.Arn}/*
                   - Fn::Sub:
                       - arn:aws:s3:::${websitecode}/*
-                      - websitecode: !FindInMap ["SourceCode", "General", "S3Bucket"]
+                      - websitecode: !Join ["-", [!FindInMap ["SourceCode", "General", "S3Bucket"], Ref: "AWS::Region"]]
               - Effect: Allow
                 Action:
                   - "s3:ListBucket"
@@ -125,7 +123,7 @@ Resources:
                   - !Sub ${MediaInsightsWebsiteBucket.Arn}
                   - Fn::Sub:
                       - arn:aws:s3:::${websitecode}
-                      - websitecode: !FindInMap ["SourceCode", "General", "S3Bucket"]
+                      - websitecode: !Join ["-", [!FindInMap ["SourceCode", "General", "S3Bucket"], Ref: "AWS::Region"]]
               - Effect: Allow
                 Action:
                   - "logs:CreateLogGroup"
@@ -138,7 +136,7 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "S3Bucket"], Ref: "AWS::Region"]]
         S3Key:
           !Join [
             "/",
@@ -168,7 +166,7 @@ Resources:
     Type: Custom::WebsiteDeployHelper
     Properties:
       ServiceToken: !GetAtt WebsiteDeployHelper.Arn
-      WebsiteCodeBucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+      WebsiteCodeBucket: !Join ["-", [!FindInMap ["SourceCode", "General", "S3Bucket"], Ref: "AWS::Region"]]
       WebsiteCodePrefix: !FindInMap ["SourceCode", "General", "WebsitePrefix"]
       DeploymentBucket: !GetAtt MediaInsightsWebsiteBucket.DomainName
 

@@ -178,6 +178,7 @@
     },
     data() {
       return {
+        valid_media_types: ['cmaf', 'dash', 'hls', 'mp4', 'f4v', 'mxf', 'mov', 'ismv', 'raw', 'av1', 'avc', 'hevc', 'mpeg-2', 'avi', 'mkv', 'webm'], // see https://docs.aws.amazon.com/mediaconvert/latest/ug/reference-codecs-containers.html
         fields: [
           {
             'asset_id': {
@@ -502,9 +503,11 @@
       fileAdded: function( file )
       {
         let errorMessage = '';
-        if (!(file.type).match(/image\/.+|video\/.+|application\/json/g)) {
-          if (file.type === "")
+        if (!(file.type).match(/image\/.+|video\/.+|application\/json/g) && !this.valid_media_types.includes(file.name.split('.').pop().toLowerCase())) {
+          if (file.type === "") {
+            console.log("here")
             errorMessage = "Unsupported file type: unknown";
+          }
           else
             errorMessage = "Unsupported file type: " + file.type;
           this.invalidFileMessages.push(errorMessage);
@@ -617,7 +620,7 @@
               }
             }
           };
-        } else if (media_type.match(/video/g)) {
+        } else if (media_type.match(/video/g) || this.valid_media_types.includes(location.s3ObjectLocation.fields.key.split('.').pop().toLowerCase())) {
           data = vm.workflowConfig;
           data["Input"] = {
             "Media": {
@@ -633,7 +636,7 @@
           //console.log("Data file has been uploaded to s3://" + location.s3ObjectLocation.fields.key);
           return;
         } else {
-          vm.s3UploadError("Unsupported media type, " + media_type + ".")
+          vm.s3UploadError("Unsupported media type: " + media_type + ".")
           }
         }
         //console.log(JSON.stringify(data));

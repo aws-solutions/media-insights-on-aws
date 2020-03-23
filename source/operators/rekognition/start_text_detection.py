@@ -64,8 +64,8 @@ def start_text_detection(bucket, key):
 def lambda_handler(event, context):
     try:
         if "Video" in event["Input"]["Media"]:
-            s3bucket = event["Input"]["Media"]["Video"]["S3Bucket"]
-            s3key = event["Input"]["Media"]["Video"]["S3Key"]
+            s3bucket = event["Input"]["Media"]["ProxyEncode"]["S3Bucket"]
+            s3key = event["Input"]["Media"]["ProxyEncode"]["S3Key"]
         elif "Image" in event["Input"]["Media"]:
             s3bucket = event["Input"]["Media"]["Image"]["S3Bucket"]
             s3key = event["Input"]["Media"]["Image"]["S3Key"]
@@ -78,7 +78,7 @@ def lambda_handler(event, context):
     print("Processing s3://"+s3bucket+"/"+s3key)
     valid_video_types = [".avi", ".mp4", ".mov"]
     valid_image_types = [".png", ".jpg", ".jpeg"]
-    file_type = os.path.splitext(s3key)[1]
+    file_type = os.path.splitext(s3key)[1].lower()
     if file_type in valid_image_types:
         # Image processing is synchronous.
         response = detect_text(s3bucket, urllib.parse.unquote_plus(s3key))

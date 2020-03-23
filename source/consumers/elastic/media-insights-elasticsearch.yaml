@@ -106,7 +106,7 @@ Resources:
       Handler: "lambda_handler.lambda_handler"
       Role: !GetAtt ElasticConsumerRole.Arn
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "S3Bucket"], Ref: "AWS::Region"]]
         S3Key:
           !Join [
             "/",

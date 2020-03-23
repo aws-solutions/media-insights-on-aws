@@ -3,49 +3,73 @@
     <Header :is-upload-active="true" />
     <br>
     <b-container>
-      <b-alert
-        :show="dismissCountDown"
-        dismissible
-        variant="danger"
-        @dismissed="dismissCountDown=0"
-        @dismiss-count-down="countDownChanged"
-      >
-        {{ uploadErrorMessage }}
-      </b-alert>
-      <b-alert
-        :show="showInvalidFile"
-        variant="danger"
-      >
-        {{ invalidFileMessages[invalidFileMessages.length-1] }}
-      </b-alert>
-      <h1>Upload Videos</h1>
-      <p>{{ description }}</p>
-      <vue-dropzone
-        id="dropzone"
-        ref="myVueDropzone"
-        :awss3="awss3"
-        :options="dropzoneOptions"
-        @vdropzone-s3-upload-error="s3UploadError"
-        @vdropzone-file-added="fileAdded"
-        @vdropzone-removed-file="fileRemoved"
-        @vdropzone-success="s3UploadComplete"
-        @vdropzone-sending="upload_in_progress=true"
-        @vdropzone-queue-complete="upload_in_progress=false"
-      />
-      <br>
-      <b-button v-b-toggle.collapse-2 class="m-1">
-        Configure Workflow
-      </b-button>
-      <b-button v-if="validForm" variant="primary" @click="uploadFiles">
-        Start Upload and Run Workflow
-      </b-button>
-      <b-button v-else disabled variant="primary" @click="uploadFiles">
-        Start Upload and Run Workflow
-      </b-button>
+      <div v-if="hasAssetParam">
+        <a>Running analysis on existing asset: {{ assetIdParam }}</a>
+      </div>
+      <div v-else>
+        <b-alert
+          :show="dismissCountDown"
+          dismissible
+          variant="danger"
+          @dismissed="dismissCountDown=0"
+          @dismiss-count-down="countDownChanged"
+        >
+          {{ uploadErrorMessage }}
+        </b-alert>
+        <b-alert
+          :show="showInvalidFile"
+          variant="danger"
+        >
+          {{ invalidFileMessages[invalidFileMessages.length-1] }}
+        </b-alert>
+        <h1>Upload Videos</h1>
+        <p>{{ description }}</p>
+        <vue-dropzone
+          id="dropzone"
+          ref="myVueDropzone"
+          :awss3="awss3"
+          :options="dropzoneOptions"
+          @vdropzone-s3-upload-error="s3UploadError"
+          @vdropzone-file-added="fileAdded"
+          @vdropzone-removed-file="fileRemoved"
+          @vdropzone-success="runWorkflow"
+          @vdropzone-sending="upload_in_progress=true"
+          @vdropzone-queue-complete="upload_in_progress=false"
+        />
+      </div>
       <br>
       <span v-if="upload_in_progress" class="text-secondary">Upload in progress</span>
       <b-container v-if="upload_in_progress">
         <b-spinner label="upload_in_progress" />
+      </b-container>
+      <br>
+      <b-container>
+        <b-row v-if="hasAssetParam">
+          <b-col>
+            <b-button v-b-toggle.collapse-2 class="m-1">
+              Configure Workflow
+            </b-button>
+            <b-button v-if="validForm" variant="primary" @click="runWorkflow">
+              Run Workflow
+            </b-button>
+            <b-button v-else disabled variant="primary">
+              Run Workflow
+            </b-button>
+          </b-col>
+        </b-row>
+        <b-row v-else>
+          <b-col>
+            <b-button v-b-toggle.collapse-2 class="m-1">
+              Configure Workflow
+            </b-button>
+            <b-button v-if="validForm" variant="primary" @click="uploadFiles">
+              Upload and Run Workflow
+            </b-button>
+            <b-button v-else disabled variant="primary">
+              Upload and Run Workflow
+            </b-button>
+          </b-col>
+        </b-row>
       </b-container>
       <br>
       <b-collapse id="collapse-2">
@@ -174,6 +198,8 @@
           }
         ],
         thumbnail_position: 10,
+        hasAssetParam: false,
+        assetIdParam: '',
         upload_in_progress: false,
         enabledOperators: ['labelDetection', 'celebrityRecognition', 'textDetection', 'contentModeration', 'faceDetection', 'thumbnail', 'Transcribe', 'Translate', 'ComprehendKeyPhrases', 'ComprehendEntities'],
         videoOperators: [
@@ -440,10 +466,16 @@
         }
       }
     },
+    created: function () {
+      if (this.$route.query.asset) {
+        this.hasAssetParam = true
+        this.assetIdParam = this.$route.query.asset
+        }
+    },
     mounted: function() {
       this.executed_assets = this.execution_history;
       this.pollWorkflowStatus();
-      console.log("this.DATAPLANE_BUCKET: " + this.DATAPLANE_BUCKET)
+      //console.log("this.DATAPLANE_BUCKET: " + this.DATAPLANE_BUCKET)
     },
     beforeDestroy () {
       clearInterval(this.workflow_status_polling)
@@ -491,18 +523,64 @@
         this.invalidFileMessages = this.invalidFileMessages.filter(function(value){ return value != errorMessage})
         if (this.invalidFileMessages.length === 0 ) this.showInvalidFile = false;
       },
-      s3UploadComplete: async function (location) {
+      runWorkflow: async function (location) {
         const token = await this.$Amplify.Auth.currentSession().then(data =>{
           return data.getIdToken().getJwtToken();
         });
         const vm = this;
-        const s3_uri = location.s3ObjectLocation.url + location.s3ObjectLocation.fields.key;
-        const media_type = location.type;
-        console.log('media type: ' + media_type);
-        console.log('s3UploadComplete: ');
-        console.log(s3_uri);
+        let media_type = null
+        let s3Key = null
+        if ("s3ObjectLocation" in location) {
+          media_type = location.type;
+          s3Key = location.s3ObjectLocation.fields.key
+        }
+        else {
+          media_type = this.$route.query.mediaType
+          s3Key = this.$route.query.s3key.split("/").pop();
+        }
         let data = {};
-        if (media_type.match(/image/g)) {
+        if (this.hasAssetParam) {
+          if (media_type === 'video') {
+            data = vm.workflowConfig;
+            data["Input"] = { "AssetId": this.assetIdParam }
+          }
+          else if (media_type === 'image') {
+            data = {
+            "Name": "ImageWorkflow",
+            "Configuration": {
+              "ValidationStage": {
+                "MediainfoImage": {
+                  "Enabled": true
+                }
+              },
+              "RekognitionStage": {
+                "faceSearchImage": {
+                  "Enabled": this.enabledOperators.includes("faceSearch"),
+                  "CollectionId": this.faceCollectionId === "" ? "undefined" : this.faceCollectionId
+                },
+                "labelDetectionImage": {
+                  "Enabled": this.enabledOperators.includes("labelDetection"),
+                },
+                "celebrityRecognitionImage": {
+                  "Enabled": this.enabledOperators.includes("celebrityRecognition"),
+                },
+                "contentModerationImage": {
+                  "Enabled": this.enabledOperators.includes("contentModeration"),
+                },
+                "faceDetectionImage": {
+                  "Enabled": this.enabledOperators.includes("faceDetection"),
+                }
+              }
+            }
+          }
+          data["Input"] = { "AssetId": this.assetIdParam }
+          }
+          else {
+            vm.s3UploadError("Unsupported media type, " + this.$route.query.mediaType  + ".")
+          }
+        }
+        else {
+          if (media_type.match(/image/g)) {
           data = {
             "Name": "ImageWorkflow",
             "Configuration": {
@@ -534,7 +612,7 @@
               "Media": {
                 "Image": {
                   "S3Bucket": this.DATAPLANE_BUCKET,
-                  "S3Key": location.s3ObjectLocation.fields.key
+                  "S3Key": s3Key
                 }
               }
             }
@@ -545,19 +623,20 @@
             "Media": {
               "Video": {
                 "S3Bucket": this.DATAPLANE_BUCKET,
-                "S3Key": location.s3ObjectLocation.fields.key
+                "S3Key": s3Key
               }
             }
           };
         } else if (media_type === 'application/json') {
           // JSON files may be uploaded for the genericDataLookup operator, but
           // we won't run a workflow for json file types.
-          console.log("Data file has been uploaded to s3://" + location.s3ObjectLocation.fields.key);
+          //console.log("Data file has been uploaded to s3://" + location.s3ObjectLocation.fields.key);
           return;
         } else {
           vm.s3UploadError("Unsupported media type, " + media_type + ".")
+          }
         }
-        console.log(JSON.stringify(data));
+        //console.log(JSON.stringify(data));
         fetch(this.WORKFLOW_API_ENDPOINT + 'workflow/execution', {
           method: 'post',
           body: JSON.stringify(data),
@@ -569,25 +648,30 @@
             })
           ).then(res => {
             if (res.status !== 200) {
-              console.log("ERROR: Failed to start workflow.");
-              console.log(res.data.Code);
-              console.log(res.data.Message);
-              console.log("URL: " + this.WORKFLOW_API_ENDPOINT + 'workflow/execution');
-              console.log("Data:");
-              console.log(JSON.stringify(data));
-              console.log((data));
-              console.log("Response: " + response.status);
+              alert("ERROR: Failed to start workflow. Check Workflow API logs.")
+              // console.log("ERROR: Failed to start workflow.");
+              // console.log(res.data.Code);
+              // console.log(res.data.Message);
+              // console.log("URL: " + this.WORKFLOW_API_ENDPOINT + 'workflow/execution');
+              // console.log("Data:");
+              // console.log(JSON.stringify(data));
+              // console.log((data));
+              // console.log("Response: " + response.status);
             } else {
-              const asset_id = res.data.AssetId;
-              const s3key = location.s3ObjectLocation.fields.key;
-              console.log("Media assigned asset id: " + asset_id);
-              vm.executed_assets.push({asset_id: asset_id, file_name: s3key, workflow_status: "", state_machine_console_link: ""});
-              vm.getWorkflowStatus(asset_id);
+              let asset_id = res.data.AssetId;
+              let wf_id = res.data.Id;
+              //console.log("Media assigned asset id: " + asset_id);
+              let executed_asset = {asset_id: asset_id, file_name: s3Key, workflow_status: "", state_machine_console_link: "", wf_id: wf_id}
+              vm.executed_assets.push(executed_asset);
+              vm.getWorkflowStatus(asset_id, wf_id);
+              this.hasAssetParam = false;
+              this.assetIdParam = '';
             }
           })
         )
       },
-      async getWorkflowStatus(asset_id) {
+      // TODO: This should probably just get the status from the wf id directly
+      async getWorkflowStatus(asset_id, wf_id) {
         const token = await this.$Amplify.Auth.currentSession().then(data =>{
           return data.getIdToken().getJwtToken();
         });
@@ -604,10 +688,10 @@
             })
           ).then(res => {
             if (res.status !== 200) {
-              console.log("ERROR: Failed to get workflow status")
+              alert("ERROR: Failed to get workflow status")
             } else {
               for (let i = 0; i < vm.executed_assets.length; i++) {
-                if (vm.executed_assets[i].asset_id === asset_id) {
+                if (vm.executed_assets[i].wf_id === wf_id) {
                   vm.executed_assets[i].workflow_status = res.data[0].Status;
                   vm.executed_assets[i].state_machine_console_link = "https://"+this.AWS_REGION+".console.aws.amazon.com/states/home?region="+this.AWS_REGION+"#/executions/details/"+res.data[0].StateMachineExecutionArn;
                   break;
@@ -630,7 +714,7 @@
         }, poll_frequency)
       },
       uploadFiles() {
-        console.log("Uploading to s3://" + this.DATAPLANE_BUCKET,);
+        //console.log("Uploading to s3://" + this.DATAPLANE_BUCKET,);
         const signurl = this.DATAPLANE_API_ENDPOINT + '/upload';
         this.$refs.myVueDropzone.setAWSSigningURL(signurl);
         this.$refs.myVueDropzone.processQueue();

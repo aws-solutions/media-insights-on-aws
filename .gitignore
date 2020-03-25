@@ -1,5 +1,4 @@
 deployment/media-analysis-dataplane-api-stack.yaml
-webapp/public/
 venv/
 **/dist
 package/
@@ -13,7 +12,7 @@ deployment/lambda_layer_factory/lambda_layer-python-*
 *.iml
 .idea/
 
-# these are not checked in to o.g. git project 
+# these are not checked in to o.g. git project
 package-lock.json
 
 scratch/

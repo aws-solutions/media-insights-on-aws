@@ -35,16 +35,24 @@ def lambda_handler(event, context):
     file_input = "s3://" + bucket + "/" + key
     destination = "s3://" + bucket + "/" + 'private/assets/' + asset_id + "/workflows/" + workflow_id + "/"
 
-    try:
-        response = mediaconvert.describe_endpoints()
-    except Exception as e:
-        print("Exception:\n", e)
-        operator_object.update_workflow_status("Error")
-        operator_object.add_workflow_metadata(MediaconvertError=str(e))
-        raise MasExecutionError(operator_object.return_output_object())
-    else:
-        mediaconvert_endpoint = response["Endpoints"][0]["Url"]
+    # Get mediaconvert endpoint from cache if available
+    if ("MEDIACONVERT_ENDPOINT" in os.environ):
+        mediaconvert_endpoint = os.environ["MEDIACONVERT_ENDPOINT"]
         customer_mediaconvert = boto3.client("mediaconvert", region_name=region, endpoint_url=mediaconvert_endpoint)
+    else:
+        try:
+            response = mediaconvert.describe_endpoints()
+        except Exception as e:
+            print("Exception:\n", e)
+            operator_object.update_workflow_status("Error")
+            operator_object.add_workflow_metadata(MediaconvertError=str(e))
+            raise MasExecutionError(operator_object.return_output_object())
+        else:
+            mediaconvert_endpoint = response["Endpoints"][0]["Url"]
+            # Cache the mediaconvert endpoint in order to avoid getting throttled on
+            # the DescribeEndpoints API.
+            os.environ["MEDIACONVERT_ENDPOINT"] = mediaconvert_endpoint
+            customer_mediaconvert = boto3.client("mediaconvert", region_name=region, endpoint_url=mediaconvert_endpoint)
 
     try:
         response = customer_mediaconvert.create_job(

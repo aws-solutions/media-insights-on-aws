@@ -149,7 +149,7 @@ Conditions:
     !Equals [!Ref DeployComprehendWorkflow, Yes]
   DeployKitchenSinkWorkflowCondition:
     !Equals [!Ref DeployKitchenSinkWorkflow, Yes]
-  DeployAnalyticsPipelineCondition: !Equals [!Ref DeployAnalyticsPipeline, Yes]
+  DeployAnalyticsPipelineCondition: !Or [!Equals [!Ref DeployAnalyticsPipeline, Yes], !Equals [!Ref DeployDemoSite, Yes]]
   DeployDemoSiteCondition: !Equals [!Ref DeployDemoSite, Yes]
   #DeployTranscriberApp: !Equals [!Ref TranscriberApp, Yes]
 
@@ -161,6 +161,13 @@ Mappings:
       TemplateKeyPrefix: "media-insights-solution/%%VERSION%%/cf"
 
 Resources:
+  # Custom log group
+  MieLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: MediaInsightsLogs
+      RetentionInDays: 14
+
   # IAM Roles
   StepFunctionsServiceRole:
     Type: AWS::IAM::Role
@@ -213,8 +220,6 @@ Resources:
               - Effect: Allow
                 Action:
                   - states:StartExecution
-                # TODO: Security - Scope this down (should implement tagging on step functions, but this is fine for now
-                # since we are only giving start execution access)
                 Resource:
                   - !Join [
                     "",
@@ -227,6 +232,9 @@ Resources:
                       "*",
                     ],
                   ]
+                Condition:
+                  StringEquals:
+                    aws:ResourceTag/environment: mie
               - Effect: Allow
                 Action:
                   - "dynamodb:GetItem"
@@ -334,8 +342,6 @@ Resources:
         - PolicyName: !Sub "${AWS::StackName}-operation-lambda-role"
           PolicyDocument:
             Statement:
-              # TODO: Security - Scope this down (should implement tagging on step functions, but this is fine for now
-              # since we are only giving start execution access)
               - Effect: Allow
                 Action:
                   - states:StartExecution
@@ -351,6 +357,9 @@ Resources:
                       "*",
                     ],
                   ]
+                Condition:
+                  StringEquals:
+                    aws:ResourceTag/environment: mie
               - Effect: Allow
                 Action:
                   - "dynamodb:GetItem"
@@ -495,6 +504,8 @@ Resources:
   SystemTable:
     Type: AWS::DynamoDB::Table
     Properties:
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: Name
@@ -507,6 +518,8 @@ Resources:
   WorkflowTable:
     Type: AWS::DynamoDB::Table
     Properties:
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: Name
@@ -519,6 +532,8 @@ Resources:
   StageTable:
     Type: AWS::DynamoDB::Table
     Properties:
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: Name
@@ -531,6 +546,8 @@ Resources:
   OperationTable:
     Type: AWS::DynamoDB::Table
     Properties:
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: Name
@@ -543,6 +560,8 @@ Resources:
   HistoryTable:
     Type: AWS::DynamoDB::Table
     Properties:
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: Id
@@ -559,6 +578,8 @@ Resources:
   WorkflowExecutionTable:
     Type: AWS::DynamoDB::Table
     Properties:
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: Id
@@ -588,6 +609,8 @@ Resources:
   DataplaneTable:
     Type: AWS::DynamoDB::Table
     Properties:
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: AssetId
@@ -611,6 +634,21 @@ Resources:
             AllowedMethods: ["GET", "POST"]
             AllowedOrigins: ["*"]
             Id: AllowUploadsFromWebApp
+
+  DataplaneBucketPolicy:
+    Type: "AWS::S3::BucketPolicy"
+    Properties:
+      Bucket:
+        Ref: "Dataplane"
+      PolicyDocument:
+        Statement:
+          - Effect: Deny
+            Principal: "*"
+            Action: "*"
+            Resource: !Sub "arn:aws:s3:::${Dataplane}/*"
+            Condition:
+              Bool:
+                aws:SecureTransport: false
 
   # Service - cognito / security infrastructure
 
@@ -693,7 +731,6 @@ Resources:
               Ref: "AWS::StackId"
             ]]
             EmailSubject: "Welcome to the AWS Media Insights Engine"
-      UsernameAttributes: ['email']
       EmailConfiguration:
         EmailSendingAccount: 'COGNITO_DEFAULT'
       AutoVerifiedAttributes: ['email']
@@ -1382,9 +1419,25 @@ Resources:
 
   # Auto build/deploy webapp
 
+  StringFunctions:
+    Condition: DeployDemoSiteCondition
+    Type: "AWS::CloudFormation::Stack"
+    Properties:
+      TemplateURL:
+        !Join [
+          "/",
+          [
+            "https://s3.amazonaws.com",
+            !FindInMap ["SourceCode", "General", "S3Bucket"],
+            !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
+            "string.template",
+          ],
+        ]
+
   MediaInsightsWebApp:
     Condition: DeployDemoSiteCondition
     DependsOn:
+      - StringFunctions
       - Analytics
       - MediaInsightsWorkflowApi
       - MediaInsightsDataplaneApiStack

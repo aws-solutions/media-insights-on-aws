@@ -15,7 +15,7 @@ Parameters:
   NodeType:
     Description: "The node type to be provisioned for the Elasticsearch cluster"
     Type: String
-    Default: "r4.large.elasticsearch"
+    Default: "t2.small.elasticsearch"
     AllowedValues:
       - "t2.small.elasticsearch"
       - "m4.large.elasticsearch"

@@ -14,7 +14,7 @@ dataplane_bucket = os.environ['DataplaneBucket']
 s3 = boto3.client('s3')
 
 # These names are the lowercase version of OPERATOR_NAME defined in /source/operators/operator-library.yaml
-supported_operators = ["transcribe", "translate", "genericdatalookup", "labeldetection", "celebrityrecognition", "facesearch", "contentmoderation", "facedetection", "key_phrases", "entities", "key_phrases"]
+supported_operators = ["textdetection", "mediainfo", "transcribe", "translate", "genericdatalookup", "labeldetection", "celebrityrecognition", "facesearch", "contentmoderation", "facedetection", "key_phrases", "entities", "key_phrases"]
 
 
 def normalize_confidence(confidence_value):
@@ -25,6 +25,47 @@ def normalize_confidence(confidence_value):
 def convert_to_milliseconds(time_value):
     converted = float(time_value) * 1000
     return str(converted)
+
+def process_text_detection(asset, workflow, results):
+    metadata = json.loads(results)
+    es = connect_es(es_endpoint)
+    extracted_items = []
+    # We can tell if json results are paged by checking to see if the json results are an instance of the list type.
+    if isinstance(metadata, list):
+        # handle paged results
+        for page in metadata:
+            if len(page["TextDetections"]) > 0:
+                for item in page["TextDetections"]:
+                    try:
+                        text_detection = item["TextDetection"]
+                        text_detection["Timestamp"] = item["Timestamp"]
+                        text_detection["Operator"] = "textDetection"
+                        text_detection["Workflow"] = workflow
+                        # Flatten the bbox Label array
+                        text_detection["BoundingBox"] = text_detection["Geometry"]["BoundingBox"]
+                        del text_detection["Geometry"]
+                        print(text_detection)
+                        extracted_items.append(text_detection)
+                    except KeyError as e:
+                        print("KeyError: " + str(e))
+                        print("Item: " + json.dumps(item))
+    else:
+        # these results are not paged
+        if len(metadata["TextDetections"]) > 0:
+                for item in metadata["TextDetections"]:
+                    try:
+                        text_detection = item["TextDetection"]
+                        text_detection["Timestamp"] = item["Timestamp"]
+                        text_detection["Operator"] = "textDetection"
+                        text_detection["Workflow"] = workflow
+                        # Flatten the bbox Label array
+                        text_detection["BoundingBox"] = text_detection["Geometry"]["BoundingBox"]
+                        del text_detection["Geometry"]
+                        extracted_items.append(text_detection)
+                    except KeyError as e:
+                        print("KeyError: " + str(e))
+                        print("Item: " + json.dumps(item))
+    bulk_index(es, asset, "textDetection", extracted_items)
 
 
 def process_celebrity_detection(asset, workflow, results):
@@ -324,6 +365,19 @@ def process_face_detection(asset, workflow, results):
                 extracted_items.append(item)
     bulk_index(es, asset, "face_detection", extracted_items)
 
+def process_mediainfo(asset, workflow, results):
+    # This function puts mediainfo data in Elasticsearch.
+    metadata = json.loads(results)
+    es = connect_es(es_endpoint)
+    extracted_items = []
+    # Objects in arrays are not well supported by Elastic, so we flatten the tracks array here.
+    if isinstance(metadata['tracks'], list):
+        for item in metadata['tracks']:
+            item["Operator"] = "mediainfo"
+            item["Workflow"] = workflow
+            extracted_items.append(item)
+    bulk_index(es, asset, "mediainfo", extracted_items)
+
 def process_generic_data(asset, workflow, results):
     # This function puts generic data in Elasticsearch.
     metadata = json.loads(results)
@@ -561,12 +615,37 @@ def connect_es(endpoint):
         return es_client
 
 
-# def delete_document(es_object, index, doc_id):
-#     es_index = "mie{index}".format(index=index).lower()
-#     es_object.delete(
-#         index=es_index,
-#         id=doc_id
-#     )
+def delete_asset_metadata_by_index(es_object, asset_id, index):
+    try:
+        es_object.delete(
+            index=index,
+            id=asset_id
+        )
+    except Exception as e:
+        print("Unable to delete metadata from elasticsearch: {es}:".format(es=e))
+    else:
+        print("Deleted {asset} metadata: {index} rom elasticsearch".format(asset=asset_id, index=index))
+
+
+def delete_asset_all_indices(es_object, asset_id):
+    delete_query = {
+      "query": {
+        "match": {
+          "AssetId": asset_id
+        }
+      }
+    }
+
+    try:
+        delete_request = es_object.delete_by_query(
+            index="_all",
+            body=delete_query
+        )
+    except Exception as e:
+        print("Unable to delete from elasticsearch: {es}:".format(es=e))
+    else:
+        print(delete_request)
+        print("Deleted asset: {asset} from elasticsearch".format(asset=asset_id))
 
 
 def bulk_index(es_object, asset, index, data):
@@ -698,6 +777,8 @@ def lambda_handler(event, context):
                             process_transcribe(asset_id, workflow, metadata["Results"])
                         if operator == "translate":
                             process_translate(asset_id, workflow, metadata["Results"])
+                        if operator == "mediainfo":
+                            process_mediainfo(asset_id, workflow, metadata["Results"])
                         if operator == "genericdatalookup":
                             process_generic_data(asset_id, workflow, metadata["Results"])
                         if operator == "labeldetection":
@@ -714,6 +795,8 @@ def lambda_handler(event, context):
                             process_entities(asset_id, workflow, metadata["Results"])
                         if operator == "key_phrases":
                             process_keyphrases(asset_id, workflow, metadata["Results"])
+                        if operator == "textdetection":
+                            process_text_detection(asset_id, workflow, metadata["Results"])
                     else:
                         print("We do not store {operator} results".format(operator=operator))
                 else:
@@ -723,7 +806,11 @@ def lambda_handler(event, context):
                 operator = payload['Operator']
             except KeyError:
                 print("Operator type not present in payload, this must be a request to delete the entire asset")
-                # es = connect_es(es_endpoint)
+                es = connect_es(es_endpoint)
+                delete_asset_all_indices(es, asset_id)
             else:
-                print("Deleting {operator} metadata for asset {asset}".format(operator=operator, asset=asset_id))
+                print(payload)
+                print('Not allowing deletion of specific metadata from ES as that is not exposed in the UI')
+                # print("Deleting {operator} metadata for asset {asset}".format(operator=operator, asset=asset_id))
                 # es = connect_es(es_endpoint)
+                # delete_asset_metadata_by_index(es, asset_id, operator)

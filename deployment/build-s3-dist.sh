@@ -33,11 +33,16 @@ if [ -n "$4" ]; then profile=$4; fi
 # Check if region is supported:
 if [ "$region" != "us-east-1" ] &&
    [ "$region" != "us-east-2" ] &&
+   [ "$region" != "us-west-1" ] &&
    [ "$region" != "us-west-2" ] &&
    [ "$region" != "eu-west-1" ] &&
+   [ "$region" != "eu-west-2" ] &&
+   [ "$region" != "eu-central-1" ] &&
    [ "$region" != "ap-south-1" ] &&
    [ "$region" != "ap-northeast-1" ] &&
-   [ "$region" != "ap-southheast-2" ] &&
+   [ "$region" != "ap-southeast-1" ] &&
+   [ "$region" != "ap-southeast-2" ] &&
+   [ "$region" != "ap-northeast-1" ] &&
    [ "$region" != "ap-northeast-2" ]; then
    echo "ERROR. Rekognition operatorions are not supported in region $region"
    exit 1

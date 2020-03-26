@@ -1195,6 +1195,7 @@ Resources:
         HistoryTableName: !Ref HistoryTable
         SystemTableName: !Ref SystemTable
         SqsQueueArn: !GetAtt StageExecutionQueue.Arn
+        MediaInsightsEnginePython37Layer: !Ref MediaInsightsEnginePython37Layer
         CompleteStageLambdaArn:
           Fn::GetAtt:
             - CompleteStageLambda

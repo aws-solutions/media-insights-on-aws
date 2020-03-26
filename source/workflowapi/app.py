@@ -1829,10 +1829,10 @@ def create_workflow_execution(trigger, workflow_execution):
     create_asset = None
 
     logger.info('create_workflow_execution workflow config: ' + str(workflow_execution))
-    if "Input" in workflow_execution and "Media" in workflow_execution["Input"]:
-        create_asset = True
-    else:
+    if "AssetId" in workflow_execution["Input"]:
         create_asset = False
+    else:
+        create_asset = True
     try:
         Name = workflow_execution["Name"]
 
@@ -1861,32 +1861,29 @@ def create_workflow_execution(trigger, workflow_execution):
                 }
                 asset_id = asset_creation["AssetId"]
         else:
-            # TODO: Probably just accept the media type as input parameter
-            data_type_mapping = {"mp4": "Video", "mp3": "Audio", "txt": "Text", "json": "Text", "ogg": "Video"}
             try:
-                input = workflow_execution["Input"]["AssetId"]
+                asset_id = workflow_execution["Input"]["AssetId"]
+                input = workflow_execution["Input"]["Media"]
+                media_type = list(input.keys())[0]
             except KeyError as e:
                 logger.info("Exception {}".format(e))
                 raise ChaliceViewError("Exception '%s'" % e)
             else:
-                asset_id = input
                 retrieve_asset = dataplane.retrieve_asset_metadata(asset_id)
+                
                 if "results" in retrieve_asset:
                     s3key = retrieve_asset["results"]["S3Key"]
-                    media_type = s3key.split('.')[-1]
                     s3bucket = retrieve_asset["results"]["S3Bucket"]
-
-                    if media_type.lower() not in data_type_mapping:
-                        raise ChaliceViewError("Unsupported media type for input asset: {e}".format(e=media_type))
-                    else:
-                        asset_input = {
-                            "Media": {
-                                data_type_mapping[media_type.lower()]: {
-                                    "S3Bucket": s3bucket,
-                                    "S3Key": s3key
-                                }
+                    
+                    asset_input = {
+                        "Media": {
+                            media_type: {
+                                "S3Bucket": s3bucket,
+                                "S3Key": s3key
                             }
                         }
+                    }
+                
                 else:
                     raise ChaliceViewError("Unable to retrieve asset: {e}".format(e=asset_id))
 

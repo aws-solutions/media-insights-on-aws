@@ -545,10 +545,16 @@
         if (this.hasAssetParam) {
           if (media_type === 'video') {
             data = vm.workflowConfig;
-            data["Input"] = { "AssetId": this.assetIdParam }
+            data["Input"] = { "AssetId": this.assetIdParam,  "Media": {"Video": {}}}
           }
           else if (media_type === 'image') {
             data = {
+            "Input": {
+              "AssetId": this.assetIdParam,
+              "Media": {
+                "Image": {}
+              }
+            },
             "Name": "ImageWorkflow",
             "Configuration": {
               "ValidationStage": {
@@ -576,7 +582,6 @@
               }
             }
           }
-          data["Input"] = { "AssetId": this.assetIdParam }
           }
           else {
             vm.s3UploadError("Unsupported media type, " + this.$route.query.mediaType  + ".")

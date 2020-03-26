@@ -642,7 +642,6 @@
           return;
         } else {
           vm.s3UploadError("Unsupported media type: " + media_type + ".")
-          }
         }
         //console.log(JSON.stringify(data));
         fetch(this.WORKFLOW_API_ENDPOINT + 'workflow/execution', {

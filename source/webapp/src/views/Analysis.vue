@@ -300,7 +300,6 @@
           const proxy_encode_key = media_key.split(".").slice(0,-1).join('.') + "_proxy.mp4";
           key = proxy_encode_key
         }
-        console.log("here")
         // get URL to video file in S3
         fetch(this.DATAPLANE_API_ENDPOINT + '/download', {
           method: 'POST',

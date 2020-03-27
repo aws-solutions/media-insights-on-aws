@@ -201,7 +201,7 @@ cp "$webapp_dir/media-insights-webapp.yaml" "$dist_dir/media-insights-webapp.tem
 find "$dist_dir"
 echo "Updating code source bucket in template files with '$bucket'"
 echo "Updating solution version in template files with '$version'"
-new_bucket="s/%%BUCKET_NAME%%/$bucket/g"
+new_bucket="s/%%BUCKET_NAME%%/$bucket-$region/g"
 new_version="s/%%VERSION%%/$version/g"
 # Update templates in place. Copy originals to [filename].orig
 sed -i.orig -e "$new_bucket" "$dist_dir/media-insights-stack.template"

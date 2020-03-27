@@ -673,9 +673,10 @@
               vm.getWorkflowStatus(asset_id, wf_id);
               this.hasAssetParam = false;
               this.assetIdParam = '';
-            }
-          })
-        )
+              }
+            })
+          )
+        }
       },
       // TODO: This should probably just get the status from the wf id directly
       async getWorkflowStatus(asset_id, wf_id) {

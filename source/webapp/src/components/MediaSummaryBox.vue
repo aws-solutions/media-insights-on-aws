@@ -5,6 +5,10 @@
       class="my-1"
     >
       <b-col>
+        <label>
+          <router-link :to="{ name: 'upload', query: { asset: this.$route.params.asset_id, mediaType: mediaType, s3key: s3Uri}}">Perform Additional Analysis</router-link>
+        </label>
+        <br>
         <label>Asset ID:</label>
         {{ this.$route.params.asset_id }}
         <br>
@@ -75,7 +79,7 @@
 <script>
   export default {
     name: 'MediaSummary',
-    props: ['s3Uri','filename','videoUrl'],
+    props: ['s3Uri','filename','videoUrl', 'mediaType'],
     data () {
       return {
         duration: "undefined",

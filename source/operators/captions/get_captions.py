@@ -16,9 +16,9 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 headers = {"Content-Type": "application/json"}
 dataplane = DataPlane()
 
-
 # Create web captions with line by line captions from the transcribe output
 def web_captions(event, context):
+
     print("We got the following event:\n", event)
 
     operator_object = MediaInsightsOperationHelper(event)
@@ -60,8 +60,10 @@ def web_captions(event, context):
 
     captions = []
     caption = None
+    
 
     for item in transcribe_metadata["results"]["items"]:
+        
 
         isPunctuation = item["type"] == "punctuation"
 
@@ -133,24 +135,29 @@ def web_captions(event, context):
             captions.append(caption)
             wordCount = 0
             caption = None
+            
 
     # Close the last caption if required
 
     if caption is not None:
         caption["end"] = endTime
         captions.append(caption)
-
-    for i in range(len(captions)):
-        asset = captions[i]
+        
+        
+    i=0
+    for asset in captions:
+        i=i+1
+        
         metadata = {
             "OperatorName": "WebCaptions",
             "Results": asset,
             "WorkflowId": workflow_id
         }
 
-        if i != len(captions) - 1:
-            metadata_upload = dataplane.store_asset_metadata(asset_id, operator_object.name, workflow_id,
-                                           json.dumps(metadata))
+        if i != len(captions):
+            metadata_upload = dataplane.store_asset_metadata(asset_id=asset_id, operator_name=operator_object.name, 
+                                    workflow_id=workflow_id, results=asset, paginate=True, end=False)
+            
             if "Status" not in metadata_upload:
                 operator_object.update_workflow_status("Error")
                 operator_object.add_workflow_metadata(
@@ -158,16 +165,15 @@ def web_captions(event, context):
                 raise MasExecutionError(operator_object.return_output_object())
             else:
                 if metadata_upload["Status"] == "Success":
-                    operator_object.update_workflow_status("Complete")
-                    return operator_object.return_output_object()
+                    pass
                 else:
                     operator_object.update_workflow_status("Error")
                     operator_object.add_workflow_metadata(
                         CaptionsError="Unable to store web captions {e}".format(e=metadata_upload))
                     raise MasExecutionError(operator_object.return_output_object())
         else:
-            metadata_upload = dataplane.store_asset_metadata(asset_id, operator_object.name, workflow_id,
-                                                             json.dumps(metadata))
+            metadata_upload = dataplane.store_asset_metadata(asset_id=asset_id, operator_name=operator_object.name, 
+                                    workflow_id=workflow_id, results=asset, paginate=True, end=True)
             if "Status" not in metadata_upload:
                 operator_object.update_workflow_status("Error")
                 operator_object.add_workflow_metadata(
@@ -175,7 +181,7 @@ def web_captions(event, context):
                 raise MasExecutionError(operator_object.return_output_object())
             else:
                 if metadata_upload["Status"] == "Success":
-                    response_json = json.loads(metadata_upload)
+                    response_json = metadata_upload
                     operator_object.add_workflow_metadata(WebCaptionsS3Bucket=response_json['Bucket'],
                                                           WebCaptionsS3Key=response_json['Key'])
                     operator_object.update_workflow_status("Complete")
@@ -208,22 +214,27 @@ def web_to_srt(event, context):
     captions = []
 
     response = dataplane.retrieve_asset_metadata(asset_id, operator_name="WebCaptions")
+    print(json.dumps(response))
 
-    response_json = json.loads(response)
-    captions.append(response_json["results"])
+    #FIXME Dataplane should only return WebCaptions data from this call, but it is returning everything
+    if "operator" in response and response["operator"] == "WebCaptions":
+        captions.append(response["results"])
 
-    while "cursor" in response_json:
-        response = dataplane.retrieve_asset_metadata(asset_id, operator_name="WebCaptions")
-        response_json = json.loads(response)
-        captions.append(response_json["results"])
+    while "cursor" in response:
+        response = dataplane.retrieve_asset_metadata(asset_id, operator_name="WebCaptions",cursor=response["cursor"])
+        print(json.dumps(response))
+        
+        #FIXME Dataplane should only return WebCaptions data from this call, but it is returning everything
+        if response["operator"] == "WebCaptions":
+            captions.append(response["results"])
 
     srt = ''
 
     index = 1
+    
+    print(captions)
 
-    for i in range(len(captions)):
-
-        caption = captions[i]
+    for caption in captions:
 
         srt += str(index) + '\n'
         srt += formatTimeSRT(float(caption["start"])) + ' --> ' + formatTimeSRT(float(caption["end"])) + '\n'
@@ -231,9 +242,11 @@ def web_to_srt(event, context):
         index += 1
 
     response = dataplane.generate_media_storage_path(asset_id, workflow_id)
-    response_json = json.loads(response)
-    bucket = response_json["S3Bucket"]
-    key = response_json["S3Key"]+'Captions.srt'
+    
+    
+    print(json.dumps(response))
+    bucket = response["S3Bucket"]
+    key = response["S3Key"]+'Captions.srt'
     s3_object = s3_resource.Object(bucket, key)
 
     s3_object.put(Body=srt)
@@ -245,7 +258,7 @@ def web_to_srt(event, context):
     }
 
     metadata_upload = dataplane.store_asset_metadata(asset_id, operator_object.name, workflow_id,
-                                   json.dumps(metadata))
+                                   metadata)
 
     if "Status" not in metadata_upload:
         operator_object.update_workflow_status("Error")
@@ -283,13 +296,18 @@ def web_to_vtt(event, context):
     captions = []
 
     response = dataplane.retrieve_asset_metadata(asset_id, operator_name="WebCaptions")
-    response_json = json.loads(response)
-    captions.append(response_json["results"])
+    
+    
+    #FIXME Dataplane should only return WebCaptions data from this call, but it is returning everything
+    if "operator" in response and response["operator"] == "WebCaptions":
+        captions.append(response["results"])
 
-    while "cursor" in response_json:
-        response = dataplane.retrieve_asset_metadata(asset_id, operator_name="WebCaptions")
-        response_json = json.loads(response)
-        captions.append(response_json["results"])
+    while "cursor" in response:
+        response = dataplane.retrieve_asset_metadata(asset_id, operator_name="WebCaptions", cursor=response["cursor"])
+        
+        #FIXME Dataplane should only return WebCaptions data from this call, but it is returning everything
+        if response["operator"] == "WebCaptions":
+            captions.append(response["results"])
 
     vtt = 'WEBVTT\n\n'
 
@@ -301,9 +319,11 @@ def web_to_vtt(event, context):
         vtt += caption["caption"] + '\n\n'
 
     response = dataplane.generate_media_storage_path(asset_id, workflow_id)
-    response_json = json.loads(response)
-    bucket = response_json["S3Bucket"]
-    key = response_json["S3Key"]+'Captions.vtt'
+    
+    print(json.dumps(response))
+    
+    bucket = response["S3Bucket"]
+    key = response["S3Key"]+'Captions.vtt'
     s3_object = s3_resource.Object(bucket, key)
 
     s3_object.put(Body=vtt)
@@ -315,7 +335,7 @@ def web_to_vtt(event, context):
     }
 
     metadata_upload = dataplane.store_asset_metadata(asset_id, operator_object.name, workflow_id,
-                                   json.dumps(metadata))
+                                   metadata)
 
     if "Status" not in metadata_upload:
         operator_object.update_workflow_status("Error")

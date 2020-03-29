@@ -47,6 +47,10 @@
                             @click="currentView = 'FaceDetection'"
                           />
                           <b-tab
+                            title="Custom"
+                            @click="currentView = 'CustomObjects'"
+                          />
+                          <b-tab
                             title="Words"
                             @click="currentView = 'TextDetection'"
                           />
@@ -156,7 +160,14 @@
         }),
         loading: Loading
       }),
-
+      CustomObjects: () => ({
+        component: new Promise(function(resolve) {
+          setTimeout(function() {
+            resolve(import('@/components/CustomObjects.vue'));
+        }, 1000);
+        }),
+        loading: Loading
+      }),
       Celebrities: () => ({
         component: new Promise(function(resolve) {
           setTimeout(function() {

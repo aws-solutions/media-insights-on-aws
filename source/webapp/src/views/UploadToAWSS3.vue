@@ -175,9 +175,10 @@
         ],
         thumbnail_position: 10,
         upload_in_progress: false,
-        enabledOperators: ['labelDetection', 'celebrityRecognition', 'textDetection', 'contentModeration', 'faceDetection', 'thumbnail', 'Transcribe', 'Translate', 'ComprehendKeyPhrases', 'ComprehendEntities'],
+        enabledOperators: ['labelDetection', 'customLabelDetection', 'celebrityRecognition', 'textDetection', 'contentModeration', 'faceDetection', 'thumbnail', 'Transcribe', 'Translate', 'ComprehendKeyPhrases', 'ComprehendEntities'],
         videoOperators: [
           {text: 'Object Detection', value: 'labelDetection'},
+          {text: 'Custom Object Detection', value: 'customLabelDetection'},
           {text: 'Celebrity Recognition', value: 'celebrityRecognition'},
           {text: 'Content Moderation', value: 'contentModeration'},
           {text: 'Face Detection', value: 'faceDetection'},
@@ -402,6 +403,9 @@
               },
               "textDetection": {
                 "Enabled": this.enabledOperators.includes("textDetection")
+              },
+              "customLabelDetection": {
+                "Enabled": this.enabledOperators.includes("customLabelDetection")
               },
               "GenericDataLookup": {
                 "Enabled": this.enabledOperators.includes("genericDataLookup"),

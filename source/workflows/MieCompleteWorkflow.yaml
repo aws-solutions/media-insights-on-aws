@@ -45,6 +45,8 @@ Resources:
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:LabelDetection"
         - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:CustomLabelDetection"
+        - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:PersonTracking"
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:TextDetection"

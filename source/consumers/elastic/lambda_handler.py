@@ -14,7 +14,7 @@ dataplane_bucket = os.environ['DataplaneBucket']
 s3 = boto3.client('s3')
 
 # These names are the lowercase version of OPERATOR_NAME defined in /source/operators/operator-library.yaml
-supported_operators = ["textdetection", "mediainfo", "transcribe", "translate", "genericdatalookup", "labeldetection", "celebrityrecognition", "facesearch", "contentmoderation", "facedetection", "key_phrases", "entities", "key_phrases"]
+supported_operators = ["textdetection", "mediainfo", "transcribe", "translate", "genericdatalookup", "labeldetection", "customlabeldetection","celebrityrecognition", "facesearch", "contentmoderation", "facedetection", "key_phrases", "entities", "key_phrases"]
 
 
 def normalize_confidence(confidence_value):
@@ -500,6 +500,52 @@ def process_label_detection(asset, workflow, results):
                     print("Item: " + json.dumps(item))
     bulk_index(es, asset, "labels", extracted_items)
 
+def process_custom_label_detection(asset, workflow, results):
+    # This function puts custom label detection data in Elasticsearch.
+    # The custom label detection metadata contains Confidence and BoundingBox fields (different from label detection).
+    # These fields are flattened in this function, accordingly.
+    metadata = json.loads(results)
+    es = connect_es(es_endpoint)
+    extracted_items = []
+    # We can tell if json results are paged by checking to see if the json results are an instance of the list type.
+    if isinstance(metadata, list):
+        # handle paged results
+        for page in metadata:
+            if "frames_result" in page:
+                for item in page["frames_result"]:
+                    try:
+                        item["Operator"] = "custom_label_detection"
+                        item["Workflow"] = workflow
+                        item["Confidence"] = float(item["Confidence"])
+                        if "Text" in item:
+                            # Flatten the inner Text array
+                            item["BoundingBox"]=item["Text"]["BoundingBox"]
+                            # Delete the flattened array
+                            del item["Text"]
+                        print(asset, ":", item)
+                        extracted_items.append(item)
+                    except KeyError as e:
+                        print("KeyError: " + str(e))
+                        print("Item: " + json.dumps(item))
+    else:
+        # these results are not paged
+        if "frames_result" in metadata:
+            for item in metadata["frames_result"]:
+                try:
+                    item["Operator"] = "batchCustomLabelDetection"
+                    item["Workflow"] = workflow
+                    item["Confidence"] = float(item["Confidence"])
+                    if "Text" in item:
+                        # Flatten the inner Text array
+                        item["BoundingBox"]=item["Text"]["BoundingBox"]
+                        # Delete the flattened array
+                        del item["Text"]
+                    print(asset, ":", item)
+                    extracted_items.append(item)
+                except KeyError as e:
+                    print("KeyError: " + str(e))
+                    print("Item: " + json.dumps(item))
+    bulk_index(es, asset, "customlabels", extracted_items)
 
 def process_translate(asset, workflow, results):
     metadata = json.loads(results)

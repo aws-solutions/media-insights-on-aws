@@ -438,6 +438,8 @@ zip -q -r9 start_face_search.zip start_face_search.py
 zip -q -r9 check_face_search_status.zip check_face_search_status.py
 zip -q -r9 start_label_detection.zip start_label_detection.py
 zip -q -r9 check_label_detection_status.zip check_label_detection_status.py
+zip -q -r9 start_custom_label_detection.zip start_custom_label_detection.py
+zip -q -r9 check_custom_label_detection_status.zip check_custom_label_detection_status.py
 zip -q -r9 start_person_tracking.zip start_person_tracking.py
 zip -q -r9 check_person_tracking_status.zip check_person_tracking_status.py
 zip -q -r9 start_text_detection.zip start_text_detection.py

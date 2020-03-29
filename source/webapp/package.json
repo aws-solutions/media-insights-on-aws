@@ -24,6 +24,7 @@
     "videojs-flash": "2.1.0",
     "videojs-hotkeys": "^0.2.25",
     "videojs-markers": "^1.0.1",
+    "@voerro/vue-tagsinput": "^2.2.0",
     "vue": "^2.6.11",
     "vue-router": "^2.8.1",
     "vue-video-player": "4.0.6",

@@ -95,15 +95,45 @@
                   name="flavour-3"
                 ></b-form-checkbox-group>
                 <div v-if="enabledOperators.includes('Translate')">
-                  <label>Translation Source Language</label>
-                  <b-form-select v-model="transcribeLanguage" :options="transcribeLanguages"></b-form-select>
-                  <label>Translation Target Language</label>
-                  <b-form-select v-model="targetLanguageCode" :options="translateLanguages"></b-form-select>
+                  <b-form-group>
+                    <voerro-tags-input element-id="target_language_tags"
+                                       v-model="selectedTags"
+                                       :limit=10
+                                       :hide-input-on-limit="true"
+                                       :existing-tags=translateLanguageTags
+                                       :only-existing-tags="true"
+                                       :add-tags-on-space="true"
+                                       :add-tags-on-comma="true"
+                                       :add-tags-on-blur="true"
+                                       :sort-search-results="true"
+                                       :typeahead-always-show="true"
+                                       :typeahead-hide-discard="true"
+                                       :typeahead="true">
+                    </voerro-tags-input>
+                  </b-form-group>
                 </div>
               </b-form-group>
               <div v-if="textFormError" style="color:red">
                 {{ textFormError }}
               </div>
+            </b-card>
+            <b-card header="Video Distribution">
+              <b-form-group>
+                <b-form-checkbox
+                    v-model="create_video_stream"
+                    value="true"
+                    unchecked-value="false"
+                >
+                  Create video stream
+                </b-form-checkbox>
+                <b-form-checkbox
+                    v-model="show_disclaimer"
+                    value="true"
+                    unchecked-value="false"
+                >
+                  Show "Not Reviewed" disclaimer
+                </b-form-checkbox>
+              </b-form-group>
             </b-card>
           </b-card-group>
           <div align="right">
@@ -145,15 +175,23 @@
 <script>
   import vueDropzone from '@/components/vue-dropzone.vue';
   import Header from '@/components/Header.vue'
+  import VoerroTagsInput from '@/components/VoerroTagsInput.vue';
+  import '@/components/VoerroTagsInput.css';
+
   import { mapState } from 'vuex'
 
   export default {
     components: {
       vueDropzone,
-      Header
+      Header,
+      VoerroTagsInput
     },
     data() {
       return {
+        selectedTags: [
+        ],
+        show_disclaimer: true,
+        create_video_stream: true,
         valid_media_types: ['cmaf', 'dash', 'hls', 'mp4', 'f4v', 'mxf', 'mov', 'ismv', 'raw', 'av1', 'avc', 'hevc', 'mpeg-2', 'avi', 'mkv', 'webm'], // see https://docs.aws.amazon.com/mediaconvert/latest/ug/reference-codecs-containers.html
         fields: [
           {
@@ -289,6 +327,8 @@
           {text: 'Urdu', value: 'ur'},
           {text: 'Vietnamese', value: 'vi'},
         ],
+        translateLanguageTags: [],
+        selectedTranslateLanguages: [],
         sourceLanguageCode: "en",
         targetLanguageCode: "es",
         uploadErrorMessage: "",
@@ -429,7 +469,6 @@
               "ComprehendKeyPhrases": {
                 "Enabled": this.enabledOperators.includes("ComprehendKeyPhrases"),
               }
-
             },
             "defaultTextSynthesisStage": {
               // Polly is available in the MIECompleteWorkflow but not used in the front-end, so we've disabled it here.
@@ -442,8 +481,13 @@
       }
     },
     mounted: function() {
+      this.translateLanguageTags=this.translateLanguages.map(x => {return {"text": x.value, "value": x.text}})
       this.executed_assets = this.execution_history;
       this.pollWorkflowStatus();
+      console.log(this.sourceLanguageCode)
+      console.log(this.selectedTranslateLanguages)
+      this.selectedTranslateLanguages = this.translateLanguages.map(x => x.value).filter(x => x.value!=this.sourceLanguageCode);
+      console.log(this.selectedTranslateLanguages)
       console.log("this.DATAPLANE_BUCKET: " + this.DATAPLANE_BUCKET)
     },
     beforeDestroy () {
@@ -451,10 +495,15 @@
     },
     methods: {
       selectAll: function (){
-        this.enabledOperators = ['labelDetection', 'celebrityRecognition', 'contentModeration', 'faceDetection', 'thumbnail', 'Transcribe', 'Translate', 'ComprehendKeyPhrases', 'ComprehendEntities']
+        this.enabledOperators = ['labelDetection', 'celebrityRecognition', 'textDetection', 'contentModeration', 'faceDetection', 'thumbnail', 'Transcribe', 'Translate', 'ComprehendKeyPhrases', 'ComprehendEntities'];
+        this.show_disclaimer = true;
+        this.create_video_stream = true;
+
       },
       clearAll: function (){
-        this.enabledOperators = []
+        this.enabledOperators = [];
+        this.show_disclaimer = false;
+        this.create_video_stream = false;
       },
       openWindow: function (url) {
         window.open(url);

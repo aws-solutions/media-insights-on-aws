@@ -1,0 +1,112 @@
+{
+    "Name": "TranslateWebCaptions",
+    "AssetId": "378e2892-dc57-4cc3-9efd-7ffed90d7bb1",
+    "WorkflowExecutionId": "29775b23-41e1-40b8-813d-d5733a9863fc",
+    "Input": {
+        "Media": {
+            "Audio": {
+                "S3Bucket": "mieor-dataplane-171zwqu9n9wmq",
+                "S3Key": "private/assets/378e2892-dc57-4cc3-9efd-7ffed90d7bb1/workflows/29775b23-41e1-40b8-813d-d5733a9863fc/test_audio.mp4"
+            },
+            "Video": {
+                "S3Bucket": "mieor-dataplane-171zwqu9n9wmq",
+                "S3Key": "private/assets/378e2892-dc57-4cc3-9efd-7ffed90d7bb1/input/test.mp4"
+            },
+            "Text": {
+                "S3Bucket": "mieor-dataplane-171zwqu9n9wmq",
+                "S3Key": "private/assets/378e2892-dc57-4cc3-9efd-7ffed90d7bb1/workflows/29775b23-41e1-40b8-813d-d5733a9863fc/Transcribe.json"
+            }
+        },
+        "MetaData": {
+            "MediaconvertJobId": "1585540821267-iq5goj",
+            "TranscribeJobId": "transcribe-29775b23-41e1-40b8-813d-d5733a9863fc",
+            "AssetId": "378e2892-dc57-4cc3-9efd-7ffed90d7bb1",
+            "WorkflowExecutionId": "29775b23-41e1-40b8-813d-d5733a9863fc",
+            "MediaconvertInputFile": "private/assets/378e2892-dc57-4cc3-9efd-7ffed90d7bb1/input/test.mp4",
+            "WebCaptionsS3Bucket": "mieor-dataplane-171zwqu9n9wmq",
+            "WebCaptionsS3Key": "private/assets/378e2892-dc57-4cc3-9efd-7ffed90d7bb1/workflows/29775b23-41e1-40b8-813d-d5733a9863fc/WebCaptions_en.json"
+        }
+    },
+    "Configuration": {
+        "MediaType": "Text",
+        "Enabled": True,
+        "TargetLanguageCodes": [
+            "es"
+        ],
+        "SourceLanguageCode": "en"
+    },
+    "Status": "Error",
+    "MetaData": {
+        "TextTranslateJobPropertiesList": [
+            {
+                "JobId": "3323a12d9ca4a4d5ceb450348b2edaf2",
+                "JobStatus": "SUBMITTED",
+                "ResponseMetadata": {
+                    "RequestId": "95577720-77f4-44b3-960f-ed012f20a5c3",
+                    "HTTPStatusCode": 200,
+                    "HTTPHeaders": {
+                        "x-amzn-requestid": "95577720-77f4-44b3-960f-ed012f20a5c3",
+                        "content-type": "application/x-amz-json-1.1",
+                        "content-length": "68",
+                        "date": "Mon, 30 Mar 2020 04:03:08 GMT"
+                    },
+                    "RetryAttempts": 0
+                }
+            }
+        ],
+        "TextTranslateJobProperties": {
+            "TextTranslationJobProperties": {
+                "JobId": "3323a12d9ca4a4d5ceb450348b2edaf2",
+                "JobName": "MIE_378e2892-dc57-4cc3-9efd-7ffed90d7bb1_29775b23-41e1-40b8-813d-d5733a9863fc_es",
+                "JobStatus": "COMPLETED",
+                "JobDetails": {
+                    "TranslatedDocumentsCount": 1,
+                    "DocumentsWithErrorsCount": 0,
+                    "InputDocumentsCount": 1
+                },
+                "SourceLanguageCode": "en",
+                "TargetLanguageCodes": [
+                    "es"
+                ],
+                "Message": "Your job has completed successfully.",
+                "SubmittedTime": datetime.datetime(2020,
+                3,
+                30,
+                4,
+                3,
+                8,
+                110000, tzinfo=tzlocal()),
+                "EndTime": datetime.datetime(2020,
+                3,
+                30,
+                4,
+                14,
+                18,
+                358000, tzinfo=tzlocal()),
+                "InputDataConfig": {
+                    "S3Uri": "s3://mieor-dataplane-171zwqu9n9wmq/private/assets/378e2892-dc57-4cc3-9efd-7ffed90d7bb1/workflows/29775b23-41e1-40b8-813d-d5733a9863fc/webcaptions_translate_input/",
+                    "ContentType": "text/plain"
+                },
+                "OutputDataConfig": {
+                    "S3Uri": "s3://mieor-dataplane-171zwqu9n9wmq/private/assets/378e2892-dc57-4cc3-9efd-7ffed90d7bb1/workflows/29775b23-41e1-40b8-813d-d5733a9863fc/webcaptions_translate_output/526662735483-TranslateText-3323a12d9ca4a4d5ceb450348b2edaf2/"
+                },
+                "DataAccessRoleArn": "arn:aws:iam::526662735483:role/mieor-OperatorLibrary-1D7AXKFX78V2-translateS3Role-1TEZKD0ZQZVF"
+            },
+            "ResponseMetadata": {
+                "RequestId": "d5499ad8-0d2e-4dbb-9778-e004a2b50f94",
+                "HTTPStatusCode": 200,
+                "HTTPHeaders": {
+                    "x-amzn-requestid": "d5499ad8-0d2e-4dbb-9778-e004a2b50f94",
+                    "content-type": "application/x-amz-json-1.1",
+                    "content-length": "1046",
+                    "date": "Mon, 30 Mar 2020 04:42:22 GMT"
+                },
+                "RetryAttempts": 0
+            }
+        },
+        "AssetId": "378e2892-dc57-4cc3-9efd-7ffed90d7bb1",
+        "WorkflowExecutionId": "29775b23-41e1-40b8-813d-d5733a9863fc",
+        "CaptionsError": "Unable to contruct path to translate output in S3: "TargetLanguageCode""
+    },
+    "Media": {}
+}

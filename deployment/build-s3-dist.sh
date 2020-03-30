@@ -349,6 +349,46 @@ zip -q -g ./dist/start_translate.zip ./start_translate.py
 cp "./dist/start_translate.zip" "$dist_dir/start_translate.zip"
 
 # ------------------------------------------------------------------------------"
+# Translate WebCaptions Operations
+# ------------------------------------------------------------------------------"
+
+echo "Building Translate function"
+cd "$source_dir/operators/translate_webcaptions" || exit 1
+[ -e dist ] && rm -r dist
+mkdir -p dist
+[ -e package ] && rm -r package
+mkdir -p package
+echo "create requirements for lambda"
+# Make lambda package
+pushd package || exit 1
+echo "create lambda package"
+# Handle distutils install errors
+touch ./setup.cfg
+echo "[install]" > ./setup.cfg
+echo "prefix= " >> ./setup.cfg
+# Try and handle failure if pip version mismatch
+if [ -x "$(command -v pip)" ]; then
+  pip install --quiet -r ../requirements.txt --target .
+elif [ -x "$(command -v pip3)" ]; then
+  echo "pip not found, trying with pip3"
+  pip3 install --quiet -r ../requirements.txt --target .
+elif ! [ -x "$(command -v pip)" ] && ! [ -x "$(command -v pip3)" ]; then
+ echo "No version of pip installed. This script requires pip. Cleaning up and exiting."
+ exit 1
+fi
+if ! [ -d ../dist/start_translate.zip ]; then
+  zip -q -r9 ../dist/translate_webcaptions.zip .
+
+elif [ -d ../dist/translate_webcaptions.zip ]; then
+  echo "Package already present"
+fi
+popd || exit 1
+zip -q -g ./dist/translate_webcaptions.zip ./translate_webcaptions.py
+cp "./dist/translate_webcaptions.zip" "$dist_dir/translate_webcaptions.zip"
+
+
+
+# ------------------------------------------------------------------------------"
 # Polly operators
 # ------------------------------------------------------------------------------"
 

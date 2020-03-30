@@ -32,6 +32,13 @@ def web_captions(event, context):
         raise MasExecutionError(operator_object.return_output_object())
 
     try:
+        lang = operator_object.configuration["SourceLanguageCode"]
+    except KeyError as e:
+        operator_object.update_workflow_status("Error")
+        operator_object.add_workflow_metadata(CaptionsError="No language codes {e}".format(e=e))
+        raise MasExecutionError(operator_object.return_output_object())
+
+    try:
         workflow_id = operator_object.workflow_execution_id
     except KeyError as e:
         operator_object.update_workflow_status("Error")
@@ -143,19 +150,13 @@ def web_captions(event, context):
         caption["end"] = endTime
         captions.append(caption)
         
-        
+    webcaptions_name = "WebCaptions"+"_"+lang
     i=0
     for asset in captions:
         i=i+1
-        
-        metadata = {
-            "OperatorName": "WebCaptions",
-            "Results": asset,
-            "WorkflowId": workflow_id
-        }
 
         if i != len(captions):
-            metadata_upload = dataplane.store_asset_metadata(asset_id=asset_id, operator_name=operator_object.name, 
+            metadata_upload = dataplane.store_asset_metadata(asset_id=asset_id, operator_name=webcaptions_name, 
                                     workflow_id=workflow_id, results=asset, paginate=True, end=False)
             
             if "Status" not in metadata_upload:
@@ -172,7 +173,7 @@ def web_captions(event, context):
                         CaptionsError="Unable to store web captions {e}".format(e=metadata_upload))
                     raise MasExecutionError(operator_object.return_output_object())
         else:
-            metadata_upload = dataplane.store_asset_metadata(asset_id=asset_id, operator_name=operator_object.name, 
+            metadata_upload = dataplane.store_asset_metadata(asset_id=asset_id, operator_name=webcaptions_name, 
                                     workflow_id=workflow_id, results=asset, paginate=True, end=True)
             if "Status" not in metadata_upload:
                 operator_object.update_workflow_status("Error")

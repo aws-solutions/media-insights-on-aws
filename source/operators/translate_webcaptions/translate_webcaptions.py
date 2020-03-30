@@ -190,6 +190,7 @@ def check_translate_webcaptions(event, context):
     bucket = translation_storage_path['S3Bucket']
     translation_path = translation_storage_path['S3Key']
 
+    webcaptions_collection = []
     for job in translate_jobs:
         try:
             print("Save translation for job {}".format(job["JobId"]))
@@ -197,6 +198,7 @@ def check_translate_webcaptions(event, context):
             translateJobDescription = translate_client.describe_text_translation_job(JobId = job["JobId"])
             translateJobS3Uri = translateJobDescription["TextTranslationJobProperties"]["OutputDataConfig"]["S3Uri"]
             translateJobUrl = urlparse(translateJobS3Uri, allow_fragments = False)
+            translateJobLanguageCode = translateJobDescription["TextTranslationJobProperties"]["TargetLanguageCodes"][0]
 
             translateJobS3Location = {
                 "Uri": translateJobS3Uri,
@@ -223,6 +225,15 @@ def check_translate_webcaptions(event, context):
                 s3_object = s3_resource.Object(bucket, translation_text_key)
                 s3_object.put(Body=translation_text)
 
+            metadata = {
+                "OperatorName": "TranslateWebCaptions_"+translateJobLanguageCode,
+                "TranslationText": {"S3Bucket": bucket, "S3Key": translation_text_key},
+                "WorkflowId": workflow_id,
+                "TargetLanguageCode": translateJobLanguageCode
+            }
+            webcaptions_collection.append(metadata)
+
+        
             # lang_code = job["TargetLanguageCode"]
             # translation_with_caption_markers = lang_code+"."+"transcript_with_caption_markers.txt"
             # translation_with_caption_markers_key = translation_output_path + translation_with_caption_markers
@@ -230,20 +241,26 @@ def check_translate_webcaptions(event, context):
             operator_object.update_workflow_status("Error")
             operator_object.add_workflow_metadata(CaptionsError="Unable to contruct path to translate output in S3: {e}".format(e=str(e)))
             raise MasExecutionError(operator_object.return_output_object())
-            
 
-        # try:
-        #     s3_response = s3.get_object(Bucket=bucket, Key=translation_with_caption_markers_key)
-        #     translation_text = json.loads(s3_response["Body"].read().decode("utf-8"))
-        # except Exception as e:
-        #     operator_object.update_workflow_status("Error")
-        #     operator_object.add_workflow_metadata(CaptionsError="Unable to read translation from S3: {e}".format(e=str(e)))
-        #     raise MasExecutionError(operator_object.return_output_object())
-        #     return operator_object.return_output_object()
 
-        # put_webcaptions(operator_object, translation_text, lang_code)   
-    
-    operator_object.update_workflow_status("Complete")  
+    data = {}
+    data["CaptionsCollection"] = webcaptions_collection
+    metadata_upload = dataplane.store_asset_metadata(asset_id, "TranslateWebCaptions", workflow_id,
+                            data)   
+
+    if "Status" not in metadata_upload:
+        operator_object.update_workflow_status("Error")
+        operator_object.add_workflow_metadata(CaptionsError="Unable to store srt captions file {e}".format(e=metadata_upload))
+        raise MasExecutionError(operator_object.return_output_object())
+    else:
+        if metadata_upload["Status"] == "Success":
+            operator_object.update_workflow_status("Complete")
+            return operator_object.return_output_object()
+        else:
+            operator_object.update_workflow_status("Error")
+            operator_object.add_workflow_metadata(
+                CaptionsError="Unable to store webcaptions collection information {e}".format(e=metadata_upload))
+            raise MasExecutionError(operator_object.return_output_object())
 
     return operator_object.return_output_object()  
 

@@ -149,9 +149,10 @@ cat requirements.txt.old | grep -v "Media_Insights_Engine_Lambda_Helper" > requi
 echo "/packages/$file" >> requirements.txt;
 # Build Lambda layer zip files and rename them to the filenames expected by media-insights-stack.yaml. The Lambda layer build script runs in Docker.
 # If Docker is not installed, then we'll use prebuilt Lambda layer zip files.
-echo "Running build-lambda-layer.sh"
+echo "Running build-lambda-layer.sh:"
+echo ""
 rm -rf lambda_layer-python-* lambda_layer-python*.zip
-./build-lambda-layer.sh requirements.txt > /dev/null
+./build-lambda-layer.sh requirements.txt
 if [ $? -eq 0 ]; then
   mv lambda_layer-python3.6.zip media_insights_engine_lambda_layer_python3.6.zip
   mv lambda_layer-python3.7.zip media_insights_engine_lambda_layer_python3.7.zip
@@ -680,9 +681,9 @@ echo "--------------------------------------------------------------------------
 echo ""
 echo "Template to deploy:"
 if [ "$region" == "us-east-1" ]; then
-  echo https://"$bucket".s3.amazonaws.com/media-insights-solution/"$version"/cf/media-insights-stack.template
+  echo https://"$bucket"-"$region".s3.amazonaws.com/media-insights-solution/"$version"/cf/media-insights-stack.template
 else
-  echo https://"$bucket".s3."$region".amazonaws.com/media-insights-solution/"$version"/cf/media-insights-stack.template
+  echo https://"$bucket"-"$region".s3."$region".amazonaws.com/media-insights-solution/"$version"/cf/media-insights-stack.template
 fi
 
 echo "------------------------------------------------------------------------------"

@@ -32,15 +32,19 @@ Resources:
       Operations:
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:WebCaptions"
+
   TranslateStage:
     Type: Custom::CustomResource
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Stage"
-      Name: "ITTranslateStage2"
+      Name: "TranslateStage2"
       Operations:
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:Translate"
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:TranslateWebCaptions"
+
   CaptionFileStage:
     Type: Custom::CustomResource
     Properties:
@@ -130,6 +134,7 @@ Resources:
       - defaultTextSynthesisStage
       - MediaconvertStage
       - WebCaptionsStage
+      - TranslateStage
       - CaptionFileStage
     Type: Custom::CustomResource
     Properties:
@@ -159,6 +164,9 @@ Resources:
               "Next": "${WebCaptionsStage}"
               },
             "${WebCaptionsStage}":{
+              "Next": "${TranslateStage}"
+              },
+            "${TranslateStage}":{
               "Next": "${CaptionFileStage}"
               },
             "${CaptionFileStage}":{
@@ -173,6 +181,7 @@ Resources:
           defaultTextSynthesisStage: !GetAtt defaultTextSynthesisStage.Name,
           MediaconvertStage: !GetAtt MediaconvertStage.Name,
           WebCaptionsStage: !GetAtt WebCaptionsStage.Name,
+          TranslateStage: !GetAtt TranslateStage.Name,
           CaptionFileStage: !GetAtt CaptionFileStage.Name
         }
 

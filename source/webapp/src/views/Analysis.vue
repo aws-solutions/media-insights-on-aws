@@ -105,7 +105,7 @@
             </div>
           </div>
           <div v-else>
-            <div v-if="videoOptions.sources[0].src === '' || videoOptions.captions[0].src === ''">
+            <div v-if="videoOptions.sources[0].src === '' || videoOptions.captions.length !== this.num_caption_tracks">
               <Loading />
             </div>
             <div v-else>
@@ -233,6 +233,7 @@
         speechTabs: 0,
         supportedImageFormats: ["jpg", "jpeg", "tif", "tiff", "png", "gif"],
         mediaType: "",
+        num_caption_tracks: 0,
         videoOptions: {
           preload: 'auto',
           loop: true,
@@ -320,13 +321,12 @@
         })
         console.log("getVideoUrl done")
       },
-      async getVttCaptions (token) {
-        console.log("getVttCaptions start")
+      getVttCaptions: async function (token) {
         if (this.mediaType !== "video") {
           return;
         }
         const asset_id = this.$route.params.asset_id;
-        fetch(this.DATAPLANE_API_ENDPOINT+'/metadata/'+asset_id+'/WebToVTTCaptions',  {
+        fetch(this.DATAPLANE_API_ENDPOINT + '/metadata/' + asset_id + '/WebToVTTCaptions', {
           method: 'get',
           headers: {
             'Authorization': token
@@ -336,33 +336,30 @@
               data: data,
             })
           ).then(res => {
-            const bucket = res.data.results.Results.S3Bucket;
-            const key = res.data.results.Results.S3Key;
-            console.log("vtt caption file:");
-            console.log(bucket);
-            console.log(key);
-            // get URL to captions file in S3
-            fetch(this.DATAPLANE_API_ENDPOINT + '/download', {
-              method: 'POST',
-              mode: 'cors',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': token
-              },
-              body: JSON.stringify({"S3Bucket": bucket, "S3Key": key})
-            }).then(data => {
-              data.text().then((data) => {
-                console.log("data:")
-                console.log(data)
-                this.videoOptions.captions[0].src = data;
-                this.videoOptions.captions[0].lang = "en";
-                this.videoOptions.captions[0].label = "English"
-                console.log("vtt captions:");
-                console.log(this.videoOptions.captions[0])
-              }).catch(err => console.error(err));
-            })
+            console.log(res.data.results.CaptionsCollection);
+            let captions_collection = [];
+            this.num_caption_tracks = res.data.results.CaptionsCollection.length;
+            res.data.results.CaptionsCollection.forEach(item => {
+              // TODO: map the language code to a language label
+              const bucket = item.Results.S3Bucket;
+              const key = item.Results.S3Key;
+              // get URL to captions file in S3
+              fetch(this.DATAPLANE_API_ENDPOINT + '/download', {
+                method: 'POST',
+                mode: 'cors',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': token
+                },
+                body: JSON.stringify({"S3Bucket": bucket, "S3Key": key})
+              }).then(data => {
+                data.text().then((data) => {
+                  captions_collection.push({'src': data, 'lang': item.LanguageCode, 'label': item.LanguageCode});
+                }).catch(err => console.error(err));
+              })
+            });
+            this.videoOptions.captions = captions_collection
           })
-          console.log("getVttCaptions done");
         });
       },
       updateAssetId () {

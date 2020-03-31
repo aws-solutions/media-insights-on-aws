@@ -251,7 +251,7 @@ def web_to_srt(event, context):
         
         print(json.dumps(response))
         bucket = response["S3Bucket"]
-        key = response["S3Key"]+'Captions'+'_'+'lang'+'.srt'
+        key = response["S3Key"]+'Captions'+'_'+lang+'.srt'
         s3_object = s3_resource.Object(bucket, key)
 
         s3_object.put(Body=srt)
@@ -336,13 +336,13 @@ def web_to_vtt(event, context):
         print(json.dumps(response))
         
         bucket = response["S3Bucket"]
-        key = response["S3Key"]+'Captions.vtt'
+        key = response["S3Key"]+'Captions_'+lang+'.vtt'
         s3_object = s3_resource.Object(bucket, key)
 
         s3_object.put(Body=vtt)
 
         metadata = {
-            "OperatorName": "SRTCaptions_"+lang,
+            "OperatorName": "VTTCaptions_"+lang,
             "Results": {"S3Bucket": bucket, "S3Key": key},
             "WorkflowId": workflow_id,
             "LanguageCode": lang

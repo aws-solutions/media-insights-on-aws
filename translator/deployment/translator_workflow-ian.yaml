@@ -41,6 +41,8 @@ Resources:
       Operations:
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:Translate"
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:TranslateWebCaptions"
   CaptionFileStage:
     Type: Custom::CustomResource
     Properties:
@@ -131,6 +133,7 @@ Resources:
       - MediaconvertStage
       - WebCaptionsStage
       - CaptionFileStage
+      - TranslateStage
     Type: Custom::CustomResource
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn

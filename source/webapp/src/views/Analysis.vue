@@ -105,7 +105,7 @@
             </div>
           </div>
           <div v-else>
-            <div v-if="videoOptions.sources[0].src === ''">
+            <div v-if="videoOptions.sources[0].src === '' || videoOptions.captions[0].src === ''">
               <Loading />
             </div>
             <div v-else>
@@ -242,6 +242,13 @@
               src: "",
               type: "video/mp4"
             }
+          ],
+          captions: [
+            {
+              src: "",
+              lang: "",
+              label: ""
+            }
           ]
         }
       }
@@ -277,16 +284,14 @@
                 this.mediaType = "video"
               }
               this.filename = filename;
-              this.getVideoUrl()
+              this.getVideoUrl(token);
+              this.getVttCaptions(token);
             })
           });
           this.updateAssetId();
       },
-      async getVideoUrl() {
+      async getVideoUrl(token) {
         // This function gets the video URL then initializes the video player
-        const token = await this.$Amplify.Auth.currentSession().then(data =>{
-          return data.getIdToken().getJwtToken();
-        });
         const bucket = this.s3_uri.split("/")[2];
         // TODO: Get the path to the proxy mp4 from the mediaconvert operator
         // Our mediaconvert operator sets proxy encode filename to [key]_proxy.mp4
@@ -313,6 +318,52 @@
             this.videoOptions.sources[0].src = data
         }).catch(err => console.error(err));
         })
+        console.log("getVideoUrl done")
+      },
+      async getVttCaptions (token) {
+        console.log("getVttCaptions start")
+        if (this.mediaType !== "video") {
+          return;
+        }
+        const asset_id = this.$route.params.asset_id;
+        fetch(this.DATAPLANE_API_ENDPOINT+'/metadata/'+asset_id+'/WebToVTTCaptions',  {
+          method: 'get',
+          headers: {
+            'Authorization': token
+          }
+        }).then(response => {
+          response.json().then(data => ({
+              data: data,
+            })
+          ).then(res => {
+            const bucket = res.data.results.Results.S3Bucket;
+            const key = res.data.results.Results.S3Key;
+            console.log("vtt caption file:");
+            console.log(bucket);
+            console.log(key);
+            // get URL to captions file in S3
+            fetch(this.DATAPLANE_API_ENDPOINT + '/download', {
+              method: 'POST',
+              mode: 'cors',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': token
+              },
+              body: JSON.stringify({"S3Bucket": bucket, "S3Key": key})
+            }).then(data => {
+              data.text().then((data) => {
+                console.log("data:")
+                console.log(data)
+                this.videoOptions.captions[0].src = data;
+                this.videoOptions.captions[0].lang = "en";
+                this.videoOptions.captions[0].label = "English"
+                console.log("vtt captions:");
+                console.log(this.videoOptions.captions[0])
+              }).catch(err => console.error(err));
+            })
+          })
+          console.log("getVttCaptions done");
+        });
       },
       updateAssetId () {
         this.$store.commit('updateAssetId', this.$route.params.asset_id);

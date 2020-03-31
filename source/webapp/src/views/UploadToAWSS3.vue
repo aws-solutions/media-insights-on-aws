@@ -436,12 +436,12 @@
             "CaptionFileStage2": {
               "WebToSRTCaptions": {
                 "MediaType": "MetadataOnly",
-                "TargetLanguageCodes": Object.values(this.selectedTranslateLanguages.map(x => x.text)),
+                "TargetLanguageCodes": Object.values(this.selectedTranslateLanguages.map(x => x.text)).concat(this.sourceLanguageCode),
                 "Enabled": true
               },
               "WebToVTTCaptions": {
                 "MediaType": "MetadataOnly",
-                "TargetLanguageCodes": Object.values(this.selectedTranslateLanguages.map(x => x.text)),
+                "TargetLanguageCodes": Object.values(this.selectedTranslateLanguages.map(x => x.text)).concat(this.sourceLanguageCode),
                 "Enabled": true
               }
             },

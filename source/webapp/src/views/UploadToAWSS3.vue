@@ -97,7 +97,7 @@
                 <div v-if="enabledOperators.includes('Translate')">
                   <b-form-group>
                     <voerro-tags-input element-id="target_language_tags"
-                                       v-model="selectedTags"
+                                       v-model="selectedTranslateLanguages"
                                        :limit=10
                                        :hide-input-on-limit="true"
                                        :existing-tags=translateLanguageTags
@@ -327,6 +327,9 @@
           {text: 'Urdu', value: 'ur'},
           {text: 'Vietnamese', value: 'vi'},
         ],
+        // translateLanguageTags is the same as translateLanguages except
+        // with keys and values flipped around. We need this field ordering
+        // for the voerro-tags-input. The flipping is done in mounted().
         translateLanguageTags: [],
         selectedTranslateLanguages: [],
         sourceLanguageCode: "en",
@@ -430,8 +433,16 @@
             },
             "MediaconvertStage2": {"Mediaconvert": {"MediaType": "Video", "Enabled": true}},
             "CaptionFileStage2": {
-              "WebToSRTCaptions": {"MediaType": "MetadataOnly", "Enabled": true},
-              "WebToVTTCaptions": {"MediaType": "MetadataOnly", "Enabled": true}
+              "WebToSRTCaptions": {
+                "MediaType": "MetadataOnly",
+                "TargetLanguageCodes": this.selectedTranslateLanguages.map(x => x.text),
+                "Enabled": true
+              },
+              "WebToVTTCaptions": {
+                "MediaType": "MetadataOnly",
+                "TargetLanguageCodes": this.selectedTranslateLanguages.map(x => x.text),
+                "Enabled": true
+              }
             },
             "WebCaptionsStage2": {"WebCaptions": {"MediaType": "Text", "Enabled": true}},
             "defaultAudioStage2": {
@@ -463,117 +474,14 @@
             }
           }
         }
-        // return {
-        //   "Name": "MieCompleteWorkflow2",
-        //   "Configuration": {
-        //     "TranscribeStage2": {
-        //       "Transcribe": {
-        //         "MediaType": "Audio",
-        //         "Enabled": true,
-        //         "TranscribeLanguage": "en-US"
-        //       }
-        //     },
-        //     "MediaconvertStage2": {
-        //       "Mediaconvert": {
-        //         "MediaType": "Video",
-        //         "Enabled": true
-        //       }
-        //     },
-        //     "CaptionFileStage2": {
-        //       "WebToSRTCaptions": {
-        //         "MediaType": "MetadataOnly",
-        //         "Enabled": true
-        //       },
-        //       "WebToVTTCaptions": {
-        //         "MediaType": "MetadataOnly",
-        //         "Enabled": true
-        //       }
-        //     },
-        //     "WebCaptionsStage2": {
-        //       "WebCaptions": {
-        //         "MediaType": "Text",
-        //         "Enabled": true
-        //       }
-        //     },
-        //     "defaultPrelimVideoStage2": {
-        //       "Thumbnail": {
-        //         "ThumbnailPosition": this.thumbnail_position.toString(),
-        //         "Enabled": true
-        //       },
-        //       "Mediainfo": {
-        //         "Enabled": true
-        //       }
-        //     },
-        //     "defaultVideoStage2": {
-        //       "faceDetection": {
-        //         "Enabled": this.enabledOperators.includes("faceDetection"),
-        //       },
-        //       "celebrityRecognition": {
-        //         "Enabled": this.enabledOperators.includes("celebrityRecognition"),
-        //       },
-        //       "labelDetection": {
-        //         "Enabled": this.enabledOperators.includes("labelDetection"),
-        //       },
-        //       "Mediaconvert": {
-        //         "Enabled": false,
-        //       },
-        //       "contentModeration": {
-        //         "Enabled": this.enabledOperators.includes("contentModeration"),
-        //       },
-        //       "faceSearch": {
-        //         "Enabled": this.enabledOperators.includes("faceSearch"),
-        //         "CollectionId": this.faceCollectionId==="" ? "undefined" : this.faceCollectionId
-        //       },
-        //       "textDetection": {
-        //         "Enabled": this.enabledOperators.includes("textDetection")
-        //       },
-        //       "GenericDataLookup": {
-        //         "Enabled": this.enabledOperators.includes("genericDataLookup"),
-        //         "Bucket": this.DATAPLANE_BUCKET,
-        //         "Key": this.genericDataFilename==="" ? "undefined" : this.genericDataFilename
-        //       }
-        //     },
-        //     "defaultAudioStage2": {
-        //       "Transcribe": {
-        //         "MediaType": "Audio",
-        //         "Enabled": this.enabledOperators.includes("Transcribe"),
-        //         "TranscribeLanguage": this.transcribeLanguage
-        //       }
-        //
-        //     },
-        //     "defaultTextStage2": {
-        //       // TODO: replace this Translate function with one that supports multiple target languages.
-        //       "Translate": {
-        //         "Enabled": false,
-        //         "SourceLanguageCode": this.transcribeLanguage.split('-')[0],
-        //         "TargetLanguageCode": this.targetLanguageCode
-        //       },
-        //       "ComprehendEntities": {
-        //         "Enabled": this.enabledOperators.includes("ComprehendEntities"),
-        //       },
-        //       "ComprehendKeyPhrases": {
-        //         "Enabled": this.enabledOperators.includes("ComprehendKeyPhrases"),
-        //       }
-        //     },
-        //     "defaultTextSynthesisStage2": {
-        //       // Polly is available in the MIECompleteWorkflow but not used in the front-end, so we've disabled it here.
-        //       "Polly": {
-        //         "Enabled": false,
-        //       }
-        //     }
-        //   }
-        // }
       }
     },
     mounted: function() {
       this.translateLanguageTags=this.translateLanguages.map(x => {return {"text": x.value, "value": x.text}})
       this.executed_assets = this.execution_history;
       this.pollWorkflowStatus();
-      console.log(this.sourceLanguageCode)
-      console.log(this.selectedTranslateLanguages)
-      this.selectedTranslateLanguages = this.translateLanguages.map(x => x.value).filter(x => x.value!=this.sourceLanguageCode);
-      console.log(this.selectedTranslateLanguages)
-      console.log("this.DATAPLANE_BUCKET: " + this.DATAPLANE_BUCKET)
+      // TODO: make sure the source language is not a target translate language
+      // this.selectedTranslateLanguages = this.selectedTranslateLanguages.map(x => x.value).filter(x => x.value!=this.sourceLanguageCode);
     },
     beforeDestroy () {
       clearInterval(this.workflow_status_polling)

@@ -332,6 +332,7 @@
         // for the voerro-tags-input. The flipping is done in mounted().
         translateLanguageTags: [],
         selectedTranslateLanguages: [],
+        // TODO: get sourceLanguageCode from web form
         sourceLanguageCode: "en",
         targetLanguageCode: "es",
         uploadErrorMessage: "",
@@ -435,20 +436,42 @@
             "CaptionFileStage2": {
               "WebToSRTCaptions": {
                 "MediaType": "MetadataOnly",
-                "TargetLanguageCodes": this.selectedTranslateLanguages.map(x => x.text),
+                "TargetLanguageCodes": Object.values(this.selectedTranslateLanguages.map(x => x.text)),
                 "Enabled": true
               },
               "WebToVTTCaptions": {
                 "MediaType": "MetadataOnly",
-                "TargetLanguageCodes": this.selectedTranslateLanguages.map(x => x.text),
+                "TargetLanguageCodes": Object.values(this.selectedTranslateLanguages.map(x => x.text)),
                 "Enabled": true
               }
             },
-            "WebCaptionsStage2": {"WebCaptions": {"MediaType": "Text", "Enabled": true}},
+            "WebCaptionsStage2": {
+              "WebCaptions": {
+                "MediaType": "Text",
+                "SourceLanguageCode": this.sourceLanguageCode,
+                "Enabled": true
+              }
+            },
+            "TranslateStage2": {
+              "Translate": {
+                "MediaType":"Text",
+                "Enabled": true,
+                // TODO: get these values from webform
+                "TargetLanguageCode":"ru",
+                "SourceLanguageCode":"en"
+              },
+              "TranslateWebCaptions": {
+                "MediaType":"Text",
+                "Enabled":true,
+                "TargetLanguageCodes": Object.values(this.selectedTranslateLanguages.map(x => x.text)),
+                "SourceLanguageCode": this.sourceLanguageCode
+              }
+            },
             "defaultAudioStage2": {
               "Transcribe": {
                 "MediaType": "Audio",
                 "Enabled": this.enabledOperators.includes("Transcribe"),
+                // TODO: get transcribe language from webform
                 "TranscribeLanguage": "en-US"
               }
             },

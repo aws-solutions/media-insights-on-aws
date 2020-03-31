@@ -35,7 +35,8 @@ def start_translate_webcaptions(event, context):
         operator_object.add_workflow_metadata(TranslateError="Language codes are not defined")
         raise MasExecutionError(operator_object.return_output_object())
 
-    webcaptions = get_webcaptions(operator_object, source_lang)
+    #webcaptions = get_webcaptions(operator_object, source_lang)
+    webcaptions = get_webcaptions_json(operator_object, source_lang)
 
     # Translate takes a list of target languages, but it only allow on item in the list.  Too bad
     # life would be so much easier if it truely allowed many targets.
@@ -213,11 +214,13 @@ def check_translate_webcaptions(event, context):
                 outputFilename = ntpath.basename(outputS3ObjectKey)
 
                 translateOutput = s3_resource.Object(translateJobS3Location["Bucket"], outputS3ObjectKey).get()["Body"].read().decode("utf-8")
-                inputWebCaptions = get_webcaptions(operator_object, translateJobDescription["TextTranslationJobProperties"]["SourceLanguageCode"])
+                #inputWebCaptions = get_webcaptions(operator_object, translateJobDescription["TextTranslationJobProperties"]["SourceLanguageCode"])
+                inputWebCaptions = get_webcaptions_json(operator_object, translateJobDescription["TextTranslationJobProperties"]["SourceLanguageCode"])
                 outputWebCaptions = delimitedToWebCaptions(inputWebCaptions, translateOutput, "<123>", 15)
                 print(outputS3ObjectKey)
                 (targetLanguageCode, basename, ext) = outputFilename.split(".")
-                put_webcaptions(operator_object, outputWebCaptions, targetLanguageCode)  
+                #put_webcaptions(operator_object, outputWebCaptions, targetLanguageCode)  
+                operator_metadata = put_webcaptions_json(operator_object, outputWebCaptions, targetLanguageCode) 
 
                 # Save a copy of the translation text without delimiters
                 translation_text = translateOutput.replace("<123>", "")
@@ -228,9 +231,11 @@ def check_translate_webcaptions(event, context):
             metadata = {
                 "OperatorName": "TranslateWebCaptions_"+translateJobLanguageCode,
                 "TranslationText": {"S3Bucket": bucket, "S3Key": translation_text_key},
+                "WebCaptions": operator_metadata,
                 "WorkflowId": workflow_id,
                 "TargetLanguageCode": translateJobLanguageCode
             }
+            
             webcaptions_collection.append(metadata)
 
         
@@ -265,14 +270,8 @@ def check_translate_webcaptions(event, context):
     return operator_object.return_output_object()  
 
 
-def get_webcaptions(operator_object, lang):
     
-    webcaptions_lang = "WebCaptions"+"_"+lang
-    try:
-        asset_id = operator_object.asset_id
-    except KeyError:
-        print('No asset id for this workflow')
-        asset_id = ''
+def get_webcaptions(operator_object, lang):
 
     try:
         workflow_id = operator_object.workflow_execution_id
@@ -300,67 +299,9 @@ def get_webcaptions(operator_object, lang):
 
     return webcaptions
 
+
+
 def put_webcaptions(operator_object, webcaptions, lang):
-    
-    try:
-        print("put_webcaptions({}".format(lang))
-        asset_id = operator_object.asset_id
-        webcaptions_lang = "WebCaptions"+"_"+lang
-        workflow_id = operator_object.workflow_execution_id
-    except KeyError:
-        operator_object.update_workflow_status("Error")
-        operator_object.add_workflow_metadata(CaptionsError="Missing a required metadata key {e}".format(e=e))
-        raise MasExecutionError(operator_object.return_output_object())
-        
-    try:
-        for i,asset in enumerate(webcaptions, start=1):
-
-            if i != len(webcaptions):
-                metadata_upload = dataplane.store_asset_metadata(asset_id=asset_id, operator_name=webcaptions_lang, 
-                                        workflow_id=workflow_id, results=asset, paginate=True, end=False)
-                
-                if "Status" not in metadata_upload:
-                    operator_object.update_workflow_status("Error")
-                    operator_object.add_workflow_metadata(
-                        CaptionsError="Unable to store web captions {e}".format(e=metadata_upload))
-                    raise MasExecutionError(operator_object.return_output_object())
-                else:
-                    if metadata_upload["Status"] == "Success":
-                        pass
-                    else:
-                        operator_object.update_workflow_status("Error")
-                        operator_object.add_workflow_metadata(
-                            CaptionsError="Unable to store web captions {e}".format(e=metadata_upload))
-                        raise MasExecutionError(operator_object.return_output_object())
-            else:
-                metadata_upload = dataplane.store_asset_metadata(asset_id=asset_id, operator_name=webcaptions_lang, 
-                                        workflow_id=workflow_id, results=asset, paginate=True, end=True)
-                if "Status" not in metadata_upload:
-                    operator_object.update_workflow_status("Error")
-                    operator_object.add_workflow_metadata(
-                        CaptionsError="Unable to store web captions {e}".format(e=metadata_upload))
-                    raise MasExecutionError(operator_object.return_output_object())
-                else:
-                    if metadata_upload["Status"] == "Success":
-                        response_json = metadata_upload
-                        operator_object.add_workflow_metadata(WebCaptionsS3Bucket=response_json['Bucket'],
-                                                            WebCaptionsS3Key=response_json['Key'])
-                        operator_object.update_workflow_status("Complete")
-                        return operator_object.return_output_object()
-                    else:
-                        operator_object.update_workflow_status("Error")
-                        operator_object.add_workflow_metadata(
-                            CaptionsError="Unable to store web captions {e}".format(e=metadata_upload))
-                        raise MasExecutionError(operator_object.return_output_object())
-    except Exception as e:
-        operator_object.update_workflow_status("Error")
-        operator_object.add_workflow_metadata(TranslateError=str(e))
-        raise MasExecutionError(operator_object.return_output_object())
-
-    print("put_webcaptions():SUCCESSS")
-
-
-def put_tranlation_text(operator_object, text, lang):
     
     try:
         print("put_webcaptions({}".format(lang))
@@ -435,3 +376,70 @@ def delimitedToWebCaptions(sourceWebCaptions, delimitedCaptions, delimiter, maxC
 		outputWebCaptions.append(caption)
 	
 	return outputWebCaptions
+
+def get_webcaptions_json(operator_object, lang):
+    try:
+        print("get_webcaptions_json({}".format(lang))
+        asset_id = operator_object.asset_id
+        workflow_id = operator_object.workflow_execution_id
+    except KeyError:
+        operator_object.update_workflow_status("Error")
+        operator_object.add_workflow_metadata(CaptionsError="Missing a required metadata key {e}".format(e=e))
+        raise MasExecutionError(operator_object.return_output_object())
+
+    try:
+        webcaptions_storage_path = dataplane.generate_media_storage_path(asset_id, workflow_id)
+        bucket = webcaptions_storage_path['S3Bucket'] 
+        key = webcaptions_storage_path['S3Key']+"WebCaptions"+"_"+lang+".json"
+            
+
+        print("get object {} {}".format(bucket, key))
+        data = s3.get_object(Bucket=bucket, Key=key)
+        webcaptions = json.loads(data['Body'].read().decode('utf-8'))
+        
+    
+    except Exception as e:
+        operator_object.update_workflow_status("Error")
+        operator_object.add_workflow_metadata(CaptionsError="Unable to get webcaptions from dataplane {e}".format(e=e))
+        raise MasExecutionError(operator_object.return_output_object())
+
+    return webcaptions
+
+def put_webcaptions_json(operator_object, webcaptions, lang):
+    try:
+        print("put_webcaptions_json({}".format(lang))
+        asset_id = operator_object.asset_id
+        webcaptions_lang = "WebCaptions"+"_"+lang
+        workflow_id = operator_object.workflow_execution_id
+    except KeyError:
+        operator_object.update_workflow_status("Error")
+        operator_object.add_workflow_metadata(CaptionsError="Missing a required metadata key {e}".format(e=e))
+        raise MasExecutionError(operator_object.return_output_object())
+
+    webcaptions_storage_path = dataplane.generate_media_storage_path(asset_id, workflow_id)
+    bucket = webcaptions_storage_path['S3Bucket'] 
+    key = webcaptions_storage_path['S3Key']+"WebCaptions"+"_"+lang+".json"
+        
+
+    print("put object {} {}".format(bucket, key))
+    s3.put_object(Bucket=bucket, Key=key, Body=json.dumps(webcaptions))
+
+    operator_metadata = {"S3Bucket": bucket, "S3Key": key, "Operator": "WebCaptions"+"_"+lang}
+    # metadata_upload = dataplane.store_asset_metadata(asset_id, "WebCaptions"+"_"+lang, workflow_id,
+    #                             operator_metadata)
+
+    # if "Status" not in metadata_upload:
+    #     operator_object.update_workflow_status("Error")
+    #     operator_object.add_workflow_metadata(CaptionsError="Unable to store webcaptions file {e}".format(e=metadata_upload))
+    #     raise MasExecutionError(operator_object.return_output_object())
+    # else:
+    #     if metadata_upload["Status"] == "Success":
+    #         operator_object.update_workflow_status("Complete")
+    #         return operator_object.return_output_object()
+    #     else:
+    #         operator_object.update_workflow_status("Error")
+    #         operator_object.add_workflow_metadata(
+    #             CaptionsError="Unable to store webcaptions file {e}".format(e=metadata_upload))
+    #         raise MasExecutionError(operator_object.return_output_object())
+
+    return operator_metadata

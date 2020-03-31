@@ -216,21 +216,22 @@ def web_to_srt(event, context):
     captions_collection = []
     for lang in targetLanguageCodes:
         captions = []
+        captions_operator_name = "WebCaptions"+"_"+lang
         
 
-        response = dataplane.retrieve_asset_metadata(asset_id, operator_name="WebCaptions"+"_"+lang)
+        response = dataplane.retrieve_asset_metadata(asset_id, operator_name=captions_operator_name)
         print(json.dumps(response))
 
         #FIXME Dataplane should only return WebCaptions data from this call, but it is returning everything
-        if "operator" in response and response["operator"] == "WebCaptions"+"_"+lang:
+        if "operator" in response and response["operator"] == captions_operator_name:
             captions.append(response["results"])
 
         while "cursor" in response:
-            response = dataplane.retrieve_asset_metadata(asset_id, operator_name="WebCaptions"+"_"+lang,cursor=response["cursor"])
+            response = dataplane.retrieve_asset_metadata(asset_id, operator_name=captions_operator_name,cursor=response["cursor"])
             print(json.dumps(response))
             
             #FIXME Dataplane should only return WebCaptions data from this call, but it is returning everything
-            if response["operator"] == "WebCaptions"+"_"+lang:
+            if response["operator"] == captions_operator_name:
                 captions.append(response["results"])
 
         srt = ''
@@ -307,19 +308,20 @@ def web_to_vtt(event, context):
     captions_collection = []
     for lang in targetLanguageCodes:
         captions = []
+        captionsOperatorName = "WebCaptions_"+lang
 
-        response = dataplane.retrieve_asset_metadata(asset_id, operator_name="WebCaptions")
+        response = dataplane.retrieve_asset_metadata(asset_id, operator_name=captionsOperatorName)
         
         
         #FIXME Dataplane should only return WebCaptions data from this call, but it is returning everything
-        if "operator" in response and response["operator"] == "WebCaptions":
+        if "operator" in response and response["operator"] == captionsOperatorName:
             captions.append(response["results"])
 
         while "cursor" in response:
-            response = dataplane.retrieve_asset_metadata(asset_id, operator_name="WebCaptions", cursor=response["cursor"])
+            response = dataplane.retrieve_asset_metadata(asset_id, operator_name=captionsOperatorName, cursor=response["cursor"])
             
             #FIXME Dataplane should only return WebCaptions data from this call, but it is returning everything
-            if response["operator"] == "WebCaptions":
+            if response["operator"] == captionsOperatorName:
                 captions.append(response["results"])
 
         vtt = 'WEBVTT\n\n'

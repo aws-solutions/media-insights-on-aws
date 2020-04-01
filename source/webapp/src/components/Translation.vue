@@ -20,8 +20,22 @@
       class="wrapper"
     >
       <label>Source Language:</label> {{ source_language }}<br>
-      <label>Target Language:</label> {{ target_language }}<br>
-      {{ translated_text }}
+      <label>Translated Language:</label> {{ selected_lang_code }}<br>
+      <b-form-group>
+        <b-form-radio-group
+            v-model="translation_url"
+            :options="translationsCollection"
+        ></b-form-radio-group>
+      </b-form-group>
+      <div v-if="translation_url !== ''">
+        {{ getTranslatedText }}
+        <br>
+        <a :href="translation_url">
+          <b-button type="button">
+            Download Translation
+          </b-button>
+        </a>
+      </div>
     </div>
   </div>
 </template>
@@ -31,12 +45,96 @@ export default {
   name: "Translation",
   data() {
     return {
-      translated_text: "",
-      source_language: "",
+      translation_url: "",
       target_language: "",
       isBusy: false,
       operator: "translation",
-      noTranslation: false
+      noTranslation: false,
+      num_translations: 0,
+      translationsCollection: [
+      ],
+      selected_lang: "",
+      translatedText: "",
+      source_language: "",
+      translateLanguages: [
+        {text: 'Afrikaans', value: 'af'},
+        {text: 'Albanian', value: 'sq'},
+        {text: 'Amharic', value: 'am'},
+        {text: 'Arabic', value: 'ar'},
+        {text: 'Azerbaijani', value: 'az'},
+        {text: 'Bengali', value: 'bn'},
+        {text: 'Bosnian', value: 'bs'},
+        {text: 'Bulgarian', value: 'bg'},
+        {text: 'Chinese (Simplified)', value: 'zh'},
+        // AWS Translate does not support translating from zh to zh-TW
+        // {text: 'Chinese (Traditional)', value: 'zh-TW'},
+        {text: 'Croatian', value: 'hr'},
+        {text: 'Czech', value: 'cs'},
+        {text: 'Danish', value: 'da'},
+        {text: 'Dari', value: 'fa-AF'},
+        {text: 'Dutch', value: 'nl'},
+        {text: 'English', value: 'en'},
+        {text: 'Estonian', value: 'et'},
+        {text: 'Finnish', value: 'fi'},
+        {text: 'French', value: 'fr'},
+        {text: 'French (Canadian)', value: 'fr-CA'},
+        {text: 'Georgian', value: 'ka'},
+        {text: 'German', value: 'de'},
+        {text: 'Greek', value: 'el'},
+        {text: 'Hausa', value: 'ha'},
+        {text: 'Hebrew', value: 'he'},
+        {text: 'Hindi', value: 'hi'},
+        {text: 'Hungarian', value: 'hu'},
+        {text: 'Indonesian', value: 'id'},
+        {text: 'Italian', value: 'it'},
+        {text: 'Japanese', value: 'ja'},
+        {text: 'Korean', value: 'ko'},
+        {text: 'Latvian', value: 'lv'},
+        {text: 'Malay', value: 'ms'},
+        {text: 'Norwegian', value: 'no'},
+        {text: 'Persian', value: 'fa'},
+        {text: 'Pashto', value: 'ps'},
+        {text: 'Polish', value: 'pl'},
+        {text: 'Portuguese', value: 'pt'},
+        {text: 'Romanian', value: 'ro'},
+        {text: 'Russian', value: 'ru'},
+        {text: 'Serbian', value: 'sr'},
+        {text: 'Slovak', value: 'sk'},
+        {text: 'Slovenian', value: 'sl'},
+        {text: 'Somali', value: 'so'},
+        {text: 'Spanish', value: 'es'},
+        {text: 'Swahili', value: 'sw'},
+        {text: 'Swedish', value: 'sv'},
+        {text: 'Tagalog', value: 'tl'},
+        {text: 'Tamil', value: 'ta'},
+        {text: 'Thai', value: 'th'},
+        {text: 'Turkish', value: 'tr'},
+        {text: 'Ukrainian', value: 'uk'},
+        {text: 'Urdu', value: 'ur'},
+        {text: 'Vietnamese', value: 'vi'},
+      ]
+    }
+  },
+  computed: {
+    selected_lang_code: function() {
+      if (this.selected_lang !== '') {
+        console.log(this.translateLanguages.filter(x => (x.text === this.selected_lang))[0]);
+        return this.translateLanguages.filter(x => (x.text === this.selected_lang))[0].value;
+      }
+      else {
+        console.log('ian')
+        return ''
+      }
+    },
+    getTranslatedText: function () {
+      this.selected_lang = this.translationsCollection.filter(x => (x.value === this.translation_url))[0].text;
+      fetch(this.translation_url)
+        .then(data => {
+          data.text().then((data) => {
+            this.translatedText = data
+          }).catch(err => console.error(err));
+        });
+      return this.translatedText
     }
   },
   deactivated: function () {
@@ -45,9 +143,9 @@ export default {
   activated: function () {
     console.log('activated component:', this.operator);
     this.fetchAssetData();
+    this.getTxtTranslations();
   },
   beforeDestroy: function () {
-      this.translated_text = "";
       this.source_language = "";
       this.target_language = "";
     },
@@ -73,14 +171,55 @@ export default {
         else {
           this.noTranslation = false;
           for (let i = 0, len = data.length; i < len; i++) {
-            this.translated_text = data[i]._source.TranslatedText;
             this.source_language = data[i]._source.SourceLanguageCode;
-            this.target_language = data[i]._source.TargetLanguageCode
           }
         }
         this.isBusy = false
       }
-    }
+    },
+    getTxtTranslations: async function () {
+      const token = await this.$Amplify.Auth.currentSession().then(data =>{
+        return data.getIdToken().getJwtToken();
+      });
+      this.translationsCollection = [];
+      const asset_id = this.$route.params.asset_id;
+      fetch(this.DATAPLANE_API_ENDPOINT + '/metadata/' + asset_id + '/TranslateWebCaptions', {
+        method: 'get',
+        headers: {
+          'Authorization': token
+        }
+      }).then(response => {
+        response.json().then(data => ({
+            data: data,
+          })
+        ).then(res => {
+          // console.log(res.data.results.CaptionsCollection);
+          this.num_translations = res.data.results.CaptionsCollection.length;
+          res.data.results.CaptionsCollection.forEach(item => {
+            const bucket = item.TranslationText.S3Bucket;
+            const key = item.TranslationText.S3Key;
+            // get URL to captions file in S3
+            fetch(this.DATAPLANE_API_ENDPOINT + '/download', {
+              method: 'POST',
+              mode: 'cors',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': token
+              },
+              body: JSON.stringify({"S3Bucket": bucket, "S3Key": key})
+            }).then(data => {
+              data.text().then((data) => {
+                let languageLabel = this.translateLanguages.filter(x => (x.value === item.TargetLanguageCode))[0].text;
+                this.translationsCollection.push(
+                  {text: languageLabel, value: data}
+                );
+              }).catch(err => console.error(err));
+            })
+          });
+        })
+      });
+    },
+
   }
 }
 </script>

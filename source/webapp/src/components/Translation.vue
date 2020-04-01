@@ -28,13 +28,13 @@
         ></b-form-radio-group>
       </b-form-group>
       <div v-if="translation_url !== ''">
-        {{ getTranslatedText }}
-        <br>
-        <a :href="translation_url">
+        <a :href="vtt_url">
           <b-button type="button">
-            Download Translation
+            Download VTT
           </b-button>
         </a>
+        <br><br>
+        {{ getTranslatedText }}
       </div>
     </div>
   </div>
@@ -45,6 +45,13 @@ export default {
   name: "Translation",
   data() {
     return {
+      vttcaptions: [
+        {
+          src: "",
+          lang: "",
+          label: ""
+        }
+      ],
       translation_url: "",
       target_language: "",
       isBusy: false,
@@ -116,13 +123,17 @@ export default {
     }
   },
   computed: {
+    vtt_url: function() {
+      if (this.selected_lang_code !== '') {
+        console.log(this.vttcaptions)
+        return this.vttcaptions.filter(x => (x.lang === this.selected_lang_code))[0].src
+      }
+    },
     selected_lang_code: function() {
       if (this.selected_lang !== '') {
-        console.log(this.translateLanguages.filter(x => (x.text === this.selected_lang))[0]);
         return this.translateLanguages.filter(x => (x.text === this.selected_lang))[0].value;
       }
       else {
-        console.log('ian')
         return ''
       }
     },
@@ -144,6 +155,7 @@ export default {
     console.log('activated component:', this.operator);
     this.fetchAssetData();
     this.getTxtTranslations();
+    this.getVttCaptions();
   },
   beforeDestroy: function () {
       this.source_language = "";
@@ -216,6 +228,51 @@ export default {
               }).catch(err => console.error(err));
             })
           });
+        })
+      });
+    },
+    getVttCaptions: async function () {
+      const token = await this.$Amplify.Auth.currentSession().then(data =>{
+        return data.getIdToken().getJwtToken();
+      });
+      const asset_id = this.$route.params.asset_id;
+      console.log("GETTING VTT")
+
+      fetch(this.DATAPLANE_API_ENDPOINT + '/metadata/' + asset_id + '/WebToVTTCaptions', {
+        method: 'get',
+        headers: {
+          'Authorization': token
+        }
+      }).then(response => {
+        response.json().then(data => ({
+            data: data,
+          })
+        ).then(res => {
+          console.log("ian01")
+          console.log(res.data.results.CaptionsCollection);
+          let captions_collection = [];
+          this.num_caption_tracks = res.data.results.CaptionsCollection.length;
+          res.data.results.CaptionsCollection.forEach(item => {
+            // TODO: map the language code to a language label
+            const bucket = item.Results.S3Bucket;
+            const key = item.Results.S3Key;
+            // get URL to captions file in S3
+            fetch(this.DATAPLANE_API_ENDPOINT + '/download', {
+              method: 'POST',
+              mode: 'cors',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': token
+              },
+              body: JSON.stringify({"S3Bucket": bucket, "S3Key": key})
+            }).then(data => {
+              data.text().then((data) => {
+                captions_collection.push({'src': data, 'lang': item.LanguageCode, 'label': item.LanguageCode});
+              }).catch(err => console.error(err));
+            })
+          });
+          this.vttcaptions = captions_collection
+          console.log("done getting vtt")
         })
       });
     },

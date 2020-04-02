@@ -33,16 +33,19 @@
           @vdropzone-queue-complete="upload_in_progress=false"
       />
       <br>
-      <b-button v-b-toggle.collapse-2 class="m-1">
+      <b-button variant="primary" v-b-toggle.collapse-2 class="m-1">
         Configure Workflow
       </b-button>
       <b-button v-if="validForm" variant="primary" @click="uploadFiles">
         Start Upload and Run Workflow
       </b-button>
-      <b-button v-else disabled variant="primary" @click="uploadFiles">
+      <b-button v-else disabled @click="uploadFiles">
         Start Upload and Run Workflow
       </b-button>
-      <br>
+      <div v-if="validForm == false" style="color:red">
+        Invalid workflow configuration
+      </div>
+      <p v-else></p>
       <span v-if="upload_in_progress" class="text-secondary">Upload in progress</span>
       <b-container v-if="upload_in_progress">
         <b-spinner label="upload_in_progress" />
@@ -78,8 +81,10 @@
                     name="flavour-2"
                 ></b-form-checkbox-group>
                 <div v-if="enabledOperators.includes('Transcribe')">
-                  <label>Source Language</label>
-                  <b-form-select v-model="transcribeLanguage" :options="transcribeLanguages"></b-form-select>
+                  Source Language
+                  <b-form-select v-model="transcribeLanguage" :options="transcribeLanguages"></b-form-select><br><br>
+                  Custom Vocabulary
+                  <b-form-input v-model="customVocab" placeholder="(optional)"></b-form-input>
                 </div>
               </b-form-group>
               <div v-if="audioFormError" style="color:red">
@@ -96,6 +101,9 @@
                 ></b-form-checkbox-group>
                 <div v-if="enabledOperators.includes('Translate')">
                   <b-form-group>
+                    <div v-if="textFormError" style="color:red">
+                      {{ textFormError }}
+                    </div>
                     <voerro-tags-input element-id="target_language_tags"
                                        v-model="selectedTranslateLanguages"
                                        :limit=10
@@ -110,12 +118,11 @@
                                        :typeahead-hide-discard="true"
                                        :typeahead="true">
                     </voerro-tags-input>
+                    Custom Terminology
+                    <b-form-input v-model="customTerminology" placeholder="(optional)"></b-form-input>
                   </b-form-group>
                 </div>
               </b-form-group>
-              <div v-if="textFormError" style="color:red">
-                {{ textFormError }}
-              </div>
             </b-card>
             <b-card header="Video Distribution">
               <b-form-group>
@@ -234,6 +241,8 @@
         ],
         faceCollectionId: "",
         genericDataFilename: "",
+        customVocab: "",
+        customTerminology: "",
         transcribeLanguage: "en-US",
         transcribeLanguages: [
           {text: 'Arabic, Gulf', value: 'ar-AE'},
@@ -332,9 +341,16 @@
         // for the voerro-tags-input. The flipping is done in mounted().
         translateLanguageTags: [],
         selectedTranslateLanguages: [],
+        selectedTranslateLanguagesDefault: [
+          {value: 'French', text: 'fr'},
+          {value: 'Spanish', text: 'es'},
+          {value: 'Arabic', text: 'ar'},
+          {value: 'Portuguese', text: 'pt'},
+          {value: 'Russian', text: 'ru'},
+          {value: 'Chinese (Simplified)', text: 'zh'}
+        ],
         // TODO: get sourceLanguageCode from web form
         sourceLanguageCode: "en",
-        targetLanguageCode: "es",
         uploadErrorMessage: "",
         invalidFileMessage: "",
         invalidFileMessages: [],
@@ -365,6 +381,9 @@
     computed: {
       ...mapState(['execution_history']),
       textFormError() {
+        if (this.enabledOperators.includes("Translate") && this.selectedTranslateLanguages.length === 0) {
+          return "Choose at least one language.";
+        }
         return "";
       },
       audioFormError() {
@@ -455,10 +474,7 @@
             "TranslateStage2": {
               "Translate": {
                 "MediaType":"Text",
-                "Enabled": true,
-                // TODO: get these values from webform
-                "TargetLanguageCode":"ru",
-                "SourceLanguageCode":"en"
+                "Enabled": false,
               },
               "TranslateWebCaptions": {
                 "MediaType":"Text",
@@ -472,7 +488,7 @@
                 "MediaType": "Audio",
                 "Enabled": this.enabledOperators.includes("Transcribe"),
                 // TODO: get transcribe language from webform
-                "TranscribeLanguage": "en-US"
+                "TranscribeLanguage": this.transcribeLanguage,
               }
             },
             "defaultTextSynthesisStage2": {"Polly": {"MediaType": "Text", "Enabled": false}},
@@ -503,8 +519,6 @@
       this.translateLanguageTags=this.translateLanguages.map(x => {return {"text": x.value, "value": x.text}})
       this.executed_assets = this.execution_history;
       this.pollWorkflowStatus();
-      // TODO: make sure the source language is not a target translate language
-      // this.selectedTranslateLanguages = this.selectedTranslateLanguages.map(x => x.value).filter(x => x.value!=this.sourceLanguageCode);
     },
     beforeDestroy () {
       clearInterval(this.workflow_status_polling)
@@ -608,8 +622,16 @@
             }
           };
         } else if (media_type.match(/video/g) || this.valid_media_types.includes(location.s3ObjectLocation.fields.key.split('.').pop().toLowerCase())) {
+          // Create workflow config from user-specified options:
           data = vm.kitchenSinkWorkflowConfig;
-          // data = vm.translateWorkflowConfig;
+          // Add optional parameters to workflow config:
+          if (this.customTerminology !== "") {
+            data.Configuration.TranslateStage2.TranslateWebCaptions.TerminologyNames = [this.customTerminology]
+          }
+          if (this.customVocab !== "") {
+            data.Configuration.defaultAudioStage2.Transcribe.VocabularyName=this.customVocab
+          }
+          // Add input parameter to workflow config:
           data["Input"] = {
             "Media": {
               "Video": {

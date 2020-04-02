@@ -1,0 +1,16 @@
+**/dist
+**/global-s3-assets
+**/regional-s3-assets
+package/
+*__pycache__/
+*.DS_Store
+*.iml
+.idea/
+
+# these are not checked in to o.g. git project
+package-lock.json
+
+scratch/
+deployment/build.sh
+deployment/private-build-s3-dist-copy.sh
+deployment/build.out

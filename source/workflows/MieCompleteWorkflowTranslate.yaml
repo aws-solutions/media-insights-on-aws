@@ -1,0 +1,186 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Media Insights Engine - Workflow to run all MIE analyses for WHO"
+
+Parameters:
+  WorkflowCustomResourceArn:
+    Type: String
+    Description: "ARN of the Media Insights custom resource that handles creating operations, stages and workflows"
+    # FIXME - this doesn't work well with nesting - just pass in the layer resource
+    # MediaInsightsWorkflowStack:
+    # Description: "Name of the base media insights workflow stack"
+    # Type: String
+  OperatorLibraryStack:
+    Description: "Name of the operator library stack"
+    Type: String
+
+Resources:
+  MediaconvertStage:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Stage"
+      Name: "MediaconvertStage2"
+      Operations:
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:Mediaconvert"
+  WebCaptionsStage:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Stage"
+      Name: "WebCaptionsStage2"
+      Operations:
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:WebCaptions"
+
+  TranslateStage:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Stage"
+      Name: "TranslateStage2"
+      Operations:
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:Translate"
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:TranslateWebCaptions"
+
+  CaptionFileStage:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Stage"
+      Name: "CaptionFileStage2"
+      Operations:
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:WebToSRTCaptions"
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:WebToVTTCaptions"
+  PreliminaryStage:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Stage"
+      Name: "defaultPrelimVideoStage2"
+      Operations:
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:Thumbnail"
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:Mediainfo"
+  defaultVideoStage:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Stage"
+      Name: "defaultVideoStage2"
+      Operations:
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:GenericDataLookup"
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:CelebRecognition"
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:ContentModeration"
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:FaceDetection"
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:FaceSearch"
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:LabelDetection"
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:PersonTracking"
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:TextDetection"
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:Mediaconvert"
+
+  defaultAudioStage:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Stage"
+      Name: "defaultAudioStage2"
+      Operations:
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:Transcribe"
+
+  defaultTextStage:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Stage"
+      Name: "defaultTextStage2"
+      Operations:
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:ComprehendPhrases"
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:ComprehendEntities"
+
+  defaultTextSynthesisStage:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Stage"
+      Name: "defaultTextSynthesisStage2"
+      Operations:
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:Polly"
+
+  MieCompleteWorkflow2:
+    DependsOn:
+      - PreliminaryStage
+      - defaultVideoStage
+      - defaultAudioStage
+      - defaultTextStage
+      - defaultTextSynthesisStage
+      - MediaconvertStage
+      - WebCaptionsStage
+      - TranslateStage
+      - CaptionFileStage
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Workflow"
+      Name: "MieCompleteWorkflow2"
+      StartAt: !GetAtt PreliminaryStage.Name
+      Stages: !Sub
+        - |-
+          {
+            "${PreliminaryStage}":{
+              "Next": "${defaultVideoStage}"
+              },
+            "${defaultVideoStage}":{
+              "Next": "${defaultAudioStage}"
+              },
+            "${defaultAudioStage}":{
+              "Next": "${defaultTextStage}"
+              },
+            "${defaultTextStage}":{
+              "Next": "${defaultTextSynthesisStage}"
+              },
+            "${defaultTextSynthesisStage}":{
+              "Next": "${MediaconvertStage}"
+              },
+            "${MediaconvertStage}":{
+              "Next": "${WebCaptionsStage}"
+              },
+            "${WebCaptionsStage}":{
+              "Next": "${TranslateStage}"
+              },
+            "${TranslateStage}":{
+              "Next": "${CaptionFileStage}"
+              },
+            "${CaptionFileStage}":{
+              "End": true
+              }
+          }
+        - {
+          PreliminaryStage: !GetAtt PreliminaryStage.Name,
+          defaultVideoStage: !GetAtt defaultVideoStage.Name,
+          defaultAudioStage: !GetAtt defaultAudioStage.Name,
+          defaultTextStage: !GetAtt defaultTextStage.Name,
+          defaultTextSynthesisStage: !GetAtt defaultTextSynthesisStage.Name,
+          MediaconvertStage: !GetAtt MediaconvertStage.Name,
+          WebCaptionsStage: !GetAtt WebCaptionsStage.Name,
+          TranslateStage: !GetAtt TranslateStage.Name,
+          CaptionFileStage: !GetAtt CaptionFileStage.Name
+        }

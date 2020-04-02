@@ -34,13 +34,17 @@ def start_translate_webcaptions(event, context):
         operator_object.update_workflow_status("Error")
         operator_object.add_workflow_metadata(TranslateError="Language codes are not defined")
         raise MasExecutionError(operator_object.return_output_object())
+    try:
+        terminology_names = operator_object.configuration["TerminologyNames"]
+    except KeyError:
+        terminology_names =[]
 
     #webcaptions = get_webcaptions(operator_object, source_lang)
     webcaptions = get_webcaptions_json(operator_object, source_lang)
 
     # Translate takes a list of target languages, but it only allow on item in the list.  Too bad
     # life would be so much easier if it truely allowed many targets.
-    translate_webcaptions(operator_object, webcaptions, source_lang, target_langs) 
+    translate_webcaptions(operator_object, webcaptions, source_lang, target_langs, terminology_names) 
 
     return operator_object.return_output_object()
 

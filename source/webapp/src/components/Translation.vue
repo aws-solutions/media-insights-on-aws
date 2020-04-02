@@ -24,7 +24,7 @@
       <b-form-group>
         <b-form-radio-group
             v-model="translation_url"
-            :options="translationsCollection"
+            :options="alphabetized_language_collection"
         ></b-form-radio-group>
       </b-form-group>
       <div v-if="translation_url !== ''">
@@ -123,10 +123,20 @@ export default {
     }
   },
   computed: {
+    alphabetized_language_collection: function() {
+      return this.translationsCollection.sort(function(a, b) {
+        var textA = a.text.toUpperCase();
+        var textB = b.text.toUpperCase();
+        return (textA < textB) ? -1 : (textA > textB) ? 1 : 0;
+      });
+    },
     vtt_url: function() {
       if (this.selected_lang_code !== '') {
         console.log(this.vttcaptions)
-        return this.vttcaptions.filter(x => (x.lang === this.selected_lang_code))[0].src
+        let vttcaption = this.vttcaptions.filter(x => (x.lang === this.selected_lang_code))[0];
+        if (vttcaption) {
+          return vttcaption.src
+        }
       }
     },
     selected_lang_code: function() {
@@ -138,7 +148,10 @@ export default {
       }
     },
     getTranslatedText: function () {
-      this.selected_lang = this.translationsCollection.filter(x => (x.value === this.translation_url))[0].text;
+      let translation = this.translationsCollection.filter(x => (x.value === this.translation_url))[0];
+      if (translation) {
+        this.selected_lang = translation.text;
+      }
       fetch(this.translation_url)
         .then(data => {
           data.text().then((data) => {
@@ -225,6 +238,8 @@ export default {
                 this.translationsCollection.push(
                   {text: languageLabel, value: data}
                 );
+                // set default language selection
+                this.translation_url = this.alphabetized_language_collection[0].value
               }).catch(err => console.error(err));
             })
           });

@@ -141,7 +141,7 @@ export default {
 
         placeholder: {
             type: String,
-            default: 'Add a language'
+            default: 'Type or select'
         },
 
         discardSearchText: {

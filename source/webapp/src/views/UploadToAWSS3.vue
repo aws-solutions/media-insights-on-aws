@@ -124,24 +124,6 @@
                 </div>
               </b-form-group>
             </b-card>
-            <b-card header="Video Distribution">
-              <b-form-group>
-                <b-form-checkbox
-                    v-model="create_video_stream"
-                    value="true"
-                    unchecked-value="false"
-                >
-                  Create video stream
-                </b-form-checkbox>
-                <b-form-checkbox
-                    v-model="show_disclaimer"
-                    value="true"
-                    unchecked-value="false"
-                >
-                  Show "Not Reviewed" disclaimer
-                </b-form-checkbox>
-              </b-form-group>
-            </b-card>
           </b-card-group>
           <div align="right">
             <button type="button" class="btn btn-link" @click="selectAll">

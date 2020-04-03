@@ -77,7 +77,7 @@ Parameters:
   MaxConcurrentWorkflows:
     Type: Number
     Description: Maximum number of workflows to run concurrently.  When the maximum is reached, additional workflows are added to a wait queue.
-    Default: 10
+    Default: 5
     MinValue: 1
   TranscriberApp:
     Type: String

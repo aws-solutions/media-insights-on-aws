@@ -132,7 +132,6 @@ export default {
     },
     vtt_url: function() {
       if (this.selected_lang_code !== '') {
-        console.log(this.vttcaptions)
         let vttcaption = this.vttcaptions.filter(x => (x.lang === this.selected_lang_code))[0];
         if (vttcaption) {
           return vttcaption.src
@@ -166,7 +165,6 @@ export default {
   },
   activated: function () {
     console.log('activated component:', this.operator);
-    this.fetchAssetData();
     this.getTxtTranslations();
     this.getVttCaptions();
   },
@@ -175,33 +173,6 @@ export default {
       this.target_language = "";
     },
   methods: {
-    async fetchAssetData () {
-      let query = 'AssetId:'+this.$route.params.asset_id+ ' _index:mietranslation';
-      let apiName = 'mieElasticsearch';
-      let path = '/_search';
-      let apiParams = {
-        headers: {'Content-Type': 'application/json'},
-        queryStringParameters: {'q': query, 'default_operator': 'AND', 'size': 10000}
-      };
-      let response = await this.$Amplify.API.get(apiName, path, apiParams);
-      if (!response) {
-        this.showElasticSearchAlert = true
-      }
-      else {
-        let result = await response;
-        let data = result.hits.hits;
-        if (data.length === 0) {
-          this.noTranslation = true
-        }
-        else {
-          this.noTranslation = false;
-          for (let i = 0, len = data.length; i < len; i++) {
-            this.source_language = data[i]._source.SourceLanguageCode;
-          }
-        }
-        this.isBusy = false
-      }
-    },
     getTxtTranslations: async function () {
       const token = await this.$Amplify.Auth.currentSession().then(data =>{
         return data.getIdToken().getJwtToken();
@@ -218,7 +189,6 @@ export default {
             data: data,
           })
         ).then(res => {
-          // console.log(res.data.results.CaptionsCollection);
           this.num_translations = res.data.results.CaptionsCollection.length;
           res.data.results.CaptionsCollection.forEach(item => {
             const bucket = item.TranslationText.S3Bucket;
@@ -251,7 +221,6 @@ export default {
         return data.getIdToken().getJwtToken();
       });
       const asset_id = this.$route.params.asset_id;
-      console.log("GETTING VTT")
 
       fetch(this.DATAPLANE_API_ENDPOINT + '/metadata/' + asset_id + '/WebToVTTCaptions', {
         method: 'get',
@@ -263,8 +232,6 @@ export default {
             data: data,
           })
         ).then(res => {
-          console.log("ian01")
-          console.log(res.data.results.CaptionsCollection);
           let captions_collection = [];
           this.num_caption_tracks = res.data.results.CaptionsCollection.length;
           res.data.results.CaptionsCollection.forEach(item => {
@@ -287,7 +254,6 @@ export default {
             })
           });
           this.vttcaptions = captions_collection
-          console.log("done getting vtt")
         })
       });
     },

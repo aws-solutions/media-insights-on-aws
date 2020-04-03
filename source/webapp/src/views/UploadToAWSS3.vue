@@ -349,8 +349,6 @@
           {value: 'Russian', text: 'ru'},
           {value: 'Chinese (Simplified)', text: 'zh'}
         ],
-        // TODO: get sourceLanguageCode from web form
-        sourceLanguageCode: "en",
         uploadErrorMessage: "",
         invalidFileMessage: "",
         invalidFileMessages: [],
@@ -380,6 +378,9 @@
     },
     computed: {
       ...mapState(['execution_history']),
+      sourceLanguageCode() {
+        return this.transcribeLanguage.split('-')[0]
+      },
       textFormError() {
         if (this.enabledOperators.includes("Translate") && this.selectedTranslateLanguages.length === 0) {
           return "Choose at least one language.";
@@ -431,14 +432,6 @@
         if (this.invalid_file_types || this.textFormError || this.audioFormError || this.videoFormError) validStatus = false;
         return validStatus;
       },
-      translateWorkflowConfig() {
-        return {
-          "Name": "TranscribeWorkflow",
-          "Configuration": {
-
-          }
-        }
-      },
       kitchenSinkWorkflowConfig() {
         return {
           "Name": "MieCompleteWorkflow2",
@@ -479,7 +472,7 @@
               "TranslateWebCaptions": {
                 "MediaType":"Text",
                 "Enabled":true,
-                "TargetLanguageCodes": Object.values(this.selectedTranslateLanguages.map(x => x.text)),
+                "TargetLanguageCodes": Object.values(this.selectedTranslateLanguages.map(x => x.text)).filter(x => x !== this.sourceLanguageCode),
                 "SourceLanguageCode": this.sourceLanguageCode
               }
             },
@@ -487,7 +480,6 @@
               "Transcribe": {
                 "MediaType": "Audio",
                 "Enabled": this.enabledOperators.includes("Transcribe"),
-                // TODO: get transcribe language from webform
                 "TranscribeLanguage": this.transcribeLanguage,
               }
             },

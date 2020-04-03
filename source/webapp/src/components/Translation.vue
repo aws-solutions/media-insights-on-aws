@@ -19,8 +19,6 @@
       v-else-if="noTranslation === false"
       class="wrapper"
     >
-      <label>Source Language:</label> {{ source_language }}<br>
-      <label>Translated Language:</label> {{ selected_lang_code }}<br>
       <b-form-group>
         <b-form-radio-group
             v-model="translation_url"
@@ -53,7 +51,6 @@ export default {
         }
       ],
       translation_url: "",
-      target_language: "",
       isBusy: false,
       operator: "translation",
       noTranslation: false,
@@ -62,7 +59,6 @@ export default {
       ],
       selected_lang: "",
       translatedText: "",
-      source_language: "",
       translateLanguages: [
         {text: 'Afrikaans', value: 'af'},
         {text: 'Albanian', value: 'sq'},
@@ -169,8 +165,6 @@ export default {
     this.getVttCaptions();
   },
   beforeDestroy: function () {
-      this.source_language = "";
-      this.target_language = "";
     },
   methods: {
     getTxtTranslations: async function () {
@@ -189,6 +183,7 @@ export default {
             data: data,
           })
         ).then(res => {
+          console.log(res.data.results)
           this.num_translations = res.data.results.CaptionsCollection.length;
           res.data.results.CaptionsCollection.forEach(item => {
             const bucket = item.TranslationText.S3Bucket;

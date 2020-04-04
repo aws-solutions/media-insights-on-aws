@@ -14,6 +14,7 @@
         :src="video_url"
         type="video/mp4"
       >
+      <track v-for="caption in captions" kind="captions" :src="caption.src" :srclang="caption.lang" :label="caption.label" default>
     </video>
     <canvas
       id="canvas"
@@ -42,6 +43,10 @@ export default {
   data: function () {
     return {
       video_url: '',
+      captions: [],
+      caption_src: '',
+      caption_lang: '',
+      caption_label: '',
       player: null
     }
   },
@@ -53,6 +58,10 @@ export default {
   },
   created() {
     this.video_url = this.options.sources[0].src;
+    this.captions = this.options.captions;
+    this.caption_src = this.options.captions[0].src;
+    this.caption_lang = this.options.captions[0].lang;
+    this.caption_label = this.options.captions[0].label;
   },
   mounted: function () {
     this.player = videojs(this.$refs.videoPlayer);

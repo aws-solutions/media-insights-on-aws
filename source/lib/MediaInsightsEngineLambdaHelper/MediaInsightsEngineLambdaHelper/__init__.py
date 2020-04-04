@@ -294,7 +294,7 @@ class DataPlane:
         :return: Dataplane response
         """
         if operator_name:
-            path = "/metadata/{asset_id}/operator".format(asset_id=asset_id, operator=operator_name)
+            path = "/metadata/{asset_id}/{operator}".format(asset_id=asset_id, operator=operator_name)
         else:
             path = "/metadata/{asset_id}".format(asset_id=asset_id)
 

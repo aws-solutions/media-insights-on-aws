@@ -149,9 +149,10 @@ cat requirements.txt.old | grep -v "Media_Insights_Engine_Lambda_Helper" > requi
 echo "/packages/$file" >> requirements.txt;
 # Build Lambda layer zip files and rename them to the filenames expected by media-insights-stack.yaml. The Lambda layer build script runs in Docker.
 # If Docker is not installed, then we'll use prebuilt Lambda layer zip files.
-echo "Running build-lambda-layer.sh"
+echo "Running build-lambda-layer.sh:"
+echo ""
 rm -rf lambda_layer-python-* lambda_layer-python*.zip
-./build-lambda-layer.sh requirements.txt > /dev/null
+./build-lambda-layer.sh requirements.txt
 if [ $? -eq 0 ]; then
   mv lambda_layer-python3.6.zip media_insights_engine_lambda_layer_python3.6.zip
   mv lambda_layer-python3.7.zip media_insights_engine_lambda_layer_python3.7.zip
@@ -188,13 +189,13 @@ cp "$workflows_dir/transcribe.yaml" "$dist_dir/transcribe.template"
 cp "$workflows_dir/rekognition.yaml" "$dist_dir/rekognition.template"
 cp "$workflows_dir/comprehend.yaml" "$dist_dir/comprehend.template"
 cp "$workflows_dir/MieCompleteWorkflow.yaml" "$dist_dir/MieCompleteWorkflow.template"
+cp "$workflows_dir/MieCompleteWorkflowTranslate.yaml" "$dist_dir/MieCompleteWorkflowTranslate.template"
 cp "$source_dir/operators/operator-library.yaml" "$dist_dir/media-insights-operator-library.template"
 cp "$template_dir/media-insights-stack.yaml" "$dist_dir/media-insights-stack.template"
 cp "$template_dir/string.yaml" "$dist_dir/string.template"
 cp "$template_dir/media-insights-test-operations-stack.yaml" "$dist_dir/media-insights-test-operations-stack.template"
 cp "$template_dir/media-insights-dataplane-streaming-stack.template" "$dist_dir/media-insights-dataplane-streaming-stack.template"
 cp "$workflows_dir/rekognition.yaml" "$dist_dir/rekognition.template"
-cp "$workflows_dir/MieCompleteWorkflow.yaml" "$dist_dir/MieCompleteWorkflow.template"
 cp "$source_dir/consumers/elastic/media-insights-elasticsearch.yaml" "$dist_dir/media-insights-elasticsearch.template"
 cp "$source_dir/consumers/elastic/media-insights-elasticsearch.yaml" "$dist_dir/media-insights-s3.template"
 cp "$webapp_dir/media-insights-webapp.yaml" "$dist_dir/media-insights-webapp.template"
@@ -347,6 +348,46 @@ fi
 popd || exit 1
 zip -q -g ./dist/start_translate.zip ./start_translate.py
 cp "./dist/start_translate.zip" "$dist_dir/start_translate.zip"
+
+# ------------------------------------------------------------------------------"
+# Translate WebCaptions Operations
+# ------------------------------------------------------------------------------"
+
+echo "Building Translate function"
+cd "$source_dir/operators/translate_webcaptions" || exit 1
+[ -e dist ] && rm -r dist
+mkdir -p dist
+[ -e package ] && rm -r package
+mkdir -p package
+echo "create requirements for lambda"
+# Make lambda package
+pushd package || exit 1
+echo "create lambda package"
+# Handle distutils install errors
+touch ./setup.cfg
+echo "[install]" > ./setup.cfg
+echo "prefix= " >> ./setup.cfg
+# Try and handle failure if pip version mismatch
+if [ -x "$(command -v pip)" ]; then
+  pip install --quiet -r ../requirements.txt --target .
+elif [ -x "$(command -v pip3)" ]; then
+  echo "pip not found, trying with pip3"
+  pip3 install --quiet -r ../requirements.txt --target .
+elif ! [ -x "$(command -v pip)" ] && ! [ -x "$(command -v pip3)" ]; then
+ echo "No version of pip installed. This script requires pip. Cleaning up and exiting."
+ exit 1
+fi
+if ! [ -d ../dist/start_translate.zip ]; then
+  zip -q -r9 ../dist/translate_webcaptions.zip .
+
+elif [ -d ../dist/translate_webcaptions.zip ]; then
+  echo "Package already present"
+fi
+popd || exit 1
+zip -q -g ./dist/translate_webcaptions.zip ./translate_webcaptions.py
+cp "./dist/translate_webcaptions.zip" "$dist_dir/translate_webcaptions.zip"
+
+
 
 # ------------------------------------------------------------------------------"
 # Polly operators
@@ -680,9 +721,9 @@ echo "--------------------------------------------------------------------------
 echo ""
 echo "Template to deploy:"
 if [ "$region" == "us-east-1" ]; then
-  echo https://"$bucket".s3.amazonaws.com/media-insights-solution/"$version"/cf/media-insights-stack.template
+  echo https://"$bucket"-"$region".s3.amazonaws.com/media-insights-solution/"$version"/cf/media-insights-stack.template
 else
-  echo https://"$bucket".s3."$region".amazonaws.com/media-insights-solution/"$version"/cf/media-insights-stack.template
+  echo https://"$bucket"-"$region".s3."$region".amazonaws.com/media-insights-solution/"$version"/cf/media-insights-stack.template
 fi
 
 echo "------------------------------------------------------------------------------"

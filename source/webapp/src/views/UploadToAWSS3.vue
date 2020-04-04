@@ -4,45 +4,48 @@
     <br>
     <b-container>
       <b-alert
-        :show="dismissCountDown"
-        dismissible
-        variant="danger"
-        @dismissed="dismissCountDown=0"
-        @dismiss-count-down="countDownChanged"
+          :show="dismissCountDown"
+          dismissible
+          variant="danger"
+          @dismissed="dismissCountDown=0"
+          @dismiss-count-down="countDownChanged"
       >
         {{ uploadErrorMessage }}
       </b-alert>
       <b-alert
-        :show="showInvalidFile"
-        variant="danger"
+          :show="showInvalidFile"
+          variant="danger"
       >
         {{ invalidFileMessages[invalidFileMessages.length-1] }}
       </b-alert>
       <h1>Upload Videos</h1>
       <p>{{ description }}</p>
       <vue-dropzone
-        id="dropzone"
-        ref="myVueDropzone"
-        :awss3="awss3"
-        :options="dropzoneOptions"
-        @vdropzone-s3-upload-error="s3UploadError"
-        @vdropzone-file-added="fileAdded"
-        @vdropzone-removed-file="fileRemoved"
-        @vdropzone-success="s3UploadComplete"
-        @vdropzone-sending="upload_in_progress=true"
-        @vdropzone-queue-complete="upload_in_progress=false"
+          id="dropzone"
+          ref="myVueDropzone"
+          :awss3="awss3"
+          :options="dropzoneOptions"
+          @vdropzone-s3-upload-error="s3UploadError"
+          @vdropzone-file-added="fileAdded"
+          @vdropzone-removed-file="fileRemoved"
+          @vdropzone-success="s3UploadComplete"
+          @vdropzone-sending="upload_in_progress=true"
+          @vdropzone-queue-complete="upload_in_progress=false"
       />
       <br>
-      <b-button v-b-toggle.collapse-2 class="m-1">
+      <b-button variant="primary" v-b-toggle.collapse-2 class="m-1">
         Configure Workflow
       </b-button>
       <b-button v-if="validForm" variant="primary" @click="uploadFiles">
         Start Upload and Run Workflow
       </b-button>
-      <b-button v-else disabled variant="primary" @click="uploadFiles">
+      <b-button v-else disabled @click="uploadFiles">
         Start Upload and Run Workflow
       </b-button>
-      <br>
+      <div v-if="validForm == false" style="color:red">
+        Invalid workflow configuration
+      </div>
+      <p v-else></p>
       <span v-if="upload_in_progress" class="text-secondary">Upload in progress</span>
       <b-container v-if="upload_in_progress">
         <b-spinner label="upload_in_progress" />
@@ -54,10 +57,10 @@
             <b-card header="Video and Image Operators">
               <b-form-group>
                 <b-form-checkbox-group
-                  id="checkbox-group-1"
-                  v-model="enabledOperators"
-                  :options="videoOperators"
-                  name="flavour-1"
+                    id="checkbox-group-1"
+                    v-model="enabledOperators"
+                    :options="videoOperators"
+                    name="flavour-1"
                 ></b-form-checkbox-group>
                 <label>Thumbnail position: </label>
                 <b-form-input v-model="thumbnail_position" type="range" min="1" max="20" step="1"></b-form-input> {{ thumbnail_position }} sec
@@ -72,14 +75,16 @@
             <b-card header="Audio Operators">
               <b-form-group>
                 <b-form-checkbox-group
-                  id="checkbox-group-2"
-                  v-model="enabledOperators"
-                  :options="audioOperators"
-                  name="flavour-2"
+                    id="checkbox-group-2"
+                    v-model="enabledOperators"
+                    :options="audioOperators"
+                    name="flavour-2"
                 ></b-form-checkbox-group>
                 <div v-if="enabledOperators.includes('Transcribe')">
-                  <label>Source Language</label>
-                  <b-form-select v-model="transcribeLanguage" :options="transcribeLanguages"></b-form-select>
+                  Source Language
+                  <b-form-select v-model="transcribeLanguage" :options="transcribeLanguages"></b-form-select><br><br>
+                  Custom Vocabulary
+                  <b-form-input v-model="customVocab" placeholder="(optional)"></b-form-input>
                 </div>
               </b-form-group>
               <div v-if="audioFormError" style="color:red">
@@ -89,15 +94,18 @@
             <b-card header="Text Operators">
               <b-form-group>
                 <b-form-checkbox-group
-                  id="checkbox-group-3"
-                  v-model="enabledOperators"
-                  :options="textOperators"
-                  name="flavour-3"
+                    id="checkbox-group-3"
+                    v-model="enabledOperators"
+                    :options="textOperators"
+                    name="flavour-3"
                 ></b-form-checkbox-group>
                 <div v-if="enabledOperators.includes('Translate')">
                   <b-form-group>
+                    <div v-if="textFormError" style="color:red">
+                      {{ textFormError }}
+                    </div>
                     <voerro-tags-input element-id="target_language_tags"
-                                       v-model="selectedTags"
+                                       v-model="selectedTranslateLanguages"
                                        :limit=10
                                        :hide-input-on-limit="true"
                                        :existing-tags=translateLanguageTags
@@ -110,29 +118,10 @@
                                        :typeahead-hide-discard="true"
                                        :typeahead="true">
                     </voerro-tags-input>
+                    Custom Terminology
+                    <b-form-input v-model="customTerminology" placeholder="(optional)"></b-form-input>
                   </b-form-group>
                 </div>
-              </b-form-group>
-              <div v-if="textFormError" style="color:red">
-                {{ textFormError }}
-              </div>
-            </b-card>
-            <b-card header="Video Distribution">
-              <b-form-group>
-                <b-form-checkbox
-                    v-model="create_video_stream"
-                    value="true"
-                    unchecked-value="false"
-                >
-                  Create video stream
-                </b-form-checkbox>
-                <b-form-checkbox
-                    v-model="show_disclaimer"
-                    value="true"
-                    unchecked-value="false"
-                >
-                  Show "Not Reviewed" disclaimer
-                </b-form-checkbox>
               </b-form-group>
             </b-card>
           </b-card-group>
@@ -152,14 +141,14 @@
         Execution History
       </label>
       <b-table
-        :fields="fields"
-        bordered
-        hover
-        small
-        responsive
-        show-empty
-        fixed
-        :items="executed_assets"
+          :fields="fields"
+          bordered
+          hover
+          small
+          responsive
+          show-empty
+          fixed
+          :items="executed_assets"
       >
         <template v-slot:cell(workflow_status)="data">
           <a href="" @click.stop.prevent="openWindow(data.item.state_machine_console_link)">{{ data.item.workflow_status }}</a>
@@ -214,7 +203,7 @@
         ],
         thumbnail_position: 10,
         upload_in_progress: false,
-        enabledOperators: ['labelDetection', 'celebrityRecognition', 'textDetection', 'contentModeration', 'faceDetection', 'thumbnail', 'Transcribe', 'Translate', 'ComprehendKeyPhrases', 'ComprehendEntities'],
+        enabledOperators: ['thumbnail', 'Transcribe', 'Translate'],
         videoOperators: [
           {text: 'Object Detection', value: 'labelDetection'},
           {text: 'Celebrity Recognition', value: 'celebrityRecognition'},
@@ -234,6 +223,8 @@
         ],
         faceCollectionId: "",
         genericDataFilename: "",
+        customVocab: "",
+        customTerminology: "",
         transcribeLanguage: "en-US",
         transcribeLanguages: [
           {text: 'Arabic, Gulf', value: 'ar-AE'},
@@ -327,10 +318,19 @@
           {text: 'Urdu', value: 'ur'},
           {text: 'Vietnamese', value: 'vi'},
         ],
+        // translateLanguageTags is the same as translateLanguages except
+        // with keys and values flipped around. We need this field ordering
+        // for the voerro-tags-input. The flipping is done in mounted().
         translateLanguageTags: [],
         selectedTranslateLanguages: [],
-        sourceLanguageCode: "en",
-        targetLanguageCode: "es",
+        selectedTranslateLanguagesDefault: [
+          {value: 'French', text: 'fr'},
+          {value: 'Spanish', text: 'es'},
+          {value: 'Arabic', text: 'ar'},
+          {value: 'Portuguese', text: 'pt'},
+          {value: 'Russian', text: 'ru'},
+          {value: 'Chinese (Simplified)', text: 'zh'}
+        ],
         uploadErrorMessage: "",
         invalidFileMessage: "",
         invalidFileMessages: [],
@@ -360,7 +360,13 @@
     },
     computed: {
       ...mapState(['execution_history']),
+      sourceLanguageCode() {
+        return this.transcribeLanguage.split('-')[0]
+      },
       textFormError() {
+        if (this.enabledOperators.includes("Translate") && this.selectedTranslateLanguages.length === 0) {
+          return "Choose at least one language.";
+        }
         return "";
       },
       audioFormError() {
@@ -408,75 +414,78 @@
         if (this.invalid_file_types || this.textFormError || this.audioFormError || this.videoFormError) validStatus = false;
         return validStatus;
       },
-      workflowConfig() {
+      kitchenSinkWorkflowConfig() {
         return {
-          "Name": "MieCompleteWorkflow",
+          "Name": "MieCompleteWorkflow2",
           "Configuration": {
-            "defaultPrelimVideoStage": {
+            "defaultPrelimVideoStage2": {
               "Thumbnail": {
                 "ThumbnailPosition": this.thumbnail_position.toString(),
+                "MediaType": "Video",
                 "Enabled": true
               },
-              "Mediainfo": {
+              "Mediainfo": {"MediaType": "Video", "Enabled": true}
+            },
+            "MediaconvertStage2": {"Mediaconvert": {"MediaType": "Video", "Enabled": true}},
+            "CaptionFileStage2": {
+              "WebToSRTCaptions": {
+                "MediaType": "MetadataOnly",
+                "TargetLanguageCodes": Object.values(this.selectedTranslateLanguages.map(x => x.text)).concat(this.sourceLanguageCode),
+                "Enabled": true
+              },
+              "WebToVTTCaptions": {
+                "MediaType": "MetadataOnly",
+                "TargetLanguageCodes": Object.values(this.selectedTranslateLanguages.map(x => x.text)).concat(this.sourceLanguageCode),
                 "Enabled": true
               }
             },
-            "defaultVideoStage": {
-              "faceDetection": {
-                "Enabled": this.enabledOperators.includes("faceDetection"),
-              },
-              "celebrityRecognition": {
-                "Enabled": this.enabledOperators.includes("celebrityRecognition"),
-              },
-              "labelDetection": {
-                "Enabled": this.enabledOperators.includes("labelDetection"),
-              },
-              "Mediaconvert": {
+            "WebCaptionsStage2": {
+              "WebCaptions": {
+                "MediaType": "Text",
+                "SourceLanguageCode": this.sourceLanguageCode,
+                "Enabled": true
+              }
+            },
+            "TranslateStage2": {
+              "Translate": {
+                "MediaType":"Text",
                 "Enabled": false,
               },
-              "contentModeration": {
-                "Enabled": this.enabledOperators.includes("contentModeration"),
-              },
+              "TranslateWebCaptions": {
+                "MediaType":"Text",
+                "Enabled":true,
+                "TargetLanguageCodes": Object.values(this.selectedTranslateLanguages.map(x => x.text)).filter(x => x !== this.sourceLanguageCode),
+                "SourceLanguageCode": this.sourceLanguageCode
+              }
+            },
+            "defaultAudioStage2": {
+              "Transcribe": {
+                "MediaType": "Audio",
+                "Enabled": this.enabledOperators.includes("Transcribe"),
+                "TranscribeLanguage": this.transcribeLanguage,
+              }
+            },
+            "defaultTextSynthesisStage2": {"Polly": {"MediaType": "Text", "Enabled": false}},
+            "defaultVideoStage2": {
+              "faceDetection": {"MediaType": "Video", "Enabled": this.enabledOperators.includes("faceDetection")},
+              "textDetection": {"MediaType": "Video", "Enabled": this.enabledOperators.includes("textDetection")},
+              "celebrityRecognition": {"MediaType": "Video", "Enabled": this.enabledOperators.includes("celebrityRecognition")},
+              "GenericDataLookup": {"MediaType": "Video", "Enabled": false},
+              "labelDetection": {"MediaType": "Video", "Enabled": this.enabledOperators.includes("labelDetection")},
+              "personTracking": {"MediaType": "Video", "Enabled": false},
+              "Mediaconvert": {"MediaType": "Video", "Enabled": false},
+              "contentModeration": {"MediaType": "Video", "Enabled": this.enabledOperators.includes("contentModeration")},
               "faceSearch": {
+                "MediaType": "Video",
                 "Enabled": this.enabledOperators.includes("faceSearch"),
                 "CollectionId": this.faceCollectionId==="" ? "undefined" : this.faceCollectionId
-              },
-              "textDetection": {
-                "Enabled": this.enabledOperators.includes("textDetection")
-              },
-              "GenericDataLookup": {
-                "Enabled": this.enabledOperators.includes("genericDataLookup"),
-                "Bucket": this.DATAPLANE_BUCKET,
-                "Key": this.genericDataFilename==="" ? "undefined" : this.genericDataFilename
               }
             },
-            "defaultAudioStage": {
-              "Transcribe": {
-                "Enabled": this.enabledOperators.includes("Transcribe"),
-                "TranscribeLanguage": this.transcribeLanguage
-              }
-
-            },
-            "defaultTextStage": {
-              "Translate": {
-                "Enabled": this.enabledOperators.includes("Translate"),
-                "SourceLanguageCode": this.transcribeLanguage.split('-')[0],
-                "TargetLanguageCode": this.targetLanguageCode
-              },
-              "ComprehendEntities": {
-                "Enabled": this.enabledOperators.includes("ComprehendEntities"),
-              },
-              "ComprehendKeyPhrases": {
-                "Enabled": this.enabledOperators.includes("ComprehendKeyPhrases"),
-              }
-            },
-            "defaultTextSynthesisStage": {
-              // Polly is available in the MIECompleteWorkflow but not used in the front-end, so we've disabled it here.
-              "Polly": {
-                "Enabled": false,
-              }
+            "defaultTextStage2": {
+              "ComprehendEntities": {"MediaType": "Text", "Enabled": true},
+              "ComprehendKeyPhrases": {"MediaType": "Text", "Enabled": true}
             }
-          },
+          }
         }
       }
     },
@@ -484,11 +493,6 @@
       this.translateLanguageTags=this.translateLanguages.map(x => {return {"text": x.value, "value": x.text}})
       this.executed_assets = this.execution_history;
       this.pollWorkflowStatus();
-      console.log(this.sourceLanguageCode)
-      console.log(this.selectedTranslateLanguages)
-      this.selectedTranslateLanguages = this.translateLanguages.map(x => x.value).filter(x => x.value!=this.sourceLanguageCode);
-      console.log(this.selectedTranslateLanguages)
-      console.log("this.DATAPLANE_BUCKET: " + this.DATAPLANE_BUCKET)
     },
     beforeDestroy () {
       clearInterval(this.workflow_status_polling)
@@ -592,7 +596,16 @@
             }
           };
         } else if (media_type.match(/video/g) || this.valid_media_types.includes(location.s3ObjectLocation.fields.key.split('.').pop().toLowerCase())) {
-          data = vm.workflowConfig;
+          // Create workflow config from user-specified options:
+          data = vm.kitchenSinkWorkflowConfig;
+          // Add optional parameters to workflow config:
+          if (this.customTerminology !== "") {
+            data.Configuration.TranslateStage2.TranslateWebCaptions.TerminologyNames = [this.customTerminology]
+          }
+          if (this.customVocab !== "") {
+            data.Configuration.defaultAudioStage2.Transcribe.VocabularyName=this.customVocab
+          }
+          // Add input parameter to workflow config:
           data["Input"] = {
             "Media": {
               "Video": {

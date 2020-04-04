@@ -69,8 +69,6 @@ Resources:
             ExpirationInDays: 30
             AbortIncompleteMultipartUpload:
               DaysAfterInitiation: 1
-      VersioningConfiguration:
-        Status: "Enabled"
 
   WebBucketPolicy:
     Type: AWS::S3::BucketPolicy

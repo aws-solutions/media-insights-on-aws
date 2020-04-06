@@ -1,8 +1,13 @@
 # Media Insights Engine Implementation Guide
 
-This implementation guide discusses architectural considerations and configuration steps for deploying the Media Insights Engine (MIE) solution on the Amazon Web Services (AWS) Cloud. It includes links to an AWS CloudFormation template that launches, configures, and runs the AWS services required to deploy this solution using AWS best practices for security and availability.
+The guide is intended for IT infrastructure architects and developers who are familiar with using the Amazon Web Services (AWS) Cloud.
 
-The guide is intended for IT infrastructure architects and developers who have practical experience working with video workflows and architecting on the AWS Cloud.
+This guide discusses architectural considerations and configuration steps for deploying MIE on AWS. It includes links to an AWS CloudFormation template that launches, configures, and runs the AWS services required to deploy this solution using AWS best practices for security and availability.
+
+Join our Gitter chat at [https://gitter.im/awslabs/aws-media-insights-engine](https://gitter.im/awslabs/aws-media-insights-engine). This public chat forum was created to foster communication between MIE developers worldwide.
+
+[![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/awslabs/aws-media-insights-engine)
+
 
 
 **Contents**

@@ -4,7 +4,7 @@ The Media Insights Engine (MIE) web app provides a user interface for configurin
 
 # USER'S GUIDE:
 
-1. Upload videos in the upload button. Currently only "mp4" file types are supported. Once the upload completes, it will automatically be processed with the MieComplete Workflow (i.e. the Kitchen sink) which includes every media analysis operator in MIE.
+1. Upload videos in the upload button. Once the upload completes, it will automatically be processed with the MieComplete Workflow (i.e. the Kitchen sink) which includes every media analysis operator in MIE.
 2. The workflow status will be shown in the Collection view. Status will be updated when you reload the page.
 3. The search field in the Collection view searches the full metadata database in Elasticsearch. Everything you see in the analysis page is searchable. Even data that is excluded by the threshold you set in the Confidence slider is searchable. Search queries must use valid Lucene syntax.
 
@@ -17,7 +17,11 @@ Here are some sample searches:
 * You can search for phrases in Comprehend results like this, `PhraseText:"some deep water" AND Confidence:>80`
 * To see the full set of attributes that you can search for, click the Analytics menu item and search for "*" in the Discover tab of Kibana.
 
-# DEVELOPER'S GUIDE:
+# DEVELOPERS:
+
+Join our Gitter chat at [https://gitter.im/awslabs/aws-media-insights-engine](https://gitter.im/awslabs/aws-media-insights-engine). This public chat forum was created to foster communication between MIE developers worldwide.
+
+[![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/awslabs/aws-media-insights-engine)
 
 ## Running a Development Environment:
 

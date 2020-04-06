@@ -176,14 +176,18 @@ MIE is a reusable architecture that can support many different applications.  Ex
 * **Automatic Transcribe and Translate** - Generate captions for Video On Demand content using speech recognition.  
 * **Content Moderation** - Detect and edit moderated content from videos.
 
-# Developer Quickstart
+# Developers
 
-The Media Insights Engine is built to be extended for new use cases. You can:
+Join our Gitter chat at [https://gitter.im/awslabs/aws-media-insights-engine](https://gitter.im/awslabs/aws-media-insights-engine). This public chat forum was created to foster communication between MIE developers worldwide.
 
-* Run existing workflows using custom runtime configurations.
-* Create new operators for new types of analysis or transformations of your media.
-* Create new workflows using the existing operators and/or your own operators.
-* Add new data consumers to provide data management that suits the needs of your application.
+[![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/awslabs/aws-media-insights-engine)
+
+MIE is built to be extended in the following ways:
+
+* Run existing workflows with custom  configurations.
+* Create new operators for new types of media analysis or transformation
+* Create new workflows using the existing or new operators.
+* Stream data to new data storage services, such as Elasticsearch or Amazon Redshift.
 
 See the [Implementation Guide](https://github.com/awslabs/aws-media-insights-engine/blob/master/IMPLEMENTATION_GUIDE.md) for the MIE API reference and builder's guide.
 

@@ -11,7 +11,9 @@ pip3.6 install -q -r /packages/requirements.txt -t /packages/lambda_layer-python
 echo "================================================================================"
 echo "Installing MediaInfo package"
 echo "================================================================================"
-VERSION=$(curl -s https://github.com/MediaArea/MediaInfoLib/releases/latest | cut -d "\"" -f 2 | awk -F "/" '{print $NF}' | tr -d 'v')
+# MediaInfo version 19.09 works but 20.03 does not. So, hardcoding to 19.09 instead of latest.
+#VERSION=$(curl -s https://github.com/MediaArea/MediaInfoLib/releases/latest | cut -d "\"" -f 2 | awk -F "/" '{print $NF}' | tr -d 'v')
+VERSION="19.09"
 echo "MediaInfo latest version = v$VERSION"
 URL=https://mediaarea.net/download/binary/libmediainfo0/${VERSION}/MediaInfo_DLL_${VERSION}_GNU_FromSource.tar.gz
 echo "Downloading MediaInfo from $URL"

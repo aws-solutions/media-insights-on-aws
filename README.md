@@ -1,6 +1,6 @@
 # Media Insights Engine
 
-Welcome to the Media Insights Engine (MIE) project!
+This fork of the Media Insights Engine (MIE) project was built for transcribing and translating speech in videos.
 
 MIE is a framework to accelerate the development of serverless applications that process video, images, audio, and text with artificial intelligence services and multimedia services on AWS. MIE is most often used to: 
 
@@ -23,6 +23,15 @@ The default settings for the template will deploy MIE and the demo GUI. You must
 
 For more information about stack deployment, see the section on [installation parameters](#installation-parameters).
 
+# Screenshots
+
+Translation analysis:
+
+![screenshot-analytics](doc/images/screenshot-analytics.png)
+
+Workflow configuration:
+
+![screenshot-uploads](doc/images/screenshot-uploads.png)
 
 # Cost
 

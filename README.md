@@ -15,8 +15,9 @@ You can deploy MIE and the demo GUI in your AWS account with the following one-c
 
 Region| Launch
 ------|-----
-US East (N. Virginia) | [![Launch in us-east-1](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-east-1.s3.amazonaws.com/media-insights-solution/v0.1.6/cf/media-insights-stack.template)
-US West (Oregon) | [![Launch in us-west-2](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-west-2.s3.amazonaws.com/media-insights-solution/v0.1.6/cf/media-insights-stack.template)
+US East (N. Virginia) | [![Launch in us-east-1](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-east-1.s3.amazonaws.com/media-insights-solution/v0.1.7/cf/media-insights-stack.template)
+US West (Oregon) | [![Launch in us-west-2](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-west-2.s3.amazonaws.com/media-insights-solution/v0.1.7/cf/media-insights-stack.template)
+
 
 The default settings for the template will deploy MIE and the demo GUI. You must set the parameters for `Stack name` and `AdminEmail`.
 
@@ -176,14 +177,18 @@ MIE is a reusable architecture that can support many different applications.  Ex
 * **Automatic Transcribe and Translate** - Generate captions for Video On Demand content using speech recognition.  
 * **Content Moderation** - Detect and edit moderated content from videos.
 
-# Developer Quickstart
+# Developers
 
-The Media Insights Engine is built to be extended for new use cases. You can:
+Join our Gitter chat at [https://gitter.im/awslabs/aws-media-insights-engine](https://gitter.im/awslabs/aws-media-insights-engine). This public chat forum was created to foster communication between MIE developers worldwide.
 
-* Run existing workflows using custom runtime configurations.
-* Create new operators for new types of analysis or transformations of your media.
-* Create new workflows using the existing operators and/or your own operators.
-* Add new data consumers to provide data management that suits the needs of your application.
+[![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/awslabs/aws-media-insights-engine)
+
+MIE is built to be extended in the following ways:
+
+* Run existing workflows with custom  configurations.
+* Create new operators for new types of media analysis or transformation
+* Create new workflows using the existing or new operators.
+* Stream data to new data storage services, such as Elasticsearch or Amazon Redshift.
 
 See the [Implementation Guide](https://github.com/awslabs/aws-media-insights-engine/blob/master/IMPLEMENTATION_GUIDE.md) for the MIE API reference and builder's guide.
 
@@ -197,7 +202,7 @@ See the [CONTRIBUTING](CONTRIBUTING.md) file for how to contribute.
 
 # License
 
-See the [LICENSE](LICENSE) file for our project's licensing.
+See the [LICENSE](LICENSE.txt) file for our project's licensing.
 
 Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 

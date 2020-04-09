@@ -119,6 +119,7 @@
                 :s3Uri="s3_uri"
                 :filename="filename"
                 :videoUrl="videoOptions.sources[0].src"
+                :mediaType="mediaType"
               />
             </b-row>
           </div>

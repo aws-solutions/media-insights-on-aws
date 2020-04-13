@@ -1,5 +1,5 @@
 import Vue from 'vue'
-import BootstrapVue from 'bootstrap-vue'
+import { BootstrapVue, BootstrapVueIcons } from 'bootstrap-vue'
 
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
@@ -53,6 +53,7 @@ getRuntimeConfig().then(function(json) {
 
   Vue.use(AmplifyPlugin, AmplifyModules);
   Vue.use(BootstrapVue);
+  Vue.use(BootstrapVueIcons);
 
   new Vue({
     router,

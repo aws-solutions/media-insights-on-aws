@@ -18,16 +18,52 @@
         <br>
         <br>
       </div>
-      {{ transcript }}
+      <div id="event-line-editor" class="event-line-editor">
+      <b-table thead-class="hidden_header" fixed responsive="sm" :items="webCaptions" :fields="webCaptions_fields">
+        <!-- adjust column width for captions -->
+        <template v-slot:table-colgroup="scope">
+          <col
+              v-for="field in scope.fields"
+              :key="field.key"
+              :style="{ width: field.key === 'caption' ? '80%' : '20%' }"
+          >
+        </template>
+        <template v-slot:cell(timeslot)="data">
+          <b-form-input class="compact-height start-time-field " v-model="data.item.start"/>
+          <b-form-input class="compact-height stop-time-field " v-model="data.item.end"/>
+        </template>
+        <template v-slot:cell(caption)="data">
+          <b-container class="p-0">
+            <b-row no-gutters>
+              <b-col cols="10">
+          <b-form-textarea class="custom-text-field .form-control-sm" max-rows="8" v-model="data.item.caption"/>
+              </b-col>
+              <b-col>
+                <span style="position:absolute; top: 3px">
+                  <b-icon-x-circle color="lightgrey"></b-icon-x-circle><br><br>
+                </span>
+                <span style="position:absolute; bottom: 0px">
+                  <b-icon-plus-square color="lightgrey"></b-icon-plus-square>
+                </span>
+              </b-col>
+            </b-row>
+          </b-container>
+        </template>
+      </b-table>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
+import webcaptions_file from '../json/WebCaptions_en.json'
+
 export default {
   name: "Transcript",
   data() {
     return {
+      webCaptions: webcaptions_file,
+      webCaptions_fields: ['timeslot', 'caption'],
       transcript: "",
       isBusy: false,
       operator: "transcript",
@@ -82,3 +118,31 @@ export default {
   }
 }
 </script>
+
+<style>
+  .start-time-field {
+    padding: 0 !important;
+    margin: 0 !important;
+    margin-bottom: 4px !important;
+    border: 0 !important;
+    height: auto;
+  }
+  .stop-time-field {
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    height: auto;
+  }
+  .hidden_header {
+    display: none;
+  }
+  .event-line-editor {
+    overflow: scroll;
+    height: 500px;
+    border-top: 1px solid #e2e2e2;
+    border-bottom: 1px solid #e2e2e2;
+  }
+  .custom-text-field {
+    border: 0;
+  }
+</style>

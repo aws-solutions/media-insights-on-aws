@@ -85,6 +85,8 @@ Resources:
             Fn::Sub: "${OperatorLibraryStack}:FaceSearchImage"
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:LabelDetectionImage"
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:CustomLabelDetectionImage"
 
   # Face search operation requires a custom input without any pre-existing default so it has a prerequiste step to create a collection
   # to search against.  This workflow should run without any pre-requisite step.
@@ -103,6 +105,8 @@ Resources:
             Fn::Sub: "${OperatorLibraryStack}:FaceDetectionImage"
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:LabelDetectionImage"
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:CustomLabelDetectionImage"
 
   # Workflows
 

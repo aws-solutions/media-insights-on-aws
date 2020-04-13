@@ -25,6 +25,25 @@ Resources:
             Fn::Sub: "${OperatorLibraryStack}:Thumbnail"
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:Mediainfo"
+  frameExtractionStage:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Stage"
+      Name: "frameExtractionStage"
+      Operations:
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:FrameExtractor"
+  customLabelDetectionStage:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Stage"
+      Name: "customLabelDetectionStage"
+      Operations:
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:CustomLabelDetection"
+
   defaultVideoStage:
     Type: Custom::CustomResource
     Properties:
@@ -44,8 +63,6 @@ Resources:
             Fn::Sub: "${OperatorLibraryStack}:FaceSearch"
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:LabelDetection"
-        - Fn::ImportValue:
-            Fn::Sub: "${OperatorLibraryStack}:CustomLabelDetection"
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:PersonTracking"
         - Fn::ImportValue:
@@ -90,6 +107,8 @@ Resources:
   MieCompleteWorkflow:
     DependsOn:
       - PreliminaryStage
+      - frameExtractionStage
+      - customLabelDetectionStage
       - defaultVideoStage
       - defaultAudioStage
       - defaultTextStage
@@ -104,6 +123,12 @@ Resources:
         - |-
           {
             "${PreliminaryStage}":{
+              "Next": "${frameExtractionStage}"
+              },
+            "${frameExtractionStage}":{
+              "Next": "${customLabelDetectionStage}"
+              },
+            "${customLabelDetectionStage}":{
               "Next": "${defaultVideoStage}"
               },
             "${defaultVideoStage}":{
@@ -121,6 +146,8 @@ Resources:
           }
         - {
           PreliminaryStage: !GetAtt PreliminaryStage.Name,
+          frameExtractionStage: !GetAtt frameExtractionStage.Name,
+          customLabelDetectionStage: !GetAtt customLabelDetectionStage.Name,
           defaultVideoStage: !GetAtt defaultVideoStage.Name,
           defaultAudioStage: !GetAtt defaultAudioStage.Name,
           defaultTextStage: !GetAtt defaultTextStage.Name,

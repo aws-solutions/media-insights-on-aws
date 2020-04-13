@@ -23,7 +23,7 @@ projectVersionArn = os.environ['PROJECT_VERSION_ARN']
 s3 = boto3.client('s3')
 
 # Minimum Rekognition Detect Custom Label Treshold
-MIN_CONFIDENCE = 90
+MIN_CONFIDENCE = 10
 
 
 
@@ -63,7 +63,9 @@ def lambda_handler(event, context):
         chunk_details = json.loads(s3.get_object(Bucket=s3bucket, Key=s3key, )["Body"].read())
         
         chunk_result = []
-        for img_s3key in chunk_details['s3_original_frames_keys']:
+        print("Number of chunks are " + str(len(chunk_details)))
+        for img_s3key in chunk_details['s3_resized_frame_keys']:
+        #for img_s3key in chunk_details['s3_original_frames_keys']:
             # For each frame detect custom labels and save the results
             response = detect_custom_labels(s3bucket, urllib.parse.unquote_plus(img_s3key))
             frame_result = []
@@ -83,7 +85,7 @@ def lambda_handler(event, context):
         
         response = {'metadata': chunk_details['metadata'],
                     'frames_result': chunk_result}
-
+        print("response is " + str(response))
         output_object.update_workflow_status("Complete")
         output_object.add_workflow_metadata(AssetId=asset_id, WorkflowExecutionId=workflow_id)
         dataplane = DataPlane()

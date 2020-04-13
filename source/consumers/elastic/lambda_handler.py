@@ -532,7 +532,7 @@ def process_custom_label_detection(asset, workflow, results):
         if "frames_result" in metadata:
             for item in metadata["frames_result"]:
                 try:
-                    item["Operator"] = "batchCustomLabelDetection"
+                    item["Operator"] = "custom_label_detection"
                     item["Workflow"] = workflow
                     item["Confidence"] = float(item["Confidence"])
                     if "Text" in item:
@@ -829,6 +829,8 @@ def lambda_handler(event, context):
                             process_generic_data(asset_id, workflow, metadata["Results"])
                         if operator == "labeldetection":
                             process_label_detection(asset_id, workflow, metadata["Results"])
+                        if operator == "customlabeldetection":
+                            process_custom_label_detection(asset_id, workflow, metadata["Results"])  
                         if operator == "celebrityrecognition":
                             process_celebrity_detection(asset_id, workflow, metadata["Results"])
                         if operator == "contentmoderation":

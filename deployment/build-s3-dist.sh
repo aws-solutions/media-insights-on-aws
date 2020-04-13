@@ -189,6 +189,7 @@ cp "$template_dir/string.yaml" "$dist_dir/string.template"
 cp "$template_dir/media-insights-test-operations-stack.yaml" "$dist_dir/media-insights-test-operations-stack.template"
 cp "$template_dir/media-insights-dataplane-streaming-stack.template" "$dist_dir/media-insights-dataplane-streaming-stack.template"
 cp "$workflows_dir/rekognition.yaml" "$dist_dir/rekognition.template"
+cp "$workflows_dir/customLabels.yaml" "$dist_dir/customLabels.template"
 cp "$workflows_dir/MieCompleteWorkflow.yaml" "$dist_dir/MieCompleteWorkflow.template"
 cp "$source_dir/consumers/elastic/media-insights-elasticsearch.yaml" "$dist_dir/media-insights-elasticsearch.template"
 cp "$source_dir/consumers/elastic/media-insights-elasticsearch.yaml" "$dist_dir/media-insights-s3.template"
@@ -242,6 +243,17 @@ mkdir -p dist
 zip -q dist/mediainfo.zip mediainfo.py
 # Zip is ready. Copy it to the distribution directory.
 cp "./dist/mediainfo.zip" "$dist_dir/mediainfo.zip"
+
+# ------------------------------------------------------------------------------"
+# Frame Extractor Operations
+# ------------------------------------------------------------------------------"
+
+echo "Building Frame extractor function"
+cd "$source_dir/operators/frame_extractor" || exit 1
+[ -e dist ] && rm -r dist
+mkdir -p dist
+zip -q dist/frame_extractor.zip frame_extractor.py
+cp "./dist/frame_extractor.zip" "$dist_dir/frame_extractor.zip"
 
 # ------------------------------------------------------------------------------"
 # Mediaconvert Operations

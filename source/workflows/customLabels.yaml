@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Media Insights Engine - Workflow to run frame extraction and custom labels"
+
+Parameters:
+  WorkflowCustomResourceArn:
+    Type: String
+    Description: "ARN of the Media Insights custom resource that handles creating operations, stages and workflows"
+  # FIXME - this doesn't work well with nesting - just pass in the layer resource
+  # MediaInsightsWorkflowStack:
+    # Description: "Name of the base media insights workflow stack"
+    # Type: String
+  OperatorLibraryStack:
+    Description: "Name of the operator library stack"
+    Type: String
+
+Resources:
+  frameExtractionStage:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Stage"
+      Name: "frameExtractionStage"
+      Operations:
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:FrameExtractor"
+
+  customLabelDetectionStage:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Stage"
+      Name: "customLabelDetectionStage"
+      Operations:
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:CustomLabelDetection"
+
+  customLabels:
+    DependsOn:
+      - frameExtractionStage
+      - customLabelDetectionStage
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Workflow"
+      Name: "customLabels"
+      StartAt: !GetAtt frameExtractionStage.Name
+      Stages: !Sub
+        - |-
+          {
+            "${frameExtractionStage}":{
+              "Next": "${customLabelDetectionStage}"
+              },
+            "${customLabelDetectionStage}":{
+              "End": true
+              }
+          }
+        - {
+          frameExtractionStage: !GetAtt frameExtractionStage.Name,
+          customLabelDetectionStage: !GetAtt customLabelDetectionStage.Name
+        }
+

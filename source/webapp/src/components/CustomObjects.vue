@@ -101,7 +101,7 @@
         count_distinct_labels: 0,
         count_labels: 0,
         isBusy: false,
-        operator: 'batchCustomLabelDetection',
+        operator: 'custom_label_detection',
         canvasRefreshInterval: undefined,
         timeseries: new Map(),
         selectedLabel: '',

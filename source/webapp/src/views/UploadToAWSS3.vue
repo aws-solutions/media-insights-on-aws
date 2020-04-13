@@ -175,9 +175,10 @@
         ],
         thumbnail_position: 10,
         upload_in_progress: false,
-        enabledOperators: ['labelDetection', 'customLabelDetection', 'celebrityRecognition', 'textDetection', 'contentModeration', 'faceDetection', 'thumbnail', 'Transcribe', 'Translate', 'ComprehendKeyPhrases', 'ComprehendEntities'],
+        enabledOperators: ['labelDetection', 'frameExtractor','customLabelDetection', 'celebrityRecognition', 'textDetection', 'contentModeration', 'faceDetection', 'thumbnail', 'Transcribe', 'Translate', 'ComprehendKeyPhrases', 'ComprehendEntities'],
         videoOperators: [
           {text: 'Object Detection', value: 'labelDetection'},
+          {text: 'Frame Extractor', value: 'frameExtractor'},
           {text: 'Custom Object Detection', value: 'customLabelDetection'},
           {text: 'Celebrity Recognition', value: 'celebrityRecognition'},
           {text: 'Content Moderation', value: 'contentModeration'},
@@ -381,6 +382,16 @@
                 "Enabled": true
               }
             },
+            "frameExtractionStage": {
+              "frameExtractor": {
+                "Enabled": this.enabledOperators.includes("frameExtractor"),
+              },
+            },
+            "customLabelDetectionStage": {
+              "customLabelDetection": {
+                "Enabled": this.enabledOperators.includes("customLabelDetection"),
+              },
+            },
             "defaultVideoStage": {
               "faceDetection": {
                 "Enabled": this.enabledOperators.includes("faceDetection"),
@@ -402,10 +413,7 @@
                 "CollectionId": this.faceCollectionId==="" ? "undefined" : this.faceCollectionId
               },
               "textDetection": {
-                "Enabled": this.enabledOperators.includes("textDetection")
-              },
-              "customLabelDetection": {
-                "Enabled": this.enabledOperators.includes("customLabelDetection")
+                "Enabled": this.enabledOperators.includes("textDetection"),
               },
               "GenericDataLookup": {
                 "Enabled": this.enabledOperators.includes("genericDataLookup"),
@@ -454,7 +462,7 @@
     },
     methods: {
       selectAll: function (){
-        this.enabledOperators = ['labelDetection', 'celebrityRecognition', 'contentModeration', 'faceDetection', 'thumbnail', 'Transcribe', 'Translate', 'ComprehendKeyPhrases', 'ComprehendEntities']
+        this.enabledOperators = ['labelDetection','customLabelDetection', 'frameExtractor', 'celebrityRecognition', 'contentModeration', 'faceDetection', 'thumbnail', 'Transcribe', 'Translate', 'ComprehendKeyPhrases', 'ComprehendEntities']
       },
       clearAll: function (){
         this.enabledOperators = []

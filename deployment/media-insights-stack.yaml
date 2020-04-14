@@ -499,6 +499,44 @@ Resources:
                 Resource: "arn:aws:logs:*:*:*:*"
                 Effect: Allow
 
+  WorkflowExecutionStreamLambdaRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: !Sub "${AWS::StackName}-WorkflowExecutionLambdaStreamAccessPolicy"
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "dynamodb:DescribeStream"
+                  - "dynamodb:GetRecords"
+                  - "dynamodb:GetShardIterator"
+                  - "dynamodb:ListStreams"
+                Resource: 
+                  Fn::GetAtt:
+                    - WorkflowExecutionTable
+                    - StreamArn
+              - Effect: Allow
+                Action:
+                  - "sns:Publish"
+                Resource: 
+                  !Ref WorkflowExecutionEventTopic
+              # TODO: Security - Scope this down
+              - Effect: Allow
+                Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: "*"
   # Services - Dynamodb
 
   SystemTable:
@@ -605,6 +643,8 @@ Resources:
           Projection:
             ProjectionType: ALL
       TableName: !Join ["", [Ref: "AWS::StackName", "WorkflowExecution"]]
+      StreamSpecification:
+        StreamViewType: "NEW_AND_OLD_IMAGES"
 
   DataplaneTable:
     Type: AWS::DynamoDB::Table
@@ -891,6 +931,68 @@ Resources:
       Username: !Ref AdminEmail
       UserPoolId: !Ref MieUserPool
 
+  # Service -SNS
+
+  WorkflowExecutionEventTopic:
+    Type: 'AWS::SNS::Topic'
+    Properties: {}
+  WorkflowExecutionEventTopicPolicy:
+    Type: 'AWS::SNS::TopicPolicy'
+    Properties:
+      PolicyDocument:
+        Id: Id1
+        Version: '2012-10-17'
+        Statement:
+        - Sid: AccountTopicPolicy
+          Effect: Allow
+          Principal:
+            AWS: "*"
+          Action:
+          - SNS:GetTopicAttributes
+          - SNS:SetTopicAttributes
+          - SNS:AddPermission
+          - SNS:RemovePermission
+          - SNS:DeleteTopic
+          - SNS:Subscribe
+          - SNS:ListSubscriptionsByTopic
+          - SNS:Publish
+          - SNS:Receive
+          Resource: !Ref WorkflowExecutionEventTopic
+          Condition:
+            StringEquals:
+              AWS:SourceOwner: !Ref 'AWS::AccountId'
+      Topics:
+        - !Ref WorkflowExecutionEventTopic
+
+  WorkflowExecutionEventQueue:
+    Type: AWS::SQS::Queue
+  SqsQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Id: MyQueuePolicy
+        Statement:
+        - Sid: Allow-SNS-SendMessage
+          Effect: Allow
+          Principal: "*"
+          Action:
+          - sqs:SendMessage
+          Resource: !GetAtt WorkflowExecutionEventQueue.Arn
+          Condition:
+            ArnEquals:
+              aws:SourceArn: !Ref WorkflowExecutionEventTopic
+      Queues:
+        - !Ref WorkflowExecutionEventQueue
+
+  WorkflowExecutionEventSnsSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: sqs
+      Endpoint: !GetAtt WorkflowExecutionEventQueue.Arn
+      TopicArn: !Ref WorkflowExecutionEventTopic
+
+  
   # Services - SQS
 
   WorkflowExecutionLambdaDeadLetterQueue:
@@ -945,7 +1047,7 @@ Resources:
     DeletionPolicy: Retain
     Properties:
       CompatibleRuntimes:
-        - python3.7
+        - python3.6
       Content:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -1003,6 +1105,8 @@ Resources:
           SYSTEM_TABLE_NAME: !Ref SystemTable
           DEFAULT_MAX_CONCURRENT_WORKFLOWS: !Ref MaxConcurrentWorkflows
       Handler: app.workflow_scheduler_lambda
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -1018,7 +1122,7 @@ Resources:
         Fn::GetAtt:
           - StageExecutionRole
           - Arn
-      Runtime: python3.6
+      Runtime: "python3.7"
       Timeout: 900
       ReservedConcurrentExecutions: 1
       DeadLetterConfig:
@@ -1046,6 +1150,8 @@ Resources:
               - WorkflowSchedulerLambda
               - Arn
       Handler: app.complete_stage_execution_lambda
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -1061,7 +1167,7 @@ Resources:
         Fn::GetAtt:
           - OperationLambdaExecutionRole
           - Arn
-      Runtime: python3.6
+      Runtime: python3.7
       Timeout: 900
     Type: AWS::Lambda::Function
 
@@ -1076,6 +1182,8 @@ Resources:
           WORKFLOW_EXECUTION_TABLE_NAME: !Ref WorkflowExecutionTable
           WORKFLOW_TABLE_NAME: !Ref WorkflowTable
       Handler: app.filter_operation_lambda
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -1091,7 +1199,7 @@ Resources:
         Fn::GetAtt:
           - OperationLambdaExecutionRole
           - Arn
-      Runtime: python3.6
+      Runtime: python3.7
       Timeout: 900
     Type: AWS::Lambda::Function
 
@@ -1113,6 +1221,39 @@ Resources:
             ],
           ]
       Runtime: "python3.7"
+
+  WorkflowExecutionStreamingFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "workflowstream.lambda_handler"
+      Role: !GetAtt WorkflowExecutionStreamLambdaRole.Arn
+      Environment:
+        Variables:
+          TOPIC_ARN: !Ref WorkflowExecutionEventTopic
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "workflowstream.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+
+# stream event mapping for lambda
+
+  StreamingFunctionEventMapping:
+    Type: "AWS::Lambda::EventSourceMapping"
+    Properties:
+      Enabled: true
+      EventSourceArn: 
+        Fn::GetAtt:
+          - WorkflowExecutionTable
+          - StreamArn
+      FunctionName: !GetAtt WorkflowExecutionStreamingFunction.Arn
+      StartingPosition: "LATEST"
 
   # DataPlane API Stack
   MediaInsightsDataplaneApiStack:
@@ -1541,3 +1682,11 @@ Outputs:
   AdminUsername:
     Description: Username of the default MIE admin
     Value: !Ref AdminEmail
+  WorkflowExecutionEventTopicArn:
+    Value: !Ref WorkflowExecutionEventTopic
+    Export:
+      Name: !Sub '${AWS::StackName}-WorkflowExecutionEventTopicArn'
+  WorkflowExecutionEventQueueUrl:
+    Value: !Ref WorkflowExecutionEventQueue
+    Export:
+      Name: !Sub '${AWS::StackName}-WorkflowExecutionEventQueueUrl'

@@ -221,6 +221,80 @@ def filter_operation_lambda(event, context):
     
     return operation_object.return_output_object()
 
+def start_wait_operation_lambda(event, context):
+    '''
+    Pause a workflow to wait for external processing
+
+    event is 
+    - Operation input
+    - Operation configuration
+
+    returns:
+    Operation output
+
+    '''
+    logger.info(json.dumps(event))
+
+    operator_object = MediaInsightsOperationHelper(event)
+
+    try:
+        update_workflow_execution_status(operator_object.workflow_execution_id, awsmie.WORKFLOW_STATUS_WAITING, "")
+    except Exception as e:
+        operator_object.update_workflow_status("Error")
+        operator_object.add_workflow_metadata(WaitError="Unable to set workflow status to Waiting {e}".format(e=str(e)))
+        raise MasExecutionError(operator_object.return_output_object())
+
+    return operator_object.return_output_object()
+
+def check_wait_operation_lambda(event, context):
+    '''
+    Check if a workflow is still in a Waiting state.
+
+    event is 
+    - Operation input
+    - Operation configuration
+
+    returns:
+    Operation output
+
+    '''
+    logger.info(json.dumps(event))
+
+    operator_object = MediaInsightsOperationHelper(event)
+    execution_table = DYNAMO_RESOURCE.Table(WORKFLOW_EXECUTION_TABLE_NAME)
+
+    response = execution_table.get_item(
+            Key={
+                'Id': operator_object.workflow_execution_id
+            },
+            ConsistentRead=True)
+
+    if "Item" in response:
+        workflow_execution = response["Item"]
+    else:
+        workflow_execution = None
+        # raise ChaliceViewError(
+        operator_object.update_workflow_status("Error")
+        operator_object.add_workflow_metadata(WaitError="Unable to find Waiting workflow execution {} {e}".format(
+            operator_object.workflow_execution_id, e=str(e)))
+        raise MasExecutionError(operator_object.return_output_object())
+
+    logger.info("workflow_execution: {}".format(
+        json.dumps(workflow_execution)))
+
+    if workflow_execution["Status"] == awsmie.WORKFLOW_STATUS_WAITING:
+        operator_object.update_workflow_status("Executing")
+        return operator_object.return_output_object()
+    elif workflow_execution["Status"] == awsmie.WORKFLOW_STATUS_STARTED:
+        operator_object.update_workflow_status("Complete")
+    else:
+        operator_object.update_workflow_status("Error")
+        operator_object.add_workflow_metadata(WaitError="Unexpected workflow execution status {} {e}".format(
+            workflow_execution["Status"], e=str(e)))
+        raise MasExecutionError(operator_object.return_output_object())
+
+    return operator_object.return_output_object()
+
 def complete_stage_execution_lambda(event, context):
     '''
     event is a stage execution object

@@ -25,20 +25,20 @@ Parameters:
     AllowedValues:
       - Yes
       - No
-  DeployInstantTranslateWorkflow:
+  DeployVODTranslateWorkflow:
     Description: Deploy Instant Translate Workflow which takes a video as input and transcribes, translates and creates an audio file in the new language
     Type: String
     Default: No
     AllowedValues:
       - Yes
       - No
-  DeployTranscribeWorkflow:
-    Description: Deploy Transcribe Workflow which takes a video as input and transcribes
-    Type: String
-    Default: No
-    AllowedValues:
-      - Yes
-      - No
+  # DeployTranscribeWorkflow:
+  #   Description: Deploy Transcribe Workflow which takes a video as input and transcribes
+  #   Type: String
+  #   Default: No
+  #   AllowedValues:
+  #     - Yes
+  #     - No
   DeployAnalyticsPipeline:
     Type: String
     Description: Deploy a metadata streaming pipeline that can be consumed by downstream analytics plaforms
@@ -79,13 +79,13 @@ Parameters:
     Description: Maximum number of workflows to run concurrently.  When the maximum is reached, additional workflows are added to a wait queue.
     Default: 5
     MinValue: 1
-  TranscriberApp:
-    Type: String
-    Description: Deploy a front end transcriber application that takes custom inputs from the user
-    Default: No
-    AllowedValues:
-      - Yes
-      - No
+  # TranscriberApp:
+  #   Type: String
+  #   Description: Deploy a front end transcriber application that takes custom inputs from the user
+  #   Default: No
+  #   AllowedValues:
+  #     - Yes
+  #     - No
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -111,9 +111,9 @@ Metadata:
           default: Workflows
         Parameters:
           - DeployTestWorkflow
-          - DeployInstantTranslateWorkflow
+          - DeployVODTranslateWorkflow
           - DeployRekognitionWorkflow
-          - DeployTranscribeWorkflow
+          # - DeployTranscribeWorkflow
           - DeployComprehendWorkflow
           - DeployKitchenSinkWorkflow
           - Label:
@@ -129,20 +129,20 @@ Metadata:
         default: Enable Operator Library Deployment
       TestWorflow:
         default: Enable Test Workflow Deployment
-      InstantTranslateWorkflow:
+      VODTranslateWorkflow:
         default: Enable Instant Translate Workflow Deployment
-      TranscribeWorkflow:
-        default: Enable Transcribe Workflow Deployment
+      # TranscribeWorkflow:
+      #   default: Enable Transcribe Workflow Deployment
       RekognitionWorkflow:
         default: Enable Rekognition Workflow Deployment
 
 Conditions:
   DeployOperatorLibraryCondition: !Equals [!Ref DeployOperatorLibrary, Yes]
   DeployTestWorkflowCondition: !Equals [!Ref DeployTestWorkflow, Yes]
-  DeployInstantTranslateWorkflowCondition:
-    !Equals [!Ref DeployInstantTranslateWorkflow, Yes]
-  DeployTranscribeWorkflowCondition:
-    !Equals [!Ref DeployTranscribeWorkflow, Yes]
+  DeployVODTranslateWorkflowCondition:
+    !Equals [!Ref DeployVODTranslateWorkflow, Yes]
+  # DeployTranscribeWorkflowCondition:
+  #   !Equals [!Ref DeployTranscribeWorkflow, Yes]
   DeployRekognitionWorkflowCondition:
     !Equals [!Ref DeployRekognitionWorkflow, Yes]
   DeployComprehendWorkflowCondition:
@@ -151,7 +151,7 @@ Conditions:
     !Equals [!Ref DeployKitchenSinkWorkflow, Yes]
   DeployAnalyticsPipelineCondition: !Or [!Equals [!Ref DeployAnalyticsPipeline, Yes], !Equals [!Ref DeployDemoSite, Yes]]
   DeployDemoSiteCondition: !Equals [!Ref DeployDemoSite, Yes]
-  DeployTranscriberApp: !Equals [!Ref TranscriberApp, Yes]
+  # DeployTranscriberApp: !Equals [!Ref TranscriberApp, Yes]
 
 Mappings:
   SourceCode:
@@ -1222,6 +1222,70 @@ Resources:
           ]
       Runtime: "python3.7"
 
+  StartWaitOperationLambda:
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-start-wait-operation"
+      Environment:
+        Variables:
+          STAGE_EXECUTION_QUEUE_URL: !Ref StageExecutionQueue
+          STAGE_TABLE_NAME: !Ref StageTable
+          OPERATION_TABLE_NAME: !Ref OperationTable
+          WORKFLOW_EXECUTION_TABLE_NAME: !Ref WorkflowExecutionTable
+          WORKFLOW_TABLE_NAME: !Ref WorkflowTable
+      Handler: app.start_wait_operation_lambda
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+            "workflow.zip",
+            ],
+          ]
+      MemorySize: 256
+      Role:
+        Fn::GetAtt:
+          - OperationLambdaExecutionRole
+          - Arn
+      Runtime: python3.7
+      Timeout: 900
+    Type: AWS::Lambda::Function
+
+  CheckWaitOperationLambda:
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-check-wait-operation"
+      Environment:
+        Variables:
+          STAGE_EXECUTION_QUEUE_URL: !Ref StageExecutionQueue
+          STAGE_TABLE_NAME: !Ref StageTable
+          OPERATION_TABLE_NAME: !Ref OperationTable
+          WORKFLOW_EXECUTION_TABLE_NAME: !Ref WorkflowExecutionTable
+          WORKFLOW_TABLE_NAME: !Ref WorkflowTable
+      Handler: app.check_wait_operation_lambda
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+            "workflow.zip",
+            ],
+          ]
+      MemorySize: 256
+      Role:
+        Fn::GetAtt:
+          - OperationLambdaExecutionRole
+          - Arn
+      Runtime: python3.7
+      Timeout: 900
+    Type: AWS::Lambda::Function
+
   WorkflowExecutionStreamingFunction:
     Type: "AWS::Lambda::Function"
     Properties:
@@ -1403,6 +1467,8 @@ Resources:
         DataPlaneHandlerArn: !GetAtt MediaInsightsDataplaneApiStack.Outputs.APIHandlerArn
         DataPlaneBucket: !Ref Dataplane
         MediaInsightsEnginePython37Layer: !Ref MediaInsightsEnginePython37Layer
+        StartWaitOperationLambda: !GetAtt StartWaitOperationLambda.Arn
+        CheckWaitOperationLambda: !GetAtt CheckWaitOperationLambda.Arn
 
   TestWorkflow:
     Condition: DeployTestWorkflowCondition
@@ -1435,8 +1501,8 @@ Resources:
         MediaInsightsEnginePython37Layer: !Ref MediaInsightsEnginePython37Layer
         StepfunctionRole: !GetAtt StepFunctionRole.Arn
 
-  InstantTranslateWorkflow:
-    Condition: DeployInstantTranslateWorkflowCondition
+  VODTranslateWorkflow:
+    Condition: DeployVODTranslateWorkflowCondition
     DependsOn:
       - MediaInsightsWorkflowApi
       - MediaInsightsDataplaneApiStack
@@ -1450,7 +1516,7 @@ Resources:
             "https://s3.amazonaws.com",
             !FindInMap ["SourceCode", "General", "S3Bucket"],
             !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
-            "instant_translate.template",
+            "vod_translate_workflow.template",
           ],
         ]
       Parameters:
@@ -1460,29 +1526,29 @@ Resources:
             - Outputs.WorkflowCustomResourceArn
         OperatorLibraryStack: !GetAtt OperatorLibrary.Outputs.StackName
 
-  TranscribeWorkflow:
-    Condition: DeployTranscribeWorkflowCondition
-    DependsOn:
-      - MediaInsightsWorkflowApi
-      - MediaInsightsDataplaneApiStack
-    Type: "AWS::CloudFormation::Stack"
-    Properties:
-      TemplateURL:
-        !Join [
-          "/",
-          [
-            "https://s3.amazonaws.com",
-            !FindInMap ["SourceCode", "General", "S3Bucket"],
-            !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
-            "transcribe.template",
-          ],
-        ]
-      Parameters:
-        WorkflowCustomResourceArn:
-          Fn::GetAtt:
-            - MediaInsightsWorkflowApi
-            - Outputs.WorkflowCustomResourceArn
-        OperatorLibraryStack: !GetAtt OperatorLibrary.Outputs.StackName
+  # TranscribeWorkflow:
+  #   Condition: DeployTranscribeWorkflowCondition
+  #   DependsOn:
+  #     - MediaInsightsWorkflowApi
+  #     - MediaInsightsDataplaneApiStack
+  #   Type: "AWS::CloudFormation::Stack"
+  #   Properties:
+  #     TemplateURL:
+  #       !Join [
+  #         "/",
+  #         [
+  #           "https://s3.amazonaws.com",
+  #           !FindInMap ["SourceCode", "General", "S3Bucket"],
+  #           !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
+  #           "transcribe.template",
+  #         ],
+  #       ]
+  #     Parameters:
+  #       WorkflowCustomResourceArn:
+  #         Fn::GetAtt:
+  #           - MediaInsightsWorkflowApi
+  #           - Outputs.WorkflowCustomResourceArn
+  #       OperatorLibraryStack: !GetAtt OperatorLibrary.Outputs.StackName
 
   RekognitionWorkflow:
     Condition: DeployRekognitionWorkflowCondition
@@ -1605,32 +1671,32 @@ Resources:
         AwsRegion: !Ref "AWS::Region"
         PoolClientId: !Ref MieWebAppClient
 
-  TranscriberWebApp:
-    Condition: DeployTranscriberApp
-    DependsOn:
-      - TranscribeWorkflow
-    Type: "AWS::CloudFormation::Stack"
-    Properties:
-      TemplateURL:
-        !Join [
-          "/",
-          [
-            "https://s3.amazonaws.com",
-            !FindInMap ["SourceCode", "General", "S3Bucket"],
-            !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
-            "transcriber-webapp.template",
-          ],
-        ]
-      Parameters:
-        ControlPlaneApiEndpoint:
-          Fn::GetAtt:
-            - MediaInsightsWorkflowApi
-            - Outputs.EndpointURL
-        DataPlaneApiEndpoint:
-          Fn::GetAtt:
-            - MediaInsightsDataplaneApiStack
-            - Outputs.EndpointURL
-        DataPlaneBucket: !Ref Dataplane
+  # TranscriberWebApp:
+  #   Condition: DeployTranscriberApp
+  #   DependsOn:
+  #     - TranscribeWorkflow
+  #   Type: "AWS::CloudFormation::Stack"
+  #   Properties:
+  #     TemplateURL:
+  #       !Join [
+  #         "/",
+  #         [
+  #           "https://s3.amazonaws.com",
+  #           !FindInMap ["SourceCode", "General", "S3Bucket"],
+  #           !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
+  #           "transcriber-webapp.template",
+  #         ],
+  #       ]
+  #     Parameters:
+  #       ControlPlaneApiEndpoint:
+  #         Fn::GetAtt:
+  #           - MediaInsightsWorkflowApi
+  #           - Outputs.EndpointURL
+  #       DataPlaneApiEndpoint:
+  #         Fn::GetAtt:
+  #           - MediaInsightsDataplaneApiStack
+  #           - Outputs.EndpointURL
+  #       DataPlaneBucket: !Ref Dataplane
 
 Outputs:
   DataplaneBucket:

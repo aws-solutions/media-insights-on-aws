@@ -26,6 +26,13 @@ Parameters:
     Type: String
     Description: "ARN of the Media insights lambda layer that contains basic python dependencies for boto3, chalice, control plane and dataplane"
 
+  StartWaitOperationLambda:
+    Type: String
+    Description: "ARN of control plane lambda function to set a workflow to Waiting state"
+  CheckWaitOperationLambda:
+    Type: String
+    Description: "ARN of control plane lambda function to if a workflow is in Waiting state"
+
 Resources:
   # SNS topic for storing the output of async Rekognition jobs:
   snsRekognitionTopic:
@@ -1877,6 +1884,17 @@ Resources:
       MonitorLambdaArn: !GetAtt checkPersonTracking.Arn
       StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
+  WaitOperation:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "Wait"
+      Type: "Async"
+      Configuration: { "MediaType": "MetadataOnly", "Enabled": false }
+      StartLambdaArn: !Ref StartWaitOperationLambda
+      MonitorLambdaArn: !Ref CheckWaitOperationLambda
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
   # Export operator names as outputs
 
 Outputs:
@@ -2029,5 +2047,10 @@ Outputs:
     Value: !GetAtt textDetectionOperationImage.Name
     Export:
       Name: !Join [":", [!Ref "AWS::StackName", TextDetectionImage]]
+  WaitOperation:
+    Description: "Wait operator - wait until /workflow/execution/continue API is called"
+    Value: !GetAtt WaitOperation.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", Wait]]
   StackName:
     Value: !Ref AWS::StackName

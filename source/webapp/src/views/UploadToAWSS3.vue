@@ -482,8 +482,8 @@
               }
             },
             "defaultTextStage2": {
-              "ComprehendEntities": {"MediaType": "Text", "Enabled": true},
-              "ComprehendKeyPhrases": {"MediaType": "Text", "Enabled": true}
+              "ComprehendEntities": {"MediaType": "Text", "Enabled": this.enabledOperators.includes("ComprehendEntities")},
+              "ComprehendKeyPhrases": {"MediaType": "Text", "Enabled": this.enabledOperators.includes("ComprehendKeyPhrases")}
             }
           }
         }

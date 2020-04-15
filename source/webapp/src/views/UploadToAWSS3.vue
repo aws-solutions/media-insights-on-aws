@@ -116,6 +116,7 @@
                                        :sort-search-results="true"
                                        :typeahead-always-show="true"
                                        :typeahead-hide-discard="true"
+                                       :key="rerenderComponent"
                                        :typeahead="true">
                     </voerro-tags-input>
                     Custom Terminology
@@ -177,6 +178,7 @@
     },
     data() {
       return {
+        rerenderComponent: 0,
         selectedTags: [
         ],
         show_disclaimer: true,
@@ -318,10 +320,6 @@
           {text: 'Urdu', value: 'ur'},
           {text: 'Vietnamese', value: 'vi'},
         ],
-        // translateLanguageTags is the same as translateLanguages except
-        // with keys and values flipped around. We need this field ordering
-        // for the voerro-tags-input. The flipping is done in mounted().
-        translateLanguageTags: [],
         selectedTranslateLanguages: [],
         selectedTranslateLanguagesDefault: [
           {value: 'French', text: 'fr'},
@@ -359,6 +357,10 @@
       }
     },
     computed: {
+      // translateLanguageTags is the same as translateLanguages except
+      // with keys and values flipped around. We need this field ordering
+      // for the voerro-tags-input. The flipping is done in here as a computed property.
+      translateLanguageTags() { this.rerenderComponent += 1; return this.translateLanguages.map(x => {return {"text": x.value, "value": x.text}}).filter(x => x.text !== this.sourceLanguageCode)},
       ...mapState(['execution_history']),
       sourceLanguageCode() {
         return this.transcribeLanguage.split('-')[0]
@@ -430,12 +432,12 @@
             "CaptionFileStage2": {
               "WebToSRTCaptions": {
                 "MediaType": "MetadataOnly",
-                "TargetLanguageCodes": Object.values(this.selectedTranslateLanguages.map(x => x.text)).concat(this.sourceLanguageCode),
+                "TargetLanguageCodes": Object.values(this.selectedTranslateLanguages.map(x => x.text)).filter(x => x !== this.sourceLanguageCode).concat(this.sourceLanguageCode),
                 "Enabled": true
               },
               "WebToVTTCaptions": {
                 "MediaType": "MetadataOnly",
-                "TargetLanguageCodes": Object.values(this.selectedTranslateLanguages.map(x => x.text)).concat(this.sourceLanguageCode),
+                "TargetLanguageCodes": Object.values(this.selectedTranslateLanguages.map(x => x.text)).filter(x => x !== this.sourceLanguageCode).concat(this.sourceLanguageCode),
                 "Enabled": true
               }
             },
@@ -490,7 +492,6 @@
       }
     },
     mounted: function() {
-      this.translateLanguageTags=this.translateLanguages.map(x => {return {"text": x.value, "value": x.text}})
       this.executed_assets = this.execution_history;
       this.pollWorkflowStatus();
     },

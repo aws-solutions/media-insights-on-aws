@@ -1988,15 +1988,98 @@ def initialize_workflow_execution(trigger, Name, input, Configuration, asset_id)
     return workflow_execution
 
 
-@app.route('/workflow/execution', cors=True, methods=['PUT'], authorizer=authorizer)
+@app.route('/workflow/execution/{Id}', cors=True, methods=['PUT'], authorizer=authorizer)
 def update_workflow_execution():
-    """ Update a workflow execution NOT IMPLEMENTED
+    """ Update a workflow execution
 
-    XXX
+       Options:
+
+           Resume a workflow that is in a Waiting Status in a specific stage.
+
+    Body:
+
+    .. code-block:: python
+
+        {
+        "WaitingStageName":"<stage-name>"
+        }
+
+
+    Returns:
+        A dict mapping keys to the corresponding workflow execution with its current status
+
+        .. code-block:: python
+
+            {
+                "Id: string,
+                "Status": "Resumed"
+            }
+
+    Raises:
+        200: The workflow execution was updated successfully.
+        400: Bad Request - the input stage was not found, the current stage did not match the WaitingStageName, 
+             or the Workflow Status was not "Waiting"
+        500: Internal server error
+    """
+    response = {}
+    params = json.loads(app.current_request.raw_body.decode())
+    logger.info(json.dumps(params))
+
+    if "WaitingStageName" in params:
+        response = resume_workflow_execution("api", id, params["WaitingStageName"])
+
+    return response
+
+def resume_workflow_execution(trigger, id, waiting_stage_name):
+    """
+    Get the workflow execution by id from dyanamo and assign to this object
+    :param id: The id of the workflow execution
+    :param status: The new status of the workflow execution
 
     """
-    stage = {"Message": "UPDATE WORKFLOW EXECUTION NOT IMPLEMENTED"}
-    return stage
+    print("Resume workflow execution {} waiting stage = {}".format(id, waiting_stage_name))
+    execution_table = DYNAMO_RESOURCE.Table(WORKFLOW_EXECUTION_TABLE_NAME)
+
+    workflow_execution = {}
+    workflow_execution["Id"] = id
+    workflow_execution["Status"] = awsmie.WORKFLOW_STATUS_RESUMED
+ 
+    try:
+        response = execution_table.update_item(
+            Key={
+                'Id': id
+            },
+            UpdateExpression='SET #workflow_status = :workflow_status',
+            ExpressionAttributeNames={
+                '#workflow_status': "Status"
+            },
+            ConditionExpression="#workflow_status = 'Waiting' AND CurrentStage = :waiting_stage_name",
+            ExpressionAttributeValues={
+                ':workflow_status': awsmie.WORKFLOW_STATUS_RESUMED,
+                ':waiting_stage_name': waiting_stage_name
+            }
+        )
+    except ClientError as e:
+        if e.response['Error']['Code'] == "ConditionalCheckFailedException":
+            print(e.response['Error']['Message'])
+            raise BadRequestError("Workflow status is not 'Waiting' or Current stage doesn't match the request")
+        else:
+            raise
+
+    # Queue the resumed workflow so it can run when resources are available
+    # FIXME - must set workflow status to error if this fails since we marked it as QUeued .  we had to do that to avoid
+    # race condition on status with the execution itself.  Once we hand it off to the state machine, we can't touch the status again.
+    response = SQS_CLIENT.send_message(QueueUrl=STAGE_EXECUTION_QUEUE_URL, MessageBody=json.dumps(workflow_execution))
+    # the response contains MD5 of the body, a message Id, MD5 of message attributes, and a sequence number (for FIFO queues)
+    logger.info('Message ID : {}'.format(response['MessageId']))
+    
+    # We just queued a workflow so, Trigger the workflow_scheduler
+    response = LAMBDA_CLIENT.invoke(
+        FunctionName=WORKFLOW_SCHEDULER_LAMBDA_ARN,
+        InvocationType='Event'
+    )
+    
+    return workflow_execution
 
 
 @app.route('/workflow/execution', cors=True, methods=['GET'], authorizer=authorizer)

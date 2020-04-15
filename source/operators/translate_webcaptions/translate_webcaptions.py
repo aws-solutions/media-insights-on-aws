@@ -6,7 +6,6 @@ import os
 import json
 from botocore import config
 import math
-import nltk.data
 import ntpath
 from datetime import datetime, timezone
 from urllib.parse import urlparse

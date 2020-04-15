@@ -563,6 +563,8 @@ Resources:
                   - !GetAtt CheckPollyFunction.Arn
                   - !GetAtt StartTranslateWebcaptionsFunction.Arn
                   - !GetAtt CheckTranslateWebcaptionsFunction.Arn
+                  - !Ref StartWaitOperationLambda
+                  - !Ref CheckWaitOperationLambda
                 Effect: "Allow"
 
   # Lambda functions

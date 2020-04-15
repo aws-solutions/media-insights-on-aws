@@ -12,6 +12,8 @@ import time
 class Status:
     WORKFLOW_STATUS_QUEUED = "Queued"
     WORKFLOW_STATUS_STARTED = "Started"
+    WORKFLOW_STATUS_WAITING = "Waiting"
+    WORKFLOW_STATUS_RESUMED = "Resumed"
     WORKFLOW_STATUS_ERROR = "Error"
     WORKFLOW_STATUS_COMPLETE = "Complete"
 

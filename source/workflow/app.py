@@ -155,25 +155,28 @@ def workflow_scheduler_lambda(event, context):
                         # Update the workflow status now to indicate we have taken it off the queue
                         update_workflow_execution_status(workflow_execution["Id"], awsmie.WORKFLOW_STATUS_STARTED, "")
 
-                        # Kick off the state machine for the workflow
-                        response = SFN_CLIENT.start_execution(
-                            stateMachineArn=workflow_execution["Workflow"]["StateMachineArn"],
-                            name=workflow_execution["Workflow"]["Name"]+workflow_execution["Id"],
-                            input=json.dumps(workflow_execution["Workflow"]["Stages"][workflow_execution["CurrentStage"]])
-                        )
+                        # Resumed workflows state machines are already executing since they just paused 
+                        # to wait for some external action
+                        if workflow_execution["Status"] != awsmie.WORKFLOW_STATUS_RESUMED:
+                            # Kick off the state machine for the workflow
+                            response = SFN_CLIENT.start_execution(
+                                stateMachineArn=workflow_execution["Workflow"]["StateMachineArn"],
+                                name=workflow_execution["Workflow"]["Name"]+workflow_execution["Id"],
+                                input=json.dumps(workflow_execution["Workflow"]["Stages"][workflow_execution["CurrentStage"]])
+                            )
 
-                        workflow_execution["StateMachineExecutionArn"] = response["executionArn"]
+                            workflow_execution["StateMachineExecutionArn"] = response["executionArn"]
 
-                        # Update the workflow with the state machine id 
-                        response = execution_table.update_item(
-                            Key={
-                                'Id': workflow_execution["Id"]
-                            },
-                            UpdateExpression='SET StateMachineExecutionArn = :arn',
-                            ExpressionAttributeValues={
-                                ':arn': response["executionArn"]
-                            }
-                        )
+                            # Update the workflow with the state machine id 
+                            response = execution_table.update_item(
+                                Key={
+                                    'Id': workflow_execution["Id"]
+                                },
+                                UpdateExpression='SET StateMachineExecutionArn = :arn',
+                                ExpressionAttributeValues={
+                                    ':arn': response["executionArn"]
+                                }
+                            )
 
                 else:
                     logger.info('Queue is empty')

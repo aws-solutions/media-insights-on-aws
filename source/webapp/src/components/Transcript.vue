@@ -58,17 +58,17 @@
     </div>
     <div>
       <b-dropdown dropup id="dropdown-1" text="Actions" class="m-md-2">
-<!--        <b-dropdown-item @click="showModal()">Upload transcript</b-dropdown-item>-->
-        <b-dropdown-item>Download transcript</b-dropdown-item>
+        <b-dropdown-item @click="showModal()">Upload transcript</b-dropdown-item>
+        <b-dropdown-item @click="saveFile()">Download transcript</b-dropdown-item>
         <b-dropdown-item>Save changes</b-dropdown-item>
       </b-dropdown>
 
-<!--      <b-modal ref="my-modal" hide-footer title="Upload a file">-->
-<!--        <p>Upload a timed subtitles file in the Webcaptions JSON format.</p>-->
-<!--        <div>-->
-<!--          <input type="file" @change="previewFiles">-->
-<!--        </div>-->
-<!--      </b-modal>-->
+      <b-modal ref="my-modal" hide-footer title="Upload a file">
+        <p>Upload a timed subtitles file in the Webcaptions JSON format.</p>
+        <div>
+          <input type="file" @change="previewFiles">
+        </div>
+      </b-modal>
     </div>
   </div>
 </template>
@@ -108,16 +108,27 @@ export default {
       this.transcript = ''
   },
   methods: {
-    // showModal() {
-    //   this.$refs['my-modal'].show()
-    // },
-    // previewFiles(event) {
-    //   console.log(event.target.files);
-    //   const file = event.target.files[0];
-    //   const reader = new FileReader();
-    //   reader.onload = e => this.$emit("load", e.target.result);
-    //   reader.readAsText(file);
-    // },
+    saveFile() {
+      const data = JSON.stringify(this.webCaptions);
+      const blob = new Blob([data], {type: 'text/plain'});
+      const e = document.createEvent('MouseEvents'),
+        a = document.createElement('a');
+      a.download = "WebCaptions.json";
+      a.href = window.URL.createObjectURL(blob);
+      a.dataset.downloadurl = ['text/json', a.download, a.href].join(':');
+      e.initEvent('click', true, false, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+      a.dispatchEvent(e);
+    },
+    showModal() {
+      this.$refs['my-modal'].show()
+    },
+    previewFiles(event) {
+      this.$refs['my-modal'].hide()
+      const file = event.target.files[0];
+      const reader = new FileReader();
+      reader.onload = e => this.webCaptions = JSON.parse(e.target.result);
+      reader.readAsText(file);
+    },
     add_row(index) {
       this.webCaptions.splice(index+1, 0, {"start":this.webCaptions[index].end,"caption":"","end":this.webCaptions[index+1].start})
       this.$refs["caption"+(index+1)].focus();

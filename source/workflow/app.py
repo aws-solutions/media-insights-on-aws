@@ -150,6 +150,7 @@ def workflow_scheduler_lambda(event, context):
                         SQS_CLIENT.delete_message(QueueUrl=STAGE_EXECUTION_QUEUE_URL,ReceiptHandle=message['ReceiptHandle'])
 
                         workflow_execution = json.loads(message['Body'])
+                        queued_workflow_status = workflow_execution['Status']
                         workflow_execution['Status'] = awsmie.WORKFLOW_STATUS_STARTED
 
                         # Update the workflow status now to indicate we have taken it off the queue
@@ -157,7 +158,7 @@ def workflow_scheduler_lambda(event, context):
 
                         # Resumed workflows state machines are already executing since they just paused 
                         # to wait for some external action
-                        if workflow_execution["Status"] != awsmie.WORKFLOW_STATUS_RESUMED:
+                        if queued_workflow_status != awsmie.WORKFLOW_STATUS_RESUMED:
                             # Kick off the state machine for the workflow
                             response = SFN_CLIENT.start_execution(
                                 stateMachineArn=workflow_execution["Workflow"]["StateMachineArn"],

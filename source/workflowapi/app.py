@@ -1989,7 +1989,7 @@ def initialize_workflow_execution(trigger, Name, input, Configuration, asset_id)
 
 
 @app.route('/workflow/execution/{Id}', cors=True, methods=['PUT'], authorizer=authorizer)
-def update_workflow_execution():
+def update_workflow_execution(Id):
     """ Update a workflow execution
 
        Options:
@@ -2026,7 +2026,7 @@ def update_workflow_execution():
     logger.info(json.dumps(params))
 
     if "WaitingStageName" in params:
-        response = resume_workflow_execution("api", id, params["WaitingStageName"])
+        response = resume_workflow_execution("api", Id, params["WaitingStageName"])
 
     return response
 
@@ -2053,8 +2053,9 @@ def resume_workflow_execution(trigger, id, waiting_stage_name):
             ExpressionAttributeNames={
                 '#workflow_status': "Status"
             },
-            ConditionExpression="#workflow_status = 'Waiting' AND CurrentStage = :waiting_stage_name",
+            ConditionExpression="#workflow_status = :workflow_waiting_status AND CurrentStage = :waiting_stage_name",
             ExpressionAttributeValues={
+                ':workflow_waiting_status': awsmie.WORKFLOW_STATUS_WAITING,
                 ':workflow_status': awsmie.WORKFLOW_STATUS_RESUMED,
                 ':waiting_stage_name': waiting_stage_name
             }

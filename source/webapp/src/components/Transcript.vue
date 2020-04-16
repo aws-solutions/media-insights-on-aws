@@ -58,8 +58,8 @@
     </div>
     <div>
       <b-dropdown dropup id="dropdown-1" text="Actions" class="m-md-2">
-        <b-dropdown-item @click="showModal()">Upload transcript</b-dropdown-item>
-        <b-dropdown-item @click="saveFile()">Download transcript</b-dropdown-item>
+        <b-dropdown-item @click="showModal()">Upload captions</b-dropdown-item>
+        <b-dropdown-item @click="saveFile()">Download captions</b-dropdown-item>
         <b-dropdown-item>Save changes</b-dropdown-item>
       </b-dropdown>
 
@@ -203,5 +203,8 @@ export default {
   }
   .custom-text-field {
     border: 0;
+  }
+  .mytdclass {
+    border-left: 2px solid #cc181e
   }
 </style>

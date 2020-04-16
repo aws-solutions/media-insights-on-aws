@@ -19,7 +19,14 @@
         <br>
       </div>
       <div id="event-line-editor" class="event-line-editor">
-      <b-table thead-class="hidden_header" fixed responsive="sm" :items="webCaptions" :fields="webCaptions_fields">
+      <b-table
+          selectable
+          select-mode="single"
+          thead-class="hidden_header"
+          fixed responsive="sm"
+          :items="webCaptions"
+          :fields="webCaptions_fields" ref="selectableTable"
+      >
         <!-- adjust column width for captions -->
         <template v-slot:table-colgroup="scope">
           <col
@@ -60,7 +67,7 @@
       <b-dropdown dropup id="dropdown-1" text="Actions" class="m-md-2">
         <b-dropdown-item @click="showModal()">Upload captions</b-dropdown-item>
         <b-dropdown-item @click="saveFile()">Download captions</b-dropdown-item>
-        <b-dropdown-item>Save changes</b-dropdown-item>
+        <b-dropdown-item @click="saveChanges()">Save changes</b-dropdown-item>
       </b-dropdown>
 
       <b-modal ref="my-modal" hide-footer title="Upload a file">
@@ -75,13 +82,17 @@
 
 <script>
 import webcaptions_file from '../json/WebCaptions_en.json'
+import { mapState } from 'vuex'
 
 export default {
   name: "Transcript",
   data() {
     return {
       webCaptions: webcaptions_file,
-      webCaptions_fields: ['timeslot', 'caption'],
+      webCaptions_fields: [
+        {key: 'timeslot', label: 'timeslot', tdClass: this.tdClassFunc},
+        {key: 'caption', label: 'caption'}
+        ],
       uploaded_captions_file: '',
       id: 0,
       transcript: "",
@@ -91,6 +102,7 @@ export default {
     }
   },
   computed: {
+    ...mapState(['player']),
     isProfane() {
       const Filter = require('bad-words');
       const profanityFilter = new Filter({ placeHolder: '_' });
@@ -102,13 +114,34 @@ export default {
   },
   activated: function () {
     console.log('activated component:', this.operator);
-    this.fetchAssetData();
+    this.getTimeUpdate();
+    // uncomment this whenever we need to get data from Elasticsearch
+    // this.fetchAssetData();
   },
   beforeDestroy: function () {
       this.transcript = ''
   },
   methods: {
+    getTimeUpdate() {
+      // Send current time position for the video player to verticalLineCanvas
+      var last_position = 0;
+      if (this.player) {
+        this.player.on('timeupdate', function () {
+          const current_position = Math.round(this.player.currentTime() / this.player.duration() * 1000);
+          if (current_position !== last_position) {
+            let timeline_position = this.webCaptions.findIndex(function(item, i){return (parseInt(item.start) <= current_position && parseInt(item.end) >= current_position)})
+            this.$refs.selectableTable.selectRow(timeline_position)
+            last_position = current_position;
+          }
+        }.bind(this));
+      }
+    },
+    saveChanges() {
+      // TODO
+      console.log(this.webCaptions)
+    },
     saveFile() {
+      this.$refs.selectableTable.selectRow(2)
       const data = JSON.stringify(this.webCaptions);
       const blob = new Blob([data], {type: 'text/plain'});
       const e = document.createEvent('MouseEvents'),
@@ -204,7 +237,14 @@ export default {
   .custom-text-field {
     border: 0;
   }
-  .mytdclass {
-    border-left: 2px solid #cc181e
+  .highlightedBorder {
+    border-left: 1px solid #cc181e;
+    background-color: green;
+  }
+  tr.b-table-row-selected {
+    border-left: 1px solid #cc181e !important;
+  }
+  table.b-table-selectable > tbody > tr.b-table-row-selected > td {
+    background-color: white !important;
   }
 </style>

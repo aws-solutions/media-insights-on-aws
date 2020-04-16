@@ -336,7 +336,6 @@
               data: data,
             })
           ).then(res => {
-            console.log(res.data.results.CaptionsCollection);
             let captions_collection = [];
             this.num_caption_tracks = res.data.results.CaptionsCollection.length;
             res.data.results.CaptionsCollection.forEach(item => {

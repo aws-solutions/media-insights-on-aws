@@ -18,16 +18,72 @@
         <br>
         <br>
       </div>
-      {{ transcript }}
+      <div id="event-line-editor" class="event-line-editor">
+      <b-table thead-class="hidden_header" fixed responsive="sm" :items="webCaptions" :fields="webCaptions_fields">
+        <!-- adjust column width for captions -->
+        <template v-slot:table-colgroup="scope">
+          <col
+              v-for="field in scope.fields"
+              :key="field.key"
+              :style="{ width: field.key === 'caption' ? '80%' : '20%' }"
+          >
+        </template>
+        <template v-slot:cell(timeslot)="data">
+          <b-form-input class="compact-height start-time-field " v-model="data.item.start"/>
+          <b-form-input class="compact-height stop-time-field " v-model="data.item.end"/>
+        </template>
+        <template v-slot:cell(caption)="data">
+          <b-container class="p-0">
+            <b-row no-gutters>
+              <b-col cols="10">
+          <b-form-textarea :ref="'caption' + data.index" class="custom-text-field .form-control-sm" max-rows="8" v-model="data.item.caption" placeholder="Type subtitle here"/>
+              </b-col>
+              <b-col>
+                <span style="position:absolute; top: 0px">
+                  <b-button size="sm" variant="link" @click="delete_row(data.index)">
+                    <b-icon icon="x-circle" color="lightgrey"></b-icon>
+                  </b-button>
+                </span>
+                <span style="position:absolute; bottom: 0px">
+                  <b-button size="sm" variant="link" @click="add_row(data.index)">
+                    <b-icon icon="plus-square" color="lightgrey"></b-icon>
+                  </b-button>
+                </span>
+              </b-col>
+            </b-row>
+          </b-container>
+        </template>
+      </b-table>
+      </div>
+    </div>
+    <div>
+      <b-dropdown dropup id="dropdown-1" text="Actions" class="m-md-2">
+        <b-dropdown-item @click="showModal()">Upload captions</b-dropdown-item>
+        <b-dropdown-item @click="saveFile()">Download captions</b-dropdown-item>
+        <b-dropdown-item>Save changes</b-dropdown-item>
+      </b-dropdown>
+
+      <b-modal ref="my-modal" hide-footer title="Upload a file">
+        <p>Upload a timed subtitles file in the Webcaptions JSON format.</p>
+        <div>
+          <input type="file" @change="previewFiles">
+        </div>
+      </b-modal>
     </div>
   </div>
 </template>
 
 <script>
+import webcaptions_file from '../json/WebCaptions_en.json'
+
 export default {
   name: "Transcript",
   data() {
     return {
+      webCaptions: webcaptions_file,
+      webCaptions_fields: ['timeslot', 'caption'],
+      uploaded_captions_file: '',
+      id: 0,
       transcript: "",
       isBusy: false,
       operator: "transcript",
@@ -52,6 +108,34 @@ export default {
       this.transcript = ''
   },
   methods: {
+    saveFile() {
+      const data = JSON.stringify(this.webCaptions);
+      const blob = new Blob([data], {type: 'text/plain'});
+      const e = document.createEvent('MouseEvents'),
+        a = document.createElement('a');
+      a.download = "WebCaptions.json";
+      a.href = window.URL.createObjectURL(blob);
+      a.dataset.downloadurl = ['text/json', a.download, a.href].join(':');
+      e.initEvent('click', true, false, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+      a.dispatchEvent(e);
+    },
+    showModal() {
+      this.$refs['my-modal'].show()
+    },
+    previewFiles(event) {
+      this.$refs['my-modal'].hide()
+      const file = event.target.files[0];
+      const reader = new FileReader();
+      reader.onload = e => this.webCaptions = JSON.parse(e.target.result);
+      reader.readAsText(file);
+    },
+    add_row(index) {
+      this.webCaptions.splice(index+1, 0, {"start":this.webCaptions[index].end,"caption":"","end":this.webCaptions[index+1].start})
+      this.$refs["caption"+(index+1)].focus();
+    },
+    delete_row(index) {
+      this.webCaptions.splice(index, 1)
+    },
     async fetchAssetData () {
       let query = 'AssetId:'+this.$route.params.asset_id+ ' _index:mietranscript';
       let apiName = 'mieElasticsearch';
@@ -82,3 +166,45 @@ export default {
   }
 }
 </script>
+
+<style>
+  .start-time-field {
+    padding: 0 !important;
+    margin: 0 !important;
+    margin-bottom: 4px !important;
+    border: 0 !important;
+    height: auto;
+  }
+  .stop-time-field {
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    height: auto;
+  }
+  .hidden_header {
+    display: none;
+  }
+  .event-line-editor {
+    overflow: scroll;
+    height: 500px;
+    border-top: 1px solid #e2e2e2;
+    border-bottom: 1px solid #e2e2e2;
+  }
+  /* these options needed for MacOS to make scrollbar visible when not in use */
+  .event-line-editor::-webkit-scrollbar {
+    -webkit-appearance: none;
+    width: 7px;
+  }
+  /* these options needed for MacOS to make scrollbar visible when not in use */
+  .event-line-editor::-webkit-scrollbar-thumb {
+    border-radius: 4px;
+    background-color: rgba(0, 0, 0, .5);
+    -webkit-box-shadow: 0 0 1px rgba(255, 255, 255, .5);
+  }
+  .custom-text-field {
+    border: 0;
+  }
+  .mytdclass {
+    border-left: 2px solid #cc181e
+  }
+</style>

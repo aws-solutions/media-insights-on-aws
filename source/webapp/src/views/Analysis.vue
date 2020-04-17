@@ -105,7 +105,7 @@
             </div>
           </div>
           <div v-else>
-            <div v-if="videoOptions.sources[0].src === '' || videoOptions.captions.length !== this.num_caption_tracks">
+            <div v-if="videoOptions.sources[0].src === '' || (videoOptions.captions.length > 0 && videoOptions.captions.length !== this.num_caption_tracks)">
               <Loading />
             </div>
             <div v-else>
@@ -337,27 +337,31 @@
             })
           ).then(res => {
             let captions_collection = [];
-            this.num_caption_tracks = res.data.results.CaptionsCollection.length;
-            res.data.results.CaptionsCollection.forEach(item => {
-              // TODO: map the language code to a language label
-              const bucket = item.Results.S3Bucket;
-              const key = item.Results.S3Key;
-              // get URL to captions file in S3
-              fetch(this.DATAPLANE_API_ENDPOINT + '/download', {
-                method: 'POST',
-                mode: 'cors',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': token
-                },
-                body: JSON.stringify({"S3Bucket": bucket, "S3Key": key})
-              }).then(data => {
-                data.text().then((data) => {
-                  captions_collection.push({'src': data, 'lang': item.LanguageCode, 'label': item.LanguageCode});
-                }).catch(err => console.error(err));
-              })
-            });
-            this.videoOptions.captions = captions_collection
+            if (res.data.results) {
+              this.num_caption_tracks = res.data.results.CaptionsCollection.length;
+              res.data.results.CaptionsCollection.forEach(item => {
+                // TODO: map the language code to a language label
+                const bucket = item.Results.S3Bucket;
+                const key = item.Results.S3Key;
+                // get URL to captions file in S3
+                fetch(this.DATAPLANE_API_ENDPOINT + '/download', {
+                  method: 'POST',
+                  mode: 'cors',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': token
+                  },
+                  body: JSON.stringify({"S3Bucket": bucket, "S3Key": key})
+                }).then(data => {
+                  data.text().then((data) => {
+                    captions_collection.push({'src': data, 'lang': item.LanguageCode, 'label': item.LanguageCode});
+                  }).catch(err => console.error(err));
+                })
+              });
+              this.videoOptions.captions = captions_collection
+            } else {
+              this.videoOptions.captions = []
+            }
           })
         });
       },

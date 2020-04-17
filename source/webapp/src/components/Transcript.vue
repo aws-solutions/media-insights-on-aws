@@ -128,9 +128,10 @@ export default {
       var last_position = 0;
       if (this.player) {
         this.player.on('timeupdate', function () {
-          const current_position = Math.round(this.player.currentTime() / this.player.duration() * 1000);
+          const current_position = Math.round(this.player.currentTime());
           if (current_position !== last_position) {
             let timeline_position = this.webCaptions.findIndex(function(item, i){return (parseInt(item.start) <= current_position && parseInt(item.end) >= current_position)})
+            console.log(this.player.currentTime())
             this.$refs.selectableTable.selectRow(timeline_position)
             last_position = current_position;
           }

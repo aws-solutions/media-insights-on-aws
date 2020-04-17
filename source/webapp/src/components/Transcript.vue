@@ -73,7 +73,7 @@
       <b-modal ref="my-modal" hide-footer title="Upload a file">
         <p>Upload a timed subtitles file in the Webcaptions JSON format.</p>
         <div>
-          <input type="file" @change="previewFiles">
+          <input type="file" @change="uploadCaptionsFile">
         </div>
       </b-modal>
     </div>
@@ -81,14 +81,14 @@
 </template>
 
 <script>
-import webcaptions_file from '../json/WebCaptions_en.json'
 import { mapState } from 'vuex'
 
 export default {
   name: "Transcript",
   data() {
     return {
-      webCaptions: webcaptions_file,
+      results: [],
+      webCaptions: [],
       webCaptions_fields: [
         {key: 'timeslot', label: 'timeslot', tdClass: this.tdClassFunc},
         {key: 'caption', label: 'caption'}
@@ -115,6 +115,7 @@ export default {
   activated: function () {
     console.log('activated component:', this.operator);
     this.getTimeUpdate();
+    this.getWebCaptions()
     // uncomment this whenever we need to get data from Elasticsearch
     // this.fetchAssetData();
   },
@@ -138,10 +139,9 @@ export default {
     },
     saveChanges() {
       // TODO
-      console.log(this.webCaptions)
+      console.log('saveChanges is TBD')
     },
     saveFile() {
-      this.$refs.selectableTable.selectRow(2)
       const data = JSON.stringify(this.webCaptions);
       const blob = new Blob([data], {type: 'text/plain'});
       const e = document.createEvent('MouseEvents'),
@@ -155,12 +155,47 @@ export default {
     showModal() {
       this.$refs['my-modal'].show()
     },
-    previewFiles(event) {
+    uploadCaptionsFile(event) {
       this.$refs['my-modal'].hide()
       const file = event.target.files[0];
       const reader = new FileReader();
       reader.onload = e => this.webCaptions = JSON.parse(e.target.result);
       reader.readAsText(file);
+    },
+    getWebCaptions: async function () {
+      const token = await this.$Amplify.Auth.currentSession().then(data =>{
+        return data.getIdToken().getJwtToken();
+      });
+      // TODO: Get workflow id
+      // TODO: Get source language from workflow configuration
+      let source_language_code = "en"
+      // Get paginated web captions
+      const asset_id = this.$route.params.asset_id;
+      let cursor=''
+      let url = this.DATAPLANE_API_ENDPOINT + '/metadata/' + asset_id + '/WebCaptions_en'
+      this.getWebCaptionsAsync(token, url, cursor)
+    },
+    getWebCaptionsAsync: async function (token, url, cursor) {
+      fetch((cursor.length === 0) ? url : url + '?cursor=' + cursor, {
+        method: 'get',
+        headers: {
+          'Authorization': token
+        },
+      }).then(response => {
+        response.json().then(data => ({
+            data: data,
+          })
+        ).then(res => {
+          if (res.data.results) {
+            cursor = res.data.cursor;
+            this.webCaptions.push(res.data.results)
+            if (cursor)
+              this.getWebCaptionsAsync(token,url,cursor)
+          } else {
+            this.videoOptions.captions = []
+          }
+        })
+      });
     },
     add_row(index) {
       this.webCaptions.splice(index+1, 0, {"start":this.webCaptions[index].end,"caption":"","end":this.webCaptions[index+1].start})

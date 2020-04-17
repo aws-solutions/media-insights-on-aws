@@ -131,7 +131,6 @@ export default {
           const current_position = Math.round(this.player.currentTime());
           if (current_position !== last_position) {
             let timeline_position = this.webCaptions.findIndex(function(item, i){return (parseInt(item.start) <= current_position && parseInt(item.end) >= current_position)})
-            console.log(this.player.currentTime())
             this.$refs.selectableTable.selectRow(timeline_position)
             last_position = current_position;
           }

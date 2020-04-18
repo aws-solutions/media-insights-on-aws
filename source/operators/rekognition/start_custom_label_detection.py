@@ -45,6 +45,11 @@ def lambda_handler(event, context):
         if "Images" in event["Input"]["Media"]:
             s3bucket = event["Input"]["Media"]["Images"]["S3Bucket"]
             s3key = event["Input"]["Media"]["Images"]["S3Key"]
+        elif "Image" in event["Input"]["Media"]:
+            s3bucket = event["Input"]["Media"]["Image"]["S3Bucket"]
+            s3key = event["Input"]["Media"]["Image"]["S3Key"]
+        else 
+            raise MasExecutionError("no image  in input media")
         workflow_id = str(event["WorkflowExecutionId"])
         asset_id = event['AssetId']
     

@@ -3,6 +3,12 @@
     <div v-if="noTranscript === true">
       No transcript found for this asset
     </div>
+    <b-alert
+        v-model="showSaveNotification"
+        dismissible
+    >
+      Captions saved
+    </b-alert>
     <div v-if="isBusy">
       <b-spinner
         variant="secondary"
@@ -87,6 +93,7 @@ export default {
   name: "Transcript",
   data() {
     return {
+      showSaveNotification: false,
       results: [],
       webCaptions: [],
       webCaptions_fields: [
@@ -137,9 +144,51 @@ export default {
         }.bind(this));
       }
     },
-    saveChanges() {
-      // TODO
-      console.log('saveChanges is TBD')
+    saveChanges: async function () {
+      const token = await this.$Amplify.Auth.currentSession().then(data =>{
+        return data.getIdToken().getJwtToken();
+      });
+      // TODO:
+      // get operator name
+      const operator_name = "WebCaptions_en"
+      const asset_id = this.$route.params.asset_id;
+      // get workflow id
+      fetch(this.WORKFLOW_API_ENDPOINT + '/workflow/execution/asset/' + asset_id, {
+        method: 'get',
+        headers: {
+          'Authorization': token
+        }
+      }).then(response => {
+        response.json().then(data => ({
+            data: data,
+          })
+        ).then(res => {
+          const workflow_id = res.data[0].Id
+          let data='{"OperatorName": "' + operator_name + '", "Results": ' + JSON.stringify(this.webCaptions) + ', "WorkflowId": "' + workflow_id + '"}'
+          // save caption data to workflow metadata
+          fetch(this.DATAPLANE_API_ENDPOINT + 'metadata/' + asset_id, {
+            method: 'post',
+            body: data,
+            headers: {'Content-Type': 'application/json', 'Authorization': token}
+          }).then(response =>
+            response.json().then(data => ({
+                data: data,
+                status: response.status
+              })
+            ).then(res => {
+              if (res.status === 200) {
+                console.log("Captions saved")
+              }
+              if (res.status !== 200) {
+                console.log("ERROR: Failed to upload captions.");
+                console.log(res.data.Code);
+                console.log(res.data.Message);
+                console.log("Response: " + response.status);
+              }
+            })
+          )}
+        )}
+      )
     },
     saveFile() {
       const data = JSON.stringify(this.webCaptions);
@@ -166,7 +215,7 @@ export default {
       const token = await this.$Amplify.Auth.currentSession().then(data =>{
         return data.getIdToken().getJwtToken();
       });
-      // TODO: Get workflow id
+      // TODO: Get workflow id so you can get the workflow configuration
       // TODO: Get source language from workflow configuration
       let source_language_code = "en"
       // Get paginated web captions
@@ -231,6 +280,15 @@ export default {
         this.isBusy = false
       }
     }
+  },
+  mounted() {
+    document.onkeydown = function(e) {
+      if (e.key === "s" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        this.saveChanges();
+        this.showSaveNotification = true;
+      }
+    }.bind(this);
   }
 }
 </script>

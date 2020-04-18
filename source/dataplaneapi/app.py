@@ -476,7 +476,7 @@ def put_asset_metadata(asset_id):
         raise ChaliceViewError("Unknown exception when storing asset metadata: {e}".format(e=e))
     else:
         # check that results is dict
-        if not isinstance(results, dict):
+        if not isinstance(results, dict) and not isinstance(results, list):
             logger.error("Exception occurred while storing metadata for {asset}".format(asset=asset))
             raise BadRequestError(
                 "Exception occurred while storing metadata for {asset}: results are not the required data type, dict".format(
@@ -531,7 +531,10 @@ def put_asset_metadata(asset_id):
         if check_existing['Status'] == 'Error':
             # Write the first page directly, format it as a list
             logger.info("Operator has not stored results during this worfklow execution, writing first page to S3")
-            formatted_result = [results]
+            if isinstance(results, list):
+                formatted_result = results
+            else:
+                formatted_result = [results]
             store_results = write_metadata_to_s3(bucket, metadata_key, formatted_result)
             if store_results['Status'] == 'Success':
                 logging.info(

@@ -357,14 +357,6 @@ export default {
       }
     }
   },
-  mounted() {
-    document.onkeydown = function(e) {
-      if (e.key === "s" && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault();
-        this.saveCaptions();
-      }
-    }.bind(this);
-  }
 }
 </script>
 

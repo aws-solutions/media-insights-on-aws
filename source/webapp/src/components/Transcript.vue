@@ -5,9 +5,11 @@
     </div>
     <b-alert
         v-model="showSaveNotification"
+        variant="success"
         dismissible
+        fade
     >
-      Captions saved
+      {{ saveNotificationMessage }}
     </b-alert>
     <div v-if="isBusy">
       <b-spinner
@@ -72,8 +74,8 @@
     <div>
       <b-dropdown dropup id="dropdown-1" text="Actions" class="m-md-2">
         <b-dropdown-item @click="showModal()">Upload captions</b-dropdown-item>
-        <b-dropdown-item @click="saveFile()">Download captions</b-dropdown-item>
-        <b-dropdown-item @click="saveChanges()">Save changes</b-dropdown-item>
+        <b-dropdown-item @click="downloadCaptions()">Download captions</b-dropdown-item>
+        <b-dropdown-item @click="saveCaptions()">Save changes</b-dropdown-item>
       </b-dropdown>
 
       <b-modal ref="my-modal" hide-footer title="Upload a file">
@@ -93,7 +95,12 @@ export default {
   name: "Transcript",
   data() {
     return {
-      showSaveNotification: false,
+      workflow_id: "",
+      workflow_status: "",
+      waiting_stage: "",
+      sourceLanguageCode: "",
+      showSaveNotification: 0,
+      saveNotificationMessage: "Captions saved",
       results: [],
       webCaptions: [],
       webCaptions_fields: [
@@ -122,7 +129,7 @@ export default {
   activated: function () {
     console.log('activated component:', this.operator);
     this.getTimeUpdate();
-    this.getWebCaptions()
+    this.getWorkflowId();
     // uncomment this whenever we need to get data from Elasticsearch
     // this.fetchAssetData();
   },
@@ -144,53 +151,111 @@ export default {
         }.bind(this));
       }
     },
-    saveChanges: async function () {
+    getWorkflowId: async function() {
       const token = await this.$Amplify.Auth.currentSession().then(data =>{
         return data.getIdToken().getJwtToken();
       });
-      // TODO:
-      // get operator name
-      const operator_name = "WebCaptions_en"
       const asset_id = this.$route.params.asset_id;
-      // get workflow id
       fetch(this.WORKFLOW_API_ENDPOINT + '/workflow/execution/asset/' + asset_id, {
         method: 'get',
         headers: {
           'Authorization': token
         }
       }).then(response => {
-        response.json().then(data => ({
-            data: data,
-          })
-        ).then(res => {
-          const workflow_id = res.data[0].Id
-          let data='{"OperatorName": "' + operator_name + '", "Results": ' + JSON.stringify(this.webCaptions) + ', "WorkflowId": "' + workflow_id + '"}'
-          // save caption data to workflow metadata
-          fetch(this.DATAPLANE_API_ENDPOINT + 'metadata/' + asset_id, {
-            method: 'post',
-            body: data,
-            headers: {'Content-Type': 'application/json', 'Authorization': token}
-          }).then(response =>
-            response.json().then(data => ({
-                data: data,
-                status: response.status
-              })
-            ).then(res => {
-              if (res.status === 200) {
-                console.log("Captions saved")
-              }
-              if (res.status !== 200) {
-                console.log("ERROR: Failed to upload captions.");
-                console.log(res.data.Code);
-                console.log(res.data.Message);
-                console.log("Response: " + response.status);
-              }
+          response.json().then(data => ({
+              data: data,
             })
-          )}
-        )}
+          ).then(res => {
+              this.workflow_id = res.data[0].Id
+              this.workflow_status = res.data[0].Status
+              if ("CurrentStage" in res.data[0])
+                this.waiting_stage = res.data[0].CurrentStage
+              this.getTranscribeLanguage()
+            }
+          )
+        }
       )
     },
-    saveFile() {
+    getTranscribeLanguage: async function() {
+      const token = await this.$Amplify.Auth.currentSession().then(data =>{
+        return data.getIdToken().getJwtToken();
+      });
+      const asset_id = this.$route.params.asset_id;
+      fetch(this.WORKFLOW_API_ENDPOINT + '/workflow/execution/' + this.workflow_id, {
+        method: 'get',
+        headers: {
+          'Authorization': token
+        }
+      }).then(response => {
+          response.json().then(data => ({
+              data: data,
+            })
+          ).then(res => {
+              this.sourceLanguageCode = res.data.Configuration.WebCaptionsStage2.WebCaptions.SourceLanguageCode
+              this.getWebCaptions()
+            }
+          )
+        }
+      )
+    },
+    resumeWorkflow: async function() {
+      const token = await this.$Amplify.Auth.currentSession().then(data =>{
+        return data.getIdToken().getJwtToken();
+      });
+      const data = JSON.stringify({"WaitingStageName": this.waiting_stage});
+      fetch(this.WORKFLOW_API_ENDPOINT + 'workflow/execution/' + this.workflow_id, {
+        method: 'put',
+        body: data,
+        headers: {'Content-Type': 'application/json', 'Authorization': token}
+      }).then(response =>
+        response.json().then(data => ({
+            data: data,
+            status: response.status
+          })
+        ).then(res => {
+          if (res.status === 200) {
+            console.log("Workflow resumed")
+            this.saveNotificationMessage += " and workflow resumed"
+          }
+        })
+      )
+    },
+    saveCaptions: async function () {
+      const token = await this.$Amplify.Auth.currentSession().then(data =>{
+        return data.getIdToken().getJwtToken();
+      });
+      const operator_name = "WebCaptions_"+this.sourceLanguageCode
+      const asset_id = this.$route.params.asset_id;
+      let data='{"OperatorName": "' + operator_name + '", "Results": ' + JSON.stringify(this.webCaptions) + ', "WorkflowId": "' + this.workflow_id + '"}'
+      // save caption data to workflow metadata
+      fetch(this.DATAPLANE_API_ENDPOINT + 'metadata/' + asset_id, {
+        method: 'post',
+        body: data,
+        headers: {'Content-Type': 'application/json', 'Authorization': token}
+      }).then(response =>
+        response.json().then(data => ({
+            data: data,
+            status: response.status
+          })
+        ).then(res => {
+          if (res.status === 200) {
+            console.log("Captions saved")
+            this.saveNotificationMessage = "Captions saved"
+            if (this.workflow_status === "Waiting") {
+              this.resumeWorkflow()
+            }
+            this.showSaveNotification = 5;
+          }
+          if (res.status !== 200) {
+            console.log("ERROR: Failed to upload captions.");
+            console.log(res.data.Code);
+            console.log(res.data.Message);
+            console.log("Response: " + response.status);
+          }
+        })
+      )
+    },
+    downloadCaptions() {
       const data = JSON.stringify(this.webCaptions);
       const blob = new Blob([data], {type: 'text/plain'});
       const e = document.createEvent('MouseEvents'),
@@ -217,14 +282,14 @@ export default {
       });
       // TODO: Get workflow id so you can get the workflow configuration
       // TODO: Get source language from workflow configuration
-      let source_language_code = "en"
       // Get paginated web captions
       const asset_id = this.$route.params.asset_id;
+      const operator_name = "WebCaptions_"+this.sourceLanguageCode
       let cursor=''
-      let url = this.DATAPLANE_API_ENDPOINT + '/metadata/' + asset_id + '/WebCaptions_en'
-      this.getWebCaptionsAsync(token, url, cursor)
+      let url = this.DATAPLANE_API_ENDPOINT + '/metadata/' + asset_id + '/' + operator_name
+      this.getWebCaptionPages(token, url, cursor)
     },
-    getWebCaptionsAsync: async function (token, url, cursor) {
+    getWebCaptionPages: async function (token, url, cursor) {
       fetch((cursor.length === 0) ? url : url + '?cursor=' + cursor, {
         method: 'get',
         headers: {
@@ -233,13 +298,20 @@ export default {
       }).then(response => {
         response.json().then(data => ({
             data: data,
+            status: response.status
           })
         ).then(res => {
+          if (res.status !== 200) {
+            console.log("ERROR: Failed to upload captions.");
+            console.log(res.data.Code);
+            console.log(res.data.Message);
+            console.log("Response: " + res.status);
+          }
           if (res.data.results) {
             cursor = res.data.cursor;
             this.webCaptions.push(res.data.results)
             if (cursor)
-              this.getWebCaptionsAsync(token,url,cursor)
+              this.getWebCaptionPages(token,url,cursor)
           } else {
             this.videoOptions.captions = []
           }
@@ -285,8 +357,7 @@ export default {
     document.onkeydown = function(e) {
       if (e.key === "s" && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
-        this.saveChanges();
-        this.showSaveNotification = true;
+        this.saveCaptions();
       }
     }.bind(this);
   }

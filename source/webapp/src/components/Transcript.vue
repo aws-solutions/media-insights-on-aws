@@ -291,6 +291,7 @@ export default {
       const operator_name = "WebCaptions_"+this.sourceLanguageCode
       let cursor=''
       let url = this.DATAPLANE_API_ENDPOINT + '/metadata/' + asset_id + '/' + operator_name
+      this.webCaptions = []
       this.getWebCaptionPages(token, url, cursor)
     },
     getWebCaptionPages: async function (token, url, cursor) {

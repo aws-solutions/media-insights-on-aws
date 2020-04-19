@@ -71,12 +71,16 @@
       </b-table>
       </div>
     </div>
-    <div>
-      <b-dropdown dropup id="dropdown-1" text="Actions" class="m-md-2">
-        <b-dropdown-item @click="showModal()">Upload captions</b-dropdown-item>
-        <b-dropdown-item @click="downloadCaptions()">Download captions</b-dropdown-item>
-        <b-dropdown-item @click="saveCaptions()">Save changes</b-dropdown-item>
-      </b-dropdown>
+    <div><br>
+      <b-button id="showModal" size="sm" class="mb-2" @click="showModal()">
+        <b-icon icon="upload" color="white"></b-icon> Upload
+      </b-button> &nbsp;
+      <b-button id="downloadCaptions" size="sm" class="mb-2" @click="downloadCaptions()">
+        <b-icon icon="download" color="white"></b-icon> Download
+      </b-button> &nbsp;
+      <b-button id="saveCaptions" size="sm" class="mb-2" @click="saveCaptions()">
+        <b-icon icon="play" color="white"></b-icon> Save changes
+      </b-button>
 
       <b-modal ref="my-modal" hide-footer title="Upload a file">
         <p>Upload a timed subtitles file in the Webcaptions JSON format.</p>

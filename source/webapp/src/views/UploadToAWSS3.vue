@@ -60,11 +60,10 @@
                     id="checkbox-group-1"
                     v-model="enabledOperators"
                     :options="videoOperators"
-                    name="flavour-1"
                 ></b-form-checkbox-group>
                 <label>Thumbnail position: </label>
                 <b-form-input v-model="thumbnail_position" type="range" min="1" max="20" step="1"></b-form-input> {{ thumbnail_position }} sec
-                <b-form-input v-if="enabledOperators.includes('faceSearch')" id="Enter face collection id" v-model="faceCollectionId"></b-form-input>
+                <b-form-input v-if="enabledOperators.includes('faceSearch')" id="faceCollectionId" v-model="faceCollectionId"></b-form-input>
 
                 <b-form-input v-if="enabledOperators.includes('genericDataLookup')" v-model="genericDataFilename" placeholder="Enter data filename"></b-form-input>
               </b-form-group>
@@ -78,11 +77,15 @@
                     id="checkbox-group-2"
                     v-model="enabledOperators"
                     :options="audioOperators"
-                    name="flavour-2"
                 ></b-form-checkbox-group>
                 <div v-if="enabledOperators.includes('Transcribe')">
                   Source Language
-                  <b-form-select v-model="transcribeLanguage" :options="transcribeLanguages"></b-form-select><br><br>
+                  <b-form-select v-model="transcribeLanguage" :options="transcribeLanguages"></b-form-select>
+                  <b-form-checkbox
+                      id="enable_caption_editing"
+                      v-model="enable_caption_editing"
+                  >Pause workflow to edit captions before downstream processing</b-form-checkbox>
+                  <br>
                   Custom Vocabulary
                   <b-form-input v-model="customVocab" placeholder="(optional)"></b-form-input>
                 </div>
@@ -97,7 +100,6 @@
                     id="checkbox-group-3"
                     v-model="enabledOperators"
                     :options="textOperators"
-                    name="flavour-3"
                 ></b-form-checkbox-group>
                 <div v-if="enabledOperators.includes('Translate')">
                   <b-form-group>
@@ -206,6 +208,7 @@
         thumbnail_position: 10,
         upload_in_progress: false,
         enabledOperators: ['thumbnail', 'Transcribe', 'Translate'],
+        enable_caption_editing: false,
         videoOperators: [
           {text: 'Object Detection', value: 'labelDetection'},
           {text: 'Celebrity Recognition', value: 'celebrityRecognition'},
@@ -429,7 +432,20 @@
               "Mediainfo": {"MediaType": "Video", "Enabled": true}
             },
             "MediaconvertStage2": {"Mediaconvert": {"MediaType": "Video", "Enabled": true}},
-            "CaptionFileStage2": {
+            "CaptionEditingWaitStage": {
+              "Wait": {
+                "MediaType": "MetadataOnly",
+                "Enabled": this.enable_caption_editing
+              }
+            },
+            "CaptionFileStageForCaptions": {
+              "WebToVTTCaptions": {
+                "MediaType": "MetadataOnly",
+                "TargetLanguageCodes": Object.values(this.selectedTranslateLanguages.map(x => x.text)).filter(x => x !== this.sourceLanguageCode).concat(this.sourceLanguageCode),
+                "Enabled": true
+              }
+            },
+            "CaptionFileStageForTranslate": {
               "WebToSRTCaptions": {
                 "MediaType": "MetadataOnly",
                 "TargetLanguageCodes": Object.values(this.selectedTranslateLanguages.map(x => x.text)).filter(x => x !== this.sourceLanguageCode).concat(this.sourceLanguageCode),

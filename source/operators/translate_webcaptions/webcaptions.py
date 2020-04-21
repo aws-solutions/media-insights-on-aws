@@ -1,0 +1,683 @@
+# Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+import json
+import boto3
+import urllib3
+import math
+import os
+import ntpath
+from botocore import config
+from urllib.parse import urlparse
+
+from MediaInsightsEngineLambdaHelper import MediaInsightsOperationHelper
+from MediaInsightsEngineLambdaHelper import MasExecutionError
+from MediaInsightsEngineLambdaHelper import DataPlane
+
+s3 = boto3.client('s3')
+s3_resource = boto3.resource('s3')
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+headers = {"Content-Type": "application/json"}
+dataplane = DataPlane()
+
+mie_config = json.loads(os.environ['botoConfig'])
+config = config.Config(**mie_config)
+translate_client = boto3.client('translate', config=config)
+
+class WebCaptions:
+    def __init__(self, operator_object):
+        """
+        :param event: The event passed in to the operator
+
+        """
+        print("WebCaptions operator_object = {}".format(operator_object))
+        self.operator_object = operator_object
+
+        try:    
+            self.transcribe_operator_name = "Transcribe"
+            self.workflow_id = operator_object.workflow_execution_id
+            self.asset_id = operator_object.asset_id
+            self.marker = "<123>"
+            if "SourceLanguageCode" in self.operator_object.configuration:
+                self.source_language_code = self.operator_object.configuration["SourceLanguageCode"]
+                self.operator_name_with_lang = self.operator_object.name+"_"+self.source_language_code 
+            if "TargetLanguageCode" in self.operator_object.configuration:
+                self.target_language_code = self.operator_object.configuration["TargetLanguageCode"]
+        except KeyError as e:
+            self.operator_object.update_workflow_status("Error")
+            self.operator_object.add_workflow_metadata(WebCaptionsError="No valid inputs {e}".format(e=e))
+            raise MasExecutionError(operator_object.return_output_object())
+    
+    def WebCaptionsOperatorName(self, language_code=None):
+        
+        # Shouldn't assume WebCaptions operator is WebCaptions, maybe pass it in the configuration?
+        operator_name = "WebCaptions"
+
+        if language_code != None:
+            return operator_name+"_"+language_code 
+
+        try:
+            name = operator_name+"_"+self.source_language_code 
+        except KeyError:
+            self.operator_object.update_workflow_status("Error")
+            self.operator_object.add_workflow_metadata(WebCaptionsError="Missing language code for WebCaptions {e}".format(e=e))
+            raise MasExecutionError(self.operator_object.return_output_object())
+        
+        print("WebCaptionsOperatorName() Name {}".format(name))
+        return name
+
+    def CaptionsOperatorName(self, language_code=None):
+        
+        # Shouldn't assume WebCaptions operator is WebCaptions, maybe pass it in the configuration?
+        operator_name = "Captions"
+
+        if language_code != None:
+            return operator_name+"_"+language_code 
+
+        try:
+            name = operator_name+"_"+self.source_language_code 
+        except KeyError:
+            self.operator_object.update_workflow_status("Error")
+            self.operator_object.add_workflow_metadata(WebCaptionsError="Missing language code for WebCaptions {e}".format(e=e))
+            raise MasExecutionError(self.operator_object.return_output_object())
+        
+        print("WebCaptionsOperatorName() Name {}".format(name))
+        return name
+
+
+
+    def GetTranscript(self):
+    
+        transcript = []
+        
+        response = dataplane.retrieve_asset_metadata(self.asset_id, operator_name=self.transcribe_operator_name)
+        transcript.append(response["results"])
+
+        while "cursor" in response:
+            response = dataplane.retrieve_asset_metadata(self.asset_id, operator_name=self.transcribe_operator_name, cursor=response["cursor"])
+            transcript.append(response["results"]) 
+
+        return transcript
+
+    def TranscribeToWebCaptions(self, transcripts):
+        
+        endTime = 0.0
+        maxLength = 50
+        wordCount = 0
+        maxWords = 12
+        maxSilence = 1.5
+
+        captions = []
+        caption = None
+
+        for transcript in transcripts:
+            for item in transcript["results"]["items"]:
+            
+
+                isPunctuation = item["type"] == "punctuation"
+
+                if caption is None:
+
+                    # Start of a line with punctuation, just skip it
+                    if isPunctuation:
+                        continue
+
+                    # Create a new caption line
+                    caption = {
+                        "start": float(item["start_time"]),
+                        "caption": "",
+                        "wordConfidence": []
+                    }
+
+                if not isPunctuation:
+
+                    startTime = float(item["start_time"])
+
+                    # Check to see if there has been a long silence
+                    # between the last recorded word and start a new
+                    # caption if this is the case, ending the last time
+                    # as this one starts.
+
+                    if (len(caption["caption"]) > 0) and ((endTime + maxSilence) < startTime):
+
+                        caption["end"] = startTime
+                        captions.append(caption)
+
+                        caption = {
+                            "start": float(startTime),
+                            "caption": "",
+                            "wordConfidence": []
+                        }
+
+                        wordCount = 0
+
+                    endTime = float(item["end_time"])
+
+                requiresSpace = (not isPunctuation) and (len(caption["caption"]) > 0)
+
+                if requiresSpace:
+                    caption["caption"] += " "
+
+                # Process tweaks
+
+                text = item["alternatives"][0]["content"]
+                confidence = item["alternatives"][0]["confidence"]
+                textLower = text.lower()
+
+                caption["caption"] += text
+
+                # Track raw word confidence
+                if not isPunctuation:
+                    caption["wordConfidence"].append(
+                        {
+                            "w": textLower,
+                            "c": float(confidence)
+                        }
+                    )
+                    # Count words
+                    wordCount += 1
+
+                # If we have reached a good amount of text finalize the caption
+
+                if (wordCount >= maxWords) or (len(caption["caption"]) >= maxLength):
+                    caption["end"] = endTime
+                    captions.append(caption)
+                    wordCount = 0
+                    caption = None
+                    
+
+        # Close the last caption if required
+
+        if caption is not None:
+            caption["end"] = endTime
+            captions.append(caption)
+
+        return captions
+
+    def GetWebCaptions(self, language_code):
+        webcaptions_operator_name = self.WebCaptionsOperatorName(language_code)
+        print(webcaptions_operator_name)
+        
+        webcaptions = []
+
+        response = dataplane.retrieve_asset_metadata(self.asset_id, operator_name=webcaptions_operator_name)
+        print(response)
+        return response["results"]["Results"]
+        
+    def PutWebCaptions(self, webcaptions, language_code=None):
+        
+        webcaptions_operator_name = self.WebCaptionsOperatorName(language_code)
+
+        WebCaptions = {"Results": webcaptions}
+        response = dataplane.store_asset_metadata(asset_id=self.asset_id, operator_name=webcaptions_operator_name, 
+                     workflow_id=self.workflow_id, results=WebCaptions, paginate=False)
+
+        if "Status" not in response:
+            self.operator_object.update_workflow_status("Error")
+            self.operator_object.add_workflow_metadata(WebCaptionsError="Unable to store captions {} {e}".format(webcaptions_operator_name ,e=response))
+            raise MasExecutionError(self.operator_object.return_output_object())
+        else:
+            if response["Status"] == "Success":
+                return self.operator_object.return_output_object()
+            else:
+                self.operator_object.update_workflow_status("Error")
+                self.operator_object.add_workflow_metadata(
+                    WebCaptionsError="Unable to store captions {} {e}".format(webcaptions_operator_name, e=response))
+                raise MasExecutionError(self.operator_object.return_output_object())
+
+        metadata = {
+            "OperatorName": webcaptions_operator_name,
+            "WorkflowId": self.workflow_id,
+            "LanguageCode": language_code
+        }
+
+        return metadata
+    
+    
+    def WebCaptionsToSRT(self, webcaptions):
+        srt = ''
+
+        index = 1
+
+        for caption in webcaptions:
+
+            srt += str(index) + '\n'
+            srt += formatTimeSRT(float(caption["start"])) + ' --> ' + formatTimeSRT(float(caption["end"])) + '\n'
+            srt += caption["caption"] + '\n\n'
+            index += 1
+
+        return srt
+
+    def PutSRT(self, lang, srt):
+        response = dataplane.generate_media_storage_path(self.asset_id, self.workflow_id)
+        
+        bucket = response["S3Bucket"]
+        key = response["S3Key"]+self.CaptionsOperatorName(lang)+".srt"
+        s3_object = s3_resource.Object(bucket, key)
+
+        s3_object.put(Body=srt)
+
+        metadata = {
+            "OperatorName": self.CaptionsOperatorName(lang),
+            "Results": {"S3Bucket": bucket, "S3Key": key},
+            "WorkflowId": self.workflow_id,
+            "LanguageCode": lang
+        }
+
+        return metadata
+
+    def PutVTT(self, lang, vtt):
+        response = dataplane.generate_media_storage_path(self.asset_id, self.workflow_id)
+        
+        bucket = response["S3Bucket"]
+        key = response["S3Key"]+self.CaptionsOperatorName(lang)+".vtt"
+        s3_object = s3_resource.Object(bucket, key)
+
+        s3_object.put(Body=vtt)
+
+        metadata = {
+            "OperatorName": self.CaptionsOperatorName(lang),
+            "Results": {"S3Bucket": bucket, "S3Key": key},
+            "WorkflowId": self.workflow_id,
+            "LanguageCode": lang
+        }
+
+        return metadata
+
+    def WebCaptionsToVTT(self, webcaptions):
+        vtt = 'WEBVTT\n\n'
+
+        for caption in webcaptions:
+
+            vtt += formatTimeVTT(float(caption["start"])) + ' --> ' + formatTimeVTT(float(caption["end"])) + '\n'
+            vtt += caption["caption"] + '\n\n'
+
+        return vtt
+    
+    # Converts a delimited file back to web captions format.
+    # Uses the source web captions to get timestamps and source caption text (saved in sourceCaption field).
+    def DelimitedToWebCaptions(self, sourceWebCaptions, delimitedCaptions, delimiter, maxCaptionLineLength):
+        entries = delimitedCaptions.split(delimiter)
+
+        outputWebCaptions = []
+        for i, c in enumerate(sourceWebCaptions):
+            caption = {}
+            caption["start"] = c["start"]
+            caption["end"] = c["end"]
+            caption["caption"] = entries[i]
+            caption["sourceCaption"] = c["caption"]
+            outputWebCaptions.append(caption)
+
+        return outputWebCaptions
+
+    def PutMediaCollection(self, operator, collection):
+        response = dataplane.store_asset_metadata(self.asset_id, self.operator_object.name, self.workflow_id,
+                                collection)
+
+        if "Status" not in response:
+            self.operator_object.update_workflow_status("Error")
+            self.operator_object.add_workflow_metadata(WebCaptionsError="Unable to store captions collection metadata {e}".format(e=response))
+            raise MasExecutionError(self.operator_object.return_output_object())
+        else:
+            if response["Status"] == "Success":
+                self.operator_object.update_workflow_status("Complete")
+                return self.operator_object.return_output_object()
+            else:
+                self.operator_object.update_workflow_status("Error")
+                self.operator_object.add_workflow_metadata(
+                    WebCaptionsError="Unable to store srt captions file {e}".format(e=response))
+                raise MasExecutionError(self.operator_object.return_output_object())
+
+    def TranslateWebCaptions(self, inputCaptions, sourceLanguageCode, targetLanguageCodes, terminology_names=[]):
+
+        marker = self.marker
+
+        try:
+
+            translate_role = os.environ['translateRole']
+            asset_id = self.operator_object.asset_id
+            workflow_id = self.operator_object.workflow_execution_id
+            translate_job_name = "MIE_"+asset_id+"_"+workflow_id
+
+            # Convert WebCaptions to text with marker between caption lines
+            inputEntries = map(lambda c: c["caption"], inputCaptions)
+            inputDelimited = marker.join(inputEntries)
+
+            transcript_storage_path = dataplane.generate_media_storage_path(asset_id, workflow_id)
+            bucket = transcript_storage_path['S3Bucket']
+            translation_input_path = transcript_storage_path['S3Key']+"webcaptions_translate_input/"
+            translation_input_uri = 's3://'+bucket+"/"+translation_input_path
+            translation_output_path = transcript_storage_path['S3Key']+"webcaptions_translate_output/"
+            translation_output_uri = 's3://'+bucket+"/"+translation_output_path
+            key = translation_input_path+"transcript_with_caption_markers.txt"
+
+
+            print("put object {} {}".format(bucket, key))
+            s3.put_object(Bucket=bucket, Key=key, Body=inputDelimited)
+
+            print("create translate output folder if it doesn't exist")
+            dummy_key = translation_output_path+"/"+"foo"
+            s3.put_object(Bucket=bucket, Key=dummy_key, Body="foo")
+
+            print("Translate inputs")
+            print("translation_input_uri {}".format(translation_input_uri))
+            print("translation_output_uri {}".format(translation_output_uri))
+            print("translate_role {}".format(translate_role))
+
+            # Kick off a job for each input language
+            translate_jobs = []
+            for targetLanguageCode in targetLanguageCodes:
+                print("Starting translation to {}".format(targetLanguageCode))
+                # Even though the API takes a list of targets, Translate only supports
+                # a list of 1 or less
+
+                # Set the job name to avoid creating the same job multiple time if
+                # we retry due to an error.
+                singletonTargetList = []
+                singletonTargetList.append(targetLanguageCode)
+                job_name = "MIE_"+asset_id+"_"+workflow_id+"_"+targetLanguageCode
+                print("JobName: {}".format(job_name))
+
+                # Save the delimited transcript text to S3
+                response = translate_client.start_text_translation_job(
+                    JobName=job_name,
+                    InputDataConfig={
+                        'S3Uri': translation_input_uri,
+                        'ContentType': 'text/plain'
+                    },
+                    OutputDataConfig={
+                        'S3Uri': translation_output_uri
+                    },
+                    DataAccessRoleArn=translate_role,
+                    SourceLanguageCode=sourceLanguageCode,
+                    TargetLanguageCodes=singletonTargetList,
+                    TerminologyNames=terminology_names
+                )
+                jobinfo = {
+                    "JobId": response["JobId"],
+                    "TargetLanguageCode": targetLanguageCode
+                }
+                translate_jobs.append(jobinfo)
+
+                self.operator_object.add_workflow_metadata(TextTranslateJobPropertiesList=translate_jobs)
+        except Exception as e:
+            self.operator_object.update_workflow_status("Error")
+            self.operator_object.add_workflow_metadata(TranslateError="Unable to start translation WebCaptions job: {e}".format(e=str(e)))
+            raise MasExecutionError(self.operator_object.return_output_object())
+
+
+# Create web captions with line by line captions from the transcribe output
+def web_captions(event, context):
+
+    print("We got the following event:\n", event)
+    operator_object = MediaInsightsOperationHelper(event)
+    
+    webcaptions_object = WebCaptions(operator_object)
+
+    transcript = webcaptions_object.GetTranscript()
+    webcaptions = webcaptions_object.TranscribeToWebCaptions(transcript)
+    webcaptions_object.PutWebCaptions(webcaptions)
+
+    operator_object.update_workflow_status("Complete")
+    return operator_object.return_output_object()
+    
+
+# Create a SRT captions file from the web captions
+def create_srt(event, context):
+    print("We got the following event:\n", event)
+
+    operator_object = MediaInsightsOperationHelper(event)
+    webcaptions_object = WebCaptions(operator_object)
+
+    try:
+        targetLanguageCodes = webcaptions_object.operator_object.configuration["TargetLanguageCodes"]
+    except KeyError as e:
+        webcaptions_object.operator_object.update_workflow_status("Error")
+        operator_object.add_workflow_metadata(WebCaptionsError="Missing a required metadata key {e}".format(e=e))
+        raise MasExecutionError(operator_object.return_output_object())
+
+    captions_collection = []
+    for lang in targetLanguageCodes:
+        webcaptions = []
+        captions_operator_name = webcaptions_object.WebCaptionsOperatorName(lang)
+
+        webcaptions = webcaptions_object.GetWebCaptions(lang)
+
+        #captions = get_webcaptions_json(self.operator_object, lang)
+        
+        srt = webcaptions_object.WebCaptionsToSRT(webcaptions)
+        metadata = webcaptions_object.PutSRT(lang, srt)
+        
+        captions_collection.append(metadata)
+
+    data = {}
+    data["CaptionsCollection"] = captions_collection
+
+    webcaptions_object.PutMediaCollection(operator_object.name, data)
+
+    operator_object.update_workflow_status("Complete")
+    return operator_object.return_output_object()
+    
+
+# Create a VTT captions file from the web captions
+def create_vtt(event, context):
+    print("We got the following event:\n", event)
+
+    operator_object = MediaInsightsOperationHelper(event)
+    webcaptions_object = WebCaptions(operator_object)
+
+    try:
+        targetLanguageCodes = webcaptions_object.operator_object.configuration["TargetLanguageCodes"]
+    except KeyError as e:
+        webcaptions_object.operator_object.update_workflow_status("Error")
+        operator_object.add_workflow_metadata(WebCaptionsError="Missing a required metadata key {e}".format(e=e))
+        raise MasExecutionError(operator_object.return_output_object())
+
+    captions_collection = []
+    for lang in targetLanguageCodes:
+        webcaptions = []
+
+        webcaptions = webcaptions_object.GetWebCaptions(lang)
+
+        #captions = get_webcaptions_json(self.operator_object, lang)
+        
+        vtt = webcaptions_object.WebCaptionsToVTT(webcaptions)
+        metadata = webcaptions_object.PutVTT(lang, vtt)
+        
+        captions_collection.append(metadata)
+
+    data = {}
+    data["CaptionsCollection"] = captions_collection
+
+    webcaptions_object.PutMediaCollection(operator_object.name, data)
+
+    operator_object.update_workflow_status("Complete")
+    return operator_object.return_output_object()
+
+def start_translate_webcaptions(event, context):
+    print("We got the following event:\n", event)
+
+    operator_object = MediaInsightsOperationHelper(event)
+    webcaptions_object = WebCaptions(operator_object)
+
+    try:
+        source_lang = operator_object.configuration["SourceLanguageCode"]
+        target_langs = operator_object.configuration["TargetLanguageCodes"]
+    except KeyError:
+        operator_object.update_workflow_status("Error")
+        operator_object.add_workflow_metadata(TranslateError="Language codes are not defined")
+        raise MasExecutionError(operator_object.return_output_object())
+    try:
+        terminology_names = operator_object.configuration["TerminologyNames"]
+    except KeyError:
+        terminology_names =[]
+
+    #webcaptions = get_webcaptions(operator_object, source_lang)
+    webcaptions = webcaptions_object.GetWebCaptions(source_lang)
+
+    # Translate takes a list of target languages, but it only allow on item in the list.  Too bad
+    # life would be so much easier if it truely allowed many targets.
+    webcaptions_object.TranslateWebCaptions(webcaptions, source_lang, target_langs, terminology_names)
+
+    return operator_object.return_output_object()
+
+
+def check_translate_webcaptions(event, context):
+
+    print("We got this event:\n", event)
+    operator_object = MediaInsightsOperationHelper(event)
+    webcaptions_object = WebCaptions(operator_object)
+
+    try:
+        translate_jobs = operator_object.metadata["TextTranslateJobPropertiesList"]
+        workflow_id = operator_object.workflow_execution_id
+        asset_id = operator_object.asset_id
+        transcript_storage_path = dataplane.generate_media_storage_path(asset_id, workflow_id)
+        bucket = transcript_storage_path['S3Bucket']
+        translation_output_path = transcript_storage_path['S3Key']+"webcaptions_translate_output/"
+
+    except KeyError as e:
+        operator_object.update_workflow_status("Error")
+        operator_object.add_workflow_metadata(TranslateError="Missing a required metadata key {e}".format(e=e))
+        raise MasExecutionError(operator_object.return_output_object())
+
+    # Check the status of each job
+    # - IF ANY job has an error, we fail the workflow and return from the loop
+    # - IF ANY job is still running, the workflow is still Executing
+    # - If ALL jobs are complete, we reach the end of the loop and the workflow is complete
+    for job in translate_jobs:
+
+        try:
+            job_id = job["JobId"]
+            job_status_list = []
+
+        except KeyError as e:
+            operator_object.update_workflow_status("Error")
+            operator_object.add_workflow_metadata(TranslateError="Missing a required metadata key {e}".format(e=e))
+            raise MasExecutionError(operator_object.return_output_object())
+        try:
+            response = translate_client.describe_text_translation_job(
+            JobId=job_id
+            )
+            print(response)
+            job_status = {
+                "JobId": job_id,
+                "Status": response["TextTranslationJobProperties"]["JobStatus"]
+            }
+
+        except Exception as e:
+            operator_object.update_workflow_status("Error")
+            operator_object.add_workflow_metadata(TranslateError=str(e), TranslateJobId=job_id)
+            raise MasExecutionError(operator_object.return_output_object())
+        else:
+            if response["TextTranslationJobProperties"]["JobStatus"] in ["IN_PROGRESS", "SUBMITTED"]:
+                operator_object.update_workflow_status("Executing")
+                operator_object.add_workflow_metadata(TextTranslateJobStatusList=job_status_list, AssetId=asset_id, WorkflowExecutionId=workflow_id)
+                return operator_object.return_output_object()
+            elif response["TextTranslationJobProperties"]["JobStatus"] in ["FAILED", "COMPLETED_WITH_ERROR", "STOP_REQUESTED", "STOPPED"]:
+                operator_object.update_workflow_status("Error")
+                operator_object.add_workflow_metadata(TextTranslateJobStatusList=job_status_list, AssetId=asset_id, WorkflowExecutionId=workflow_id)
+                raise MasExecutionError(operator_object.return_output_object())
+            elif response["TextTranslationJobProperties"]["JobStatus"] == "COMPLETED":
+                print("{} is complete".format(job_id))
+                operator_object.add_workflow_metadata(TextTranslateJobStatusList=job_status_list, AssetId=asset_id, WorkflowExecutionId=workflow_id)
+
+
+    # If we made it here, then all the translate jobs are complete.
+    # Convert the translations back to WebCaptions and write them out
+    # to the dataplane
+    translation_storage_path = dataplane.generate_media_storage_path(asset_id, workflow_id)
+    bucket = translation_storage_path['S3Bucket']
+    translation_path = translation_storage_path['S3Key']
+
+    webcaptions_collection = []
+    for job in translate_jobs:
+        try:
+            print("Save translation for job {}".format(job["JobId"]))
+
+            translateJobDescription = translate_client.describe_text_translation_job(JobId = job["JobId"])
+            translateJobS3Uri = translateJobDescription["TextTranslationJobProperties"]["OutputDataConfig"]["S3Uri"]
+            translateJobUrl = urlparse(translateJobS3Uri, allow_fragments = False)
+            translateJobLanguageCode = translateJobDescription["TextTranslationJobProperties"]["TargetLanguageCodes"][0]
+
+            translateJobS3Location = {
+                "Uri": translateJobS3Uri,
+                "Bucket": translateJobUrl.netloc,
+                "Key": translateJobUrl.path.strip("/")
+            }
+
+            # use input web captions to convert translation output to web captions format
+            for outputS3ObjectKey in map(lambda s: s.key, s3_resource.Bucket(translateJobS3Location["Bucket"]).objects.filter(Prefix=translateJobS3Location["Key"] + "/", Delimiter="/")):
+                print("Save translation for each output of job {} output {}".format(job["JobId"], outputS3ObjectKey))
+
+                outputFilename = ntpath.basename(outputS3ObjectKey)
+
+                translateOutput = s3_resource.Object(translateJobS3Location["Bucket"], outputS3ObjectKey).get()["Body"].read().decode("utf-8")
+                #inputWebCaptions = get_webcaptions(operator_object, translateJobDescription["TextTranslationJobProperties"]["SourceLanguageCode"])
+                inputWebCaptions = webcaptions_object.GetWebCaptions(translateJobDescription["TextTranslationJobProperties"]["SourceLanguageCode"])
+                outputWebCaptions = webcaptions_object.DelimitedToWebCaptions(inputWebCaptions, translateOutput, "<123>", 15)
+                print(outputS3ObjectKey)
+                (targetLanguageCode, basename, ext) = outputFilename.split(".")
+                #put_webcaptions(operator_object, outputWebCaptions, targetLanguageCode)
+                operator_metadata = webcaptions_object.PutWebCaptions(outputWebCaptions, targetLanguageCode)
+
+                # Save a copy of the translation text without delimiters
+                translation_text = translateOutput.replace("<123>", "")
+                translation_text_key = translation_path+"translation"+"_"+targetLanguageCode+".txt"
+                s3_object = s3_resource.Object(bucket, translation_text_key)
+                s3_object.put(Body=translation_text)
+
+            metadata = {
+                "OperatorName": "TranslateWebCaptions_"+translateJobLanguageCode,
+                "TranslationText": {"S3Bucket": bucket, "S3Key": translation_text_key},
+                "WebCaptions": operator_metadata,
+                "WorkflowId": workflow_id,
+                "TargetLanguageCode": translateJobLanguageCode
+            }
+            print(json.dumps(metadata))
+
+            webcaptions_collection.append(metadata)
+
+        except Exception as e:
+            operator_object.update_workflow_status("Error")
+            operator_object.add_workflow_metadata(CaptionsError="Unable to construct path to translate output in S3: {e}".format(e=str(e)))
+            raise MasExecutionError(operator_object.return_output_object())
+
+
+    data = {}
+    data["CaptionsCollection"] = webcaptions_collection
+    webcaptions_object.PutMediaCollection(operator_object.name, data)
+
+    return operator_object.return_output_object()
+
+# Format an SRT timestamp in HH:MM:SS,mmm
+def formatTimeSRT(timeSeconds):
+
+    ONE_HOUR = 60 * 60
+    ONE_MINUTE = 60
+    hours = math.floor(timeSeconds / ONE_HOUR)
+    remainder = timeSeconds - (hours * ONE_HOUR)
+    minutes = math.floor(remainder / 60)
+    remainder = remainder - (minutes * ONE_MINUTE)
+    seconds = math.floor(remainder)
+    remainder = remainder - seconds
+    millis = remainder
+
+    return str(hours).zfill(2) + ':' + str(minutes).zfill(2) + ':' + str(seconds).zfill(2) + ',' + str(math.floor(millis * 1000)).zfill(3)
+
+# Format a VTT timestamp in HH:MM:SS.mmm
+def formatTimeVTT(timeSeconds):
+
+    ONE_HOUR = 60 * 60
+    ONE_MINUTE = 60
+    hours = math.floor(timeSeconds / ONE_HOUR)
+    remainder = timeSeconds - (hours * ONE_HOUR)
+    minutes = math.floor(remainder / 60)
+    remainder = remainder - (minutes * ONE_MINUTE)
+    seconds = math.floor(remainder)
+    remainder = remainder - seconds
+    millis = remainder
+
+    return str(hours).zfill(2) + ':' + str(minutes).zfill(2) + ':' + str(seconds).zfill(2) + '.' + str(math.floor(millis * 1000)).zfill(3)
+
+

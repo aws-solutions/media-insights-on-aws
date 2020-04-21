@@ -13,48 +13,48 @@ Parameters:
 Resources:
   # Stages
 
-  MediaconvertStage:
+  MediaconvertStageT:
     Type: Custom::CustomResource
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Stage"
-      Name: "MediaconvertStage"
+      Name: "MediaconvertStageT"
       Operations:
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:Mediaconvert"
-  TranscribeStage:
+  TranscribeStageT:
     Type: Custom::CustomResource
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Stage"
-      Name: "TranscribeStage"
+      Name: "TranscribeStageTT"
       Operations:
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:Transcribe"
-  WebCaptionsStage:
+  WebCaptionsStageT:
     Type: Custom::CustomResource
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Stage"
-      Name: "WebCaptionsStage"
+      Name: "WebCaptionsStageT"
       Operations:
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:WebCaptions"
-  CaptionEditingWaitStage:
+  CaptionEditingWaitStageT:
     Type: Custom::CustomResource
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Stage"
-      Name: "CaptionEditingWaitStage"
+      Name: "CaptionEditingWaitStageT"
       Operations:
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:Wait"
-  TranslateStage:
+  TranslateStageT:
     Type: Custom::CustomResource
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Stage"
-      Name: "TranslateStage"
+      Name: "TranslateStageT"
       Operations:
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:Translate"
@@ -71,12 +71,12 @@ Resources:
   #       - Fn::ImportValue:
   #           Fn::Sub: "${OperatorLibraryStack}:TranslateWebCaptions"
 
-  CaptionFileStage:
+  CaptionFileStageT:
     Type: Custom::CustomResource
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Stage"
-      Name: "CaptionFileStage"
+      Name: "CaptionFileStageT"
       Operations:
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:WebToSRTCaptions"
@@ -88,46 +88,46 @@ Resources:
 
   TranslatorWorkflow:
     DependsOn:
-      - MediaconvertStage
-      - TranscribeStage
-      - WebCaptionsStage
+      - MediaconvertStageT
+      - TranscribeStageT
+      - WebCaptionsStageT
       # - TranslateBatchStage
-      - CaptionEditingWaitStage
-      - TranslateStage
-      - CaptionFileStage
+      - CaptionEditingWaitStageT
+      - TranslateStageT
+      - CaptionFileStageT
     Type: Custom::CustomResource
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Workflow"
       Name: "TranslatorWorkflow"
-      StartAt: !GetAtt MediaconvertStage.Name
+      StartAt: !GetAtt MediaconvertStageT.Name
       Stages: !Sub
         - |-
           {
-            "${MediaconvertStage}":{
-              "Next": "${TranscribeStage}"
+            "${MediaconvertStageT}":{
+              "Next": "${TranscribeStageT}"
               },
-            "${TranscribeStage}":{
-              "Next": "${WebCaptionsStage}"
+            "${TranscribeStageT}":{
+              "Next": "${WebCaptionsStageT}"
               },
-            "${WebCaptionsStage}":{
-              "Next": "${CaptionEditingWaitStage}"
+            "${WebCaptionsStageT}":{
+              "Next": "${CaptionEditingWaitStageT}"
               },
-            "${CaptionEditingWaitStage}":{
-              "Next": "${TranslateStage}"
+            "${CaptionEditingWaitStageT}":{
+              "Next": "${TranslateStageT}"
               },
-            "${TranslateStage}":{
-              "Next": "${CaptionFileStage}"
+            "${TranslateStageT}":{
+              "Next": "${CaptionFileStageT}"
               },
-            "${CaptionFileStage}":{
+            "${CaptionFileStageT}":{
               "End": true
               }
           }
         - {
-          MediaconvertStage: !GetAtt MediaconvertStage.Name,
-          TranscribeStage: !GetAtt TranscribeStage.Name,
-          WebCaptionsStage: !GetAtt WebCaptionsStage.Name,
-          CaptionEditingWaitStage: !GetAtt CaptionEditingWaitStage.Name,
-          TranslateStage: !GetAtt TranslateStage.Name,
-          CaptionFileStage: !GetAtt CaptionFileStage.Name
+          MediaconvertStageT: !GetAtt MediaconvertStageT.Name,
+          TranscribeStageT: !GetAtt TranscribeStageT.Name,
+          WebCaptionsStageT: !GetAtt WebCaptionsStageTT.Name,
+          CaptionEditingWaitStageT: !GetAtt CaptionEditingWaitStageT.Name,
+          TranslateStageT: !GetAtt TranslateStageT.Name,
+          CaptionFileStageT: !GetAtt CaptionFileStageT.Name
         }

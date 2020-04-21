@@ -5,7 +5,8 @@ Parameters:
   AdminEmail:
     Description: Email address for the MIE Administrator
     Type: String
-
+    AllowedPattern: "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
+  
   DevGroupName:
     Type: String
     Description: Name of the developer group

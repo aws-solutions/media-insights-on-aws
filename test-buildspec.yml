@@ -28,7 +28,7 @@ phases:
       - echo Entered the build phase...
       - echo Build started on `date`
       - cd deployment
-      - ./build-s3-dist.sh $build_bucket-us-west-2 '$commit_id' us-west-2
+      - ./build-s3-dist.sh $build_bucket-us-west-2 $commit_id us-west-2
     finally:
       - cd ..
       - rm awscliv2.zip

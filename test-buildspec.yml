@@ -1,0 +1,39 @@
+version: 0.2
+
+env:
+  parameter-store:
+    access_key: /CodeBuild/mie/build_access_key
+    secret_access_key: /CodeBuild/mie/build_secret_access_key
+
+phases:
+  install:
+    commands:
+      - echo Entered the install phase...
+      - export LC_ALL=en_US.utf-8
+      - export LANG=en_US.utf-8
+      - export AWS_ACCESS_KEY_ID=$access_key
+      - export AWS_SECRET_ACCESS_KEY=$secret_access_key
+      - export AWS_DEFAULT_REGION=us-west-2
+      - yum install -y findutils
+      - yum install -y wget
+      - yum install -y unzip
+      - yum install -y zip
+      - yum install -y python36 python36-virtualenv python36-pip
+      - python3.6 -m pip install chalice
+      - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+      - unzip awscliv2.zip
+      - ./aws/install
+  build:
+    commands:
+      - echo Entered the build phase...
+      - echo Build started on `date`
+      - cd deployment
+      - ./build-s3-dist.sh $build_bucket-us-west-2 '$commit_id' us-west-2
+    finally:
+      - cd ..
+      - rm awscliv2.zip
+      - rm -rf ./aws
+  post_build:
+    commands:
+      - echo Entered the post_build phase...
+      - echo Build completed on `date`

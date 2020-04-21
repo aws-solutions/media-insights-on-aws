@@ -1870,6 +1870,13 @@ def create_workflow_execution(trigger, workflow_execution):
                 raise ChaliceViewError("Exception '%s'" % e)
             else:
                 asset_id = input
+
+                workflow_execution_list = list_workflow_executions_by_assetid(asset_id)
+                for workflow_execution in workflow_execution_list:
+                    if workflow_execution["Status"] not in [awsmie.WORKFLOW_STATUS_COMPLETE, awsmie.WORKFLOW_STATUS_ERROR]:
+                        raise ConflictError("There is currently another workflow execution(Id = {}) active on AssetId {}.".format(
+                            workflow_execution["Id"], asset_id))
+
                 retrieve_asset = dataplane.retrieve_asset_metadata(asset_id)
                 if "results" in retrieve_asset:
                     s3key = retrieve_asset["results"]["S3Key"]

@@ -1279,7 +1279,7 @@ Resources:
   WebCaptionsFunction:
     Type: "AWS::Lambda::Function"
     Properties:
-      Handler: "get_captions.web_captions"
+      Handler: "webcaptions.web_captions"
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "captionsRole.Arn"
@@ -1290,22 +1290,24 @@ Resources:
             "/",
             [
             !FindInMap ["SourceCode", "General", "KeyPrefix"],
-            "get_captions.zip",
+            "webcaptions.zip",
             ],
           ]
       Runtime: "python3.7"
       Timeout: 300
+      MemorySize: 256
       Environment:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
 
   # Create Time Series Lambda
 
   CreateSRTCaptionsFunction:
     Type: "AWS::Lambda::Function"
     Properties:
-      Handler: "get_captions.create_srt"
+      Handler: "webcaptions.create_srt"
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "captionsRole.Arn"
@@ -1316,7 +1318,7 @@ Resources:
             "/",
             [
             !FindInMap ["SourceCode", "General", "KeyPrefix"],
-            "get_captions.zip",
+            "webcaptions.zip",
             ],
           ]
       Runtime: "python3.7"
@@ -1325,11 +1327,12 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
 
   CreateVTTCaptionsFunction:
     Type: "AWS::Lambda::Function"
     Properties:
-      Handler: "get_captions.create_vtt"
+      Handler: "webcaptions.create_vtt"
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "captionsRole.Arn"
@@ -1340,7 +1343,7 @@ Resources:
             "/",
             [
             !FindInMap ["SourceCode", "General", "KeyPrefix"],
-            "get_captions.zip",
+            "webcaptions.zip",
             ],
           ]
       Runtime: "python3.7"
@@ -1349,11 +1352,12 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
 
   WebToSRTCaptionsFunction:
     Type: "AWS::Lambda::Function"
     Properties:
-      Handler: "get_captions.web_to_srt"
+      Handler: "webcaptions.create_srt"
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "captionsRole.Arn"
@@ -1364,7 +1368,7 @@ Resources:
             "/",
             [
             !FindInMap ["SourceCode", "General", "KeyPrefix"],
-            "get_captions.zip",
+            "webcaptions.zip",
             ],
           ]
       Runtime: "python3.7"
@@ -1373,11 +1377,12 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
 
   WebToVTTCaptionsFunction:
     Type: "AWS::Lambda::Function"
     Properties:
-      Handler: "get_captions.web_to_vtt"
+      Handler: "webcaptions.create_vtt"
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "captionsRole.Arn"
@@ -1388,7 +1393,7 @@ Resources:
             "/",
             [
             !FindInMap ["SourceCode", "General", "KeyPrefix"],
-            "get_captions.zip",
+            "webcaptions.zip",
             ],
           ]
       Runtime: "python3.7"
@@ -1397,6 +1402,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
 
   # Translate Lambdas
 
@@ -1429,7 +1435,7 @@ Resources:
   StartTranslateWebcaptionsFunction:
     Type: "AWS::Lambda::Function"
     Properties:
-      Handler: "translate_webcaptions.start_translate_webcaptions"
+      Handler: "webcaptions.start_translate_webcaptions"
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "translateRole.Arn"
@@ -1440,7 +1446,7 @@ Resources:
             "/",
             [
             !FindInMap ["SourceCode", "General", "KeyPrefix"],
-            "translate_webcaptions.zip",
+            "webcaptions.zip",
             ],
           ]
       Runtime: "python3.7"
@@ -1455,7 +1461,7 @@ Resources:
   CheckTranslateWebcaptionsFunction:
     Type: "AWS::Lambda::Function"
     Properties:
-      Handler: "translate_webcaptions.check_translate_webcaptions"
+      Handler: "webcaptions.check_translate_webcaptions"
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "translateRole.Arn"
@@ -1466,7 +1472,7 @@ Resources:
             "/",
             [
             !FindInMap ["SourceCode", "General", "KeyPrefix"],
-            "translate_webcaptions.zip",
+            "webcaptions.zip",
             ],
           ]
       Runtime: "python3.7"

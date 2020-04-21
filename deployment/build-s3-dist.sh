@@ -309,8 +309,8 @@ echo "Building Stage completion function"
 cd "$source_dir/operators/captions" || exit
 [ -e dist ] && rm -r dist
 mkdir -p dist
-zip -g ./dist/get_captions.zip ./get_captions.py
-cp "./dist/get_captions.zip" "$dist_dir/get_captions.zip"
+zip -g ./dist/webcaptions.zip ./webcaptions.py
+cp "./dist/webcaptions.zip" "$dist_dir/webcaptions.zip"
 
 # ------------------------------------------------------------------------------"
 # Translate Operations
@@ -379,14 +379,14 @@ elif ! [ -x "$(command -v pip)" ] && ! [ -x "$(command -v pip3)" ]; then
  exit 1
 fi
 if ! [ -d ../dist/start_translate.zip ]; then
-  zip -q -r9 ../dist/translate_webcaptions.zip .
+  zip -q -r9 ../dist/webcaptions.zip .
 
-elif [ -d ../dist/translate_webcaptions.zip ]; then
+elif [ -d ../dist/webcaptions.zip ]; then
   echo "Package already present"
 fi
 popd || exit 1
-zip -q -g ./dist/translate_webcaptions.zip ./translate_webcaptions.py
-cp "./dist/translate_webcaptions.zip" "$dist_dir/translate_webcaptions.zip"
+zip -q -g ./dist/webcaptions.zip ./webcaptions.py
+cp "./dist/webcaptions.zip" "$dist_dir/webcaptions.zip"
 
 
 

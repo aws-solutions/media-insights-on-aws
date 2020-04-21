@@ -51,7 +51,7 @@
           <b-container class="p-0">
             <b-row no-gutters>
               <b-col cols="10">
-          <b-form-textarea :ref="'caption' + data.index" class="custom-text-field .form-control-sm" max-rows="8" v-model="data.item.caption" placeholder="Type subtitle here"/>
+          <b-form-textarea :ref="'caption' + data.index" class="custom-text-field .form-control-sm" max-rows="8" v-model="data.item.caption" placeholder="Type subtitle here" @click='captionClickHandler(data.index)'/>
               </b-col>
               <b-col>
                 <span style="position:absolute; top: 0px">
@@ -72,22 +72,23 @@
       </div>
     </div>
     <div><br>
-      <b-button id="showModal" size="sm" class="mb-2" @click="showModal()">
-        <b-icon icon="upload" color="white"></b-icon> Upload
-      </b-button> &nbsp;
-      <b-button id="downloadCaptions" size="sm" class="mb-2" @click="downloadCaptions()">
-        <b-icon icon="download" color="white"></b-icon> Download
+<!-- Uncomment to enable Upload button -->
+<!--      <b-button id="showModal" size="sm" class="mb-2" @click="showModal()">-->
+<!--        <b-icon icon="upload" color="white"></b-icon> Upload JSON-->
+<!--      </b-button> &nbsp;-->
+      <b-button id="downloadCaptionsVTT" size="sm" class="mb-2" @click="downloadCaptionsVTT()">
+        <b-icon icon="download" color="white"></b-icon> Download VTT
       </b-button> &nbsp;
       <b-button id="saveCaptions" size="sm" class="mb-2" @click="saveCaptions()">
         <b-icon icon="play" color="white"></b-icon> Save changes
       </b-button>
-
-      <b-modal ref="my-modal" hide-footer title="Upload a file">
-        <p>Upload a timed subtitles file in the Webcaptions JSON format.</p>
-        <div>
-          <input type="file" @change="uploadCaptionsFile">
-        </div>
-      </b-modal>
+<!-- Uncomment to enable Upload button -->
+<!--      <b-modal ref="my-modal" hide-footer title="Upload a file">-->
+<!--        <p>Upload a timed subtitles file in the Webcaptions JSON format.</p>-->
+<!--        <div>-->
+<!--          <input type="file" @change="uploadCaptionsFile">-->
+<!--        </div>-->
+<!--      </b-modal>-->
     </div>
   </div>
 </template>
@@ -107,6 +108,7 @@ export default {
       saveNotificationMessage: "Captions saved",
       results: [],
       webCaptions: [],
+      webCaptions_vtt: '',
       webCaptions_fields: [
         {key: 'timeslot', label: 'timeslot', tdClass: this.tdClassFunc},
         {key: 'caption', label: 'caption'}
@@ -120,6 +122,22 @@ export default {
     }
   },
   computed: {
+    inputListeners: function () {
+      var vm = this
+      // `Object.assign` merges objects together to form a new object
+      return Object.assign({},
+        // We add all the listeners from the parent
+        this.$listeners,
+        // Then we can add custom listeners or override the
+        // behavior of some listeners.
+        {
+          // This ensures that the component works with v-model
+          input: function (event) {
+            vm.$emit('input', event.target.value)
+          }
+        }
+      )
+    },
     ...mapState(['player']),
     isProfane() {
       const Filter = require('bad-words');
@@ -141,6 +159,35 @@ export default {
       this.transcript = ''
   },
   methods: {
+    captionClickHandler(index) {
+      // pause video player and jump to the time for the selected caption
+      this.player.currentTime(this.webCaptions[index].start)
+      this.player.pause()
+    },
+    // Format a VTT timestamp in HH:MM:SS.mmm
+    formatTimeVTT(timeSeconds) {
+      const ONE_HOUR = 60 * 60
+      const ONE_MINUTE = 60
+      const hours = Math.floor(timeSeconds / ONE_HOUR)
+      let remainder = timeSeconds - (hours * ONE_HOUR)
+      const minutes = Math.floor(remainder / 60)
+      remainder = remainder - (minutes * ONE_MINUTE)
+      const seconds = Math.floor(remainder)
+      remainder = remainder - seconds
+      const millis = remainder
+
+      return hours.toString().padStart(2, '0') + ':' + minutes.toString().padStart(2, '0') + ':' + seconds.toString().padStart(2, '0') + '.' + Math.floor(millis * 1000).toString().padStart(3, '0')
+    },
+    webToVtt()
+    {
+      let vtt = 'WEBVTT\n\n'
+      for (let i = 0; i < this.webCaptions.length; i++) {
+        const caption = this.webCaptions[i]
+        vtt += this.formatTimeVTT(caption["start"]) + ' --> ' + this.formatTimeVTT(caption["end"]) + '\n';
+        vtt += caption["caption"] + '\n\n';
+      }
+      this.webCaptions_vtt = vtt;
+    },
     getTimeUpdate() {
       // Send current time position for the video player to verticalLineCanvas
       var last_position = 0;
@@ -259,22 +306,25 @@ export default {
         })
       )
     },
-    downloadCaptions() {
-      const data = JSON.stringify(this.webCaptions);
+    downloadCaptionsVTT() {
+      this.webToVtt()
+      const data = JSON.stringify(this.webCaptions_vtt);
       const blob = new Blob([data], {type: 'text/plain'});
       const e = document.createEvent('MouseEvents'),
         a = document.createElement('a');
-      a.download = "WebCaptions.json";
+      a.download = "WebCaptions.vtt";
       a.href = window.URL.createObjectURL(blob);
       a.dataset.downloadurl = ['text/json', a.download, a.href].join(':');
       e.initEvent('click', true, false, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
       a.dispatchEvent(e);
     },
-    showModal() {
-      this.$refs['my-modal'].show()
-    },
+    // Uncomment to enable Upload button
+    // showModal() {
+    //   this.$refs['my-modal'].show()
+    // },
     uploadCaptionsFile(event) {
-      this.$refs['my-modal'].hide()
+      // Uncomment to enable Upload button
+      // this.$refs['my-modal'].hide()
       const file = event.target.files[0];
       const reader = new FileReader();
       reader.onload = e => this.webCaptions = JSON.parse(e.target.result);

@@ -66,6 +66,25 @@ class WebCaptions:
         print("WebCaptionsOperatorName() Name {}".format(name))
         return name
 
+    def CaptionsOperatorName(self, language_code=None):
+        
+        # Shouldn't assume WebCaptions operator is WebCaptions, maybe pass it in the configuration?
+        operator_name = "Captions"
+
+        if language_code != None:
+            return operator_name+"_"+language_code 
+
+        try:
+            name = operator_name+"_"+self.source_language_code 
+        except KeyError:
+            self.operator_object.update_workflow_status("Error")
+            self.operator_object.add_workflow_metadata(WebCaptionsError="Missing language code for WebCaptions {e}".format(e=e))
+            raise MasExecutionError(self.operator_object.return_output_object())
+        
+        print("WebCaptionsOperatorName() Name {}".format(name))
+        return name
+
+
 
     def GetTranscript(self):
     
@@ -178,18 +197,16 @@ class WebCaptions:
     def GetWebCaptions(self, language_code):
         webcaptions_operator_name = self.WebCaptionsOperatorName(language_code)
         print(webcaptions_operator_name)
-        
-        webcaptions = []
 
         response = dataplane.retrieve_asset_metadata(self.asset_id, operator_name=webcaptions_operator_name)
         print(response)
-        return response["results"]["Results"]
+        return response["results"]["WebCaptions"]
         
     def PutWebCaptions(self, webcaptions, language_code=None):
         
         webcaptions_operator_name = self.WebCaptionsOperatorName(language_code)
 
-        WebCaptions = {"Results": webcaptions}
+        WebCaptions = {"WebCaptions": webcaptions}
         response = dataplane.store_asset_metadata(asset_id=self.asset_id, operator_name=webcaptions_operator_name, 
                      workflow_id=self.workflow_id, results=WebCaptions, paginate=False)
 
@@ -233,13 +250,31 @@ class WebCaptions:
         response = dataplane.generate_media_storage_path(self.asset_id, self.workflow_id)
         
         bucket = response["S3Bucket"]
-        key = response["S3Key"]+self.WebCaptionsOperatorName(lang)+".srt"
+        key = response["S3Key"]+self.CaptionsOperatorName(lang)+".srt"
         s3_object = s3_resource.Object(bucket, key)
 
         s3_object.put(Body=srt)
 
         metadata = {
-            "OperatorName": self.WebCaptionsOperatorName(lang),
+            "OperatorName": self.CaptionsOperatorName(lang),
+            "Results": {"S3Bucket": bucket, "S3Key": key},
+            "WorkflowId": self.workflow_id,
+            "LanguageCode": lang
+        }
+
+        return metadata
+
+    def PutVTT(self, lang, vtt):
+        response = dataplane.generate_media_storage_path(self.asset_id, self.workflow_id)
+        
+        bucket = response["S3Bucket"]
+        key = response["S3Key"]+self.CaptionsOperatorName(lang)+".vtt"
+        s3_object = s3_resource.Object(bucket, key)
+
+        s3_object.put(Body=vtt)
+
+        metadata = {
+            "OperatorName": self.CaptionsOperatorName(lang),
             "Results": {"S3Bucket": bucket, "S3Key": key},
             "WorkflowId": self.workflow_id,
             "LanguageCode": lang
@@ -250,12 +285,12 @@ class WebCaptions:
     def WebCaptionsToVTT(self, webcaptions):
         vtt = 'WEBVTT\n\n'
 
-        for i in range(len(captions)):
-
-            caption = captions[i]
+        for caption in webcaptions:
 
             vtt += formatTimeVTT(float(caption["start"])) + ' --> ' + formatTimeVTT(float(caption["end"])) + '\n'
             vtt += caption["caption"] + '\n\n'
+
+        return vtt
     
     # Converts a delimited file back to web captions format.
     # Uses the source web captions to get timestamps and source caption text (saved in sourceCaption field).
@@ -439,7 +474,6 @@ def create_vtt(event, context):
     captions_collection = []
     for lang in targetLanguageCodes:
         webcaptions = []
-        captions_operator_name = webcaptions_object.WebCaptionsOperatorName(lang)
 
         webcaptions = webcaptions_object.GetWebCaptions(lang)
 
@@ -454,6 +488,7 @@ def create_vtt(event, context):
     data["CaptionsCollection"] = captions_collection
 
     webcaptions_object.PutMediaCollection(operator_object.name, data)
+
     operator_object.update_workflow_status("Complete")
     return operator_object.return_output_object()
 

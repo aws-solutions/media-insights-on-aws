@@ -18,6 +18,7 @@ import json
 import time
 import decimal
 import signal
+from operator import itemgetter
 from jsonschema import validate, ValidationError
 # from urllib2 import build_opener, HTTPHandler, Request
 from urllib.request import build_opener, HTTPHandler, Request
@@ -2173,7 +2174,7 @@ def list_workflow_executions_by_assetid(AssetId):
     """
     table = DYNAMO_RESOURCE.Table(WORKFLOW_EXECUTION_TABLE_NAME)
 
-    projection_expression = "Id, AssetId, CurrentStage, StateMachineExecutionArn, #workflow_status, Workflow.#workflow_name"
+    projection_expression = "Id, AssetId, CurrentStage, Created, StateMachineExecutionArn, #workflow_status, Workflow.#workflow_name"
 
     response = table.query(
         IndexName='WorkflowExecutionAssetId',
@@ -2205,7 +2206,8 @@ def list_workflow_executions_by_assetid(AssetId):
         )
         workflow_executions.extend(response['Items'])
 
-    return workflow_executions
+    sorted_executions = sorted(workflow_executions, key=itemgetter('Created'), reverse=True)
+    return sorted_executions
 
 @app.route('/workflow/execution/{Id}', cors=True, methods=['GET'], authorizer=authorizer)
 def get_workflow_execution_by_id(Id):

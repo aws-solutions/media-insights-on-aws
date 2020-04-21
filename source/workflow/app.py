@@ -293,8 +293,8 @@ def check_wait_operation_lambda(event, context):
         operator_object.update_workflow_status("Complete")
     else:
         operator_object.update_workflow_status("Error")
-        operator_object.add_workflow_metadata(WaitError="Unexpected workflow execution status {} {e}".format(
-            workflow_execution["Status"], e=str(e)))
+        operator_object.add_workflow_metadata(WaitError="Unexpected workflow execution status {}".format(
+            workflow_execution["Status"]))
         raise MasExecutionError(operator_object.return_output_object())
 
     return operator_object.return_output_object()

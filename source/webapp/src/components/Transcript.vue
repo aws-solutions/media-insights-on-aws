@@ -277,8 +277,8 @@ export default {
       });
       const operator_name = "WebCaptions_"+this.sourceLanguageCode
       const asset_id = this.$route.params.asset_id;
-      let data='{"OperatorName": "' + operator_name + '", "Results": ' + JSON.stringify(this.webCaptions) + ', "WorkflowId": "' + this.workflow_id + '"}'
-      // save caption data to workflow metadata
+      const webCaptions = {"WebCaptions": this.webCaptions}
+      let data='{"OperatorName": "' + operator_name + '", "Results": ' + JSON.stringify(webCaptions) + ', "WorkflowId": "' + this.workflow_id + '"}'
       fetch(this.DATAPLANE_API_ENDPOINT + 'metadata/' + asset_id, {
         method: 'post',
         body: data,
@@ -364,7 +364,8 @@ export default {
           }
           if (res.data.results) {
             cursor = res.data.cursor;
-            this.webCaptions.push(res.data.results)
+            console.log(res.data.results["WebCaptions"])
+            this.webCaptions = res.data.results["WebCaptions"]
             if (cursor)
               this.getWebCaptionPages(token,url,cursor)
           } else {

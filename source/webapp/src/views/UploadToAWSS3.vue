@@ -441,7 +441,7 @@
             "CaptionFileStageForCaptions": {
               "WebToVTTCaptions": {
                 "MediaType": "MetadataOnly",
-                "TargetLanguageCodes": this.sourceLanguageCode,
+                "TargetLanguageCodes": [this.sourceLanguageCode],
                 "Enabled": true
               }
             },

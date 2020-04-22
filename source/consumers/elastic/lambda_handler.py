@@ -14,7 +14,7 @@ dataplane_bucket = os.environ['DataplaneBucket']
 s3 = boto3.client('s3')
 
 # These names are the lowercase version of OPERATOR_NAME defined in /source/operators/operator-library.yaml
-supported_operators = ["textdetection", "mediainfo", "transcribe", "translate", "genericdatalookup", "labeldetection", "celebrityrecognition", "facesearch", "contentmoderation", "facedetection", "key_phrases", "entities", "key_phrases"]
+supported_operators = ["textdetection", "mediainfo", "transcribe", "translate", "webcaptions","genericdatalookup", "labeldetection", "celebrityrecognition", "facesearch", "contentmoderation", "facedetection", "key_phrases", "entities", "key_phrases"]
 
 
 def normalize_confidence(confidence_value):
@@ -509,6 +509,14 @@ def process_translate(asset, workflow, results):
     es = connect_es(es_endpoint)
     index_document(es, asset, "translation", translation)
 
+def process_webcaptions(asset, workflow, results, language_code):
+    metadata = json.loads(results)
+    metadata_type = "webcaptions"+"_"+language_code
+
+    webcaptions = metadata
+    webcaptions["workflow"] = workflow
+    es = connect_es(es_endpoint)
+    index_document(es, asset, metadata_type, webcaptions)
 
 def process_transcribe(asset, workflow, results):
     metadata = json.loads(results)
@@ -770,6 +778,12 @@ def lambda_handler(event, context):
                 if metadata["Status"] == "Success":
                     print("Retrieved {operator} metadata from s3, inserting into Elasticsearch".format(operator=operator))
                     operator = operator.lower()
+                    # webcaptions operators are processed the same, but they have a language extension
+                    # in the operator name.  Strip that off now.  Any language is supported for search
+                    if operator.startswith("webcaptions_"):
+                        print("Got webcaptions operator {}".format(operator))
+                        (operator, language_code) = operator.split("_")
+
                     # Route event to process method based on the operator type in the event.
                     # These names are the lowercase version of OPERATOR_NAME defined in /source/operators/operator-library.yaml
                     if operator in supported_operators:
@@ -777,6 +791,8 @@ def lambda_handler(event, context):
                             process_transcribe(asset_id, workflow, metadata["Results"])
                         if operator == "translate":
                             process_translate(asset_id, workflow, metadata["Results"])
+                        if operator == "webcaptions":
+                            process_webcaptions(asset_id, workflow, metadata["Results"], language_code)
                         if operator == "mediainfo":
                             process_mediainfo(asset_id, workflow, metadata["Results"])
                         if operator == "genericdatalookup":

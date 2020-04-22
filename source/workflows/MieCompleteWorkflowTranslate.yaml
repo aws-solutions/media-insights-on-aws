@@ -52,24 +52,15 @@ Resources:
             Fn::Sub: "${OperatorLibraryStack}:Translate"
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:TranslateWebCaptions"
-  CaptionFileStageForTranslate:
+  CaptionFileStage:
     Type: Custom::CustomResource
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Stage"
-      Name: "CaptionFileStageForTranslate"
+      Name: "CaptionFileStage2"
       Operations:
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:WebToSRTCaptions"
-        - Fn::ImportValue:
-            Fn::Sub: "${OperatorLibraryStack}:WebToVTTCaptions"
-  CaptionFileStageForCaptions:
-    Type: Custom::CustomResource
-    Properties:
-      ServiceToken: !Ref WorkflowCustomResourceArn
-      ResourceType: "Stage"
-      Name: "CaptionFileStageForCaptions"
-      Operations:
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:WebToVTTCaptions"
   PreliminaryStage:
@@ -149,8 +140,7 @@ Resources:
       - WebCaptionsStage
       - CaptionEditingWaitStage
       - TranslateStage
-      - CaptionFileStageForCaptions
-      - CaptionFileStageForTranslate
+      - CaptionFileStage
     Type: Custom::CustomResource
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
@@ -179,18 +169,15 @@ Resources:
               "Next": "${WebCaptionsStage}"
               },
             "${WebCaptionsStage}":{
-              "Next": "${CaptionFileStageForCaptions}"
-              },
-            "${CaptionFileStageForCaptions}":{
               "Next": "${CaptionEditingWaitStage}"
               },
             "${CaptionEditingWaitStage}":{
               "Next": "${TranslateStage}"
               },
             "${TranslateStage}":{
-              "Next": "${CaptionFileStageForTranslate}"
+              "Next": "${CaptionFileStage}"
               },
-            "${CaptionFileStageForTranslate}":{
+            "${CaptionFileStage}":{
               "End": true
               }
           }
@@ -204,6 +191,5 @@ Resources:
           WebCaptionsStage: !GetAtt WebCaptionsStage.Name,
           CaptionEditingWaitStage: !GetAtt CaptionEditingWaitStage.Name,
           TranslateStage: !GetAtt TranslateStage.Name,
-          CaptionFileStageForCaptions: !GetAtt CaptionFileStageForCaptions.Name,
-          CaptionFileStageForTranslate: !GetAtt CaptionFileStageForTranslate.Name
+          CaptionFileStage: !GetAtt CaptionFileStage.Name
         }

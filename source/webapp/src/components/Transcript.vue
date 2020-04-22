@@ -44,23 +44,23 @@
           >
         </template>
         <template v-slot:cell(timeslot)="data">
-          <b-form-input class="compact-height start-time-field " v-model="data.item.start"/>
-          <b-form-input class="compact-height stop-time-field " v-model="data.item.end"/>
+          <b-form-input :disabled="workflow_status !== 'Waiting'" class="compact-height start-time-field " v-model="data.item.start"/>
+          <b-form-input :disabled="workflow_status !== 'Waiting'" class="compact-height stop-time-field " v-model="data.item.end"/>
         </template>
         <template v-slot:cell(caption)="data">
           <b-container class="p-0">
             <b-row no-gutters>
               <b-col cols="10">
-          <b-form-textarea :ref="'caption' + data.index" class="custom-text-field .form-control-sm" max-rows="8" v-model="data.item.caption" placeholder="Type subtitle here" @click='captionClickHandler(data.index)'/>
+          <b-form-textarea :disabled="workflow_status !== 'Waiting'" :ref="'caption' + data.index" class="custom-text-field .form-control-sm" max-rows="8" v-model="data.item.caption" placeholder="Type subtitle here" @click='captionClickHandler(data.index)'/>
               </b-col>
               <b-col>
                 <span style="position:absolute; top: 0px">
-                  <b-button size="sm" variant="link" @click="delete_row(data.index)">
+                  <b-button v-if="workflow_status === 'Waiting'" size="sm" variant="link" @click="delete_row(data.index)">
                     <b-icon icon="x-circle" color="lightgrey"></b-icon>
                   </b-button>
                 </span>
                 <span style="position:absolute; bottom: 0px">
-                  <b-button size="sm" variant="link" @click="add_row(data.index)">
+                  <b-button v-if="workflow_status === 'Waiting'" size="sm" variant="link" @click="add_row(data.index)">
                     <b-icon icon="plus-square" color="lightgrey"></b-icon>
                   </b-button>
                 </span>
@@ -294,6 +294,7 @@ export default {
             this.saveNotificationMessage = "Captions saved"
             if (this.workflow_status === "Waiting") {
               this.resumeWorkflow()
+              this.workflow_status = "Started"
             }
             this.showSaveNotification = 5;
           }
@@ -419,12 +420,14 @@ export default {
     margin-bottom: 4px !important;
     border: 0 !important;
     height: auto;
+    background-color: white !important;
   }
   .stop-time-field {
     padding: 0 !important;
     margin: 0 !important;
     border: 0 !important;
     height: auto;
+    background-color: white !important;
   }
   .hidden_header {
     display: none;
@@ -447,6 +450,7 @@ export default {
     -webkit-box-shadow: 0 0 1px rgba(255, 255, 255, .5);
   }
   .custom-text-field {
+    background-color: white !important;
     border: 0;
   }
   .highlightedBorder {

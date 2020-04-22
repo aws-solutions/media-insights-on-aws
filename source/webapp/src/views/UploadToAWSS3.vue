@@ -208,7 +208,7 @@
         thumbnail_position: 10,
         upload_in_progress: false,
         enabledOperators: ['thumbnail', 'Transcribe', 'Translate'],
-        enable_caption_editing: true,
+        enable_caption_editing: false,
         videoOperators: [
           {text: 'Object Detection', value: 'labelDetection'},
           {text: 'Celebrity Recognition', value: 'celebrityRecognition'},
@@ -441,7 +441,7 @@
             "CaptionFileStageForCaptions": {
               "WebToVTTCaptions": {
                 "MediaType": "MetadataOnly",
-                "TargetLanguageCodes": [this.sourceLanguageCode],
+                "TargetLanguageCodes": [].concat(this.sourceLanguageCode),
                 "Enabled": true
               }
             },

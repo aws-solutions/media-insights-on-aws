@@ -365,7 +365,6 @@ export default {
           }
           if (res.data.results) {
             cursor = res.data.cursor;
-            console.log(res.data.results["WebCaptions"])
             this.webCaptions = res.data.results["WebCaptions"]
             if (cursor)
               this.getWebCaptionPages(token,url,cursor)

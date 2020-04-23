@@ -44,7 +44,7 @@
           >
         </template>
         <template v-slot:cell(timeslot)="data">
-          <b-form-input :disabled="workflow_status !== 'Waiting'" class="compact-height start-time-field " v-model="data.item.start"/>
+          <b-form-input :disabled="workflow_status !== 'Waiting'" class="compact-height start-time-field " v-model="data.item.start" @change="sortWebCaptions(data.item)"/>
           <b-form-input :disabled="workflow_status !== 'Waiting'" class="compact-height stop-time-field " v-model="data.item.end"/>
         </template>
         <template v-slot:cell(caption)="data">
@@ -159,6 +159,17 @@ export default {
       this.transcript = ''
   },
   methods: {
+    sortWebCaptions(item) {
+      // Keep the webCaptions table sorted on caption start time
+      this.webCaptions.sort((a,b) => {
+        a=parseFloat(a["start"])
+        b=parseFloat(b["start"])
+        return a<b?-1:1
+      });
+      // Since table has mutated, regain focus on the row that the user is editing
+      const new_index = this.webCaptions.findIndex(element => {return (element.start === item.start)})
+      this.$refs["caption"+(new_index)].focus();
+    },
     captionClickHandler(index) {
       // pause video player and jump to the time for the selected caption
       this.player.currentTime(this.webCaptions[index].start)

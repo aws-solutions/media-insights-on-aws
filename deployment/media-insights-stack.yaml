@@ -1750,10 +1750,12 @@ Outputs:
     Description: Username of the default MIE admin
     Value: !Ref AdminEmail
   WorkflowExecutionEventTopicArn:
+    Description: Topic to monitor MIE workflow Status change events
     Value: !Ref WorkflowExecutionEventTopic
     Export:
       Name: !Sub '${AWS::StackName}-WorkflowExecutionEventTopicArn'
   WorkflowExecutionEventQueueUrl:
+    Description: Queue subscribed to WorkflowExecutionEventTopic.  Can be used for viewing and debugging status SNS events
     Value: !Ref WorkflowExecutionEventQueue
     Export:
       Name: !Sub '${AWS::StackName}-WorkflowExecutionEventQueueUrl'

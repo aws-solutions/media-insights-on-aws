@@ -88,7 +88,6 @@
                       v-model="enable_caption_editing"
                   >Pause workflow to edit captions before downstream processing</b-form-checkbox>
                   <br>
-                  <b-form-select v-model="transcribeLanguage" :options="transcribeLanguages"></b-form-select><br><br>
                   Custom Vocabulary
                   <b-form-input v-model="customVocab" placeholder="(optional)"></b-form-input>
                 </div>

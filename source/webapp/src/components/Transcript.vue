@@ -84,7 +84,7 @@
         <b-icon v-else icon="play" color="white"></b-icon>
         Save changes
       </b-button>
-      <b-button v-if="this.workflow_status === 'Complete' || this.workflow_status === 'Error'" id="editCaptions" size="sm" class="mb-2" @click="saveCaptions()">
+      <b-button v-if="this.workflow_status === 'Complete' || this.workflow_status === 'Error'" id="editCaptions" size="sm" class="mb-2" @click="showSaveConfirmation()">
         <b-icon icon="play" color="white"></b-icon>
         Save captions
       </b-button>
@@ -92,6 +92,9 @@
         <b-icon icon="arrow-clockwise" animation="spin"  color="white"></b-icon>
         Save captions
       </b-button>
+      <b-modal ref="save-modal" title="Save Confirmation" @ok="saveCaptions()" ok-title="Confirm">
+        <p>Saving captions will restart the Translate workflow. You will not be able to edit captions until the workflow has finished. This can take several minutes. Are you sure?</p>
+      </b-modal>
 
 <!-- Uncomment to enable Upload button -->
 <!--      <b-modal ref="my-modal" hide-footer title="Upload a file">-->
@@ -380,6 +383,7 @@ export default {
     saveCaptions: async function (token) {
       // This function saves captions to the dataplane
       // and reruns or resumes the workflow.
+      this.$refs['save-modal'].hide()
       this.isSaving=true;
       if (!token) {
         token = await this.$Amplify.Auth.currentSession().then(data =>{
@@ -437,6 +441,9 @@ export default {
     // showModal() {
     //   this.$refs['my-modal'].show()
     // },
+    showSaveConfirmation() {
+      this.$refs['save-modal'].show()
+    },
     uploadCaptionsFile(event) {
       // Uncomment to enable Upload button
       // this.$refs['my-modal'].hide()

@@ -1,0 +1,133 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: "Media Insights Engine - Workflow to run VOD transcribe and translate application"
+
+Parameters:
+
+  WorkflowCustomResourceArn:
+    Type: String
+    Description: "ARN of the Media Insights custom resource that handles creating operations, stages and workflows"
+  OperatorLibraryStack:
+    Description: "Name of the operator library stack"
+    Type: String
+
+Resources:
+  # Stages
+
+  MediaconvertStageT:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Stage"
+      Name: "MediaconvertStageT"
+      Operations:
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:Mediaconvert"
+  TranscribeStageT:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Stage"
+      Name: "TranscribeStageTT"
+      Operations:
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:Transcribe"
+  WebCaptionsStageT:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Stage"
+      Name: "WebCaptionsStageT"
+      Operations:
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:WebCaptions"
+  CaptionEditingWaitStageT:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Stage"
+      Name: "CaptionEditingWaitStageT"
+      Operations:
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:Wait"
+  TranslateStageT:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Stage"
+      Name: "TranslateStageT"
+      Operations:
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:Translate"
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:TranslateWebCaptions"
+  
+  # TranslateBatchStage:
+  #   Type: Custom::CustomResource
+  #   Properties:
+  #     ServiceToken: !Ref WorkflowCustomResourceArn
+  #     ResourceType: "Stage"
+  #     Name: "TranslateBatchStage"
+  #     Operations:
+  #       - Fn::ImportValue:
+  #           Fn::Sub: "${OperatorLibraryStack}:TranslateWebCaptions"
+
+  CaptionFileStageT:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Stage"
+      Name: "CaptionFileStageT"
+      Operations:
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:WebToSRTCaptions"
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:WebToVTTCaptions"
+  
+
+  # Workflow
+
+  TranslatorWorkflow:
+    DependsOn:
+      - MediaconvertStageT
+      - TranscribeStageT
+      - WebCaptionsStageT
+      # - TranslateBatchStage
+      - CaptionEditingWaitStageT
+      - TranslateStageT
+      - CaptionFileStageT
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Workflow"
+      Name: "TranslatorWorkflow"
+      StartAt: !GetAtt MediaconvertStageT.Name
+      Stages: !Sub
+        - |-
+          {
+            "${MediaconvertStageT}":{
+              "Next": "${TranscribeStageT}"
+              },
+            "${TranscribeStageT}":{
+              "Next": "${WebCaptionsStageT}"
+              },
+            "${WebCaptionsStageT}":{
+              "Next": "${CaptionEditingWaitStageT}"
+              },
+            "${CaptionEditingWaitStageT}":{
+              "Next": "${TranslateStageT}"
+              },
+            "${TranslateStageT}":{
+              "Next": "${CaptionFileStageT}"
+              },
+            "${CaptionFileStageT}":{
+              "End": true
+              }
+          }
+        - {
+          MediaconvertStageT: !GetAtt MediaconvertStageT.Name,
+          TranscribeStageT: !GetAtt TranscribeStageT.Name,
+          WebCaptionsStageT: !GetAtt WebCaptionsStageT.Name,
+          CaptionEditingWaitStageT: !GetAtt CaptionEditingWaitStageT.Name,
+          TranslateStageT: !GetAtt TranslateStageT.Name,
+          CaptionFileStageT: !GetAtt CaptionFileStageT.Name
+        }

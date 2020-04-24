@@ -82,7 +82,12 @@
                 ></b-form-checkbox-group>
                 <div v-if="enabledOperators.includes('Transcribe')">
                   Source Language
-                  <b-form-select v-model="transcribeLanguage" :options="transcribeLanguages"></b-form-select><br><br>
+                  <b-form-select v-model="transcribeLanguage" :options="transcribeLanguages"></b-form-select>
+<!--                  <b-form-checkbox-->
+<!--                      id="enable_caption_editing"-->
+<!--                      v-model="enable_caption_editing"-->
+<!--                  >Pause workflow to edit captions before downstream processing</b-form-checkbox>-->
+                  <br>
                   Custom Vocabulary
                   <b-form-input v-model="customVocab" placeholder="(optional)"></b-form-input>
                 </div>
@@ -116,6 +121,7 @@
                                        :sort-search-results="true"
                                        :typeahead-always-show="true"
                                        :typeahead-hide-discard="true"
+                                       :key="rerenderComponent"
                                        :typeahead="true">
                     </voerro-tags-input>
                     Custom Terminology
@@ -177,6 +183,7 @@
     },
     data() {
       return {
+        rerenderComponent: 0,
         selectedTags: [
         ],
         show_disclaimer: true,
@@ -204,6 +211,7 @@
         thumbnail_position: 10,
         upload_in_progress: false,
         enabledOperators: ['thumbnail', 'Transcribe', 'Translate'],
+        enable_caption_editing: false,
         videoOperators: [
           {text: 'Object Detection', value: 'labelDetection'},
           {text: 'Celebrity Recognition', value: 'celebrityRecognition'},
@@ -318,10 +326,6 @@
           {text: 'Urdu', value: 'ur'},
           {text: 'Vietnamese', value: 'vi'},
         ],
-        // translateLanguageTags is the same as translateLanguages except
-        // with keys and values flipped around. We need this field ordering
-        // for the voerro-tags-input. The flipping is done in mounted().
-        translateLanguageTags: [],
         selectedTranslateLanguages: [],
         selectedTranslateLanguagesDefault: [
           {value: 'French', text: 'fr'},
@@ -359,6 +363,10 @@
       }
     },
     computed: {
+      // translateLanguageTags is the same as translateLanguages except
+      // with keys and values flipped around. We need this field ordering
+      // for the voerro-tags-input. The flipping is done in here as a computed property.
+      translateLanguageTags() { this.rerenderComponent += 1; return this.translateLanguages.map(x => {return {"text": x.value, "value": x.text}}).filter(x => x.text !== this.sourceLanguageCode)},
       ...mapState(['execution_history']),
       sourceLanguageCode() {
         return this.transcribeLanguage.split('-')[0]
@@ -427,15 +435,21 @@
               "Mediainfo": {"MediaType": "Video", "Enabled": true}
             },
             "MediaconvertStage2": {"Mediaconvert": {"MediaType": "Video", "Enabled": true}},
+            "CaptionEditingWaitStage": {
+              "Wait": {
+                "MediaType": "MetadataOnly",
+                "Enabled": this.enable_caption_editing
+              }
+            },
             "CaptionFileStage2": {
               "WebToSRTCaptions": {
                 "MediaType": "MetadataOnly",
-                "TargetLanguageCodes": Object.values(this.selectedTranslateLanguages.map(x => x.text)).concat(this.sourceLanguageCode),
+                "TargetLanguageCodes": Object.values(this.selectedTranslateLanguages.map(x => x.text)).filter(x => x !== this.sourceLanguageCode).concat(this.sourceLanguageCode),
                 "Enabled": true
               },
               "WebToVTTCaptions": {
                 "MediaType": "MetadataOnly",
-                "TargetLanguageCodes": Object.values(this.selectedTranslateLanguages.map(x => x.text)).concat(this.sourceLanguageCode),
+                "TargetLanguageCodes": Object.values(this.selectedTranslateLanguages.map(x => x.text)).filter(x => x !== this.sourceLanguageCode).concat(this.sourceLanguageCode),
                 "Enabled": true
               }
             },
@@ -443,7 +457,7 @@
               "WebCaptions": {
                 "MediaType": "Text",
                 "SourceLanguageCode": this.sourceLanguageCode,
-                "Enabled": true
+                "Enabled": this.enabledOperators.includes("Transcribe"),
               }
             },
             "TranslateStage2": {
@@ -453,7 +467,7 @@
               },
               "TranslateWebCaptions": {
                 "MediaType":"Text",
-                "Enabled":true,
+                "Enabled": this.enabledOperators.includes("Translate"),
                 "TargetLanguageCodes": Object.values(this.selectedTranslateLanguages.map(x => x.text)).filter(x => x !== this.sourceLanguageCode),
                 "SourceLanguageCode": this.sourceLanguageCode
               }
@@ -490,7 +504,6 @@
       }
     },
     mounted: function() {
-      this.translateLanguageTags=this.translateLanguages.map(x => {return {"text": x.value, "value": x.text}})
       this.executed_assets = this.execution_history;
       this.pollWorkflowStatus();
     },

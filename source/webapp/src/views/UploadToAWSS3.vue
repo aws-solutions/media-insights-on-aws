@@ -445,12 +445,12 @@
               "WebToSRTCaptions": {
                 "MediaType": "MetadataOnly",
                 "TargetLanguageCodes": Object.values(this.selectedTranslateLanguages.map(x => x.text)).filter(x => x !== this.sourceLanguageCode).concat(this.sourceLanguageCode),
-                "Enabled": true
+                "Enabled": this.enabledOperators.includes("Translate")
               },
               "WebToVTTCaptions": {
                 "MediaType": "MetadataOnly",
                 "TargetLanguageCodes": Object.values(this.selectedTranslateLanguages.map(x => x.text)).filter(x => x !== this.sourceLanguageCode).concat(this.sourceLanguageCode),
-                "Enabled": true
+                "Enabled": this.enabledOperators.includes("Translate")
               }
             },
             "WebCaptionsStage2": {

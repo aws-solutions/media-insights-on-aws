@@ -938,6 +938,7 @@ def create_stage(stage):
                     "Resource": COMPLETE_STAGE_LAMBDA_ARN,
                     "End": True
                 }
+
             }
         }
         stageAsl["StartAt"] = Name
@@ -946,6 +947,13 @@ def create_stage(stage):
             "Next": "Complete Stage {}".format(Name),
             "ResultPath": "$.Outputs",
             "Branches": [
+            ],
+            "Catch": [
+                {
+                    "ErrorEquals": ["States.ALL"],
+                    "Next": "Complete Stage {}".format(Name),
+                    "ResultPath": "$.Outputs"
+                }
             ]
         }
 

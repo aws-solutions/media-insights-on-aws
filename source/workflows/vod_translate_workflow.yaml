@@ -126,7 +126,7 @@ Resources:
         - {
           MediaconvertStageT: !GetAtt MediaconvertStageT.Name,
           TranscribeStageT: !GetAtt TranscribeStageT.Name,
-          WebCaptionsStageT: !GetAtt WebCaptionsStageTT.Name,
+          WebCaptionsStageT: !GetAtt WebCaptionsStageT.Name,
           CaptionEditingWaitStageT: !GetAtt CaptionEditingWaitStageT.Name,
           TranslateStageT: !GetAtt TranslateStageT.Name,
           CaptionFileStageT: !GetAtt CaptionFileStageT.Name

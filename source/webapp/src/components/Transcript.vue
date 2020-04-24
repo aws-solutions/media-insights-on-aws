@@ -44,7 +44,7 @@
           >
         </template>
         <template v-slot:cell(timeslot)="data">
-          <b-form-input :disabled="workflow_status !== 'Waiting'" class="compact-height start-time-field " v-model="data.item.start"/>
+          <b-form-input :disabled="workflow_status !== 'Waiting'" class="compact-height start-time-field " v-model="data.item.start" @change="sortWebCaptions(data.item)"/>
           <b-form-input :disabled="workflow_status !== 'Waiting'" class="compact-height stop-time-field " v-model="data.item.end"/>
         </template>
         <template v-slot:cell(caption)="data">
@@ -79,8 +79,14 @@
       <b-button id="downloadCaptionsVTT" size="sm" class="mb-2" @click="downloadCaptionsVTT()">
         <b-icon icon="download" color="white"></b-icon> Download VTT
       </b-button> &nbsp;
-      <b-button id="saveCaptions" size="sm" class="mb-2" @click="saveCaptions()">
-        <b-icon icon="play" color="white"></b-icon> Save changes
+      <b-button v-if="this.workflow_status === 'Waiting'" id="saveCaptions" size="sm" class="mb-2" @click="saveCaptions()">
+        <b-icon v-if="this.isSaving" icon="arrow-clockwise" animation="spin"  color="white"></b-icon>
+        <b-icon v-else icon="play" color="white"></b-icon>
+        Save changes
+      </b-button>
+      <b-button v-if="this.workflow_status === 'Complete' || this.workflow_status === 'Error'" id="editCaptions" size="sm" class="mb-2" @click="editCaptions()">
+        <b-icon icon="file-diff" color="white"></b-icon>
+        Edit captions
       </b-button>
 <!-- Uncomment to enable Upload button -->
 <!--      <b-modal ref="my-modal" hide-footer title="Upload a file">-->
@@ -117,6 +123,7 @@ export default {
       id: 0,
       transcript: "",
       isBusy: false,
+      isSaving: false,
       operator: "transcript",
       noTranscript: false
     }
@@ -150,6 +157,7 @@ export default {
   },
   activated: function () {
     console.log('activated component:', this.operator);
+    this.isBusy = true;
     this.getTimeUpdate();
     this.getWorkflowId();
     // uncomment this whenever we need to get data from Elasticsearch
@@ -159,6 +167,22 @@ export default {
       this.transcript = ''
   },
   methods: {
+    sortWebCaptions(item) {
+      console.log("sorting captions")
+      // Keep the webCaptions table sorted on caption start time
+      this.webCaptions.sort((a,b) => {
+        a=parseFloat(a["start"])
+        b=parseFloat(b["start"])
+        return a<b?-1:1
+      });
+      if (item) {
+        // Since table has mutated, regain focus on the row that the user is editing
+        const new_index = this.webCaptions.findIndex(element => {
+          return (element.start === item.start)
+        })
+        this.$refs["caption" + (new_index)].focus();
+      }
+    },
     captionClickHandler(index) {
       // pause video player and jump to the time for the selected caption
       this.player.currentTime(this.webCaptions[index].start)
@@ -196,7 +220,9 @@ export default {
           const current_position = Math.round(this.player.currentTime());
           if (current_position !== last_position) {
             let timeline_position = this.webCaptions.findIndex(function(item, i){return (parseInt(item.start) <= current_position && parseInt(item.end) >= current_position)})
-            this.$refs.selectableTable.selectRow(timeline_position)
+            if (this.$refs.selectableTable) {
+              this.$refs.selectableTable.selectRow(timeline_position)
+            }
             last_position = current_position;
           }
         }.bind(this));
@@ -271,12 +297,21 @@ export default {
         })
       )
     },
+    editCaptions: async function () {
+      // TODO sort captions
+      // TODO execute workflow
+      // TODO set workflow status
+      console.log("edit captions")
+    },
     saveCaptions: async function () {
+      this.isSaving=true;
       const token = await this.$Amplify.Auth.currentSession().then(data =>{
         return data.getIdToken().getJwtToken();
       });
       const operator_name = "WebCaptions_"+this.sourceLanguageCode
       const asset_id = this.$route.params.asset_id;
+      // Sort captions by start time before saving
+      this.sortWebCaptions();
       const webCaptions = {"WebCaptions": this.webCaptions}
       let data='{"OperatorName": "' + operator_name + '", "Results": ' + JSON.stringify(webCaptions) + ', "WorkflowId": "' + this.workflow_id + '"}'
       fetch(this.DATAPLANE_API_ENDPOINT + 'metadata/' + asset_id, {
@@ -290,6 +325,7 @@ export default {
           })
         ).then(res => {
           if (res.status === 200) {
+            this.isSaving=true;
             console.log("Captions saved")
             this.saveNotificationMessage = "Captions saved"
             if (this.workflow_status === "Waiting") {
@@ -330,6 +366,7 @@ export default {
       const reader = new FileReader();
       reader.onload = e => this.webCaptions = JSON.parse(e.target.result);
       reader.readAsText(file);
+      this.sortWebCaptions();
     },
     getWebCaptions: async function () {
       const token = await this.$Amplify.Auth.currentSession().then(data =>{
@@ -366,6 +403,8 @@ export default {
           if (res.data.results) {
             cursor = res.data.cursor;
             this.webCaptions = res.data.results["WebCaptions"]
+            this.sortWebCaptions()
+            this.isBusy = false
             if (cursor)
               this.getWebCaptionPages(token,url,cursor)
           } else {
@@ -377,6 +416,8 @@ export default {
     add_row(index) {
       this.webCaptions.splice(index+1, 0, {"start":this.webCaptions[index].end,"caption":"","end":this.webCaptions[index+1].start})
       this.$refs["caption"+(index+1)].focus();
+      this.player.currentTime(this.webCaptions[index+1].start)
+      this.player.pause()
     },
     delete_row(index) {
       this.webCaptions.splice(index, 1)

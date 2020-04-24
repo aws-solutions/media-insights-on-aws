@@ -93,7 +93,7 @@
         Save captions
       </b-button>
       <b-modal ref="save-modal" title="Save Confirmation" @ok="saveCaptions()" ok-title="Confirm">
-        <p>Saving captions will restart the Translate workflow. You will not be able to edit captions until the workflow has finished. This can take several minutes. Are you sure?</p>
+        <p>Saving captions will restart a workflow that can take several minutes. You will not be able to edit captions until it has finished. Are you ready to proceed?</p>
       </b-modal>
 
 <!-- Uncomment to enable Upload button -->
@@ -563,12 +563,12 @@ export default {
           "CaptionFileStage2": {
             "WebToSRTCaptions": {
               "MediaType": "MetadataOnly",
-              "TargetLanguageCodes": this.translateLanguageCodes,
+              "TargetLanguageCodes": this.translateLanguageCodes.concat(this.sourceLanguageCode),
               "Enabled": true
             },
             "WebToVTTCaptions": {
               "MediaType": "MetadataOnly",
-              "TargetLanguageCodes": this.translateLanguageCodes,
+              "TargetLanguageCodes": this.translateLanguageCodes.concat(this.sourceLanguageCode),
               "Enabled": true
             }
           },

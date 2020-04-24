@@ -83,10 +83,10 @@
                 <div v-if="enabledOperators.includes('Transcribe')">
                   Source Language
                   <b-form-select v-model="transcribeLanguage" :options="transcribeLanguages"></b-form-select>
-                  <b-form-checkbox
-                      id="enable_caption_editing"
-                      v-model="enable_caption_editing"
-                  >Pause workflow to edit captions before downstream processing</b-form-checkbox>
+<!--                  <b-form-checkbox-->
+<!--                      id="enable_caption_editing"-->
+<!--                      v-model="enable_caption_editing"-->
+<!--                  >Pause workflow to edit captions before downstream processing</b-form-checkbox>-->
                   <br>
                   Custom Vocabulary
                   <b-form-input v-model="customVocab" placeholder="(optional)"></b-form-input>

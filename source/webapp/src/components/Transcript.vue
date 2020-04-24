@@ -44,23 +44,23 @@
           >
         </template>
         <template v-slot:cell(timeslot)="data">
-          <b-form-input :disabled="workflow_status !== 'Waiting'" class="compact-height start-time-field " v-model="data.item.start" @change="sortWebCaptions(data.item)"/>
-          <b-form-input :disabled="workflow_status !== 'Waiting'" class="compact-height stop-time-field " v-model="data.item.end"/>
+          <b-form-input :disabled="workflow_status !== 'Complete'" class="compact-height start-time-field " v-model="data.item.start" @change="sortWebCaptions(data.item)"/>
+          <b-form-input :disabled="workflow_status !== 'Complete'" class="compact-height stop-time-field " v-model="data.item.end"/>
         </template>
         <template v-slot:cell(caption)="data">
           <b-container class="p-0">
             <b-row no-gutters>
               <b-col cols="10">
-          <b-form-textarea :disabled="workflow_status !== 'Waiting'" :ref="'caption' + data.index" class="custom-text-field .form-control-sm" max-rows="8" v-model="data.item.caption" placeholder="Type subtitle here" @click='captionClickHandler(data.index)'/>
+          <b-form-textarea :disabled="workflow_status !== 'Complete'" :ref="'caption' + data.index" class="custom-text-field .form-control-sm" max-rows="8" v-model="data.item.caption" placeholder="Type subtitle here" @click='captionClickHandler(data.index)'/>
               </b-col>
               <b-col>
                 <span style="position:absolute; top: 0px">
-                  <b-button v-if="workflow_status === 'Waiting'" size="sm" variant="link" @click="delete_row(data.index)">
+                  <b-button v-if="workflow_status === 'Complete'" size="sm" variant="link" @click="delete_row(data.index)">
                     <b-icon icon="x-circle" color="lightgrey"></b-icon>
                   </b-button>
                 </span>
                 <span style="position:absolute; bottom: 0px">
-                  <b-button v-if="workflow_status === 'Waiting'" size="sm" variant="link" @click="add_row(data.index)">
+                  <b-button v-if="workflow_status === 'Complete'" size="sm" variant="link" @click="add_row(data.index)">
                     <b-icon icon="plus-square" color="lightgrey"></b-icon>
                   </b-button>
                 </span>
@@ -77,17 +77,22 @@
 <!--        <b-icon icon="upload" color="white"></b-icon> Upload JSON-->
 <!--      </b-button> &nbsp;-->
       <b-button id="downloadCaptionsVTT" size="sm" class="mb-2" @click="downloadCaptionsVTT()">
-        <b-icon icon="download" color="white"></b-icon> Download VTT
+        <b-icon v-if="this.webCaptions.length > 0" icon="download" color="white"></b-icon> Download VTT
       </b-button> &nbsp;
       <b-button v-if="this.workflow_status === 'Waiting'" id="saveCaptions" size="sm" class="mb-2" @click="saveCaptions()">
         <b-icon v-if="this.isSaving" icon="arrow-clockwise" animation="spin"  color="white"></b-icon>
         <b-icon v-else icon="play" color="white"></b-icon>
         Save changes
       </b-button>
-      <b-button v-if="this.workflow_status === 'Complete' || this.workflow_status === 'Error'" id="editCaptions" size="sm" class="mb-2" @click="editCaptions()">
-        <b-icon icon="file-diff" color="white"></b-icon>
-        Edit captions
+      <b-button v-if="this.workflow_status === 'Complete' || this.workflow_status === 'Error'" id="editCaptions" size="sm" class="mb-2" @click="saveCaptions()">
+        <b-icon icon="play" color="white"></b-icon>
+        Save captions
       </b-button>
+      <b-button v-if="this.workflow_status === 'Started'" id="editCaptionsDisabled" size="sm" disabled class="mb-2" @click="saveCaptions()">
+        <b-icon icon="arrow-clockwise" animation="spin"  color="white"></b-icon>
+        Save captions
+      </b-button>
+
 <!-- Uncomment to enable Upload button -->
 <!--      <b-modal ref="my-modal" hide-footer title="Upload a file">-->
 <!--        <p>Upload a timed subtitles file in the Webcaptions JSON format.</p>-->
@@ -95,6 +100,9 @@
 <!--          <input type="file" @change="uploadCaptionsFile">-->
 <!--        </div>-->
 <!--      </b-modal>-->
+      <div style="color:red" v-if="this.webCaptions.length > 0 && this.workflow_status !== 'Complete' && this.workflow_status !== 'Error' && this.workflow_status !== 'Waiting'">
+        Caption editing is disabled until workflow completes.
+      </div>
     </div>
   </div>
 </template>
@@ -106,10 +114,12 @@ export default {
   name: "Transcript",
   data() {
     return {
+      asset_id: this.$route.params.asset_id,
       workflow_id: "",
       workflow_status: "",
       waiting_stage: "",
       sourceLanguageCode: "",
+      translateLanguageCodes: [],
       showSaveNotification: 0,
       saveNotificationMessage: "Captions saved",
       results: [],
@@ -160,6 +170,7 @@ export default {
     this.isBusy = true;
     this.getTimeUpdate();
     this.getWorkflowId();
+    this.pollWorkflowStatus();
     // uncomment this whenever we need to get data from Elasticsearch
     // this.fetchAssetData();
   },
@@ -232,8 +243,7 @@ export default {
       const token = await this.$Amplify.Auth.currentSession().then(data =>{
         return data.getIdToken().getJwtToken();
       });
-      const asset_id = this.$route.params.asset_id;
-      fetch(this.WORKFLOW_API_ENDPOINT + '/workflow/execution/asset/' + asset_id, {
+      fetch(this.WORKFLOW_API_ENDPOINT + '/workflow/execution/asset/' + this.asset_id, {
         method: 'get',
         headers: {
           'Authorization': token
@@ -247,17 +257,35 @@ export default {
               this.workflow_status = res.data[0].Status
               if ("CurrentStage" in res.data[0])
                 this.waiting_stage = res.data[0].CurrentStage
-              this.getTranscribeLanguage()
+              this.getTranscribeLanguage(token)
+              // get translation languages, needed for edit captions button
+              this.getTranslateLanguages(token);
             }
           )
         }
       )
     },
-    getTranscribeLanguage: async function() {
+    getWorkflowStatus: async function() {
       const token = await this.$Amplify.Auth.currentSession().then(data =>{
         return data.getIdToken().getJwtToken();
       });
-      const asset_id = this.$route.params.asset_id;
+      fetch(this.WORKFLOW_API_ENDPOINT + '/workflow/execution/asset/' + this.asset_id, {
+        method: 'get',
+        headers: {
+          'Authorization': token
+        }
+      }).then(response => {
+          response.json().then(data => ({
+              data: data,
+            })
+          ).then(res => {
+              this.workflow_status = res.data[0].Status
+            }
+          )
+        }
+      )
+    },
+    getTranscribeLanguage: async function(token) {
       fetch(this.WORKFLOW_API_ENDPOINT + '/workflow/execution/' + this.workflow_id, {
         method: 'get',
         headers: {
@@ -275,7 +303,25 @@ export default {
         }
       )
     },
+    getTranslateLanguages: async function(token) {
+      fetch(this.WORKFLOW_API_ENDPOINT + '/workflow/execution/' + this.workflow_id, {
+        method: 'get',
+        headers: {
+          'Authorization': token
+        }
+      }).then(response => {
+          response.json().then(data => ({
+              data: data,
+            })
+          ).then(res => {
+              this.translateLanguageCodes = res.data.Configuration.TranslateStage2.TranslateWebCaptions.TargetLanguageCodes
+            }
+          )
+        }
+      )
+    },
     resumeWorkflow: async function() {
+      // This function executes a paused workflow from the WaitingStageName stage.
       const token = await this.$Amplify.Auth.currentSession().then(data =>{
         return data.getIdToken().getJwtToken();
       });
@@ -297,24 +343,53 @@ export default {
         })
       )
     },
-    editCaptions: async function () {
-      // TODO sort captions
-      // TODO execute workflow
-      // TODO set workflow status
-      console.log("edit captions")
+    rerunWorkflow: async function (token) {
+      // This function reruns all the operators downstream from transcribe.
+      let data = this.kitchenSinkWorkflowConfig();
+      data["Input"] = {
+        "AssetId": this.asset_id
+      };
+      // execute the workflow
+      fetch(this.WORKFLOW_API_ENDPOINT + 'workflow/execution', {
+        method: 'post',
+        body: JSON.stringify(data),
+        headers: {'Content-Type': 'application/json', 'Authorization': token}
+      }).then(response =>
+        response.json().then(data => ({
+            data: data,
+            status: response.status
+          })
+        ).then(res => {
+          if (res.status !== 200) {
+            console.log("ERROR: Failed to start workflow.");
+            console.log(res.data.Code);
+            console.log(res.data.Message);
+            console.log("URL: " + this.WORKFLOW_API_ENDPOINT + 'workflow/execution');
+            console.log("Data:");
+            console.log(JSON.stringify(data));
+            console.log((data));
+            console.log("Response: " + response.status);
+          } else {
+            this.saveNotificationMessage += " and workflow resumed"
+            console.log("workflow executing");
+            console.log(res);
+          }
+        })
+      )
     },
-    saveCaptions: async function () {
+    saveCaptions: async function (token) {
+      // This function saves captions to the dataplane
+      // and reruns or resumes the workflow.
       this.isSaving=true;
-      const token = await this.$Amplify.Auth.currentSession().then(data =>{
-        return data.getIdToken().getJwtToken();
-      });
+      if (!token) {
+        token = await this.$Amplify.Auth.currentSession().then(data =>{
+          return data.getIdToken().getJwtToken();
+        });
+      }
       const operator_name = "WebCaptions_"+this.sourceLanguageCode
-      const asset_id = this.$route.params.asset_id;
-      // Sort captions by start time before saving
-      this.sortWebCaptions();
       const webCaptions = {"WebCaptions": this.webCaptions}
       let data='{"OperatorName": "' + operator_name + '", "Results": ' + JSON.stringify(webCaptions) + ', "WorkflowId": "' + this.workflow_id + '"}'
-      fetch(this.DATAPLANE_API_ENDPOINT + 'metadata/' + asset_id, {
+      fetch(this.DATAPLANE_API_ENDPOINT + 'metadata/' + this.asset_id, {
         method: 'post',
         body: data,
         headers: {'Content-Type': 'application/json', 'Authorization': token}
@@ -329,8 +404,11 @@ export default {
             console.log("Captions saved")
             this.saveNotificationMessage = "Captions saved"
             if (this.workflow_status === "Waiting") {
-              this.resumeWorkflow()
-              this.workflow_status = "Started"
+              this.resumeWorkflow();
+              this.workflow_status = "Started";
+            } else if (this.workflow_status === "Complete" ||
+              this.workflow_status === "Error") {
+              this.rerunWorkflow(token);
             }
             this.showSaveNotification = 5;
           }
@@ -375,10 +453,9 @@ export default {
       // TODO: Get workflow id so you can get the workflow configuration
       // TODO: Get source language from workflow configuration
       // Get paginated web captions
-      const asset_id = this.$route.params.asset_id;
       const operator_name = "WebCaptions_"+this.sourceLanguageCode
       let cursor=''
-      let url = this.DATAPLANE_API_ENDPOINT + '/metadata/' + asset_id + '/' + operator_name
+      let url = this.DATAPLANE_API_ENDPOINT + '/metadata/' + this.asset_id + '/' + operator_name
       this.webCaptions = []
       this.getWebCaptionPages(token, url, cursor)
     },
@@ -423,7 +500,7 @@ export default {
       this.webCaptions.splice(index, 1)
     },
     async fetchAssetData () {
-      let query = 'AssetId:'+this.$route.params.asset_id+ ' _index:mietranscript';
+      let query = 'AssetId:'+this.asset_id+ ' _index:mietranscript';
       let apiName = 'mieElasticsearch';
       let path = '/_search';
       let apiParams = {
@@ -448,7 +525,137 @@ export default {
         }
         this.isBusy = false
       }
-    }
+    },
+    kitchenSinkWorkflowConfig() {
+      return {
+        "Name": "MieCompleteWorkflow2",
+        "Configuration": {
+          "defaultPrelimVideoStage2": {
+            "Thumbnail": {
+              "ThumbnailPosition": "10",
+              "MediaType": "Video",
+              "Enabled": false
+            },
+            "Mediainfo": {
+              "MediaType": "Video",
+              "Enabled": false
+            }
+          },
+          "MediaconvertStage2": {
+            "Mediaconvert": {
+              "MediaType": "Video",
+              "Enabled": false
+            }
+          },
+          "CaptionEditingWaitStage": {
+            "Wait": {
+              "MediaType": "MetadataOnly",
+              "Enabled": false
+            }
+          },
+          "CaptionFileStage2": {
+            "WebToSRTCaptions": {
+              "MediaType": "MetadataOnly",
+              "TargetLanguageCodes": this.translateLanguageCodes,
+              "Enabled": true
+            },
+            "WebToVTTCaptions": {
+              "MediaType": "MetadataOnly",
+              "TargetLanguageCodes": this.translateLanguageCodes,
+              "Enabled": true
+            }
+          },
+          "WebCaptionsStage2": {
+            "WebCaptions": {
+              "MediaType": "Text",
+              "SourceLanguageCode": this.sourceLanguageCode,
+              "Enabled": true
+            }
+          },
+          "TranslateStage2": {
+            "Translate": {
+              "MediaType": "Text",
+              "Enabled": true
+            },
+            "TranslateWebCaptions": {
+              "MediaType": "MetadataOnly",
+              "Enabled": true,
+              "TargetLanguageCodes": this.translateLanguageCodes,
+              "SourceLanguageCode": this.sourceLanguageCode,
+            }
+          },
+          "defaultAudioStage2": {
+            "Transcribe": {
+              "MediaType": "Audio",
+              "Enabled": false,
+              "TranscribeLanguage": "N/A"
+            }
+          },
+          "defaultTextSynthesisStage2": {
+            "Polly": {
+              "MediaType": "Text",
+              "Enabled": false
+            }
+          },
+          "defaultVideoStage2": {
+            "faceDetection": {
+              "MediaType": "Video",
+              "Enabled": false
+            },
+            "textDetection": {
+              "MediaType": "Video",
+              "Enabled": false
+            },
+            "celebrityRecognition": {
+              "MediaType": "Video",
+              "Enabled": false
+            },
+            "GenericDataLookup": {
+              "MediaType": "Video",
+              "Enabled": false
+            },
+            "labelDetection": {
+              "MediaType": "Video",
+              "Enabled": false
+            },
+            "personTracking": {
+              "MediaType": "Video",
+              "Enabled": false
+            },
+            "Mediaconvert": {
+              "MediaType": "Video",
+              "Enabled": false
+            },
+            "contentModeration": {
+              "MediaType": "Video",
+              "Enabled": false
+            },
+            "faceSearch": {
+              "MediaType": "Video",
+              "Enabled": false,
+              "CollectionId": "undefined"
+            }
+          },
+          "defaultTextStage2": {
+            "ComprehendEntities": {
+              "MediaType": "Text",
+              "Enabled": false
+            },
+            "ComprehendKeyPhrases": {
+              "MediaType": "Text",
+              "Enabled": false
+            }
+          }
+        }
+      }
+    },
+    pollWorkflowStatus() {
+      // Poll frequency in milliseconds
+      const poll_frequency = 5000;
+      this.workflow_status_polling = setInterval(() => {
+        this.getWorkflowStatus();
+      }, poll_frequency)
+    },
   },
 }
 </script>

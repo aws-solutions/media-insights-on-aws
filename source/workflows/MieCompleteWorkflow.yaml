@@ -22,7 +22,7 @@ Resources:
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Stage"
-      Name: "defaultPrelimVideoStage"
+      Name: !Sub "defaultPrelimVideoStage-${ShortUUID}"
       Operations:
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:Thumbnail"

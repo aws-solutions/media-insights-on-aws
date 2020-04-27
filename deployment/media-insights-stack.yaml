@@ -165,7 +165,7 @@ Resources:
   MieLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: MediaInsightsLogs
+      LogGroupName: !Sub "${AWS::StackName}-MediaInsightsLogs"
       RetentionInDays: 14
 
   # IAM Roles

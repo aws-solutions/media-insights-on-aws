@@ -1450,7 +1450,7 @@ Resources:
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Operation"
-      Name: "Mediainfo"
+      Name: !Sub "Mediainfo-${ShortUUID}"
       Type: "Sync"
       Configuration: { "MediaType": "Video", "Enabled": true }
       StartLambdaArn: !GetAtt Mediainfo.Arn
@@ -1461,7 +1461,7 @@ Resources:
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Operation"
-      Name: "MediainfoImage"
+      Name: !Sub "MediainfoImage-${ShortUUID}"
       Type: "Sync"
       Configuration: { "MediaType": "Image", "Enabled": true }
       StartLambdaArn: !GetAtt Mediainfo.Arn
@@ -1721,7 +1721,7 @@ Resources:
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Operation"
-      Name: "textDetection"
+      Name: !Sub "textDetection-${ShortUUID}"
       Type: "Async"
       Configuration: { "MediaType": "Video", "Enabled": true }
       StartLambdaArn: !GetAtt startTextDetection.Arn
@@ -1733,7 +1733,7 @@ Resources:
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Operation"
-      Name: "textDetectionImage"
+      Name: !Sub "textDetectionImage-${ShortUUID}"
       Type: "Sync"
       Configuration: { "MediaType": "Image", "Enabled": true }
       StartLambdaArn: !GetAtt startTextDetection.Arn

@@ -122,7 +122,7 @@ export default {
       workflow_status: "",
       waiting_stage: "",
       sourceLanguageCode: "",
-      translateLanguageCodes: [],
+      workflow_config: {},
       showSaveNotification: 0,
       saveNotificationMessage: "Captions saved",
       results: [],
@@ -261,8 +261,8 @@ export default {
               if ("CurrentStage" in res.data[0])
                 this.waiting_stage = res.data[0].CurrentStage
               this.getTranscribeLanguage(token)
-              // get translation languages, needed for edit captions button
-              this.getTranslateLanguages(token);
+              // get workflow config, needed for edit captions button
+              this.getWorkflowConfig(token);
             }
           )
         }
@@ -306,7 +306,7 @@ export default {
         }
       )
     },
-    getTranslateLanguages: async function(token) {
+    getWorkflowConfig: async function(token) {
       fetch(this.WORKFLOW_API_ENDPOINT + '/workflow/execution/' + this.workflow_id, {
         method: 'get',
         headers: {
@@ -317,9 +317,8 @@ export default {
               data: data,
             })
           ).then(res => {
-              this.translateLanguageCodes = res.data.Configuration.TranslateStage2.TranslateWebCaptions.TargetLanguageCodes
-            }
-          )
+            this.workflow_config = res.data.Configuration
+          })
         }
       )
     },
@@ -348,7 +347,10 @@ export default {
     },
     rerunWorkflow: async function (token) {
       // This function reruns all the operators downstream from transcribe.
-      let data = this.kitchenSinkWorkflowConfig();
+      let data = {
+        "Name": "MieCompleteWorkflow2",
+        "Configuration": this.workflow_config
+      }
       data["Input"] = {
         "AssetId": this.asset_id
       };
@@ -531,129 +533,6 @@ export default {
           }
         }
         this.isBusy = false
-      }
-    },
-    kitchenSinkWorkflowConfig() {
-      return {
-        "Name": "MieCompleteWorkflow2",
-        "Configuration": {
-          "defaultPrelimVideoStage2": {
-            "Thumbnail": {
-              "ThumbnailPosition": "10",
-              "MediaType": "Video",
-              "Enabled": false
-            },
-            "Mediainfo": {
-              "MediaType": "Video",
-              "Enabled": false
-            }
-          },
-          "MediaconvertStage2": {
-            "Mediaconvert": {
-              "MediaType": "Video",
-              "Enabled": false
-            }
-          },
-          "CaptionEditingWaitStage": {
-            "Wait": {
-              "MediaType": "MetadataOnly",
-              "Enabled": false
-            }
-          },
-          "CaptionFileStage2": {
-            "WebToSRTCaptions": {
-              "MediaType": "MetadataOnly",
-              "TargetLanguageCodes": this.translateLanguageCodes.concat(this.sourceLanguageCode),
-              "Enabled": true
-            },
-            "WebToVTTCaptions": {
-              "MediaType": "MetadataOnly",
-              "TargetLanguageCodes": this.translateLanguageCodes.concat(this.sourceLanguageCode),
-              "Enabled": true
-            }
-          },
-          "WebCaptionsStage2": {
-            "WebCaptions": {
-              "MediaType": "Text",
-              "SourceLanguageCode": this.sourceLanguageCode,
-              "Enabled": true
-            }
-          },
-          "TranslateStage2": {
-            "Translate": {
-              "MediaType": "Text",
-              "Enabled": true
-            },
-            "TranslateWebCaptions": {
-              "MediaType": "MetadataOnly",
-              "Enabled": true,
-              "TargetLanguageCodes": this.translateLanguageCodes,
-              "SourceLanguageCode": this.sourceLanguageCode,
-            }
-          },
-          "defaultAudioStage2": {
-            "Transcribe": {
-              "MediaType": "Audio",
-              "Enabled": false,
-              "TranscribeLanguage": "N/A"
-            }
-          },
-          "defaultTextSynthesisStage2": {
-            "Polly": {
-              "MediaType": "Text",
-              "Enabled": false
-            }
-          },
-          "defaultVideoStage2": {
-            "faceDetection": {
-              "MediaType": "Video",
-              "Enabled": false
-            },
-            "textDetection": {
-              "MediaType": "Video",
-              "Enabled": false
-            },
-            "celebrityRecognition": {
-              "MediaType": "Video",
-              "Enabled": false
-            },
-            "GenericDataLookup": {
-              "MediaType": "Video",
-              "Enabled": false
-            },
-            "labelDetection": {
-              "MediaType": "Video",
-              "Enabled": false
-            },
-            "personTracking": {
-              "MediaType": "Video",
-              "Enabled": false
-            },
-            "Mediaconvert": {
-              "MediaType": "Video",
-              "Enabled": false
-            },
-            "contentModeration": {
-              "MediaType": "Video",
-              "Enabled": false
-            },
-            "faceSearch": {
-              "MediaType": "Video",
-              "Enabled": false,
-              "CollectionId": "undefined"
-            }
-          },
-          "defaultTextStage2": {
-            "ComprehendEntities": {
-              "MediaType": "Text",
-              "Enabled": false
-            },
-            "ComprehendKeyPhrases": {
-              "MediaType": "Text",
-              "Enabled": false
-            }
-          }
-        }
       }
     },
     pollWorkflowStatus() {

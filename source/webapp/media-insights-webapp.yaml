@@ -34,12 +34,6 @@ Resources:
     DeletionPolicy: Retain
     Properties:
       AccessControl: LogDeliveryWrite
-      BucketName:
-        Fn::Transform:
-          Name: 'String'
-          Parameters:
-            InputString: !Sub "${AWS::StackName}-website"
-            Operation: Lower
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
@@ -48,12 +42,6 @@ Resources:
         IndexDocument: "index.html"
         ErrorDocument: "index.html"
       LoggingConfiguration:
-        DestinationBucketName:
-          Fn::Transform:
-            Name: 'String'
-            Parameters:
-              InputString: !Sub "${AWS::StackName}-website"
-              Operation: Lower
         LogFilePrefix: "access_logs/"
       LifecycleConfiguration:
         Rules:

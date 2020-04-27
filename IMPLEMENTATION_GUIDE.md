@@ -137,7 +137,9 @@ Use the following shell commands to configure the build environment parameters:
     VERSION=[enter an arbitrary version name here]
     REGION=[enter the name of the region in which you would like to build MIE]
 
-Create an S3 bucket for the MIE build files named `$DIST_OUTPUT_BUCKET-$REGION` using the input you gave above.
+Create an S3 bucket for the MIE build files named `$DIST_OUTPUT_BUCKET`, for instance using AWS CLI:
+
+    aws s3 mb s3://$DIST_OUTPUT_BUCKET
 
 Run the following build command in your terminal from the `deployment` directory:
 

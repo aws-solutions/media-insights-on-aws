@@ -34,7 +34,7 @@ def start_frame_workflows(nframes, stack_resources, testing_env_variables):
         s3 = boto3.client('s3', region_name=testing_env_variables['REGION'])
         s3.upload_file(testing_env_variables['SAMPLE_IMAGE'], testing_env_variables['BUCKET_NAME'], uid + testing_env_variables['SAMPLE_IMAGE'])
         headers = {"Content-Type": "application/json", "Authorization": testing_env_variables['token']}
-        body = json.loads('{"Name":"ImageWorkflow","Configuration":{"ValidationStage":{"MediainfoImage":{"Enabled":true}},"RekognitionStage":{"faceSearchImage":{"Enabled":false, "CollectionId":"undefined"},"labelDetectionImage":{"Enabled":true},"celebrityRecognitionImage":{"Enabled":true},"contentModerationImage":{"Enabled":true},"faceDetectionImage":{"Enabled":true}}},"Input":{"Media":{"Image":{"S3Bucket":"' + testing_env_variables['BUCKET_NAME'] + '","S3Key":"' + uid + testing_env_variables['SAMPLE_IMAGE'] + '"}}}}')
+        body = json.loads('{"Name":"ImageWorkflow","Configuration":{"ValidationStage":{"MediainfoImage":{"Enabled":true}},"RekognitionStage":{"faceSearchImage":{"Enabled":false, "CollectionId":"undefined"},"labelDetectionImage":{"Enabled":true},"celebrityRecogImage":{"Enabled":true},"contentModeratImage":{"Enabled":true},"faceDetectionImage":{"Enabled":true}}},"Input":{"Media":{"Image":{"S3Bucket":"' + testing_env_variables['BUCKET_NAME'] + '","S3Key":"' + uid + testing_env_variables['SAMPLE_IMAGE'] + '"}}}}')
         start_request = requests.post(stack_resources["WorkflowApiEndpoint"]+'/workflow/execution', headers=headers, json=body, verify=False)
         if start_request.status_code != 200:
             print('error on workflow #' + str(i))
@@ -195,4 +195,3 @@ def test_frame_flood(api, stack_resources, api_schema, testing_env_variables):
 
 # compare time it takes to run a set of 100 workflows with concurrency set to 1 vs 100
 # time should be at least 10x faster (heuristic sanity check for embarrassing overheads)
-

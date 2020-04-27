@@ -644,12 +644,12 @@ export default {
                 labelDetectionImage: {
                   Enabled: this.enabledOperators.includes("labelDetection")
                 },
-                celebrityRecognitionImage: {
+                celebrityRecogImage: {
                   Enabled: this.enabledOperators.includes(
                     "celebrityRecognition"
                   )
                 },
-                contentModerationImage: {
+                contentModeratImage: {
                   Enabled: this.enabledOperators.includes("contentModeration")
                 },
                 faceDetectionImage: {

@@ -7,7 +7,7 @@ env:
     testing_user_password: /CodeBuild/mie/testing_password
 
 phases:
-  post_build:
+  build:
     commands:
       - mkdir ~/.aws/
       - touch ~/.aws/credentials
@@ -43,3 +43,5 @@ phases:
       - export FACE_COLLECTION_ID=temporary_face_collection
       - echo "Running tests"
       - pytest -s -W ignore::DeprecationWarning -p no:cacheprovider
+    finally:
+      - aws cognito-idp admin-delete-user --user-pool-id $MIE_POOL_ID --username $MIE_USERNAME

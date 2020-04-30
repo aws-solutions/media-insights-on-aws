@@ -44,8 +44,8 @@
           >
         </template>
         <template v-slot:cell(timeslot)="data">
-          <b-form-input :disabled="workflow_status !== 'Complete'" class="compact-height start-time-field " :value="data.item.start" @change="new_time => changeStartTime(new_time, data.index)"/>
-          <b-form-input :disabled="workflow_status !== 'Complete'" class="compact-height stop-time-field " :value="data.item.end" @change="new_time => changeEndTime(new_time, data.index)"/>
+          <b-form-input :disabled="workflow_status !== 'Complete'" class="compact-height start-time-field " :value="toHHMMSS(data.item.start)" @change="new_time => changeStartTime(new_time, data.index)"/>
+          <b-form-input :disabled="workflow_status !== 'Complete'" class="compact-height stop-time-field " :value="toHHMMSS(data.item.end)" @change="new_time => changeEndTime(new_time, data.index)"/>
         </template>
         <template v-slot:cell(caption)="data">
           <b-container class="p-0">
@@ -181,6 +181,17 @@ export default {
       this.transcript = ''
   },
   methods: {
+    toHHMMSS(secs) {
+      var sec_num = parseInt(secs, 10)
+      var hours   = Math.floor(sec_num / 3600)
+      var minutes = Math.floor(sec_num / 60) % 60
+      var seconds = sec_num % 60
+
+      return [hours,minutes,seconds]
+        .map(v => v < 10 ? "0" + v : v)
+        .filter((v,i) => v !== "00" || i > 0)
+        .join(":")
+    },
     sortWebCaptions(item) {
       console.log("sorting captions")
       // Keep the webCaptions table sorted on caption start time
@@ -197,11 +208,15 @@ export default {
         this.$refs["caption" + (new_index)].focus();
       }
     },
-    changeStartTime(new_time, index) {
+    changeStartTime(hms, index) {
+      // input time must be in hh:mm:ss or mm:ss format
+      let new_time = hms.split(':').reduce((acc,time) => (60 * acc) + +time);
       this.webCaptions[index].start = new_time
       this.sortWebCaptions(this.webCaptions[index])
     },
-    changeEndTime(new_time, index) {
+    changeEndTime(hms, index) {
+      // input time must be in hh:mm:ss or mm:ss format
+      let new_time = hms.split(':').reduce((acc,time) => (60 * acc) + +time);
       this.webCaptions[index].end = new_time
     },
     changeCaption(new_caption, index) {

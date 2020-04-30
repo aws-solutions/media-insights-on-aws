@@ -606,20 +606,4 @@ export default {
   table.b-table-selectable > tbody > tr.b-table-row-selected > td {
     background-color: white !important;
   }
-  .scroller {
-    height: 100vh;
-  }
-  .vue-recycle-scroller__slot,
-  .vue-recycle-scroller__item-view {
-    display: flex;
-    width: 100%;
-  }
-  .th,
-  .td {
-    flex: 1;
-  }
-  .vue-recycle-scroller__slot .th:first-child,
-  .vue-recycle-scroller__item-view .td:first-child {
-    flex: 2;
-  }
 </style>

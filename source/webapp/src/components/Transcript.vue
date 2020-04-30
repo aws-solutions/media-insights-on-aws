@@ -44,14 +44,14 @@
           >
         </template>
         <template v-slot:cell(timeslot)="data">
-          <b-form-input :disabled="workflow_status !== 'Complete'" class="compact-height start-time-field " v-model="data.item.start" @change="sortWebCaptions(data.item)"/>
-          <b-form-input :disabled="workflow_status !== 'Complete'" class="compact-height stop-time-field " v-model="data.item.end"/>
+          <b-form-input :disabled="workflow_status !== 'Complete'" class="compact-height start-time-field " :value="data.item.start" @change="new_time => changeStartTime(new_time, data.index)"/>
+          <b-form-input :disabled="workflow_status !== 'Complete'" class="compact-height stop-time-field " :value="data.item.end" @change="new_time => changeEndTime(new_time, data.index)"/>
         </template>
         <template v-slot:cell(caption)="data">
           <b-container class="p-0">
             <b-row no-gutters>
               <b-col cols="10">
-          <b-form-textarea :disabled="workflow_status !== 'Complete'" :ref="'caption' + data.index" class="custom-text-field .form-control-sm" max-rows="8" v-model="data.item.caption" placeholder="Type subtitle here" @click='captionClickHandler(data.index)'/>
+          <b-form-textarea :disabled="workflow_status !== 'Complete'" :ref="'caption' + data.index" class="custom-text-field .form-control-sm" max-rows="8" :value="data.item.caption" placeholder="Type subtitle here" @change="new_caption => changeCaption(new_caption, data.index)" @click='captionClickHandler(data.index)'/>
               </b-col>
               <b-col>
                 <span style="position:absolute; top: 0px">
@@ -196,6 +196,16 @@ export default {
         })
         this.$refs["caption" + (new_index)].focus();
       }
+    },
+    changeStartTime(new_time, index) {
+      this.webCaptions[index].start = new_time
+      this.sortWebCaptions(this.webCaptions[index])
+    },
+    changeEndTime(new_time, index) {
+      this.webCaptions[index].end = new_time
+    },
+    changeCaption(new_caption, index) {
+      this.webCaptions[index].caption = new_caption
     },
     captionClickHandler(index) {
       // pause video player and jump to the time for the selected caption
@@ -595,5 +605,21 @@ export default {
   }
   table.b-table-selectable > tbody > tr.b-table-row-selected > td {
     background-color: white !important;
+  }
+  .scroller {
+    height: 100vh;
+  }
+  .vue-recycle-scroller__slot,
+  .vue-recycle-scroller__item-view {
+    display: flex;
+    width: 100%;
+  }
+  .th,
+  .td {
+    flex: 1;
+  }
+  .vue-recycle-scroller__slot .th:first-child,
+  .vue-recycle-scroller__item-view .td:first-child {
+    flex: 2;
   }
 </style>

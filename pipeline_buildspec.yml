@@ -37,3 +37,9 @@ phases:
     commands:
       - echo Entered the post_build phase...
       - echo Build completed on `date`
+
+artifacts:
+  files:
+    - deployment/dist/media-insights-stack.template
+  name: media-insights-stack
+  discard-paths: yes

@@ -51,7 +51,7 @@
           <b-container class="p-0">
             <b-row no-gutters>
               <b-col cols="10">
-          <b-form-textarea :disabled="workflow_status !== 'Complete'" :ref="'caption' + data.index" class="custom-text-field .form-control-sm" max-rows="8" :value="data.item.caption" placeholder="Type subtitle here" @change="new_caption => changeCaption(new_caption, data.index)" @click='captionClickHandler(data.index)'/>
+          <b-form-textarea :disabled="workflow_status !== 'Complete'" :id="'caption' + data.index" :ref="'caption' + data.index" class="custom-text-field .form-control-sm" max-rows="8" :value="data.item.caption" placeholder="Type subtitle here" @change="new_caption => changeCaption(new_caption, data.index)" @click='captionClickHandler(data.index)'/>
               </b-col>
               <b-col>
                 <span style="position:absolute; top: 0px">
@@ -158,11 +158,18 @@ export default {
         }
       )
     },
-    ...mapState(['player']),
+    ...mapState(['player', 'waveform_seek_position']),
     isProfane() {
       const Filter = require('bad-words');
       const profanityFilter = new Filter({ placeHolder: '_' });
       return profanityFilter.isProfane(this.transcript);
+    },
+  },
+  watch: {
+    // When user moves the cursor on the waveform
+    // then focus the corresponding row in the caption table.
+    waveform_seek_position: function () {
+      this.handleWaveformSeek();
     },
   },
   deactivated: function () {
@@ -171,7 +178,8 @@ export default {
   activated: function () {
     console.log('activated component:', this.operator);
     this.isBusy = true;
-    this.getTimeUpdate();
+    this.handleVideoPlay();
+    this.handleVideoSeek();
     this.getWorkflowId();
     this.pollWorkflowStatus();
     // uncomment this whenever we need to get data from Elasticsearch
@@ -251,21 +259,56 @@ export default {
       }
       this.webCaptions_vtt = vtt;
     },
-    getTimeUpdate() {
-      // Send current time position for the video player to verticalLineCanvas
-      var last_position = 0;
+    handleWaveformSeek() {
+      // When user moves the cursor on the waveform
+      // then focus the corresponding row in the caption table.
+      let timeline_position = this.webCaptions.findIndex(function (item, i) {
+        return (parseInt(item.start) <= this.waveform_seek_position && parseInt(item.end) >= this.waveform_seek_position)
+      }.bind(this));
+      if (timeline_position === -1) {
+        // There is no caption at that seek position
+        // so just seek to the beginning.
+        timeline_position = 0
+      }
+      if (this.$refs.selectableTable) {
+        var element = document.getElementById("caption" + timeline_position);
+        element.scrollIntoView();
+      }
+    },
+    handleVideoSeek() {
+      // When user moves the cursor on the video player
+      // then focus the corresponding row in the caption table.
       if (this.player) {
-        this.player.on('timeupdate', function () {
+        this.player.controlBar.progressControl.on('mouseup', function () {
           const current_position = Math.round(this.player.currentTime());
-          if (current_position !== last_position) {
-            let timeline_position = this.webCaptions.findIndex(function(item, i){return (parseInt(item.start) <= current_position && parseInt(item.end) >= current_position)})
-            if (this.$refs.selectableTable) {
-              this.$refs.selectableTable.selectRow(timeline_position)
-            }
-            last_position = current_position;
+          let timeline_position = this.webCaptions.findIndex(function (item, i) {
+            return (parseInt(item.start) <= current_position && parseInt(item.end) >= current_position)
+          })
+          if (timeline_position === -1) {
+            // There is no caption at that seek position
+            // so just seek to the beginning.
+            timeline_position = 0
+          }
+          if (this.$refs.selectableTable) {
+            var element = document.getElementById("caption" + (timeline_position));
+            element.scrollIntoView();
           }
         }.bind(this));
       }
+    },
+    handleVideoPlay() {
+      var last_position = 0;
+      // Advance the selected row in the caption table when the video is playing
+      this.player.on('timeupdate', function () {
+        const current_position = Math.round(this.player.currentTime());
+        if (current_position !== last_position) {
+          let timeline_position = this.webCaptions.findIndex(function(item, i){return (parseInt(item.start) <= current_position && parseInt(item.end) >= current_position)})
+          if (this.$refs.selectableTable) {
+            this.$refs.selectableTable.selectRow(timeline_position)
+          }
+          last_position = current_position;
+        }
+      }.bind(this));
     },
     getWorkflowId: async function() {
       const token = await this.$Amplify.Auth.currentSession().then(data =>{

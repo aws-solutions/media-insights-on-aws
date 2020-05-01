@@ -123,6 +123,9 @@
           // Seek the video player to the new position
           vm.player.currentTime(new_position*wavesurfer.getDuration())
           vm.old_position = new_position
+          // Send a signal to the Transcript component so it can
+          // seek the caption table to the new position.
+          vm.$store.commit('updateWaveformSeekPosition', new_position*wavesurfer.getDuration());
         });
       },
       getTimeUpdate() {

@@ -225,8 +225,17 @@ def check_translate_webcaptions(event, context):
                 #put_webcaptions(operator_object, outputWebCaptions, targetLanguageCode)
                 operator_metadata = put_webcaptions_json(operator_object, outputWebCaptions, targetLanguageCode)
 
-                # Save a copy of the translation text without delimiters
-                translation_text = translateOutput.replace("<123>", "")
+                # Save a copy of the translation text without delimiters.  The translations can add
+                # and remove important whitespace around delimiters as Translate changes the 
+                # sentence structure.  Try to fix up known problems.
+                # - delimiter next to space keeps the space
+                translation_text = translateOutput.replace(" <123>", " ")
+                # - delimiter next to contraction (some languages) has no space
+                translation_text = translation_text.replace("'<123>", "")
+                # - all the rest are replaced with a space. This might add an extra space
+                # - but that's proabably better than no space
+                translation_text = translation_text.replace("<123>", " ")
+
                 translation_text_key = translation_path+"translation"+"_"+targetLanguageCode+".txt"
                 s3_object = s3_resource.Object(bucket, translation_text_key)
                 s3_object.put(Body=translation_text)

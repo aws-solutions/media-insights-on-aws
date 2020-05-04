@@ -23,7 +23,6 @@ The default settings for the template will deploy MIE and the demo GUI. You must
 
 For more information about stack deployment, see the section on [installation parameters](#installation-parameters).
 
-
 # Cost
 
 Most AWS accounts include a free tier for the services used in MIE. However, if your usage exceeds the free tier allotments then you will be responsible for the cost of the AWS services used while running MIE. 

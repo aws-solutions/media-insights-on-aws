@@ -16,23 +16,39 @@
 # User-defined environment variables
 # User-defined environment variables
 
-echo "What region is your MIE Stack in?"
-read region
-export REGION=$region
-echo $REGION
+if [ -z MIE_REGION ]
+then
+    echo "What region is your MIE Stack in?"
+    read region
+    export REGION=$region
+    echo $REGION
+else
+    export REGION=$MIE_REGION
 
-echo "What is the name of your MIE Stack?"
-read stackname
-export MIE_STACK_NAME=$stackname
-echo $MIE_STACK_NAME
+fi
 
-echo "Enter your MIE Admin Username"
-read username
-export MIE_USERNAME=$username
-echo $MIE_USERNAME
+if [ -z MIE_STACK_NAME ]
+then
+    echo "What is the name of your MIE Stack?"
+    read stackname
+    export MIE_STACK_NAME=$stackname
+    echo $MIE_STACK_NAME
+fi
 
-read -p "Enter your password (enter temp password if your account is unverified)" -s password
-export MIE_PASSWORD=$password
+if [ -z MIE_USERNAME ]
+then
+    echo "Enter your MIE Admin Username"
+    read username
+    export MIE_USERNAME=$username
+    echo $MIE_USERNAME
+fi
+
+
+if [ -z MIE_PASSWORD ]
+then
+    read -p "Enter your password (enter temp password if your account is unverified)" -s password
+    export MIE_PASSWORD=$password
+fi
 
 # Retrieve exports from mie stack
 export BUCKET_NAME=`aws cloudformation list-stack-resources --profile default --stack-name $MIE_STACK_NAME --region $REGION --output text --query 'StackResourceSummaries[?LogicalResourceId == \`Dataplane\`]'.PhysicalResourceId`
@@ -63,13 +79,16 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Authenticate with Cognito
-token=$(python3 './getAccessToken.py')
-if [ $? -eq 0 ]; then
-    export MIE_ACCESS_TOKEN=$token
-else
-    echo "ERROR: Unable to authenticate";
-    exit 1;
+if [ -z MIE_ACCESS_TOKEN ]
+then
+    # Authenticate with Cognito
+    token=$(python3 './getAccessToken.py')
+    if [ $? -eq 0 ]; then
+        export MIE_ACCESS_TOKEN=$token
+    else
+        echo "ERROR: Unable to authenticate";
+        exit 1;
+    fi
 fi
 
 echo "------------------------------------------------------------------------------"

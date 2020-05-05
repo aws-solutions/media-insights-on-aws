@@ -21,6 +21,8 @@ s3 = boto3.client('s3')
 s3_resource = boto3.resource("s3")
 dataplane = DataPlane()
 
+marker = "<span/>"
+
 def start_translate_webcaptions(event, context):
     print("We got the following event:\n", event)
 
@@ -48,9 +50,7 @@ def start_translate_webcaptions(event, context):
     return operator_object.return_output_object()
 
 
-def translate_webcaptions(operator_object, inputCaptions, sourceLanguageCodes, targetLanguageCodes, terminology_names=[]):
-
-    marker = "<123>"
+def translate_webcaptions(operator_object, inputCaptions, sourceLanguageCodes, targetLanguageCodes, terminology_names=[]):    
 
     try:
 
@@ -219,7 +219,7 @@ def check_translate_webcaptions(event, context):
                 translateOutput = s3_resource.Object(translateJobS3Location["Bucket"], outputS3ObjectKey).get()["Body"].read().decode("utf-8")
                 #inputWebCaptions = get_webcaptions(operator_object, translateJobDescription["TextTranslationJobProperties"]["SourceLanguageCode"])
                 inputWebCaptions = get_webcaptions_json(operator_object, translateJobDescription["TextTranslationJobProperties"]["SourceLanguageCode"])
-                outputWebCaptions = delimitedToWebCaptions(inputWebCaptions, translateOutput, "<123>", 15)
+                outputWebCaptions = delimitedToWebCaptions(inputWebCaptions, translateOutput, marker, 15)
                 print(outputS3ObjectKey)
                 (targetLanguageCode, basename, ext) = outputFilename.split(".")
                 #put_webcaptions(operator_object, outputWebCaptions, targetLanguageCode)
@@ -234,7 +234,7 @@ def check_translate_webcaptions(event, context):
                 translation_text = translation_text.replace("'<123>", "")
                 # - all the rest are replaced with a space. This might add an extra space
                 # - but that's proabably better than no space
-                translation_text = translation_text.replace("<123>", " ")
+                translation_text = translation_text.replace(marker, " ")
 
                 translation_text_key = translation_path+"translation"+"_"+targetLanguageCode+".txt"
                 s3_object = s3_resource.Object(bucket, translation_text_key)

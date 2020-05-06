@@ -37,7 +37,7 @@ class WebCaptions:
             self.transcribe_operator_name = "Transcribe"
             self.workflow_id = operator_object.workflow_execution_id
             self.asset_id = operator_object.asset_id
-            self.marker = "<123>"
+            self.marker = "<span/>"
             if "SourceLanguageCode" in self.operator_object.configuration:
                 self.source_language_code = self.operator_object.configuration["SourceLanguageCode"]
                 self.operator_name_with_lang = self.operator_object.name+"_"+self.source_language_code 
@@ -100,11 +100,11 @@ class WebCaptions:
         return transcript
 
     def TranscribeToWebCaptions(self, transcripts):
-        
+  
         endTime = 0.0
-        maxLength = 50
+        maxLength = 200
         wordCount = 0
-        maxWords = 12
+        maxWords = 35
         maxSilence = 1.5
 
         captions = []
@@ -113,7 +113,6 @@ class WebCaptions:
         for transcript in transcripts:
             for item in transcript["results"]["items"]:
             
-
                 isPunctuation = item["type"] == "punctuation"
 
                 if caption is None:
@@ -178,13 +177,12 @@ class WebCaptions:
                     wordCount += 1
 
                 # If we have reached a good amount of text finalize the caption
-
-                if (wordCount >= maxWords) or (len(caption["caption"]) >= maxLength):
+                if (wordCount >= maxWords) or (len(caption["caption"]) >= maxLength) or isPunctuation and text in "...?!":
                     caption["end"] = endTime
                     captions.append(caption)
                     wordCount = 0
                     caption = None
-                    
+
 
         # Close the last caption if required
 
@@ -613,14 +611,14 @@ def check_translate_webcaptions(event, context):
                 translateOutput = s3_resource.Object(translateJobS3Location["Bucket"], outputS3ObjectKey).get()["Body"].read().decode("utf-8")
                 #inputWebCaptions = get_webcaptions(operator_object, translateJobDescription["TextTranslationJobProperties"]["SourceLanguageCode"])
                 inputWebCaptions = webcaptions_object.GetWebCaptions(translateJobDescription["TextTranslationJobProperties"]["SourceLanguageCode"])
-                outputWebCaptions = webcaptions_object.DelimitedToWebCaptions(inputWebCaptions, translateOutput, "<123>", 15)
+                outputWebCaptions = webcaptions_object.DelimitedToWebCaptions(inputWebCaptions, translateOutput, webcaptions_object.marker, 15)
                 print(outputS3ObjectKey)
                 (targetLanguageCode, basename, ext) = outputFilename.split(".")
                 #put_webcaptions(operator_object, outputWebCaptions, targetLanguageCode)
                 operator_metadata = webcaptions_object.PutWebCaptions(outputWebCaptions, targetLanguageCode)
 
                 # Save a copy of the translation text without delimiters
-                translation_text = translateOutput.replace("<123>", "")
+                translation_text = translateOutput.replace(webcaptions_object.marker, "")
                 translation_text_key = translation_path+"translation"+"_"+targetLanguageCode+".txt"
                 s3_object = s3_resource.Object(bucket, translation_text_key)
                 s3_object.put(Body=translation_text)

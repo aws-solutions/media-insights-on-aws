@@ -7,6 +7,7 @@ import urllib3
 import math
 import os
 import ntpath
+import html
 from botocore import config
 from urllib.parse import urlparse
 
@@ -38,6 +39,7 @@ class WebCaptions:
             self.workflow_id = operator_object.workflow_execution_id
             self.asset_id = operator_object.asset_id
             self.marker = "<span/>"
+            self.contentType = "text/html"
             if "SourceLanguageCode" in self.operator_object.configuration:
                 self.source_language_code = self.operator_object.configuration["SourceLanguageCode"]
                 self.operator_name_with_lang = self.operator_object.name+"_"+self.source_language_code 
@@ -293,6 +295,10 @@ class WebCaptions:
     # Converts a delimited file back to web captions format.
     # Uses the source web captions to get timestamps and source caption text (saved in sourceCaption field).
     def DelimitedToWebCaptions(self, sourceWebCaptions, delimitedCaptions, delimiter, maxCaptionLineLength):
+        
+        if self.contentType == 'text/html':
+            delimitedCaptions = html.unescape(delimitedCaptions)
+        
         entries = delimitedCaptions.split(delimiter)
 
         outputWebCaptions = []
@@ -379,7 +385,7 @@ class WebCaptions:
                     JobName=job_name,
                     InputDataConfig={
                         'S3Uri': translation_input_uri,
-                        'ContentType': 'text/plain'
+                        'ContentType': self.contentType
                     },
                     OutputDataConfig={
                         'S3Uri': translation_output_uri
@@ -618,6 +624,9 @@ def check_translate_webcaptions(event, context):
                 operator_metadata = webcaptions_object.PutWebCaptions(outputWebCaptions, targetLanguageCode)
 
                 # Save a copy of the translation text without delimiters
+                if webcaptions_object.contentType == 'text/html':
+                    translateOutput = html.unescape(translateOutput)
+
                 translation_text = translateOutput.replace(webcaptions_object.marker, "")
                 translation_text_key = translation_path+"translation"+"_"+targetLanguageCode+".txt"
                 s3_object = s3_resource.Object(bucket, translation_text_key)

@@ -422,6 +422,13 @@ export default {
       data["Input"] = {
         "AssetId": this.asset_id
       };
+      data["Configuration"]["WebCaptionsStage2"]["WebCaptions"].Enabled = false;
+      data["Configuration"]["defaultAudioStage2"]["Transcribe"].Enabled = false;
+      data["Configuration"]["MediaconvertStage2"]["Mediaconvert"].Enabled = false;
+      data["Configuration"]["defaultPrelimVideoStage2"]["Thumbnail"].Enabled = false;
+      data["Configuration"]["defaultPrelimVideoStage2"]["Mediainfo"].Enabled = false;
+      data["Configuration"]["TranslateStage2"]["TranslateWebCaptions"].MediaType = "MetadataOnly";
+
       // execute the workflow
       fetch(this.WORKFLOW_API_ENDPOINT + 'workflow/execution', {
         method: 'post',

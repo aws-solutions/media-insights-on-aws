@@ -106,7 +106,7 @@ class WebCaptions:
         endTime = 0.0
         maxLength = 120
         wordCount = 0
-        maxWords = 20
+        maxWords = 25
         maxSilence = 1.5
 
         captions = []

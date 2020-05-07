@@ -104,9 +104,9 @@ class WebCaptions:
     def TranscribeToWebCaptions(self, transcripts):
   
         endTime = 0.0
-        maxLength = 200
+        maxLength = 120
         wordCount = 0
-        maxWords = 35
+        maxWords = 20
         maxSilence = 1.5
 
         captions = []
@@ -623,11 +623,20 @@ def check_translate_webcaptions(event, context):
                 #put_webcaptions(operator_object, outputWebCaptions, targetLanguageCode)
                 operator_metadata = webcaptions_object.PutWebCaptions(outputWebCaptions, targetLanguageCode)
 
-                # Save a copy of the translation text without delimiters
+                # Save a copy of the translation text without delimiters.  The translation
+                # process may remove or add important whitespace around caption markers
+                # Try to replace markers with correct spacing (biased toward Latin based languages)
                 if webcaptions_object.contentType == 'text/html':
                     translateOutput = html.unescape(translateOutput)
 
-                translation_text = translateOutput.replace(webcaptions_object.marker, "")
+                # - delimiter next to space keeps the space
+                translation_text = translateOutput.replace(" "+webcaptions_object.marker, " ")
+                # - delimiter next to contraction (some languages) has no space
+                translation_text = translation_text.replace("'"+webcaptions_object.marker, "")
+                # - all the rest are replaced with a space. This might add an extra space
+                # - but that's proabably better than no space
+                translation_text = translation_text.replace(webcaptions_object.marker, " ")
+                
                 translation_text_key = translation_path+"translation"+"_"+targetLanguageCode+".txt"
                 s3_object = s3_resource.Object(bucket, translation_text_key)
                 s3_object.put(Body=translation_text)

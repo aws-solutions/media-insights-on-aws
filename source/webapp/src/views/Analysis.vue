@@ -110,6 +110,11 @@
             </div>
             <div v-else>
               <VideoPlayer :options="videoOptions" />
+            </div>
+            <div v-if="currentView === 'Transcript' || currentView === 'Translation' || currentView === 'KeyPhrases' || currentView === 'Entities'">
+              <Waveform />
+            </div>
+            <div v-else>
               <LineChart />
             </div>
           </div>
@@ -137,10 +142,12 @@
   import MediaSummaryBox from '@/components/MediaSummaryBox.vue'
   import LineChart from '@/components/LineChart.vue'
   import { mapState } from 'vuex'
+  import Waveform from "../components/Waveform";
 
   export default {
     name: 'Home',
     components: {
+      Waveform,
       Header,
       ComponentLoadingError,
       MediaSummaryBox,

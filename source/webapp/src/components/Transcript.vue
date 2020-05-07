@@ -44,14 +44,14 @@
           >
         </template>
         <template v-slot:cell(timeslot)="data">
-          <b-form-input :disabled="workflow_status !== 'Complete'" class="compact-height start-time-field " v-model="data.item.start" @change="sortWebCaptions(data.item)"/>
-          <b-form-input :disabled="workflow_status !== 'Complete'" class="compact-height stop-time-field " v-model="data.item.end"/>
+          <b-form-input :disabled="workflow_status !== 'Complete'" class="compact-height start-time-field " :value="toHHMMSS(data.item.start)" @change="new_time => changeStartTime(new_time, data.index)"/>
+          <b-form-input :disabled="workflow_status !== 'Complete'" class="compact-height stop-time-field " :value="toHHMMSS(data.item.end)" @change="new_time => changeEndTime(new_time, data.index)"/>
         </template>
         <template v-slot:cell(caption)="data">
           <b-container class="p-0">
             <b-row no-gutters>
               <b-col cols="10">
-          <b-form-textarea :disabled="workflow_status !== 'Complete'" :ref="'caption' + data.index" class="custom-text-field .form-control-sm" max-rows="8" v-model="data.item.caption" placeholder="Type subtitle here" @click='captionClickHandler(data.index)'/>
+          <b-form-textarea :disabled="workflow_status !== 'Complete'" :id="'caption' + data.index" :ref="'caption' + data.index" class="custom-text-field .form-control-sm" max-rows="8" :value="data.item.caption" placeholder="Type subtitle here" @change="new_caption => changeCaption(new_caption, data.index)" @click='captionClickHandler(data.index)'/>
               </b-col>
               <b-col>
                 <span style="position:absolute; top: 0px">
@@ -122,7 +122,7 @@ export default {
       workflow_status: "",
       waiting_stage: "",
       sourceLanguageCode: "",
-      translateLanguageCodes: [],
+      workflow_config: {},
       showSaveNotification: 0,
       saveNotificationMessage: "Captions saved",
       results: [],
@@ -158,11 +158,18 @@ export default {
         }
       )
     },
-    ...mapState(['player']),
+    ...mapState(['player', 'waveform_seek_position']),
     isProfane() {
       const Filter = require('bad-words');
       const profanityFilter = new Filter({ placeHolder: '_' });
       return profanityFilter.isProfane(this.transcript);
+    },
+  },
+  watch: {
+    // When user moves the cursor on the waveform
+    // then focus the corresponding row in the caption table.
+    waveform_seek_position: function () {
+      this.handleWaveformSeek();
     },
   },
   deactivated: function () {
@@ -171,7 +178,8 @@ export default {
   activated: function () {
     console.log('activated component:', this.operator);
     this.isBusy = true;
-    this.getTimeUpdate();
+    this.handleVideoPlay();
+    this.handleVideoSeek();
     this.getWorkflowId();
     this.pollWorkflowStatus();
     // uncomment this whenever we need to get data from Elasticsearch
@@ -181,6 +189,17 @@ export default {
       this.transcript = ''
   },
   methods: {
+    toHHMMSS(secs) {
+      var sec_num = parseInt(secs, 10)
+      var hours   = Math.floor(sec_num / 3600)
+      var minutes = Math.floor(sec_num / 60) % 60
+      var seconds = sec_num % 60
+
+      return [hours,minutes,seconds]
+        .map(v => v < 10 ? "0" + v : v)
+        .filter((v,i) => v !== "00" || i > 0)
+        .join(":")
+    },
     sortWebCaptions(item) {
       console.log("sorting captions")
       // Keep the webCaptions table sorted on caption start time
@@ -196,6 +215,20 @@ export default {
         })
         this.$refs["caption" + (new_index)].focus();
       }
+    },
+    changeStartTime(hms, index) {
+      // input time must be in hh:mm:ss or mm:ss format
+      let new_time = hms.split(':').reduce((acc,time) => (60 * acc) + +time);
+      this.webCaptions[index].start = new_time
+      this.sortWebCaptions(this.webCaptions[index])
+    },
+    changeEndTime(hms, index) {
+      // input time must be in hh:mm:ss or mm:ss format
+      let new_time = hms.split(':').reduce((acc,time) => (60 * acc) + +time);
+      this.webCaptions[index].end = new_time
+    },
+    changeCaption(new_caption, index) {
+      this.webCaptions[index].caption = new_caption
     },
     captionClickHandler(index) {
       // pause video player and jump to the time for the selected caption
@@ -226,21 +259,56 @@ export default {
       }
       this.webCaptions_vtt = vtt;
     },
-    getTimeUpdate() {
-      // Send current time position for the video player to verticalLineCanvas
-      var last_position = 0;
+    handleWaveformSeek() {
+      // When user moves the cursor on the waveform
+      // then focus the corresponding row in the caption table.
+      let timeline_position = this.webCaptions.findIndex(function (item, i) {
+        return (parseInt(item.start) <= this.waveform_seek_position && parseInt(item.end) >= this.waveform_seek_position)
+      }.bind(this));
+      if (timeline_position === -1) {
+        // There is no caption at that seek position
+        // so just seek to the beginning.
+        timeline_position = 0
+      }
+      if (this.$refs.selectableTable) {
+        var element = document.getElementById("caption" + timeline_position);
+        element.scrollIntoView();
+      }
+    },
+    handleVideoSeek() {
+      // When user moves the cursor on the video player
+      // then focus the corresponding row in the caption table.
       if (this.player) {
-        this.player.on('timeupdate', function () {
+        this.player.controlBar.progressControl.on('mouseup', function () {
           const current_position = Math.round(this.player.currentTime());
-          if (current_position !== last_position) {
-            let timeline_position = this.webCaptions.findIndex(function(item, i){return (parseInt(item.start) <= current_position && parseInt(item.end) >= current_position)})
-            if (this.$refs.selectableTable) {
-              this.$refs.selectableTable.selectRow(timeline_position)
-            }
-            last_position = current_position;
+          let timeline_position = this.webCaptions.findIndex(function (item, i) {
+            return (parseInt(item.start) <= current_position && parseInt(item.end) >= current_position)
+          })
+          if (timeline_position === -1) {
+            // There is no caption at that seek position
+            // so just seek to the beginning.
+            timeline_position = 0
+          }
+          if (this.$refs.selectableTable) {
+            var element = document.getElementById("caption" + (timeline_position));
+            element.scrollIntoView();
           }
         }.bind(this));
       }
+    },
+    handleVideoPlay() {
+      var last_position = 0;
+      // Advance the selected row in the caption table when the video is playing
+      this.player.on('timeupdate', function () {
+        const current_position = Math.round(this.player.currentTime());
+        if (current_position !== last_position) {
+          let timeline_position = this.webCaptions.findIndex(function(item, i){return (parseInt(item.start) <= current_position && parseInt(item.end) >= current_position)})
+          if (this.$refs.selectableTable) {
+            this.$refs.selectableTable.selectRow(timeline_position)
+          }
+          last_position = current_position;
+        }
+      }.bind(this));
     },
     getWorkflowId: async function() {
       const token = await this.$Amplify.Auth.currentSession().then(data =>{
@@ -261,8 +329,8 @@ export default {
               if ("CurrentStage" in res.data[0])
                 this.waiting_stage = res.data[0].CurrentStage
               this.getTranscribeLanguage(token)
-              // get translation languages, needed for edit captions button
-              this.getTranslateLanguages(token);
+              // get workflow config, needed for edit captions button
+              this.getWorkflowConfig(token);
             }
           )
         }
@@ -306,7 +374,7 @@ export default {
         }
       )
     },
-    getTranslateLanguages: async function(token) {
+    getWorkflowConfig: async function(token) {
       fetch(this.WORKFLOW_API_ENDPOINT + '/workflow/execution/' + this.workflow_id, {
         method: 'get',
         headers: {
@@ -317,9 +385,8 @@ export default {
               data: data,
             })
           ).then(res => {
-              this.translateLanguageCodes = res.data.Configuration.TranslateStage2.TranslateWebCaptions.TargetLanguageCodes
-            }
-          )
+            this.workflow_config = res.data.Configuration
+          })
         }
       )
     },
@@ -348,10 +415,20 @@ export default {
     },
     rerunWorkflow: async function (token) {
       // This function reruns all the operators downstream from transcribe.
-      let data = this.kitchenSinkWorkflowConfig();
+      let data = {
+        "Name": "MieCompleteWorkflow2",
+        "Configuration": this.workflow_config
+      }
       data["Input"] = {
         "AssetId": this.asset_id
       };
+      data["Configuration"]["WebCaptionsStage2"]["WebCaptions"].Enabled = false;
+      data["Configuration"]["defaultAudioStage2"]["Transcribe"].Enabled = false;
+      data["Configuration"]["MediaconvertStage2"]["Mediaconvert"].Enabled = false;
+      data["Configuration"]["defaultPrelimVideoStage2"]["Thumbnail"].Enabled = false;
+      data["Configuration"]["defaultPrelimVideoStage2"]["Mediainfo"].Enabled = false;
+      data["Configuration"]["TranslateStage2"]["TranslateWebCaptions"].MediaType = "MetadataOnly";
+
       // execute the workflow
       fetch(this.WORKFLOW_API_ENDPOINT + 'workflow/execution', {
         method: 'post',
@@ -531,129 +608,6 @@ export default {
           }
         }
         this.isBusy = false
-      }
-    },
-    kitchenSinkWorkflowConfig() {
-      return {
-        "Name": "MieCompleteWorkflow2",
-        "Configuration": {
-          "defaultPrelimVideoStage2": {
-            "Thumbnail": {
-              "ThumbnailPosition": "10",
-              "MediaType": "Video",
-              "Enabled": false
-            },
-            "Mediainfo": {
-              "MediaType": "Video",
-              "Enabled": false
-            }
-          },
-          "MediaconvertStage2": {
-            "Mediaconvert": {
-              "MediaType": "Video",
-              "Enabled": false
-            }
-          },
-          "CaptionEditingWaitStage": {
-            "Wait": {
-              "MediaType": "MetadataOnly",
-              "Enabled": false
-            }
-          },
-          "CaptionFileStage2": {
-            "WebToSRTCaptions": {
-              "MediaType": "MetadataOnly",
-              "TargetLanguageCodes": this.translateLanguageCodes.concat(this.sourceLanguageCode),
-              "Enabled": true
-            },
-            "WebToVTTCaptions": {
-              "MediaType": "MetadataOnly",
-              "TargetLanguageCodes": this.translateLanguageCodes.concat(this.sourceLanguageCode),
-              "Enabled": true
-            }
-          },
-          "WebCaptionsStage2": {
-            "WebCaptions": {
-              "MediaType": "Text",
-              "SourceLanguageCode": this.sourceLanguageCode,
-              "Enabled": true
-            }
-          },
-          "TranslateStage2": {
-            "Translate": {
-              "MediaType": "Text",
-              "Enabled": true
-            },
-            "TranslateWebCaptions": {
-              "MediaType": "MetadataOnly",
-              "Enabled": true,
-              "TargetLanguageCodes": this.translateLanguageCodes,
-              "SourceLanguageCode": this.sourceLanguageCode,
-            }
-          },
-          "defaultAudioStage2": {
-            "Transcribe": {
-              "MediaType": "Audio",
-              "Enabled": false,
-              "TranscribeLanguage": "N/A"
-            }
-          },
-          "defaultTextSynthesisStage2": {
-            "Polly": {
-              "MediaType": "Text",
-              "Enabled": false
-            }
-          },
-          "defaultVideoStage2": {
-            "faceDetection": {
-              "MediaType": "Video",
-              "Enabled": false
-            },
-            "textDetection": {
-              "MediaType": "Video",
-              "Enabled": false
-            },
-            "celebrityRecognition": {
-              "MediaType": "Video",
-              "Enabled": false
-            },
-            "GenericDataLookup": {
-              "MediaType": "Video",
-              "Enabled": false
-            },
-            "labelDetection": {
-              "MediaType": "Video",
-              "Enabled": false
-            },
-            "personTracking": {
-              "MediaType": "Video",
-              "Enabled": false
-            },
-            "Mediaconvert": {
-              "MediaType": "Video",
-              "Enabled": false
-            },
-            "contentModeration": {
-              "MediaType": "Video",
-              "Enabled": false
-            },
-            "faceSearch": {
-              "MediaType": "Video",
-              "Enabled": false,
-              "CollectionId": "undefined"
-            }
-          },
-          "defaultTextStage2": {
-            "ComprehendEntities": {
-              "MediaType": "Text",
-              "Enabled": false
-            },
-            "ComprehendKeyPhrases": {
-              "MediaType": "Text",
-              "Enabled": false
-            }
-          }
-        }
       }
     },
     pollWorkflowStatus() {

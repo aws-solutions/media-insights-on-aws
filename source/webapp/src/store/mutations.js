@@ -14,4 +14,7 @@ export default {
   updateExecutedAssets (state, value){
     state.execution_history = value
   },
+  updateWaveformSeekPosition (state, value){
+    state.waveform_seek_position = value
+  },
 }

@@ -24,12 +24,13 @@
     "videojs-flash": "2.1.0",
     "videojs-hotkeys": "^0.2.25",
     "videojs-markers": "^1.0.1",
-    "@voerro/vue-tagsinput": "^2.2.0",
     "vue": "^2.6.11",
     "vue-router": "^2.8.1",
     "vue-video-player": "4.0.6",
     "vuex": "^3.1.2",
-    "vuex-persistedstate": "^2.7.1"
+    "vuex-persistedstate": "^2.7.1",
+    "waveform-data": "^3.3.1",
+    "wavesurfer.js": "^3.3.3"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "^3.12.1",

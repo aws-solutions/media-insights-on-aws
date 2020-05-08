@@ -1697,7 +1697,7 @@ Resources:
       Type: "Async"
       Configuration: 
         {
-          "MediaType": "Text",
+          "MediaType": "MetadataOnly",
           "TargetLanguageCodes": ["es"],
           "Enabled": true,
           "SourceLanguageCode": "en",

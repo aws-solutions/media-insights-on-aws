@@ -123,6 +123,7 @@ export default {
       waiting_stage: "",
       sourceLanguageCode: "",
       workflow_config: {},
+      workflow_definition: {},
       showSaveNotification: 0,
       saveNotificationMessage: "Captions saved",
       results: [],
@@ -386,6 +387,7 @@ export default {
             })
           ).then(res => {
             this.workflow_config = res.data.Configuration
+            this.workflow_definition = res.data.Workflow
           })
         }
       )
@@ -413,8 +415,8 @@ export default {
         })
       )
     },
-    rerunWorkflow: async function (token) {
-      // This function reruns all the operators downstream from transcribe.
+    disableUpstreamStages()  {
+      
       let data = {
         "Name": "MieCompleteWorkflow2",
         "Configuration": this.workflow_config
@@ -422,6 +424,40 @@ export default {
       data["Input"] = {
         "AssetId": this.asset_id
       };
+
+      let workflow = this.workflow_definition
+      let stage_name = workflow.StartAt
+      let stage = workflow["Stages"][stage_name]
+      let end = false
+      while (end == false) {
+          console.log("Stage: "+ stage_name)
+          if ("End" in stage && stage["End"] == true){
+              end = true
+          }
+          else if (stage_name == "TranslateStage2") {
+              end = true
+          }
+          else {
+              // Disable all the operators in the stage
+              for (var key in data["Configuration"][stage_name]){
+                data["Configuration"][stage_name][key]["Enabled"] = false
+                console.log(key + " is disabled")
+              }
+                  
+              stage_name = stage["Next"]
+              stage = workflow["Stages"][stage_name]
+          }
+      }
+
+      return data
+
+    },
+    rerunWorkflow: async function (token) {
+      // This function reruns all the operators downstream from transcribe.
+      let data = this.disableUpstreamStages();
+
+      data["Configuration"]["TranslateStage2"]["TranslateWebCaptions"].MediaType = "MetadataOnly";
+
       // execute the workflow
       fetch(this.WORKFLOW_API_ENDPOINT + 'workflow/execution', {
         method: 'post',

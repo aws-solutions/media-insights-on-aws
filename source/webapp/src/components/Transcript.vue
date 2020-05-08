@@ -416,7 +416,7 @@ export default {
       )
     },
     disableUpstreamStages()  {
-      
+
       let data = {
         "Name": "MieCompleteWorkflow2",
         "Configuration": this.workflow_config
@@ -443,7 +443,7 @@ export default {
                 data["Configuration"][stage_name][key]["Enabled"] = false
                 console.log(key + " is disabled")
               }
-                  
+
               stage_name = stage["Next"]
               stage = workflow["Stages"][stage_name]
           }
@@ -534,8 +534,7 @@ export default {
     },
     downloadCaptionsVTT() {
       this.webToVtt()
-      const data = JSON.stringify(this.webCaptions_vtt);
-      const blob = new Blob([data], {type: 'text/plain'});
+      const blob = new Blob([this.webCaptions_vtt], {type: 'text/plain', endings:'native'});
       const e = document.createEvent('MouseEvents'),
         a = document.createElement('a');
       a.download = "WebCaptions.vtt";

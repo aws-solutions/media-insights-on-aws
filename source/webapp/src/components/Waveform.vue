@@ -99,6 +99,7 @@
           progressColor: "#999",
           responsive: true,
           height: 64,
+          barHeight: 2,
           plugins: [
             Timeline.create({
               container: '#wave-timeline'

@@ -38,7 +38,7 @@ class WebCaptions:
             self.transcribe_operator_name = "Transcribe"
             self.workflow_id = operator_object.workflow_execution_id
             self.asset_id = operator_object.asset_id
-            self.marker = "<span/>"
+            self.marker = "<span>"
             self.contentType = "text/html"
             if "SourceLanguageCode" in self.operator_object.configuration:
                 self.source_language_code = self.operator_object.configuration["SourceLanguageCode"]

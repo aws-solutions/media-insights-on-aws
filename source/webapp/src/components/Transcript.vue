@@ -457,6 +457,7 @@ export default {
       let data = this.disableUpstreamStages();
 
       data["Configuration"]["TranslateStage2"]["TranslateWebCaptions"].MediaType = "MetadataOnly";
+      data["Configuration"]["defaultPrelimVideoStage2"]["Thumbnail"].Enabled = true;
 
       // execute the workflow
       fetch(this.WORKFLOW_API_ENDPOINT + 'workflow/execution', {

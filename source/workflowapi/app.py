@@ -1871,7 +1871,7 @@ def create_workflow_execution(trigger, workflow_execution):
                 asset_id = asset_creation["AssetId"]
         else:
             # TODO: Probably just accept the media type as input parameter
-            data_type_mapping = {"mp4": "Video", "mp3": "Audio", "txt": "Text", "json": "Text", "ogg": "Video"}
+            data_type_mapping = {"mov":"Video", "mp4": "Video", "mp3": "Audio", "txt": "Text", "json": "Text", "ogg": "Video"}
             try:
                 input = workflow_execution["Input"]["AssetId"]
             except KeyError as e:

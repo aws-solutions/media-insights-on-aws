@@ -2,10 +2,6 @@ AWSTemplateFormatVersion: "2010-09-09"
 Description: Media Insights Engine - Base AWS CloudFormation template that provisions the core Media Insights Engine services and provides parameters for enabling additional functionality.
 
 Parameters:
-  AdminEmail:
-    Description: Email address for the MIE Administrator
-    Type: String
-
   DeployOperatorLibrary:
     Description: Deploy operator library
     Type: String
@@ -95,7 +91,6 @@ Metadata:
       - Label:
           default: System Configuration
         Parameters:
-          - AdminEmail
           - MaxConcurrentWorkflows
 
 Conditions:

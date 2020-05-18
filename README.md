@@ -200,7 +200,7 @@ See the [CONTRIBUTING](CONTRIBUTING.md) file for how to contribute.
 
 # Logo
 
-The [MIE logo](doc/images/MIE_logo.png) features a clapperboard representing *multimedia*, centered inside a crosshair representing *under extreme scrutiny*. This symbol is available from [nounproject](https://thenounproject.com/icon/1815092/). The font is Engineering Plot, https://www.dafont.com/engineering-plot.font.
+The [MIE logo](doc/images/MIE_logo.png) features a clapperboard representing *multimedia*, centered inside a crosshair representing *under extreme scrutiny*. This symbol is available from [nounproject](https://thenounproject.com/icon/1815092/). The font is Engineering Plot, https://www.dafont.com/engineering-plot.font which conveys the scaffolding nature of MIE.
 
 ![MIE logo](doc/images/MIE_logo.png)
 

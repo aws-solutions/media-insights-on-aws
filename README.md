@@ -1,8 +1,6 @@
-# Media Insights Engine
+![MIE logo](doc/images/MIE_logo.png)
 
-Welcome to the Media Insights Engine (MIE) project!
-
-MIE is a framework to accelerate the development of serverless applications that process video, images, audio, and text with artificial intelligence services and multimedia services on AWS. MIE is most often used to: 
+Media Insights Engine (MIE) is a framework to accelerate the development of serverless applications that process video, images, audio, and text with artificial intelligence services and multimedia services on AWS. MIE is most often used to: 
 
 1. Create media analysis workflows using [Amazon Rekognition](https://aws.amazon.com/rekognition/), [Amazon Transcribe](https://aws.amazon.com/transcribe/), [Amazon Translate](https://aws.amazon.com/translate/), [Amazon Cognito](https://aws.amazon.com/cognito/), [Amazon Polly](https://aws.amazon.com/polly/), and [AWS Elemental MediaConvert](https://aws.amazon.com/mediaconvert/).
 2. Build analytical applications on top of data extracted by workflows and saved in the [Amazon Elasticsearch Service](https://aws.amazon.com/elasticsearch-service/)
@@ -199,6 +197,12 @@ Visit the Issue page in this repository for known issues and feature requests.
 # Contributing
 
 See the [CONTRIBUTING](CONTRIBUTING.md) file for how to contribute.
+
+# Logo
+
+The [MIE logo](doc/images/MIE_logo.png) features a clapperboard representing *multimedia*, centered inside a crosshair representing *under extreme scrutiny*. This symbol is available from [nounproject](https://thenounproject.com/icon/1815092/). The font is Engineering Plot, https://www.dafont.com/engineering-plot.font.
+
+![MIE logo](doc/images/MIE_logo.png)
 
 # License
 

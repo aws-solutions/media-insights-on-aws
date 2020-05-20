@@ -1196,6 +1196,7 @@ Resources:
 #        DataPlaneBucket: !Ref DataplaneBucket
 
 Outputs:
+  # TODO: Add outputs for rest api IDs of workflow/dataplane apis
   DataplaneBucket:
     Description: Bucket used to store transfomred media object from workflow execution
     Value: !Ref Dataplane
@@ -1206,6 +1207,11 @@ Outputs:
     Value: !GetAtt MediaInsightsDataplaneApiStack.Outputs.EndpointURL
     Export:
       Name: !Join [":", [!Ref "AWS::StackName", DataplaneApiEndpoint]]
+  DataplaneApiRestID:
+    Description: REST API ID for dataplane API
+    Value: !GetAtt MediaInsightsDataplaneApiStack.Outputs.RestAPIId
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", DataplaneApiId]]
   WorkflowCustomResourceArn:
     Description: Custom resource for creating operations, stages and workflows using CloudFormation
     Value: !GetAtt MediaInsightsWorkflowApi.Outputs.WorkflowCustomResourceArn
@@ -1216,6 +1222,11 @@ Outputs:
     Value: !GetAtt MediaInsightsWorkflowApi.Outputs.EndpointURL
     Export:
       Name: !Join [":", [!Ref "AWS::StackName", WorkflowApiEndpoint]]
+  WorkflowApiRestID:
+    Description: REST API ID for workflow API
+    Value: !GetAtt MediaInsightsWorkflowApi.Outputs.RestAPIId
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", WorkflowApiId]]
   MediaInsightsEnginePython37Layer:
     Description: Lambda layer for Python libraries
     Value: !Ref MediaInsightsEnginePython37Layer

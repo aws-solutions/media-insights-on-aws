@@ -1,4 +1,4 @@
-![MIE logo](doc/images/logo/MIE_logo.png)
+![MIE logo](doc/images/MIE_logo.png)
 
 Media Insights Engine (MIE) is a framework to accelerate the development of serverless applications that process video, images, audio, and text with artificial intelligence services and multimedia services on AWS. MIE is most often used to: 
 
@@ -200,7 +200,7 @@ See the [CONTRIBUTING](CONTRIBUTING.md) file for how to contribute.
 
 # Logo
 
-The [MIE logo](doc/images/logo/MIE_logo.png) features a clapperboard representing *multimedia*, centered inside a crosshair representing *under scrutiny*. 
+The [MIE logo](doc/images/MIE_logo.png) features a clapperboard representing *multimedia*, centered inside a crosshair representing *under scrutiny*. 
 
 # License
 

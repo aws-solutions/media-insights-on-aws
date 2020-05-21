@@ -1261,6 +1261,7 @@ Resources:
         DataPlaneHandlerArn: !GetAtt MediaInsightsDataplaneApiStack.Outputs.APIHandlerArn
         DataPlaneBucket: !Ref Dataplane
         MediaInsightsEnginePython37Layer: !Ref MediaInsightsEnginePython37Layer
+        MediaInsightsEnginePython36Layer: !Ref MediaInsightsEnginePython36Layer
 
   TestWorkflow:
     Condition: DeployTestWorkflowCondition

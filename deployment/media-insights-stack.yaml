@@ -572,6 +572,7 @@ Resources:
 
   # Services - S3
   # TODO: Best Practice - S3 Bucket should have access logging configured, S3 Bucket should have encryption option set
+  # TODO: Update cors config per: https://docs.amplify.aws/lib/storage/getting-started/q/platform/js#using-amazon-s3
   Dataplane:
     Type: "AWS::S3::Bucket"
     DeletionPolicy: Retain

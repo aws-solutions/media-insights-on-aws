@@ -24,7 +24,8 @@ s3 = boto3.client('s3')
 
 # Minimum Rekognition Detect Custom Label Treshold
 MIN_CONFIDENCE = 10
-
+# MAX TPS for Rekognition Custom labels
+TPS = 2
 
 
 # Recognizes custom labels in an image
@@ -61,7 +62,7 @@ def lambda_handler(event, context):
     valid_image_types = [".json"]
     file_type = os.path.splitext(s3key)[1]
     
-    # Image batch processing is synchronous.
+    # Image batch processing can be synchronous / asynchronous
     if file_type in valid_image_types:
         
         # Read metadata and list of frames
@@ -69,46 +70,68 @@ def lambda_handler(event, context):
         
         chunk_result = []
         print("Number of chunks are " + str(len(chunk_details)))
-        for img_s3key in chunk_details['s3_resized_frame_keys']:
-        #for img_s3key in chunk_details['s3_original_frames_keys']:
-            # For each frame detect custom labels and save the results
-            response = detect_custom_labels(s3bucket, urllib.parse.unquote_plus(img_s3key))
-            frame_result = []
-            for i in response['CustomLabels']:
-                if i['Confidence'] > MIN_CONFIDENCE:
-                    bbox = i['Geometry']['BoundingBox']
-                    frame_id, file_extension = os.path.splitext(os.path.basename(img_s3key))
-                    frame_result.append({'frame_id': frame_id[3:],
-                                'Text': {
-                                    'BoundingBox': bbox
-                                },
-                                'Confidence': i['Confidence'],
-                                'Name': i['Name'],
-                                'Timestamp': chunk_details['timestamps'][frame_id]})
+        #separate async processing logic for fan out architecture
+        if(FAN_OUT=='true') :
+            count = 1
+            total = len(chunk_details['s3_original_frames_keys'])
+            print("Number of frames to process are: " + str(total))
+            for img_s3key in chunk_details['s3_original_frames_keys']:
+                #trigger async lambda
+                end = False
+                if(count==total) :
+                    print("reached the end")
+                    end = True
+                response = client.invoke(FunctionName=fanout_function,InvocationType='Event',Payload=json.dumps( {'chunk_details':chunk_details,'asset_id': asset_id,'operator_name': operator_name,'workflow_id': workflow_id,'projectVersionArn':projectVersionArn, 'bucket': s3bucket, 'img_s3key': img_s3key,'end': end}))
+                print('response on async lambda invoke: %s', response)
+                count = count + 1
+                if(count % TPS ==0) :
+                    time.sleep(1)
+                    print('slept for 1 second')
+            output_object.update_workflow_status("Complete")
+            output_object.add_workflow_metadata(AssetId=asset_id, WorkflowExecutionId=workflow_id)
+            print('completed output object')
+            return output_object.return_output_object()
+        else : 
+            #for img_s3key in chunk_details['s3_resized_frame_keys']:
+            for img_s3key in chunk_details['s3_original_frames_keys']:
+                # For each frame detect custom labels and save the results
+                response = detect_custom_labels(s3bucket, urllib.parse.unquote_plus(img_s3key))
+                frame_result = []
+                for i in response['CustomLabels']:
+                    if i['Confidence'] > MIN_CONFIDENCE:
+                        bbox = i['Geometry']['BoundingBox']
+                        frame_id, file_extension = os.path.splitext(os.path.basename(img_s3key))
+                        frame_result.append({'frame_id': frame_id[3:],
+                                    'Text': {
+                                        'BoundingBox': bbox
+                                    },
+                                    'Confidence': i['Confidence'],
+                                    'Name': i['Name'],
+                                    'Timestamp': chunk_details['timestamps'][frame_id]})
+                        print("frame result is " + str(frame_result))
+                if len(frame_result)>0: chunk_result+=frame_result
+                print("chunk result is " + str(chunk_result))
+            response = {'metadata': chunk_details['metadata'],
+                        'frames_result': chunk_result}
+            print("response is " + str(response))
+            output_object.update_workflow_status("Complete")
+            output_object.add_workflow_metadata(AssetId=asset_id, WorkflowExecutionId=workflow_id)
+            dataplane = DataPlane()
+            metadata_upload = dataplane.store_asset_metadata(asset_id, operator_name, workflow_id, response)
             
-            if len(frame_result)>0: chunk_result+=frame_result
-        
-        response = {'metadata': chunk_details['metadata'],
-                    'frames_result': chunk_result}
-        print("response is " + str(response))
-        output_object.update_workflow_status("Complete")
-        output_object.add_workflow_metadata(AssetId=asset_id, WorkflowExecutionId=workflow_id)
-        dataplane = DataPlane()
-        metadata_upload = dataplane.store_asset_metadata(asset_id, operator_name, workflow_id, response)
-        
-        if metadata_upload["Status"] == "Success":
-            print("Uploaded metadata for asset: {asset}".format(asset=asset_id))
-        elif metadata_upload["Status"] == "Failed":
-            output_object.update_workflow_status("Error")
-            output_object.add_workflow_metadata(
-                CustomLabelDetectionError="Unable to upload metadata for asset: {asset}".format(asset=asset_id))
-            raise MasExecutionError(output_object.return_output_object())
-        else:
-            output_object.update_workflow_status("Error")
-            output_object.add_workflow_metadata(
-                CustomLabelDetectionError="Unable to upload metadata for asset: {asset}".format(asset=asset_id))
-            raise MasExecutionError(output_object.return_output_object())
-        return output_object.return_output_object()
+            if metadata_upload["Status"] == "Success":
+                print("Uploaded metadata for asset: {asset}".format(asset=asset_id))
+            elif metadata_upload["Status"] == "Failed":
+                output_object.update_workflow_status("Error")
+                output_object.add_workflow_metadata(
+                    CustomLabelDetectionError="Unable to upload metadata for asset: {asset}".format(asset=asset_id))
+                raise MasExecutionError(output_object.return_output_object())
+            else:
+                output_object.update_workflow_status("Error")
+                output_object.add_workflow_metadata(
+                    CustomLabelDetectionError="Unable to upload metadata for asset: {asset}".format(asset=asset_id))
+                raise MasExecutionError(output_object.return_output_object())
+            return output_object.return_output_object()
     
     else:
         print("ERROR: invalid file type")

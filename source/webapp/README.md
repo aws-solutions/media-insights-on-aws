@@ -49,7 +49,7 @@ git clone https://github.com/awslabs/aws-media-insights-engine
 
 ### Install the packages in package.json
 ```
-cd MediaInsightsEngine/webapp
+cd aws-media-insights-engine/source/webapp/
 npm install
 ```
 

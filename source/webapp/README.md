@@ -44,7 +44,7 @@ nvm install --latest-npm
 
 ### Download MIE 
 ```
-git clone ssh://git.amazon.com/pkg/MediaInsightsEngine
+git clone https://github.com/awslabs/aws-media-insights-engine
 ```
 
 ### Install the packages in package.json

@@ -29,7 +29,7 @@ Here's how to run this project on an Amazon Linux Docker container:
 
 ### Start an Amazon Linux container
 ```
-docker run -it amazonlinux
+docker run -p 8080:8080 -it amazonlinux
 yum groupinstall "Development Tools" -y
 ```
 

@@ -745,7 +745,7 @@ Resources:
     Type: AWS::Cognito::UserPoolClient
     Properties:
       UserPoolId: !Ref MieUserPool
-      ExplicitAuthFlows: ['ADMIN_NO_SRP_AUTH']
+      ExplicitAuthFlows: ['ADMIN_USER_PASSWORD_AUTH']
 
   MieWebAppClient:
     Type: AWS::Cognito::UserPoolClient

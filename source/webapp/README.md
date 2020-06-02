@@ -29,7 +29,7 @@ Here's how to run this project on an Amazon Linux Docker container:
 
 ### Start an Amazon Linux container
 ```
-docker run -it amazonlinux
+docker run -p 8080:8080 -it amazonlinux
 yum groupinstall "Development Tools" -y
 ```
 
@@ -44,12 +44,12 @@ nvm install --latest-npm
 
 ### Download MIE 
 ```
-git clone ssh://git.amazon.com/pkg/MediaInsightsEngine
+git clone https://github.com/awslabs/aws-media-insights-engine
 ```
 
 ### Install the packages in package.json
 ```
-cd MediaInsightsEngine/webapp
+cd aws-media-insights-engine/source/webapp/
 npm install
 ```
 

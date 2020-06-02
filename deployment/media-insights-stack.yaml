@@ -861,7 +861,7 @@ Resources:
                 "ForAnyValue:StringEquals":
                   "cognito-identity.amazonaws.com:amr": authenticated
         Policies:
-          - PolicyName: "MieDeveloporCognitoPolicy"
+          - PolicyName: "MieDeveloperCognitoPolicy"
             PolicyDocument: !Sub
               - |-
                 {

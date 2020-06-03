@@ -64,6 +64,8 @@ export default {
   },
   deactivated: function () {
     console.log('deactivated component:', this.operator)
+    // clearing this value after every deactivation so we dont carry this huge amount of data in memory
+    this.entities = []
   },
   activated: function () {
     console.log('activated component:', this.operator);

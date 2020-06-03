@@ -64,6 +64,7 @@ export default {
   },
   deactivated: function () {
     console.log('deactivated component:', this.operator)
+    this.entities = []
   },
   activated: function () {
     console.log('activated component:', this.operator);

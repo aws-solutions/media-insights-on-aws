@@ -104,7 +104,7 @@ def lambda_handler(event, context):
     for sentence in sentences:
         # Translate can handle 5000 unicode characters but we'll process no more than 4000
         # just to be on the safe side.
-        if (len(sentence) + len(transcript_chunk) < 4000):
+        if (len(sentence) + len(transcript_chunk) < 1000):
             transcript_chunk = transcript_chunk + ' ' + sentence
         else:
             try:

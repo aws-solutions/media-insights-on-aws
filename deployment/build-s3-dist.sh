@@ -448,7 +448,67 @@ zip -q -r9 check_person_tracking_status.zip check_person_tracking_status.py
 zip -q -r9 start_text_detection.zip start_text_detection.py
 zip -q -r9 check_text_detection_status.zip check_text_detection_status.py
 
+
+# remove this when service is GA
+
+[ -e dist ] && rm -r dist
+mkdir -p dist
+cd dist
+cp ../start_technical_cue_detection.py .
+mkdir rekognition-segment-detection
+cd rekognition-segment-detection
+mkdir 2016-06-27
+cd 2016-06-27
+cp ../../../service-2.json .
+cd ../../
+zip -q -r9 ../start_technical_cue_detection.zip *
+cd ../
+
+
+[ -e dist ] && rm -r dist
+mkdir -p dist
+cd dist
+cp ../check_technical_cue_status.py .
+mkdir rekognition-segment-detection
+cd rekognition-segment-detection
+mkdir 2016-06-27
+cd 2016-06-27
+cp ../../../service-2.json .
+cd ../../
+zip -q -r9 ../check_technical_cue_status.zip *
+cd ../
+
 mv -f ./*.zip "$dist_dir"
+
+
+[ -e dist ] && rm -r dist
+mkdir -p dist
+cd dist
+cp ../start_shot_detection.py .
+mkdir rekognition-segment-detection
+cd rekognition-segment-detection
+mkdir 2016-06-27
+cd 2016-06-27
+cp ../../../service-2.json .
+cd ../../
+zip -q -r9 ../start_shot_detection.zip *
+cd ../
+
+[ -e dist ] && rm -r dist
+mkdir -p dist
+cd dist
+cp ../check_shot_detection_status.py .
+mkdir rekognition-segment-detection
+cd rekognition-segment-detection
+mkdir 2016-06-27
+cd 2016-06-27
+cp ../../../service-2.json .
+cd ../../
+zip -q -r9 ../check_shot_detection_status.zip *
+cd ../
+
+mv -f ./*.zip "$dist_dir"
+
 
 # ------------------------------------------------------------------------------"
 # Test operators

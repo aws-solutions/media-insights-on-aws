@@ -244,10 +244,14 @@ export default {
         "Transcribe",
         "Translate",
         "ComprehendKeyPhrases",
-        "ComprehendEntities"
+        "ComprehendEntities",
+        "shotDetection",
+        "technicalCueDetection"
       ],
       videoOperators: [
         { text: "Object Detection", value: "labelDetection" },
+        { text: "Technical Cue Detection", value: "technicalCueDetection" },
+        { text: "Shot Detection", value: "shotDetection" },
         { text: "Celebrity Recognition", value: "celebrityRecognition" },
         { text: "Content Moderation", value: "contentModeration" },
         { text: "Face Detection", value: "faceDetection" },
@@ -464,6 +468,12 @@ export default {
             faceDetection: {
               Enabled: this.enabledOperators.includes("faceDetection")
             },
+            technicalCueDetection: {
+              Enabled: this.enabledOperators.includes("technicalCueDetection")
+            },
+            shotDetection: {
+              Enabled: this.enabledOperators.includes("shotDetection")
+            },
             celebrityRecognition: {
               Enabled: this.enabledOperators.includes("celebrityRecognition")
             },
@@ -549,7 +559,9 @@ export default {
         "Transcribe",
         "Translate",
         "ComprehendKeyPhrases",
-        "ComprehendEntities"
+        "ComprehendEntities",
+        "technicalCueDetection",
+        "shotDetection"
       ];
     },
     clearAll: function() {

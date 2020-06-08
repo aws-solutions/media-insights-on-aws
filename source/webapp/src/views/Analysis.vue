@@ -50,6 +50,14 @@
                             title="Words"
                             @click="currentView = 'TextDetection'"
                           />
+                          <b-tab
+                            title="Cues"
+                            @click="currentView = 'TechnicalCues'"
+                          />
+                          <b-tab
+                            title="Shots"
+                            @click="currentView = 'ShotDetection'"
+                          />
                         </b-tabs>
                       </div>
                     </b-row>
@@ -170,6 +178,22 @@
         component: new Promise(function(resolve) {
           setTimeout(function() {
             resolve(import('@/components/TextDetection.vue'));
+        }, 1000);
+        }),
+        loading: Loading,
+      }),
+      TechnicalCues: () => ({
+        component: new Promise(function(resolve) {
+          setTimeout(function() {
+            resolve(import('@/components/TechnicalCues.vue'));
+        }, 1000);
+        }),
+        loading: Loading,
+      }),
+      ShotDetection: () => ({
+        component: new Promise(function(resolve) {
+          setTimeout(function() {
+            resolve(import('@/components/ShotDetection.vue'));
         }, 1000);
         }),
         loading: Loading,

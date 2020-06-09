@@ -93,7 +93,8 @@
                     </template>
                     <template v-slot:cell(status)="data">
                       <!-- open link in new tab -->
-                      <a href="" @click.stop.prevent="openWindow(data.item.state_machine_console_link)">{{ data.item.status }}</a>
+                      <a v-if="data.item.status !== 'Queued'"  href="" @click.stop.prevent="openWindow(data.item.state_machine_console_link)">{{ data.item.status }}</a>
+                      <div v-if="data.item.status === 'Queued'">{{ data.item.status }}</div>
                     </template>
                     <template v-slot:cell(Actions)="data">
                       <b-button

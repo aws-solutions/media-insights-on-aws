@@ -38,7 +38,7 @@ Now that user should be able to use the MIE content analysis application.
 
 # COST:
 
-Most AWS accounts include a free tier for the services used in MIE. However, if your usage exceeds the free tier allotments then you will be responsible for the cost of the AWS services used while running MIE.
+Most AWS accounts include a free tier for the services used in this app. However, if your usage exceeds the free tier allotments then you will be responsible for the cost of the AWS services used while running this app.
 
 The cost of this app is dominated by AWS Rekognition and Amazon Elasticsearch. A good rule of thumb is that videos will cost about $0.50 / minute to process. That can vary between $0.10 / minute and $0.60 / minute depending on video content. If you disable Rekognition in your workflow configuration then these costs will be more like $0.04 / minute. Data storage will generally be $10/day regardless of the quantity or type of video content. 
 

@@ -118,7 +118,15 @@
             </div>
             <div v-else>
               <VideoPlayer :options="videoOptions" />
-              <LineChart />
+              <div v-if="currentView === 'ShotDetection'">
+                <br>
+              </div>
+              <div v-else-if="currentView === 'TechnicalCues'">
+                <br>
+              </div>
+              <div v-else>
+                <LineChart />
+              </div>
             </div>
           </div>
           <div>

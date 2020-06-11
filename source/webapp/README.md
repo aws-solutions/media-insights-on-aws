@@ -46,6 +46,12 @@ While the costs of processing a video occurs as a one-time expense after uploadi
 
 ![](/doc/images/costs_movie.png)
 
+# LIMITATIONS:
+
+This application has the following restrictions:
+* Upload files must be smaller than 2GB.
+* Upload videos must be in a format that is supported by [AWS MediaConvert](https://docs.aws.amazon.com/mediaconvert/latest/ug/reference-codecs-containers.html), such as .mp4, .avi, .flv, .mkv, or .mov.
+
 # DEVELOPERS:
 
 Join our Gitter chat at [https://gitter.im/awslabs/aws-media-insights-engine](https://gitter.im/awslabs/aws-media-insights-engine). This public chat forum was created to foster communication between MIE developers worldwide.

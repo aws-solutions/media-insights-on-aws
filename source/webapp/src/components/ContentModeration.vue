@@ -149,7 +149,7 @@
       },
       saveFile() {
         const elasticsearch_data = this.elasticsearch_data;
-        const blob = new Blob([elasticsearch_data], {type: 'text/plain'});
+        const blob = new Blob([JSON.stringify(elasticsearch_data)], {type: 'text/plain'});
         const e = document.createEvent('MouseEvents'),
           a = document.createElement('a');
         a.download = "data.json";

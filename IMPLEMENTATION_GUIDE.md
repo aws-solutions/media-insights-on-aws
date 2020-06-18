@@ -517,7 +517,9 @@ Now you can use Kibana to validate that your operator's data is present in Elast
 
     `GET /metadata/{asset_id}`
 
-    Returns: All asset metadata
+    Returns: All asset metadata. If the result provides a cursor then you can get the next page by specifying the cursor like this:
+     
+     `GET /metadata/{asset_id}?cursor={cursor}`
 
 * Add operation metadata for an asset:
 

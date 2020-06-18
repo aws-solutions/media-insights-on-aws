@@ -88,16 +88,6 @@
                 {
                   "Effect": "Allow",
                   "Action": [
-                    "s3:*"
-                  ],
-                  "Resource": [
-                    {"Fn::Sub": "arn:aws:s3:::${DataPlaneBucket}"},
-                    {"Fn::Sub": "arn:aws:s3:::${DataPlaneBucket}/*"}
-                  ]
-                },
-                {
-                  "Effect": "Allow",
-                  "Action": [
                     "sqs:*"
                   ],
                   "Resource": {"Ref": "SqsQueueArn"}
@@ -105,9 +95,26 @@
                 {
                   "Effect": "Allow",
                   "Action": [
-                    "states:*"
+                    "states:ListStateMachines",
+                    "states:TagResource",
+                    "states:CreateStateMachine"
                   ],
                   "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "states:DescribeStateMachine",
+                    "states:UpdateStateMachine",
+                    "states:DeleteStateMachine",
+                    "states:UntagResource"
+                  ],
+                  "Resource": "*",
+                  "Condition": {
+                    "StringEquals": {
+                        "aws:ResourceTag/environment": "mie"
+                    }
+                  }
                 },
                 {
                   "Effect": "Allow",

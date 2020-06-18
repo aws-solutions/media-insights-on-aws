@@ -1,0 +1,246 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Media Insights Engine - AWS CloudFormation template that provisions a web application for exploring extracted data
+
+Parameters:
+  DataplaneEndpoint:
+    Type: String
+  WorkflowEndpoint:
+    Type: String
+  ElasticEndpoint:
+    Type: String
+  DataplaneBucket:
+    Type: String
+  UserPoolId:
+    Type: String
+  IdentityPoolId:
+    Type: String
+  AwsRegion:
+    Type: String
+  PoolClientId:
+    Type: String
+
+Mappings:
+  SourceCode:
+    General:
+      S3Bucket: "%%BUCKET_NAME%%"
+      CodeKeyPrefix: "media-insights-solution/%%VERSION%%/code"
+      TemplateKeyPrefix: "media-insights-solution/%%VERSION%%/cf"
+      WebsitePrefix: "media-insights-solution/%%VERSION%%/code/website"
+
+Resources:
+
+  MediaInsightsWebsiteBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    Properties:
+      AccessControl: LogDeliveryWrite
+      BucketName:
+        Fn::Transform:
+          Name: 'String'
+          Parameters:
+            InputString: !Sub "${AWS::StackName}-website"
+            Operation: Lower
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      WebsiteConfiguration:
+        IndexDocument: "index.html"
+        ErrorDocument: "index.html"
+      LoggingConfiguration:
+        DestinationBucketName:
+          Fn::Transform:
+            Name: 'String'
+            Parameters:
+              InputString: !Sub "${AWS::StackName}-website"
+              Operation: Lower
+        LogFilePrefix: "access_logs/"
+      LifecycleConfiguration:
+        Rules:
+          - Id: "Keep access log for 30 days"
+            Status: Enabled
+            Prefix: "access_logs/"
+            ExpirationInDays: 30
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 1
+          - Id: "Keep cloudfront log for 30 days"
+            Status: Enabled
+            Prefix: "cf_logs/"
+            ExpirationInDays: 30
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 1
+
+  WebBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref MediaInsightsWebsiteBucket
+      PolicyDocument:
+        Statement:
+          - Effect: Deny
+            Principal: "*"
+            Action: "*"
+            Resource: !Sub "arn:aws:s3:::${MediaInsightsWebsiteBucket}/*"
+            Condition:
+              Bool:
+                aws:SecureTransport: false
+
+  WebsiteHelperRole:
+    Type: AWS::IAM::Role
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "Website helper Lambda requires ability to read / write to both MIE website bucket and MIE build bucket"
+    DependsOn: MediaInsightsWebsiteBucket
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: !Sub "${AWS::StackName}-WebsiteHelperS3Access"
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "s3:GetObject"
+                  - "s3:PutObject"
+                  - "s3:ListBucket"
+                Resource:
+                  - !Sub ${MediaInsightsWebsiteBucket.Arn}/*
+                  - Fn::Sub:
+                      - arn:aws:s3:::${websitecode}/*
+                      - websitecode: !FindInMap ["SourceCode", "General", "S3Bucket"]
+              - Effect: Allow
+                Action:
+                  - "s3:ListBucket"
+                Resource:
+                  - !Sub ${MediaInsightsWebsiteBucket.Arn}
+                  - Fn::Sub:
+                      - arn:aws:s3:::${websitecode}
+                      - websitecode: !FindInMap ["SourceCode", "General", "S3Bucket"]
+              - Effect: Allow
+                Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource:
+                  - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*"
+
+  WebsiteDeployHelper:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+            "websitehelper.zip",
+            ],
+          ]
+      Handler: website_helper.lambda_handler
+      MemorySize: 256
+      Role: !GetAtt WebsiteHelperRole.Arn
+      Runtime: python3.6
+      Timeout: 900
+      Environment:
+        Variables:
+          DataplaneEndpoint: !Ref DataplaneEndpoint
+          WorkflowEndpoint: !Ref WorkflowEndpoint
+          ElasticEndpoint: !Ref ElasticEndpoint
+          DataplaneBucket: !Ref DataplaneBucket
+          UserPoolId: !Ref UserPoolId
+          IdentityPoolId: !Ref IdentityPoolId
+          AwsRegion: !Ref AwsRegion
+          PoolClientId: !Ref PoolClientId
+
+  CopyWebSource:
+    DependsOn: MediaInsightsWebsiteBucket
+    Type: Custom::WebsiteDeployHelper
+    Properties:
+      ServiceToken: !GetAtt WebsiteDeployHelper.Arn
+      WebsiteCodeBucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+      WebsiteCodePrefix: !FindInMap ["SourceCode", "General", "WebsitePrefix"]
+      DeploymentBucket: !GetAtt MediaInsightsWebsiteBucket.DomainName
+
+  MediaInsightsOriginAccessIdentity:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: !Sub "access-identity-${MediaInsightsWebsiteBucket}"
+
+  MediaInsightsWebsiteBucketPolicy:
+    Type: "AWS::S3::BucketPolicy"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: F16
+            reason: "website bucket policy requires a wildcard principal"
+    Properties:
+      Bucket:
+        Ref: "MediaInsightsWebsiteBucket"
+      PolicyDocument:
+        Statement:
+          - Effect: "Allow"
+            Action:
+              - "s3:GetObject"
+            Resource:
+              - !Sub "arn:aws:s3:::${MediaInsightsWebsiteBucket}/*"
+            Principal:
+              CanonicalUser: !GetAtt MediaInsightsOriginAccessIdentity.S3CanonicalUserId
+
+  MediaInsightsWebsiteDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Comment: "Website distribution for Media Insights Engine"
+        Logging:
+          Bucket: !Sub "${MediaInsightsWebsiteBucket}.s3.amazonaws.com"
+          Prefix: cf_logs/
+          IncludeCookies: true
+        Origins:
+          - Id: S3-solution-website
+            DomainName: !Sub "${MediaInsightsWebsiteBucket}.s3.${AWS::Region}.amazonaws.com"
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${MediaInsightsOriginAccessIdentity}"
+        DefaultCacheBehavior:
+          TargetOriginId: S3-solution-website
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+            - PUT
+            - POST
+            - DELETE
+            - PATCH
+          CachedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          ForwardedValues:
+            QueryString: false
+          ViewerProtocolPolicy: redirect-to-https
+        DefaultRootObject: "index.html"
+        CustomErrorResponses:
+          - ErrorCode: 404
+            ResponsePagePath: "/index.html"
+            ResponseCode: 200
+          - ErrorCode: 403
+            ResponsePagePath: "/index.html"
+            ResponseCode: 200
+        IPV6Enabled: true
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+        Enabled: true
+        HttpVersion: 'http2'
+
+Outputs:
+  CloudfrontUrl:
+    Value: !Join ["", ["https://", !GetAtt MediaInsightsWebsiteDistribution.DomainName]]

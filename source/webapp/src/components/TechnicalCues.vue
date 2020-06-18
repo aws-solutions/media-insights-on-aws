@@ -14,15 +14,24 @@
         responsive
         fixed
         :items="elasticsearch_data"
+        :per-page="perPage"
+        :current-page="currentPage"
         :fields="fields"
         :sort-by="sortBy"
       >
         <template v-slot:cell(Type)="data">
-          <b-button variant="link" @click="setPlayerTime(data.item.StartTimestamp)"> 
+          <b-button variant="link" @click="setPlayerTime(data.item.EndTimestamp, data.item.StartTimestamp)"> 
             {{ data.item.Type }}
           </b-button>
         </template>
       </b-table>
+      <b-pagination
+        v-model="currentPage"
+        align="center"
+        :per-page="perPage"
+        :total-rows="rows"
+        aria-controls="shotTable"
+      ></b-pagination>
       <b-button
         type="button"
         @click="saveFile()"
@@ -50,6 +59,9 @@
     data() {
       return {
         sortBy: 'StartTimecodeSMPTE',
+        currentPage: 1,
+        perPage: 5,
+        endTimestamp: null,
         fields: [
           {
             'Type': {
@@ -83,7 +95,21 @@
       }
     },
     computed: {
-      ...mapState(['player'])
+      ...mapState(['player']),
+      ...mapState(['current_time']),
+      rows() {
+        return this.elasticsearch_data.length
+      }
+    },
+    watch: {
+      current_time(time) {
+        if (this.endTimestamp != null) {
+          if (time == this.endTimestamp || time > this.endTimestamp) {
+            this.player.pause();
+            this.endTimestamp = null
+          }
+        }
+      }
     },
     beforeDestroy: function () {
       this.elasticsearch_data = [];
@@ -96,10 +122,11 @@
       this.fetchAssetData();
     },
     methods: {
-      setPlayerTime(milliseconds) {
-        let seconds = milliseconds / 1000
-        let playerTime = Math.ceil(seconds)
-        this.player.currentTime(playerTime)
+      setPlayerTime(endMillisenconds, startMilliseconds) {
+        this.endTimestamp = endMillisenconds / 1000
+        let seconds = startMilliseconds / 1000
+        this.player.currentTime(seconds);
+        this.player.play();
       },
       saveFile() {
         const elasticsearch_data = JSON.stringify(this.elasticsearch_data);

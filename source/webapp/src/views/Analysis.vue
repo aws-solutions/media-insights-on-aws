@@ -47,6 +47,10 @@
                             @click="currentView = 'FaceDetection'"
                           />
                           <b-tab
+                            title="Face Search"
+                            @click="currentView = 'FaceSearch'"
+                          />
+                          <b-tab
                             title="Words"
                             @click="currentView = 'TextDetection'"
                           />
@@ -202,6 +206,14 @@
         component: new Promise(function(resolve) {
           setTimeout(function() {
             resolve(import('@/components/FaceDetection.vue'));
+        }, 1000);
+        }),
+        loading: Loading,
+      }),
+      FaceSearch: () => ({
+        component: new Promise(function(resolve) {
+          setTimeout(function() {
+            resolve(import('@/components/FaceSearch.vue'));
         }, 1000);
         }),
         loading: Loading,

@@ -247,6 +247,7 @@ def process_face_search(asset, workflow, results):
                         for face in item["FaceMatches"]:
                             item["KnownFaceSimilarity"] = face["Similarity"]
                             item["MatchingKnownFaceId"] = face["Face"]["FaceId"]
+                            item["ExternalImageId"] = face["Face"]["ExternalImageId"]
                             item["KnownFaceBoundingBox"] = face["Face"]["BoundingBox"]
                             item["ImageId"] = face["Face"]["ImageId"]
                         del item["FaceMatches"]

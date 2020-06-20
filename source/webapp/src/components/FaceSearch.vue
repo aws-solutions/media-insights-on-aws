@@ -146,13 +146,14 @@
       // These watches update the line chart
       selectedLabel: function() {
         this.chartData();
+        
       },
       elasticsearch_data: function() {
         this.chartData();
       },
     },
     deactivated: function () {
-      console.log('activated component:', this.operator);
+      //console.log('activated component:', this.operator);
       this.boxes_available = [];
       this.selectedLabel = '';
       clearInterval(this.canvasRefreshInterval);
@@ -162,7 +163,7 @@
       if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
     },
     activated: function () {
-      console.log('activated component:', this.operator);
+      //console.log('activated component:', this.operator);
       this.fetchAssetData();
     },
     beforeDestroy: function () {
@@ -193,7 +194,6 @@
               this.lowerConfidenceMessage = 'Try lowering confidence threshold'
             } else {
               this.lowerConfidence = false;
-              console.log(data[0])
               for (let i = 0, len = data.length; i < len; i++) {
                 let item = data[i]._source;
 
@@ -213,9 +213,7 @@
                 }
               }
             }
-            console.log("Before modifying es data. First element:  ", es_data[0] )
             this.elasticsearch_data = JSON.parse(JSON.stringify(es_data));
-            console.log("About to modify es data. First element: ", this.elasticsearch_data[0] )
             this.isBusy = false
         }
       },
@@ -334,8 +332,6 @@
         }
       },
       drawBoxes: function(boxMap) {
-        console.log("Inside drawBoxes function. Processing map ", boxMap)
-
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         // TODO: move image processing to a separate component

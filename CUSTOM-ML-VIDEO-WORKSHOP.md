@@ -24,7 +24,7 @@ Operator inputs include a list of Media, Metadata and the operator Configuration
   
  Execution steps : 
  
- 1. Clone this github repository https://github.com/hasanp87/aws-media-insights-engine/edit/pose_inference_pipeline/
+ 1. Clone this github repository https://github.com/hasanp87/aws-media-insights-engine/tree/pose_inference_pipeline
  
  2. Create a S3 bucket for building MIE with pose inference. 
      DIST_OUTPUT_BUCKET=[enter the name of your bucket here]

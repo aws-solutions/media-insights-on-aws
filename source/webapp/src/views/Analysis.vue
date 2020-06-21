@@ -47,6 +47,10 @@
                             @click="currentView = 'FaceDetection'"
                           />
                           <b-tab
+                            title="Pose"
+                            @click="currentView = 'PoseInference'"
+                          />
+                          <b-tab
                             title="Words"
                             @click="currentView = 'TextDetection'"
                           />
@@ -153,6 +157,15 @@
         component: new Promise(function(resolve) {
           setTimeout(function() {
             resolve(import('@/components/LabelObjects.vue'));
+        }, 1000);
+        }),
+        loading: Loading
+      }),
+
+      PoseInference: () => ({
+        component: new Promise(function(resolve) {
+          setTimeout(function() {
+            resolve(import('@/components/PoseInference.vue'));
         }, 1000);
         }),
         loading: Loading

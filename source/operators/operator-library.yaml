@@ -26,6 +26,30 @@ Parameters:
     Type: String
     Description: "ARN of the Media insights lambda layer that contains basic python dependencies for boto3, chalice, control plane and dataplane"
 
+  ModelEndpointName:
+        Description: Model endpoint name
+        Type: String
+        Default: "pose-inference-endpoint"
+  ModelDataBucket:
+        Description: S3 Bucket location of model artefact
+        Type: String
+        Default: "pose-bucket"
+  SagemakerEndpointInstanceType:
+        Description: Instance type
+        Type: String
+        Default: "ml.g4dn.2xlarge"
+        AllowedValues:
+            - ml.g4dn.xlarge
+            - ml.g4dn.2xlarge
+            - ml.g4dn.4xlarge
+            - ml.g4dn.8xlarge
+            - ml.g4dn.12xlarge
+            - ml.g4dn.16xlarge
+  InstanceCount:
+        Description: Number of Instances created
+        Type: String
+        Default: 1
+
 Resources:
   # SNS topic for storing the output of async Rekognition jobs:
   snsRekognitionTopic:
@@ -517,10 +541,208 @@ Resources:
                   - !GetAtt TranslateFunction.Arn
                   - !GetAtt StartPollyFunction.Arn
                   - !GetAtt CheckPollyFunction.Arn
+                  - !GetAtt startPoseInference.Arn
+                  - !GetAtt frameExtractor.Arn
                 Effect: "Allow"
 
-  # Lambda functions
+  SagemakerExecutionRole: 
+        Type: "AWS::IAM::Role"
+        Properties: 
+            AssumeRolePolicyDocument: 
+                Version: "2012-10-17"
+                Statement: 
+                    - 
+                        Effect: "Allow"
+                        Principal: 
+                            Service: 
+                                - "sagemaker.amazonaws.com"
+                        Action: 
+                            - "sts:AssumeRole"
+            Path: "/"
+            Policies: 
+                - 
+                    PolicyName: "root"
+                    PolicyDocument: 
+                        Version: "2012-10-17"
+                        Statement: 
+                        - 
+                            Effect: "Allow"
+                            Action: "*"
+                            Resource: "*"
 
+  PoseInferenceRole:
+    DependsOn:
+      - Endpoint
+    Type: "AWS::IAM::Role"
+    Properties: 
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - 
+            Effect: "Allow"
+            Principal: 
+              Service: 
+                - "lambda.amazonaws.com"
+            Action: 
+              - "sts:AssumeRole"
+      Path: "/"
+      Policies: 
+        - 
+          PolicyName: "poseDetectLambdaPolicy"
+          PolicyDocument: 
+            Version: "2012-10-17"
+            Statement: 
+              - 
+                Effect: "Allow"
+                Action: 
+                  - "s3:GetObject"
+                  - "s3:PutObject"
+                Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
+              - 
+                Effect: "Allow"
+                Action: "lambda:InvokeFunction"
+                Resource: !Ref DataPlaneHandlerArn
+              - 
+                Effect: "Allow"
+                Action: "sagemaker:InvokeEndpoint"
+                #FIXME : Tried getting the arn for the specific endpoint but its a valid syntax "!GetAtt Endpoint.EndpointArn"
+                Resource: "*"
+
+  frameExtractorRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action:
+              - "sts:AssumeRole"
+            Effect: "Allow"
+            Principal:
+              Service: "lambda.amazonaws.com"
+      Policies:
+        - PolicyName: "MieframeExtractorPolicy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action: "lambda:InvokeFunction"
+                Resource: !Ref DataPlaneHandlerArn
+                Effect: "Allow"
+              # TODO: Security - figure out why this only works with * and fix it
+              - Action: "s3:*"
+                Resource: "*"
+                Effect: "Allow"
+
+  #Sagemaker model and endpoint
+  Model:
+        Type: AWS::SageMaker::Model
+        Properties: 
+            Containers: 
+                - 
+                    ContainerHostname : MxnetContainer1
+                    Image: !Sub "763104351884.dkr.ecr.${AWS::Region}.amazonaws.com/mxnet-inference:1.6.0-gpu-py3"
+                    ModelDataUrl: !Sub "s3://${ModelDataBucket}-${AWS::Region}-${AWS::AccountId}/model_yolo3/model.tar.gz"
+                    Environment: {
+                        "SAGEMAKER_MODEL_SERVER_WORKERS": 10,
+                        "SAGEMAKER_ENABLE_CLOUDWATCH_METRICS": 'true',
+                        "SAGEMAKER_REGION": {"Ref": "AWS::Region"},
+                        "SAGEMAKER_PROGRAM": "yolo3.py",
+                        "SAGEMAKER_CONTAINER_LOG_LEVEL": 20,
+                        "SAGEMAKER_SUBMIT_DIRECTORY": {"Fn::Sub": "s3://${ModelDataBucket}-${AWS::Region}-${AWS::AccountId}/model_yolo3/model.tar.gz"},
+                    }
+                -    
+                    ContainerHostname : MxnetContainer2
+                    Image: !Sub "763104351884.dkr.ecr.${AWS::Region}.amazonaws.com/mxnet-inference:1.6.0-gpu-py3"
+                    ModelDataUrl: !Sub "s3://${ModelDataBucket}-${AWS::Region}-${AWS::AccountId}/model_alpha_pose/model.tar.gz"
+                    Environment: {
+                        "SAGEMAKER_MODEL_SERVER_WORKERS": 10,
+                        "SAGEMAKER_ENABLE_CLOUDWATCH_METRICS": 'true',
+                        "SAGEMAKER_REGION": {"Ref": "AWS::Region"},
+                        "SAGEMAKER_PROGRAM": "alpha_pose.py",
+                        "SAGEMAKER_CONTAINER_LOG_LEVEL": 20,
+                        "SAGEMAKER_SUBMIT_DIRECTORY": {"Fn::Sub": "s3://${ModelDataBucket}-${AWS::Region}-${AWS::AccountId}/model_alpha_pose/model.tar.gz"},
+                    }
+
+            ExecutionRoleArn: !GetAtt SagemakerExecutionRole.Arn
+            ModelName: !Ref ModelEndpointName
+    
+  EndpointConfig:
+        Type: AWS::SageMaker::EndpointConfig
+        Properties:
+            ProductionVariants: 
+                -
+                    ModelName: !GetAtt Model.ModelName
+                    VariantName: AllTraffic
+                    InitialInstanceCount: !Ref InstanceCount
+                    InstanceType: !Ref SagemakerEndpointInstanceType
+                    InitialVariantWeight: 1.0
+            EndpointConfigName: !Ref ModelEndpointName
+
+  Endpoint:
+        Type: AWS::SageMaker::Endpoint
+        Properties: 
+            EndpointConfigName: !GetAtt EndpointConfig.EndpointConfigName
+            EndpointName: !Ref ModelEndpointName
+  
+  # Lambda functions
+  # Frame extractor
+  frameExtractor:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      MemorySize: 512
+      Timeout: 900
+      Handler: "frame_extractor.lambda_handler"
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
+      Role: !GetAtt "frameExtractorRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "frame_extractor.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Environment:
+        Variables:
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          STORE_FRAMES: "original"
+  #Pose inference
+  startPoseInference:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      MemorySize: 512
+      Timeout: 900
+      Handler: "start_pose_inference.lambda_handler"
+      Layers:
+        - !Ref MediaInsightsEnginePython37Layer
+      Role: !GetAtt "PoseInferenceRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "start_pose_inference.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Environment:
+        Variables:
+          OPERATOR_NAME: "poseInference"
+          ENDPOINT_NAME: !GetAtt "Endpoint.EndpointName" 
+          MIN_CONFIDENCE: "0.5"
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
   # This is a generic Lambda function for getting metadata from JSON file in S3:
   startGenericDataLookup:
     Type: "AWS::Lambda::Function"
@@ -1430,6 +1652,28 @@ Resources:
 
   # Register as operators in the control plane
 
+  FrameExtractorOperation:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "frameExtractor"
+      Type: "Sync"
+      Configuration: { "MediaType": "Video", "Enabled": true }
+      StartLambdaArn: !GetAtt frameExtractor.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+  
+  PoseInferenceOperation:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "poseInference"
+      Configuration: { "MediaType": "Images", "Enabled": true }
+      Type: "Sync"
+      StartLambdaArn: !GetAtt startPoseInference.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
   GenericDataLookupOperation:
     Type: Custom::CustomResource
     Properties:
@@ -1836,6 +2080,20 @@ Outputs:
     Value: !GetAtt comprehendEntitiesOperation.Name
     Export:
       Name: !Join [":", [!Ref "AWS::StackName", ComprehendEntities]]
+
+  #sagemaker
+  PoseInference:
+    Description: "Pose inference operator"
+    Value: !GetAtt PoseInferenceOperation.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", PoseInference]]
+
+  #frame extraction
+  FrameExtractorOperation:
+    Description: "Operation name of the FrameExtractor Operator"
+    Value: !GetAtt FrameExtractorOperation.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", FrameExtractor]]
 
   # Rekognition video
   CelebRecognition:

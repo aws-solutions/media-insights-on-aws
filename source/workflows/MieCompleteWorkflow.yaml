@@ -14,6 +14,26 @@ Parameters:
     Type: String
 
 Resources:
+  frameExtractionStage:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Stage"
+      Name: "frameExtractionStage"
+      Operations:
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:FrameExtractor"
+
+  poseInferenceStage:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Stage"
+      Name: "poseInferenceStage"
+      Operations:
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:PoseInference"
+
   PreliminaryStage:
     Type: Custom::CustomResource
     Properties:
@@ -61,37 +81,7 @@ Resources:
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:Transcribe"
 
-  defaultTextStage:
-    Type: Custom::CustomResource
-    Properties:
-      ServiceToken: !Ref WorkflowCustomResourceArn
-      ResourceType: "Stage"
-      Name: "defaultTextStage"
-      Operations:
-        - Fn::ImportValue:
-            Fn::Sub: "${OperatorLibraryStack}:Translate"
-        - Fn::ImportValue:
-            Fn::Sub: "${OperatorLibraryStack}:ComprehendPhrases"
-        - Fn::ImportValue:
-            Fn::Sub: "${OperatorLibraryStack}:ComprehendEntities"
-
-  defaultTextSynthesisStage:
-    Type: Custom::CustomResource
-    Properties:
-      ServiceToken: !Ref WorkflowCustomResourceArn
-      ResourceType: "Stage"
-      Name: "defaultTextSynthesisStage"
-      Operations:
-        - Fn::ImportValue:
-            Fn::Sub: "${OperatorLibraryStack}:Polly"
-
-  MieCompleteWorkflow:
-    DependsOn:
-      - PreliminaryStage
-      - defaultVideoStage
-      - defaultAudioStage
-      - defaultTextStage
-      - defaultTextSynthesisStage
+  MieCompleteWorkflow: 
     Type: Custom::CustomResource
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
@@ -102,26 +92,26 @@ Resources:
         - |-
           {
             "${PreliminaryStage}":{
+              "Next": "${frameExtractionStage}"
+              },
+            "${frameExtractionStage}":{
+              "Next": "${poseInferenceStage}"
+              },
+            "${poseInferenceStage}":{
               "Next": "${defaultVideoStage}"
               },
             "${defaultVideoStage}":{
               "Next": "${defaultAudioStage}"
               },
             "${defaultAudioStage}":{
-              "Next": "${defaultTextStage}"
-              },
-            "${defaultTextStage}":{
-              "Next": "${defaultTextSynthesisStage}"
-              },
-            "${defaultTextSynthesisStage}":{
               "End": true
               }
           }
         - {
           PreliminaryStage: !GetAtt PreliminaryStage.Name,
+          frameExtractionStage: !GetAtt frameExtractionStage.Name,
+          poseInferenceStage: !GetAtt poseInferenceStage.Name,
           defaultVideoStage: !GetAtt defaultVideoStage.Name,
-          defaultAudioStage: !GetAtt defaultAudioStage.Name,
-          defaultTextStage: !GetAtt defaultTextStage.Name,
-          defaultTextSynthesisStage: !GetAtt defaultTextSynthesisStage.Name
+          defaultAudioStage: !GetAtt defaultAudioStage.Name
         }
 

@@ -238,6 +238,8 @@ export default {
         "labelDetection",
         "celebrityRecognition",
         "textDetection",
+        "frameExtractor",
+        "poseInference",
         "contentModeration",
         "faceDetection",
         "thumbnail",
@@ -248,6 +250,8 @@ export default {
       ],
       videoOperators: [
         { text: "Object Detection", value: "labelDetection" },
+        {text: 'Frame Extractor', value: 'frameExtractor'},
+        {text: 'Pose Inference', value: 'poseInference'},
         { text: "Celebrity Recognition", value: "celebrityRecognition" },
         { text: "Content Moderation", value: "contentModeration" },
         { text: "Face Detection", value: "faceDetection" },
@@ -460,6 +464,16 @@ export default {
               Enabled: true
             }
           },
+          frameExtractionStage: {
+              frameExtractor: {
+                Enabled: this.enabledOperators.includes("frameExtractor"),
+              },
+            },
+            poseInferenceStage: {
+              poseInference: {
+                "Enabled": this.enabledOperators.includes("poseInference"),
+              },
+            },
           defaultVideoStage: {
             faceDetection: {
               Enabled: this.enabledOperators.includes("faceDetection")
@@ -500,25 +514,6 @@ export default {
               Enabled: this.enabledOperators.includes("Transcribe"),
               TranscribeLanguage: this.transcribeLanguage
             }
-          },
-          defaultTextStage: {
-            Translate: {
-              Enabled: this.enabledOperators.includes("Translate"),
-              SourceLanguageCode: this.transcribeLanguage.split("-")[0],
-              TargetLanguageCode: this.targetLanguageCode
-            },
-            ComprehendEntities: {
-              Enabled: this.enabledOperators.includes("ComprehendEntities")
-            },
-            ComprehendKeyPhrases: {
-              Enabled: this.enabledOperators.includes("ComprehendKeyPhrases")
-            }
-          },
-          defaultTextSynthesisStage: {
-            // Polly is available in the MIECompleteWorkflow but not used in the front-end, so we've disabled it here.
-            Polly: {
-              Enabled: false
-            }
           }
         }
       };
@@ -542,6 +537,8 @@ export default {
     selectAll: function() {
       this.enabledOperators = [
         "labelDetection",
+        "frameExtractor",
+        "poseInference",
         "celebrityRecognition",
         "contentModeration",
         "faceDetection",

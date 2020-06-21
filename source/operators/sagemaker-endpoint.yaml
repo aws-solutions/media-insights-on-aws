@@ -1,0 +1,107 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'CloudFormation template to create Sagemaker Model endpoint for pose inference'
+
+Parameters:
+    ModelEndpointName:
+        Description: Model endpoint name
+        Type: String
+        Default: "pose-inference-endpoint"
+    ModelDataBucket:
+        Description: S3 Bucket location of model artefact
+        Type: String
+        Default: "pose-bucket"
+    InstanceType:
+        Description: Instance type
+        Type: String
+        Default: "ml.g4dn.2xlarge"
+        AllowedValues:
+            - ml.g4dn.xlarge
+            - ml.g4dn.2xlarge
+            - ml.g4dn.4xlarge
+            - ml.g4dn.8xlarge
+            - ml.g4dn.12xlarge
+            - ml.g4dn.16xlarge
+    InstanceCount:
+        Description: Number of Instances created
+        Type: String
+        Default: 1
+Resources:
+    Model:
+        Type: AWS::SageMaker::Model
+        Properties: 
+            Containers: 
+                - 
+                    ContainerHostname : MxnetContainer1
+                    Image: !Sub "763104351884.dkr.ecr.${AWS::Region}.amazonaws.com/mxnet-inference:1.6.0-gpu-py3"
+                    ModelDataUrl: !Sub "s3://${ModelDataBucket}-${AWS::Region}-${AWS::AccountId}/model_yolo3/model.tar.gz"
+                    Environment: {
+                        "SAGEMAKER_MODEL_SERVER_WORKERS": 10,
+                        "SAGEMAKER_ENABLE_CLOUDWATCH_METRICS": 'true',
+                        "SAGEMAKER_REGION": {"Ref": "AWS::Region"},
+                        "SAGEMAKER_PROGRAM": "yolo3.py",
+                        "SAGEMAKER_CONTAINER_LOG_LEVEL": 20,
+                        "SAGEMAKER_SUBMIT_DIRECTORY": {"Fn::Sub": "s3://${ModelDataBucket}-${AWS::Region}-${AWS::AccountId}/model_yolo3/model.tar.gz"},
+                    }
+                -    
+                    ContainerHostname : MxnetContainer2
+                    Image: !Sub "763104351884.dkr.ecr.${AWS::Region}.amazonaws.com/mxnet-inference:1.6.0-gpu-py3"
+                    ModelDataUrl: !Sub "s3://${ModelDataBucket}-${AWS::Region}-${AWS::AccountId}/model_alpha_pose/model.tar.gz"
+                    Environment: {
+                        "SAGEMAKER_MODEL_SERVER_WORKERS": 10,
+                        "SAGEMAKER_ENABLE_CLOUDWATCH_METRICS": 'true',
+                        "SAGEMAKER_REGION": {"Ref": "AWS::Region"},
+                        "SAGEMAKER_PROGRAM": "alpha_pose.py",
+                        "SAGEMAKER_CONTAINER_LOG_LEVEL": 20,
+                        "SAGEMAKER_SUBMIT_DIRECTORY": {"Fn::Sub": "s3://${ModelDataBucket}-${AWS::Region}-${AWS::AccountId}/model_alpha_pose/model.tar.gz"},
+                    }
+
+            ExecutionRoleArn: !GetAtt ExecutionRole.Arn
+            ModelName: !Ref ModelEndpointName
+    ExecutionRole: 
+        Type: "AWS::IAM::Role"
+        Properties: 
+            AssumeRolePolicyDocument: 
+                Version: "2012-10-17"
+                Statement: 
+                    - 
+                        Effect: "Allow"
+                        Principal: 
+                            Service: 
+                                - "sagemaker.amazonaws.com"
+                        Action: 
+                            - "sts:AssumeRole"
+            Path: "/"
+            Policies: 
+                - 
+                    PolicyName: "root"
+                    PolicyDocument: 
+                        Version: "2012-10-17"
+                        Statement: 
+                        - 
+                            Effect: "Allow"
+                            Action: "*"
+                            Resource: "*"
+    EndpointConfig:
+        Type: AWS::SageMaker::EndpointConfig
+        Properties:
+            ProductionVariants: 
+                -
+                    ModelName: !GetAtt Model.ModelName
+                    VariantName: AllTraffic
+                    InitialInstanceCount: !Ref InstanceCount
+                    InstanceType: !Ref InstanceType
+                    InitialVariantWeight: 1.0
+            EndpointConfigName: !Ref ModelEndpointName
+
+    Endpoint:
+        Type: AWS::SageMaker::Endpoint
+        Properties: 
+            EndpointConfigName: !GetAtt EndpointConfig.EndpointConfigName
+            EndpointName: !Ref ModelEndpointName
+
+
+Outputs:
+    EndpointId:
+        Value: !Ref Endpoint
+    EndpointName:
+        Value: !GetAtt Endpoint.EndpointName

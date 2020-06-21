@@ -6,6 +6,11 @@ Parameters:
     Description: Email address for the MIE Administrator
     Type: String
 
+  SagemakerEndpointInstanceType:
+        Description: Instance type
+        Type: String
+        Default: "ml.g4dn.2xlarge"
+
   DevGroupName:
     Type: String
     Description: Name of the developer group
@@ -1261,6 +1266,7 @@ Resources:
         DataPlaneHandlerArn: !GetAtt MediaInsightsDataplaneApiStack.Outputs.APIHandlerArn
         DataPlaneBucket: !Ref Dataplane
         MediaInsightsEnginePython37Layer: !Ref MediaInsightsEnginePython37Layer
+        SagemakerEndpointInstanceType: !Ref SagemakerEndpointInstanceType
 
   TestWorkflow:
     Condition: DeployTestWorkflowCondition

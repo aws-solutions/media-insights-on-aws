@@ -48,7 +48,7 @@ Operator inputs include a list of Media, Metadata and the operator Configuration
   
   9. Attach the lambda layer to the frame processing operator. Search for '*frameExtractor*' lambda function and add additional layer. 
   
-  10. Upload any video .mp4 file (upto 10 minutes) through the MIE console and observe the pose inference results in a new tab named 'Pose'
+  10. Upload any video .mp4 file (upto 10 minutes in length) through the MIE console and observe the pose inference results in a new tab named 'Pose'
   
   
      

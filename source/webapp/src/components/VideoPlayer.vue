@@ -79,6 +79,11 @@ export default {
       });
       this.player.autoplay('muted');
       this.player.currentTime(0);
+      let vm = this
+      this.player.on('timeupdate', function() {
+        let currentTime = this.currentTime()
+        vm.$store.commit('updateCurrentTime', currentTime)
+      });
       this.$store.commit('updatePlayer', this.player);
     });
     this.player.on('loadeddata', function() {

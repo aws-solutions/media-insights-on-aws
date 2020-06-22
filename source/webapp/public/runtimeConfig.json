@@ -1,1 +1,10 @@
-{"ELASTICSEARCH_ENDPOINT": "", "WORKFLOW_API_ENDPOINT": "", "DATAPLANE_API_ENDPOINT": "", "DATAPLANE_BUCKET": "", "USER_POOL_ID": "", "USER_POOL_CLIENT_ID": "", "IDENTITY_POOL_ID": "", "AWS_REGION": ""}
+{
+  "ELASTICSEARCH_ENDPOINT": "https://search-mie-es-i6pnasr5igfeq4acesodkab5jq.us-west-2.es.amazonaws.com",
+  "WORKFLOW_API_ENDPOINT": "https://8c8647obu2.execute-api.us-west-2.amazonaws.com/api/",
+  "DATAPLANE_API_ENDPOINT": "https://cilcx09ea4.execute-api.us-west-2.amazonaws.com/api/",
+  "DATAPLANE_BUCKET": "mie-dataplane-177lrrqwzinpf",
+  "USER_POOL_ID": "us-west-2_nsSnkppvH",
+  "USER_POOL_CLIENT_ID": "18a8a5opiv14gndamqfs150bco",
+  "IDENTITY_POOL_ID": "us-west-2:8f5e0988-e95d-4043-bf75-691fb7765f22",
+  "AWS_REGION": "us-west-2"
+}

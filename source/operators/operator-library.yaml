@@ -687,6 +687,127 @@ Resources:
 
   # Rekognition
 
+  startTechnicalCueDetection:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "start_technical_cue_detection.lambda_handler"
+      Layers:
+        - !Ref MediaInsightsEnginePython37Layer
+      Role: !GetAtt "rekognitionRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "start_technical_cue_detection.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Timeout: 120
+      Environment:
+        Variables:
+          REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          OPERATOR_NAME: "technicalCueDetection"
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          # TODO: Remove this when service is GA
+          AWS_DATA_PATH: '.'
+
+  checkTechnicalCueDetection:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "check_technical_cue_status.lambda_handler"
+      Layers:
+        - !Ref MediaInsightsEnginePython37Layer
+      Role: !GetAtt "rekognitionRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "check_technical_cue_status.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Timeout: 120
+      Environment:
+        Variables:
+          REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          OPERATOR_NAME: "technicalCueDetection"
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          # TODO: Remove this when service is GA
+          AWS_DATA_PATH: '.'
+
+
+  startShotDetection:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "start_shot_detection.lambda_handler"
+      Layers:
+        - !Ref MediaInsightsEnginePython37Layer
+      Role: !GetAtt "rekognitionRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "start_shot_detection.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Timeout: 120
+      Environment:
+        Variables:
+          REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          OPERATOR_NAME: "shotDetection"
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          # TODO: Remove this when service is GA
+          AWS_DATA_PATH: '.'
+
+  checkShotDetection:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "check_shot_detection_status.lambda_handler"
+      Layers:
+        - !Ref MediaInsightsEnginePython37Layer
+      Role: !GetAtt "rekognitionRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "check_shot_detection_status.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Timeout: 120
+      Environment:
+        Variables:
+          REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          OPERATOR_NAME: "shotDetection"
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          # TODO: Remove this when service is GA
+          AWS_DATA_PATH: '.'
+
   startCelebrityRecognition:
     Type: "AWS::Lambda::Function"
     Properties:
@@ -1715,6 +1836,30 @@ Resources:
       MonitorLambdaArn: !GetAtt checkLabelDetection.Arn
       StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
+  technicalCueDetectionOperation:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "technicalCueDetection"
+      Type: "Async"
+      Configuration: { "MediaType": "Video", "Enabled": true }
+      StartLambdaArn: !GetAtt startTechnicalCueDetection.Arn
+      MonitorLambdaArn: !GetAtt checkTechnicalCueDetection.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
+  shotDetectionOperation:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "shotDetection"
+      Type: "Async"
+      Configuration: { "MediaType": "Video", "Enabled": true }
+      StartLambdaArn: !GetAtt startShotDetection.Arn
+      MonitorLambdaArn: !GetAtt checkShotDetection.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
   textDetectionOperation:
     Type: Custom::CustomResource
     Properties:
@@ -1841,6 +1986,16 @@ Outputs:
       Name: !Join [":", [!Ref "AWS::StackName", ComprehendEntities]]
 
   # Rekognition video
+  shotDetection:
+    Description: "shotDetection operator"
+    Value: !GetAtt shotDetectionOperation.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", ShotDetection]]
+  TechnicalCueDetection:
+    Description: "technicalCueDetection operator"
+    Value: !GetAtt technicalCueDetectionOperation.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", TechnicalCueDetection]]
   CelebRecognition:
     Description: "CelebRecognition operator"
     Value: !GetAtt celebrityRecognitionOperation.Name

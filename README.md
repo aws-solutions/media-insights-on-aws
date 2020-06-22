@@ -7,19 +7,58 @@ Media Insights Engine (MIE) is a framework to accelerate the development of serv
 
 MIE includes a demo GUI for video content analysis and search. The [Implementation Guide](https://github.com/awslabs/aws-media-insights-engine/blob/master/IMPLEMENTATION_GUIDE.md) explains how to build other applications with MIE. 
 
+![](doc/images/MIEDemo.gif)
+
+The Media Insights sample application lets you upload videos, images, audio and text files for content analysis and add the results to a collection that can be searched to find media that has attributes you are looking for.  It runs an MIE workflow that extracts insights using many of the ML content analysis services available on AWS and stores them in a search engine for easy exploration.  A web based GUI is used to search and visualize the resulting data along-side the input media.  The analysis and transformations included in MIE workflow for this application include:
+
+* Proxy encode of videos and separation of video and audio tracks using **AWS Elemental MediaConvert**. 
+* Object, scene, and activity detection in images and video using **Amazon Rekognition**. 
+* Celebrity detection in images and video using **Amazon Rekognition**
+* Face search from a collection of known faces in images and video using **Amazon Rekognition**
+* Facial analysis to detect facial features and faces in images and videos to determine things like happiness, age range, eyes open, glasses, facial hair, etc. In video, you can also measure how these things change over time, such as constructing a timeline of the emotions expressed by an actor.  From **Amazon Rekognition**.
+* Unsafe content detection using **Amazon Rekognition**. Identify potentially unsafe or inappropriate content across both image and video assets. 
+* Convert speech to text from audio and video assets using **Amazon Transcribe**.
+* Convert text from one language to another using **Amazon Translate**.
+* Identify entities in text using **Amazon Comprehend**. 
+* Identify key phrases in text using **Amazon Comprehend**
+* Locate technical cues such as black frames, end credits, and color bars in your videos using Amazon Rekognition.
+* Identify start, end, and duration of each unique shot in your videos using Amazon Rekognition. 
+
+Data are stored in Amazon Elasticsearch Service and can be retrieved using _Lucene_ queries in the Collection view search page.
 
 # Installation
 You can deploy MIE and the demo GUI in your AWS account with the following one-click deploy buttons:
 
 Region| Launch
 ------|-----
-US East (N. Virginia) | [![Launch in us-east-1](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-east-1.s3.amazonaws.com/media-insights-solution/v0.1.7/cf/media-insights-stack.template)
-US West (Oregon) | [![Launch in us-west-2](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-west-2.s3.amazonaws.com/media-insights-solution/v0.1.7/cf/media-insights-stack.template)
+US East (N. Virginia) | [![Launch in us-east-1](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-east-1.s3.amazonaws.com/media-insights-solution/v0.1.8/cf/media-insights-stack.template)
+US West (Oregon) | [![Launch in us-west-2](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-west-2.s3.amazonaws.com/media-insights-solution/v0.1.8/cf/media-insights-stack.template)
 
 
 The default settings for the template will deploy MIE and the demo GUI. You must set the parameters for `Stack name` and `AdminEmail`.
 
+Total installation time is between 15-30 minutes. 
+
 For more information about stack deployment, see the section on [installation parameters](#installation-parameters).
+
+## Outputs
+
+After the stack successfully deploys, you can find important interface resources in the **Outputs** tab of the MIE CloudFormation stack.
+
+**MediaInsightsWebAppUrl** is the Url to access sample Media Insights web application
+
+**DataplaneApiEndpoint** is the endpoint for accessing dataplane APIs to create, update, delete and retrieve media assets
+
+**DataplaneBucket** is the S3 bucket used to store derived media (_derived assets_) and raw analysis metadata created by MIE workflows.
+
+**ElasticsearchEndpoint** is the endpoint of the Elasticsearch cluster used to store analysis metadata for search
+
+**MediaInsightsEnginePython37Layer** is a lambda layer required to build new operator lambdas
+
+**WorkflowApiEndpoint** is the endpoint for accessing the Workflow APIs to create, update, delete and execute MIE workflows.
+
+**WorkflowCustomResourceArn** is the custom resource that can be used to create MIE workflows in CloudFormation scripts
+
 
 # Cost
 
@@ -89,45 +128,6 @@ You can deploy MIE and the demo GUI in your AWS account with the [one-click depl
 
 **Other parameters**
 * **DeployAnalyticsPipeline**: If set to true, deploys a metadata streaming pipeline that can be consumed by downstream analytics plaforms. Defaults to `true`.
-
-## Outputs
-
-After the stack successfully deploys, you can find important interface resources in the **Outputs** tab of the CloudFormation stack.
-
-**DataplaneApiEndpoint** is the endpoint for accessing dataplane APIs to create, update, delete and retrieve media assets
-
-**DataplaneBucket** is the S3 bucket used to store derived media (_derived assets_) and raw analysis metadata created by MIE workflows.
-
-**ElasticsearchEndpoint** is the endpoint of the Elasticsearch cluster used to store analysis metadata for search
-
-**MediaInsightsEnginePython37Layer** is a lambda layer required to build new operator lambdas
-
-**MediaInsightsWebAppUrl** is the Url for the sample Media Insights web application
-
-**WorkflowApiEndpoint** is the endpoint for accessing the Workflow APIs to create, update, delete and execute MIE workflows.
-
-**WorkflowCustomResourceArn** is the custom resource that can be used to create MIE workflows in CloudFormation scripts
-
-# Usage
-
-###  Sample application
-
-![](doc/images/MIEDemo.gif)
-
-The Media Insights sample application lets you upload videos, images, audio and text files for content analysis and add the results to a collection that can be searched to find media that has attributes you are looking for.  It runs an MIE workflow that extracts insights using many of the ML content analysis services available on AWS and stores them in a search engine for easy exploration.  A web based GUI is used to search and visualize the resulting data along-side the input media.  The analysis and transformations included in MIE workflow for this application include:
-
-* Proxy encode of videos and separation of video and audio tracks using **AWS Elemental MediaConvert**. 
-* Object, scene, and activity detection in images and video using **Amazon Rekognition**. 
-* Celebrity detection in images and video using **Amazon Rekognition**
-* Face search from a collection of known faces in images and video using **Amazon Rekognition**
-* Facial analysis to detect facial features and faces in images and videos to determine things like happiness, age range, eyes open, glasses, facial hair, etc. In video, you can also measure how these things change over time, such as constructing a timeline of the emotions expressed by an actor.  From **Amazon Rekognition**.
-* Unsafe content detection using **Amazon Rekognition**. Identify potentially unsafe or inappropriate content across both image and video assets. 
-* Convert speech to text from audio and video assets using **Amazon Transcribe**.
-* Convert text from one language to another using **Amazon Translate**.
-* Identify entities in text using **Amazon Comprehend**. 
-* Identify key phrases in text using **Amazon Comprehend**
-
-Data are stored in Amazon Elasticsearch Service and can be retrieved using _Lucene_ queries in the Collection view search page.
 
 ### Example use cases for Media Insights Engine
  

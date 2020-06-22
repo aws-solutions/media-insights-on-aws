@@ -709,7 +709,6 @@ npm install
 echo "Compiling the vue app"
 npm run build
 echo "Built demo webapp"
-rm -rf ./dist
 
 echo "------------------------------------------------------------------------------"
 echo "Copy dist to S3"

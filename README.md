@@ -27,19 +27,47 @@ The Media Insights sample application lets you upload videos, images, audio and 
 Data are stored in Amazon Elasticsearch Service and can be retrieved using _Lucene_ queries in the Collection view search page.
 
 # Installation
-You can deploy MIE and the demo GUI in your AWS account with the following one-click deploy buttons:
+You can deploy MIE and the demo GUI in your AWS account with the following instructions:
 
-Region| Launch
-------|-----
-US East (N. Virginia) | [![Launch in us-east-1](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-east-1.s3.amazonaws.com/media-insights-solution/v0.1.8/cf/media-insights-stack.template)
-US West (Oregon) | [![Launch in us-west-2](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-west-2.s3.amazonaws.com/media-insights-solution/v0.1.8/cf/media-insights-stack.template)
+#### *Step 1. Launch the Stack*
+  Region| Launch
+  ------|-----
+  US East (N. Virginia) | [![Launch in us-east-1](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-east-1.s3.amazonaws.com/media-insights-solution/v0.1.8/cf/media-insights-stack.template)
+  US West (Oregon) | [![Launch in us-west-2](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-west-2.s3.amazonaws.com/media-insights-solution/v0.1.8/cf/media-insights-stack.template)
 
+1. Sign in to the AWS Management Console in either the US-East-1 or US-West-2 regions.
+2. Select a template to launch from the table above based on the region you are signed into. This will take you to the 
+Cloudformation deployment menu. 
+3. On the Create stack page, verify that the correct template URL shows in the Amazon
+S3 URL text box and choose Next.
+4. On the Specify stack details page, assign a name to your MIE stack.
+5. Under Parameters, review the parameters for the template and modify them as
+necessary. The default settings for the template will deploy MIE and the demo GUI. You must set the parameters for `Stack name` and `AdminEmail`.
+6. Choose Next.
+7. On the Configure stack options page, choose Next.
+8. On the Review page, review and confirm the settings. Check the box acknowledging that
+the template will create AWS Identity and Access Management (IAM) resources.
+9. Choose Create stack to deploy the stack
 
-The default settings for the template will deploy MIE and the demo GUI. You must set the parameters for `Stack name` and `AdminEmail`.
-
-Total installation time is between 15-30 minutes. 
+You can view the status of the stack in the AWS CloudFormation Console in the Status
+column. You should see a status of CREATE_COMPLETE in approximately 15-30 minutes. 
 
 For more information about stack deployment, see the section on [installation parameters](#installation-parameters).
+
+#### *Step 2. Access the Web Application*
+
+To access the web application, you will need the email address you provided in the AWS
+CloudFormation template, a temporary password, which is emailed to your specified
+address, and the URL of your deployed MIE sample application.
+
+In the same email that includes your temp password, there is a link to the MIE stack overview.
+
+1. Click that link to access the stack overview page.
+2. Navigate to the `Outputs` tab of the MIE stack.
+3. Copy the value of the `MediaInsightsWebAppUrl` output. This is the URL you will use to access the sample application.
+4. In a new browser tab, paste the `MediaInsightsWebAppUrl` value into the navigation bar and access the app.
+5. Sign in with the email address you provided and the temp password from the automated email. You will be prompted to set a new password.
+6. Upload some content from the `Upload` link in the navigation header and explore the application.
 
 ## Outputs
 

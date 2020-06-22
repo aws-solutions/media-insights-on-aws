@@ -1,4 +1,4 @@
-![MIE logo](doc/images/logo/MIE_logo.png)
+![MIE logo](doc/images/MIE_logo.png)
 
 Media Insights Engine (MIE) is a framework to accelerate the development of serverless applications that process video, images, audio, and text with artificial intelligence services and multimedia services on AWS. MIE is most often used to: 
 
@@ -23,44 +23,7 @@ For more information about stack deployment, see the section on [installation pa
 
 # Cost
 
-Most AWS accounts include a free tier for the services used in MIE. However, if your usage exceeds the free tier allotments then you will be responsible for the cost of the AWS services used while running MIE. 
-
-The cost depends on the number of and length of uploaded videos, and data transfer fees, which will vary depending on the number of users and frequency of viewing. Cost also depends on video content. For example, videos with lots of speech will incur higher costs for text operations. You will also be charged for storing media files in S3.
-
-As of the date of publication, the costs for running this solution in the us-east-1 (N. Virginia) region are estimated below. Prices for services are tiered to distinguish between heavy and lite users. The estimates below are based on prices for lite users.
-
-## Video Operators 
-See [https://aws.amazon.com/rekognition/pricing/](https://aws.amazon.com/rekognition/pricing/).
-
-Object Detection ($0.10 per min)
-Celebrity Recognition ($0.10 per min)
-Content Moderation ($0.10 per min)
-Face Detection ($0.10 per min)
-Face Search ($0.10 per min)
-
-## Audio Operators
-See [https://aws.amazon.com/transcribe/pricing/](https://aws.amazon.com/rekognition/pricing/).
-
-Transcribe ($.024 per min)
-
-## Text Operators
-Comprehend Key Phrases ($0.000001 per character)
-Comprehend Entities ($0.000001 per character)
-Polly ($0.000004 per character)
-Translate ($0.000015 per character)
-
-## Data Plane and Control Plane
-[Elasticsearch](https://aws.amazon.com/elasticsearch-service/pricing/)(r4.large.elasticsearch) $0.196 per Hour
-[S3](https://aws.amazon.com/s3/pricing/) $0.023 per GB
-
-## Lambda, API Gateway, DynamoDB, and DynamoDB Streams 
-The free-tier for Lambda, API Gateway, DynamoDB, and DynamoDB Streams should cover most common MIE use cases.
-
-## Pricing Example:
-
-The cost to analyzing 4 hours of video with 64 pages (~165k characters) of speech through every operator is $128.
-
-This scenario is loosely based on "A Christmas Carol" by Charles Dickens, which includes ~165k characters and ~3 hours 50 min speech duration ([reference](https://aws.amazon.com/polly/pricing/)).
+MIE itself does not have a significant cost footprint. The MIE control plane and data plane generally cost less than $1 per month. However, when people talk about the cost of MIE they're generally talking about the cost of running some specific application that was built on top of MIE. Because those costs can vary widely you will need to get pricing information from the documentation for those applications. As a point of reference, see the README for the Content Analysis application that is included under the webapp directory.
 
 # Limits
 
@@ -199,10 +162,7 @@ See the [CONTRIBUTING](CONTRIBUTING.md) file for how to contribute.
 
 # Logo
 
-The [MIE logo](doc/images/logo/MIE_logo.png) features a clapperboard representing *multimedia*, centered inside a crosshair representing *under extreme scrutiny*. This symbol is available from [nounproject](https://thenounproject.com/icon/1815092/). The font is Engineering Plot, https://www.dafont.com/engineering-plot.font which conveys the scaffolding nature of MIE.
-
-![MIE logo](doc/images/logo/MIE_logo.png)
-![MIE logo dark](doc/images/logo/MIE_logo_dark.png)
+The [MIE logo](doc/images/MIE_logo.png) features a clapperboard representing *multimedia*, centered inside a crosshair representing *under scrutiny*. 
 
 # License
 

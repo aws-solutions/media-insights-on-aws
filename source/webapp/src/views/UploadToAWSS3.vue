@@ -167,10 +167,11 @@
         :items="executed_assets"
       >
         <template v-slot:cell(workflow_status)="data">
-          <a
+          <a v-if="data.item.workflow_status !== 'Queued'"
             href
             @click.stop.prevent="openWindow(data.item.state_machine_console_link)"
           >{{ data.item.workflow_status }}</a>
+          <div v-if="data.item.workflow_status === 'Queued'">{{ data.item.workflow_status }}</div>
         </template>
       </b-table>
       <b-button size="sm" @click="clearHistory">

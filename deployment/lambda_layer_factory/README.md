@@ -25,18 +25,6 @@ Put your desired Python libraries in a requirements.txt file, following standard
 echo "boto3==1.9.134" >> requirements.txt
 ```
 
-(Optional) To get the latest version of the MediaInsightsEngineLambdaHelper package, build the "whl" file and include it in the requirements.txt like this:
-```
-cd deployment/lambda_layer_factory
-git clone git+ssh://git.amazon.com/pkg/MediaInsightsEngineLambdaHelper
-cd MediaInsightsEngineLambdaHelper/
-python3 setup.py bdist_wheel
-cp dist/*.whl ../
-cd ..
-rm -rf MediaInsightsEngineLambdaHelper/
-echo "/packages/Media_Insights_Engine_Lambda_Helper-0.0.1-py3-none-any.whl" >> requirements.txt
-``` 
-
 Run the `build-lambda-layer.sh` script to build and deploy a Lamba layer containing the python packages you specified above.
 ```
 ./build-lambda-layer.sh requirements.txt s3://my_bucket/lambda_layers/ us-west-2

@@ -233,6 +233,7 @@ cd "$source_dir/operators/operator_failed" || exit 1
 mkdir -p dist
 zip -q dist/operator_failed.zip operator_failed.py
 cp "./dist/operator_failed.zip" "$dist_dir/operator_failed.zip"
+rm -rf ./dist
 
 # ------------------------------------------------------------------------------"
 # Mediainfo Operation
@@ -247,6 +248,7 @@ mkdir -p dist
 zip -q dist/mediainfo.zip mediainfo.py
 # Zip is ready. Copy it to the distribution directory.
 cp "./dist/mediainfo.zip" "$dist_dir/mediainfo.zip"
+rm -rf ./dist
 
 # ------------------------------------------------------------------------------"
 # Mediaconvert Operations
@@ -260,6 +262,7 @@ zip -q dist/start_media_convert.zip start_media_convert.py
 zip -q dist/get_media_convert.zip get_media_convert.py
 cp "./dist/start_media_convert.zip" "$dist_dir/start_media_convert.zip"
 cp "./dist/get_media_convert.zip" "$dist_dir/get_media_convert.zip"
+rm -rf ./dist
 
 # ------------------------------------------------------------------------------"
 # Thumbnail Operations
@@ -285,6 +288,7 @@ elif [ -d ./dist/check_thumbnail.zip ]; then
 fi
 zip -q -g dist/check_thumbnail.zip check_thumbnail.py
 cp "./dist/check_thumbnail.zip" "$dist_dir/check_thumbnail.zip"
+rm -rf ./dist
 
 # ------------------------------------------------------------------------------"
 # Transcribe Operations
@@ -298,6 +302,7 @@ zip -q -g ./dist/start_transcribe.zip ./start_transcribe.py
 zip -q -g ./dist/get_transcribe.zip ./get_transcribe.py
 cp "./dist/start_transcribe.zip" "$dist_dir/start_transcribe.zip"
 cp "./dist/get_transcribe.zip" "$dist_dir/get_transcribe.zip"
+rm -rf ./dist
 
 # ------------------------------------------------------------------------------"
 # Create Captions Operations
@@ -309,6 +314,7 @@ cd "$source_dir/operators/captions" || exit
 mkdir -p dist
 zip -g ./dist/get_captions.zip ./get_captions.py
 cp "./dist/get_captions.zip" "$dist_dir/get_captions.zip"
+rm -rf ./dist
 
 # ------------------------------------------------------------------------------"
 # Translate Operations
@@ -347,6 +353,7 @@ fi
 popd || exit 1
 zip -q -g ./dist/start_translate.zip ./start_translate.py
 cp "./dist/start_translate.zip" "$dist_dir/start_translate.zip"
+rm -rf ./dist ./package
 
 # ------------------------------------------------------------------------------"
 # Polly operators
@@ -360,6 +367,7 @@ zip -q -g ./dist/start_polly.zip ./start_polly.py
 zip -q -g ./dist/get_polly.zip ./get_polly.py
 cp "./dist/start_polly.zip" "$dist_dir/start_polly.zip"
 cp "./dist/get_polly.zip" "$dist_dir/get_polly.zip"
+rm -rf ./dist
 
 # ------------------------------------------------------------------------------"
 # Comprehend operators
@@ -419,6 +427,7 @@ for dir in ./*;
       zip -q -g dist/get_entity_detection.zip get_entity_detection.py
       mv -f ./dist/*.zip "$dist_dir"
     fi
+    rm -rf ./dist ./package
     cd ..
   done;
 
@@ -520,6 +529,7 @@ cd "$source_dir/operators/test" || exit
 mkdir -p dist
 zip -q -g ./dist/test_operations.zip ./test.py
 cp "./dist/test_operations.zip" "$dist_dir/test_operations.zip"
+rm -rf ./dist
 
 echo "------------------------------------------------------------------------------"
 echo "DynamoDB Stream Function"
@@ -553,6 +563,7 @@ popd || exit 1
 
 zip -q -g dist/ddbstream.zip ./*.py
 cp "./dist/ddbstream.zip" "$dist_dir/ddbstream.zip"
+rm -rf ./dist ./package
 
 echo "------------------------------------------------------------------------------"
 echo "Elasticsearch consumer Function"
@@ -587,6 +598,7 @@ popd || exit 1
 
 zip -q -g dist/esconsumer.zip ./*.py
 cp "./dist/esconsumer.zip" "$dist_dir/esconsumer.zip"
+rm -f ./dist ./package
 
 echo "------------------------------------------------------------------------------"
 echo "Workflow Scheduler"
@@ -621,6 +633,7 @@ zip -q -r9 ../dist/workflow.zip .
 cd ..
 zip -q -g dist/workflow.zip ./*.py
 cp "./dist/workflow.zip" "$dist_dir/workflow.zip"
+rm -f ./dist ./package/
 
 echo "------------------------------------------------------------------------------"
 echo "Workflow API Stack"
@@ -649,7 +662,7 @@ if [ $? -ne 0 ]; then
   echo "ERROR: Failed to build workflow api template"
   exit 1
 fi
-rm -f ./dist/*
+rm -f ./dist
 
 echo "------------------------------------------------------------------------------"
 echo "Dataplane API Stack"
@@ -676,7 +689,7 @@ if [ $? -ne 0 ]; then
   echo "ERROR: Failed to build dataplane api template"
   exit 1
 fi
-rm -f ./dist/*
+rm -f ./dist
 
 echo "------------------------------------------------------------------------------"
 echo "Demo website stack"
@@ -696,6 +709,7 @@ npm install
 echo "Compiling the vue app"
 npm run build
 echo "Built demo webapp"
+rm -rf ./dist
 
 echo "------------------------------------------------------------------------------"
 echo "Copy dist to S3"

@@ -861,7 +861,7 @@ Resources:
                 "ForAnyValue:StringEquals":
                   "cognito-identity.amazonaws.com:amr": authenticated
         Policies:
-          - PolicyName: "MieDeveloporCognitoPolicy"
+          - PolicyName: "MieDeveloperCognitoPolicy"
             PolicyDocument: !Sub
               - |-
                 {
@@ -1532,6 +1532,9 @@ Outputs:
   UserPoolId:
     Description: ID of the MIE Cognito User Pool
     Value: !Ref MieUserPool
+  IdentityPoolId:
+    Description: ID of the MIE Cognito Identity Pool
+    Value: !Ref MieIdentityPool
   AdminClientId:
     Description: ID of the Admin Cognito Client. This can be used to authenticate command-line apps using boto3.
     Value: !Ref MieAdminClient

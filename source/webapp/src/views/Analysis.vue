@@ -50,6 +50,14 @@
                             title="Words"
                             @click="currentView = 'TextDetection'"
                           />
+                          <b-tab
+                            title="Cues"
+                            @click="currentView = 'TechnicalCues'"
+                          />
+                          <b-tab
+                            title="Shots"
+                            @click="currentView = 'ShotDetection'"
+                          />
                         </b-tabs>
                       </div>
                     </b-row>
@@ -110,7 +118,15 @@
             </div>
             <div v-else>
               <VideoPlayer :options="videoOptions" />
-              <LineChart />
+              <div v-if="currentView === 'ShotDetection'">
+                <br>
+              </div>
+              <div v-else-if="currentView === 'TechnicalCues'">
+                <br>
+              </div>
+              <div v-else>
+                <LineChart />
+              </div>
             </div>
           </div>
           <div>
@@ -170,6 +186,22 @@
         component: new Promise(function(resolve) {
           setTimeout(function() {
             resolve(import('@/components/TextDetection.vue'));
+        }, 1000);
+        }),
+        loading: Loading,
+      }),
+      TechnicalCues: () => ({
+        component: new Promise(function(resolve) {
+          setTimeout(function() {
+            resolve(import('@/components/TechnicalCues.vue'));
+        }, 1000);
+        }),
+        loading: Loading,
+      }),
+      ShotDetection: () => ({
+        component: new Promise(function(resolve) {
+          setTimeout(function() {
+            resolve(import('@/components/ShotDetection.vue'));
         }, 1000);
         }),
         loading: Loading,

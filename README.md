@@ -1,69 +1,96 @@
-# Media Insights Engine
+![MIE logo](doc/images/MIE_logo.png)
 
-Welcome to the Media Insights Engine (MIE) project!
-
-MIE is a framework to accelerate the development of serverless applications that process video, images, audio, and text with artificial intelligence services and multimedia services on AWS. MIE is most often used to: 
+Media Insights Engine (MIE) is a framework to accelerate the development of serverless applications that process video, images, audio, and text with artificial intelligence services and multimedia services on AWS. MIE is most often used to: 
 
 1. Create media analysis workflows using [Amazon Rekognition](https://aws.amazon.com/rekognition/), [Amazon Transcribe](https://aws.amazon.com/transcribe/), [Amazon Translate](https://aws.amazon.com/translate/), [Amazon Cognito](https://aws.amazon.com/cognito/), [Amazon Polly](https://aws.amazon.com/polly/), and [AWS Elemental MediaConvert](https://aws.amazon.com/mediaconvert/).
 2. Build analytical applications on top of data extracted by workflows and saved in the [Amazon Elasticsearch Service](https://aws.amazon.com/elasticsearch-service/)
 
 MIE includes a demo GUI for video content analysis and search. The [Implementation Guide](https://github.com/awslabs/aws-media-insights-engine/blob/master/IMPLEMENTATION_GUIDE.md) explains how to build other applications with MIE. 
 
+![](doc/images/MIEDemo.gif)
+
+The Media Insights sample application lets you upload videos, images, audio and text files for content analysis and add the results to a collection that can be searched to find media that has attributes you are looking for.  It runs an MIE workflow that extracts insights using many of the ML content analysis services available on AWS and stores them in a search engine for easy exploration.  A web based GUI is used to search and visualize the resulting data along-side the input media.  The analysis and transformations included in MIE workflow for this application include:
+
+* Proxy encode of videos and separation of video and audio tracks using **AWS Elemental MediaConvert**. 
+* Object, scene, and activity detection in images and video using **Amazon Rekognition**. 
+* Celebrity detection in images and video using **Amazon Rekognition**
+* Face search from a collection of known faces in images and video using **Amazon Rekognition**
+* Facial analysis to detect facial features and faces in images and videos to determine things like happiness, age range, eyes open, glasses, facial hair, etc. In video, you can also measure how these things change over time, such as constructing a timeline of the emotions expressed by an actor.  From **Amazon Rekognition**.
+* Unsafe content detection using **Amazon Rekognition**. Identify potentially unsafe or inappropriate content across both image and video assets. 
+* Convert speech to text from audio and video assets using **Amazon Transcribe**.
+* Convert text from one language to another using **Amazon Translate**.
+* Identify entities in text using **Amazon Comprehend**. 
+* Identify key phrases in text using **Amazon Comprehend**
+* Locate technical cues such as black frames, end credits, and color bars in your videos using Amazon Rekognition.
+* Identify start, end, and duration of each unique shot in your videos using Amazon Rekognition. 
+
+Data are stored in Amazon Elasticsearch Service and can be retrieved using _Lucene_ queries in the Collection view search page.
 
 # Installation
-You can deploy MIE and the demo GUI in your AWS account with the following one-click deploy buttons:
+You can deploy MIE and the demo GUI in your AWS account with the following instructions:
 
-Region| Launch
-------|-----
-US East (N. Virginia) | [![Launch in us-east-1](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-east-1.s3.amazonaws.com/media-insights-solution/v0.1.7/cf/media-insights-stack.template)
-US West (Oregon) | [![Launch in us-west-2](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-west-2.s3.amazonaws.com/media-insights-solution/v0.1.7/cf/media-insights-stack.template)
+#### *Step 1. Launch the Stack*
+  Region| Launch
+  ------|-----
+  US East (N. Virginia) | [![Launch in us-east-1](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-east-1.s3.amazonaws.com/media-insights-solution/v0.1.8/cf/media-insights-stack.template)
+  US West (Oregon) | [![Launch in us-west-2](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-west-2.s3.amazonaws.com/media-insights-solution/v0.1.8/cf/media-insights-stack.template)
 
+1. Sign in to the AWS Management Console in either the US-East-1 or US-West-2 regions.
+2. Select a template to launch from the table above based on the region you are signed into. This will take you to the 
+Cloudformation deployment menu. 
+3. On the Create stack page, verify that the correct template URL shows in the Amazon
+S3 URL text box and choose Next.
+4. On the Specify stack details page, assign a name to your MIE stack.
+5. Under Parameters, review the parameters for the template and modify them as
+necessary. The default settings for the template will deploy MIE and the demo GUI. You must set the parameters for `Stack name` and `AdminEmail`.
+6. Choose Next.
+7. On the Configure stack options page, choose Next.
+8. On the Review page, review and confirm the settings. Check the box acknowledging that
+the template will create AWS Identity and Access Management (IAM) resources.
+9. Choose Create stack to deploy the stack
 
-The default settings for the template will deploy MIE and the demo GUI. You must set the parameters for `Stack name` and `AdminEmail`.
+You can view the status of the stack in the AWS CloudFormation Console in the Status
+column. You should see a status of CREATE_COMPLETE in approximately 15-30 minutes. 
 
 For more information about stack deployment, see the section on [installation parameters](#installation-parameters).
+
+#### *Step 2. Access the Web Application*
+
+To access the web application, you will need the email address you provided in the AWS
+CloudFormation template, a temporary password, which is emailed to your specified
+address, and the URL of your deployed MIE sample application.
+
+In the same email that includes your temp password, there is a link to the MIE stack overview.
+
+1. Click that link to access the stack overview page.
+2. Navigate to the `Outputs` tab of the MIE stack.
+3. Copy the value of the `MediaInsightsWebAppUrl` output. This is the URL you will use to access the sample application.
+4. In a new browser tab, paste the `MediaInsightsWebAppUrl` value into the navigation bar and access the app.
+5. Sign in with the email address you provided and the temp password from the automated email. You will be prompted to set a new password.
+6. Upload some content from the `Upload` link in the navigation header and explore the application.
+
+## Outputs
+
+After the stack successfully deploys, you can find important interface resources in the **Outputs** tab of the MIE CloudFormation stack.
+
+**MediaInsightsWebAppUrl** is the Url to access sample Media Insights web application
+
+**DataplaneApiEndpoint** is the endpoint for accessing dataplane APIs to create, update, delete and retrieve media assets
+
+**DataplaneBucket** is the S3 bucket used to store derived media (_derived assets_) and raw analysis metadata created by MIE workflows.
+
+**ElasticsearchEndpoint** is the endpoint of the Elasticsearch cluster used to store analysis metadata for search
+
+**MediaInsightsEnginePython37Layer** is a lambda layer required to build new operator lambdas
+
+**WorkflowApiEndpoint** is the endpoint for accessing the Workflow APIs to create, update, delete and execute MIE workflows.
+
+**WorkflowCustomResourceArn** is the custom resource that can be used to create MIE workflows in CloudFormation scripts
 
 
 # Cost
 
-Most AWS accounts include a free tier for the services used in MIE. However, if your usage exceeds the free tier allotments then you will be responsible for the cost of the AWS services used while running MIE. 
-
-The cost depends on the number of and length of uploaded videos, and data transfer fees, which will vary depending on the number of users and frequency of viewing. Cost also depends on video content. For example, videos with lots of speech will incur higher costs for text operations. You will also be charged for storing media files in S3.
-
-As of the date of publication, the costs for running this solution in the us-east-1 (N. Virginia) region are estimated below. Prices for services are tiered to distinguish between heavy and lite users. The estimates below are based on prices for lite users.
-
-## Video Operators 
-See [https://aws.amazon.com/rekognition/pricing/](https://aws.amazon.com/rekognition/pricing/).
-
-Object Detection ($0.10 per min)
-Celebrity Recognition ($0.10 per min)
-Content Moderation ($0.10 per min)
-Face Detection ($0.10 per min)
-Face Search ($0.10 per min)
-
-## Audio Operators
-See [https://aws.amazon.com/transcribe/pricing/](https://aws.amazon.com/rekognition/pricing/).
-
-Transcribe ($.024 per min)
-
-## Text Operators
-Comprehend Key Phrases ($0.000001 per character)
-Comprehend Entities ($0.000001 per character)
-Polly ($0.000004 per character)
-Translate ($0.000015 per character)
-
-## Data Plane and Control Plane
-[Elasticsearch](https://aws.amazon.com/elasticsearch-service/pricing/)(r4.large.elasticsearch) $0.196 per Hour
-[S3](https://aws.amazon.com/s3/pricing/) $0.023 per GB
-
-## Lambda, API Gateway, DynamoDB, and DynamoDB Streams 
-The free-tier for Lambda, API Gateway, DynamoDB, and DynamoDB Streams should cover most common MIE use cases.
-
-## Pricing Example:
-
-The cost to analyzing 4 hours of video with 64 pages (~165k characters) of speech through every operator is $128.
-
-This scenario is loosely based on "A Christmas Carol" by Charles Dickens, which includes ~165k characters and ~3 hours 50 min speech duration ([reference](https://aws.amazon.com/polly/pricing/)).
+MIE itself does not have a significant cost footprint. The MIE control plane and data plane generally cost less than $1 per month. However, when people talk about the cost of MIE they're generally talking about the cost of running some specific application that was built on top of MIE. Because those costs can vary widely you will need to get pricing information from the documentation for those applications. As a point of reference, see the README for the Content Analysis application that is included under the webapp directory.
 
 # Limits
 
@@ -130,45 +157,6 @@ You can deploy MIE and the demo GUI in your AWS account with the [one-click depl
 **Other parameters**
 * **DeployAnalyticsPipeline**: If set to true, deploys a metadata streaming pipeline that can be consumed by downstream analytics plaforms. Defaults to `true`.
 
-## Outputs
-
-After the stack successfully deploys, you can find important interface resources in the **Outputs** tab of the CloudFormation stack.
-
-**DataplaneApiEndpoint** is the endpoint for accessing dataplane APIs to create, update, delete and retrieve media assets
-
-**DataplaneBucket** is the S3 bucket used to store derived media (_derived assets_) and raw analysis metadata created by MIE workflows.
-
-**ElasticsearchEndpoint** is the endpoint of the Elasticsearch cluster used to store analysis metadata for search
-
-**MediaInsightsEnginePython37Layer** is a lambda layer required to build new operator lambdas
-
-**MediaInsightsWebAppUrl** is the Url for the sample Media Insights web application
-
-**WorkflowApiEndpoint** is the endpoint for accessing the Workflow APIs to create, update, delete and execute MIE workflows.
-
-**WorkflowCustomResourceArn** is the custom resource that can be used to create MIE workflows in CloudFormation scripts
-
-# Usage
-
-###  Sample application
-
-![](doc/images/MIEDemo.gif)
-
-The Media Insights sample application lets you upload videos, images, audio and text files for content analysis and add the results to a collection that can be searched to find media that has attributes you are looking for.  It runs an MIE workflow that extracts insights using many of the ML content analysis services available on AWS and stores them in a search engine for easy exploration.  A web based GUI is used to search and visualize the resulting data along-side the input media.  The analysis and transformations included in MIE workflow for this application include:
-
-* Proxy encode of videos and separation of video and audio tracks using **AWS Elemental MediaConvert**. 
-* Object, scene, and activity detection in images and video using **Amazon Rekognition**. 
-* Celebrity detection in images and video using **Amazon Rekognition**
-* Face search from a collection of known faces in images and video using **Amazon Rekognition**
-* Facial analysis to detect facial features and faces in images and videos to determine things like happiness, age range, eyes open, glasses, facial hair, etc. In video, you can also measure how these things change over time, such as constructing a timeline of the emotions expressed by an actor.  From **Amazon Rekognition**.
-* Unsafe content detection using **Amazon Rekognition**. Identify potentially unsafe or inappropriate content across both image and video assets. 
-* Convert speech to text from audio and video assets using **Amazon Transcribe**.
-* Convert text from one language to another using **Amazon Translate**.
-* Identify entities in text using **Amazon Comprehend**. 
-* Identify key phrases in text using **Amazon Comprehend**
-
-Data are stored in Amazon Elasticsearch Service and can be retrieved using _Lucene_ queries in the Collection view search page.
-
 ### Example use cases for Media Insights Engine
  
 MIE is a reusable architecture that can support many different applications.  Examples:
@@ -199,6 +187,10 @@ Visit the Issue page in this repository for known issues and feature requests.
 # Contributing
 
 See the [CONTRIBUTING](CONTRIBUTING.md) file for how to contribute.
+
+# Logo
+
+The [MIE logo](doc/images/MIE_logo.png) features a clapperboard representing *multimedia*, centered inside a crosshair representing *under scrutiny*. 
 
 # License
 

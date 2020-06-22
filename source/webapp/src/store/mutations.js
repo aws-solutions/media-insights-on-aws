@@ -8,6 +8,9 @@ export default {
   updateTimeseries (state, value){
     state.chart_tuples = value
   },
+  updateCurrentTime (state, value) {
+    state.current_time = value
+  },
   updateSelectedLabel (state, value){
     state.selected_label = value
   },

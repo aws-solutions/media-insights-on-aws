@@ -5,4 +5,5 @@ export default {
   chart_tuples: [],
   selected_label: '',
   execution_history: [],
+  current_time: 0
 }

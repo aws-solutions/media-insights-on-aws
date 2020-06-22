@@ -167,10 +167,11 @@
         :items="executed_assets"
       >
         <template v-slot:cell(workflow_status)="data">
-          <a
+          <a v-if="data.item.workflow_status !== 'Queued'"
             href
             @click.stop.prevent="openWindow(data.item.state_machine_console_link)"
           >{{ data.item.workflow_status }}</a>
+          <div v-if="data.item.workflow_status === 'Queued'">{{ data.item.workflow_status }}</div>
         </template>
       </b-table>
       <b-button size="sm" @click="clearHistory">
@@ -244,10 +245,14 @@ export default {
         "Transcribe",
         "Translate",
         "ComprehendKeyPhrases",
-        "ComprehendEntities"
+        "ComprehendEntities",
+        "shotDetection",
+        "technicalCueDetection"
       ],
       videoOperators: [
         { text: "Object Detection", value: "labelDetection" },
+        { text: "Technical Cue Detection", value: "technicalCueDetection" },
+        { text: "Shot Detection", value: "shotDetection" },
         { text: "Celebrity Recognition", value: "celebrityRecognition" },
         { text: "Content Moderation", value: "contentModeration" },
         { text: "Face Detection", value: "faceDetection" },
@@ -464,6 +469,12 @@ export default {
             faceDetection: {
               Enabled: this.enabledOperators.includes("faceDetection")
             },
+            technicalCueDetection: {
+              Enabled: this.enabledOperators.includes("technicalCueDetection")
+            },
+            shotDetection: {
+              Enabled: this.enabledOperators.includes("shotDetection")
+            },
             celebrityRecognition: {
               Enabled: this.enabledOperators.includes("celebrityRecognition")
             },
@@ -549,7 +560,9 @@ export default {
         "Transcribe",
         "Translate",
         "ComprehendKeyPhrases",
-        "ComprehendEntities"
+        "ComprehendEntities",
+        "technicalCueDetection",
+        "shotDetection"
       ];
     },
     clearAll: function() {

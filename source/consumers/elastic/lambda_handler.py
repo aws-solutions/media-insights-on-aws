@@ -14,7 +14,7 @@ dataplane_bucket = os.environ['DataplaneBucket']
 s3 = boto3.client('s3')
 
 # These names are the lowercase version of OPERATOR_NAME defined in /source/operators/operator-library.yaml
-supported_operators = ["textdetection", "mediainfo", "transcribe", "translate", "genericdatalookup", "labeldetection", "celebrityrecognition", "facesearch", "contentmoderation", "facedetection", "key_phrases", "entities", "key_phrases"]
+supported_operators = ["textdetection", "mediainfo", "transcribe", "translate", "genericdatalookup", "poseinference","labeldetection", "celebrityrecognition", "facesearch", "contentmoderation", "facedetection", "key_phrases", "entities", "key_phrases"]
 
 
 def normalize_confidence(confidence_value):
@@ -25,6 +25,60 @@ def normalize_confidence(confidence_value):
 def convert_to_milliseconds(time_value):
     converted = float(time_value) * 1000
     return str(converted)
+
+def process_pose_inference(asset, workflow, results):
+    # This function puts pose inference data in Elasticsearch.
+    # The pose inference raw data was in inconsistent with Confidence and BoundingBox fields in Rekognition.
+    # So, those fields are modified in this function, accordingly.
+    print("results")
+    print(results)
+    metadata = json.loads(results)
+    print("metadata")
+    print(metadata)
+    es = connect_es(es_endpoint)
+    extracted_items = []
+    # We can tell if json results are paged by checking to see if the json results are an instance of the list type.
+    if isinstance(metadata, list):
+        # handle paged results
+        for page in metadata:
+            if "frames_result" in page:
+                for item in page["frames_result"]:
+                    try:
+                        item["Operator"] = "poseInference"
+                        item["Workflow"] = workflow
+                        
+                        if "Pose" in item:
+                            # Flatten the inner Pose array
+                            item["points"]=item["Pose"]["points"]
+                            item["confidence"] = item["Pose"]["confidence"]
+                            # Delete the flattened array
+                            del item["Pose"]
+                        print(asset, ":", item)
+                        extracted_items.append(item)
+                    except KeyError as e:
+                        print("KeyError: " + str(e))
+                        print("Item: " + json.dumps(item))
+    else:
+        # these results are not paged
+        if "frames_result" in metadata:
+            for item in metadata["frames_result"]:
+                try:
+                    item["Operator"] = "poseInference"
+                    item["Workflow"] = workflow
+                    if "Pose" in item:
+                        # Flatten the inner Pose array
+                        item["points"]=item["Pose"]["points"]
+                        item["confidence"] = item["Pose"]["confidence"]
+                        # Delete the flattened array
+                        del item["Pose"]
+                    print(asset, ":", item)
+                    extracted_items.append(item)
+                except KeyError as e:
+                    print("KeyError: " + str(e))
+                    print("Item: " + json.dumps(item))
+    print("inserting in elastic cache")
+    print(extracted_items)
+    bulk_index(es, asset, "pose", extracted_items)
 
 def process_text_detection(asset, workflow, results):
     metadata = json.loads(results)
@@ -783,6 +837,8 @@ def lambda_handler(event, context):
                             process_generic_data(asset_id, workflow, metadata["Results"])
                         if operator == "labeldetection":
                             process_label_detection(asset_id, workflow, metadata["Results"])
+                        if operator == "poseinference":
+                            process_pose_inference(asset_id, workflow, metadata["Results"])  
                         if operator == "celebrityrecognition":
                             process_celebrity_detection(asset_id, workflow, metadata["Results"])
                         if operator == "contentmoderation":

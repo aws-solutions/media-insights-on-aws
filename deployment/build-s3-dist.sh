@@ -194,6 +194,7 @@ cp "$template_dir/string.yaml" "$dist_dir/string.template"
 cp "$template_dir/media-insights-test-operations-stack.yaml" "$dist_dir/media-insights-test-operations-stack.template"
 cp "$template_dir/media-insights-dataplane-streaming-stack.template" "$dist_dir/media-insights-dataplane-streaming-stack.template"
 cp "$workflows_dir/rekognition.yaml" "$dist_dir/rekognition.template"
+cp "$workflows_dir/sagemaker.yaml" "$dist_dir/sagemaker.template"
 cp "$workflows_dir/MieCompleteWorkflow.yaml" "$dist_dir/MieCompleteWorkflow.template"
 cp "$source_dir/consumers/elastic/media-insights-elasticsearch.yaml" "$dist_dir/media-insights-elasticsearch.template"
 cp "$source_dir/consumers/elastic/media-insights-elasticsearch.yaml" "$dist_dir/media-insights-s3.template"
@@ -247,6 +248,17 @@ mkdir -p dist
 zip -q dist/mediainfo.zip mediainfo.py
 # Zip is ready. Copy it to the distribution directory.
 cp "./dist/mediainfo.zip" "$dist_dir/mediainfo.zip"
+
+# ------------------------------------------------------------------------------"
+# Frame Extractor Operations
+# ------------------------------------------------------------------------------"
+
+echo "Building Frame extractor function"
+cd "$source_dir/operators/frame_extractor" || exit 1
+[ -e dist ] && rm -r dist
+mkdir -p dist
+zip -q dist/frame_extractor.zip frame_extractor.py
+cp "./dist/frame_extractor.zip" "$dist_dir/frame_extractor.zip"
 
 # ------------------------------------------------------------------------------"
 # Mediaconvert Operations
@@ -449,6 +461,19 @@ zip -q -r9 start_text_detection.zip start_text_detection.py
 zip -q -r9 check_text_detection_status.zip check_text_detection_status.py
 
 mv -f ./*.zip "$dist_dir"
+
+# ------------------------------------------------------------------------------"
+# Sagemaker Operations
+# ------------------------------------------------------------------------------"
+
+echo "Building Sagemaker functions"
+cd "$source_dir/operators/sagemaker" || exit 1
+[ -e dist ] && rm -r dist
+mkdir -p dist
+# Make lambda package
+echo "creating lambda packages"
+zip -q dist/start_pose_inference.zip start_pose_inference.py
+cp "./dist/start_pose_inference.zip" "$dist_dir/start_pose_inference.zip"
 
 # ------------------------------------------------------------------------------"
 # Test operators

@@ -1,0 +1,138 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Media Insight Engine - Operator library for pose inference"
+
+Mappings:
+  SourceCode:
+    General:
+      S3Bucket: "%%BUCKET_NAME%%"
+      KeyPrefix: "media-insights-solution/%%VERSION%%/code"
+
+Parameters:
+  DataPlaneEndpoint:
+    Type: "String"
+    Description: "Name of the dataplane handler lambda function"
+  DataPlaneBucket:
+    Type: "String"
+    Description: "Bucket for the dataplane"
+  DataPlaneHandlerArn:
+    Type: "String"
+    Description: "Arn of dataplane lambda handler"
+  EndpointArn:
+    Type: "String"
+    Description: "Arn of deployed sagemaker endpoint"
+  EndpointName:
+    Type: "String"
+    Description: "Name of deployed sagemaker endpoint"
+
+  WorkflowCustomResourceArn:
+    Type: String
+    Description: "ARN of the Media insights custom resource that handles creating operations, stages and workflows"
+
+  MediaInsightsEnginePython37Layer:
+    Type: String
+    Description: "ARN of the Media insights lambda layer that contains basic python dependencies for boto3, chalice, control plane and dataplane"
+
+
+Resources:
+  PoseInferenceRole:
+    Type: "AWS::IAM::Role"
+    Properties: 
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - 
+            Effect: "Allow"
+            Principal: 
+              Service: 
+                - "lambda.amazonaws.com"
+            Action: 
+              - "sts:AssumeRole"
+      Path: "/"
+      Policies: 
+        - 
+          PolicyName: "poseDetectLambdaPolicy"
+          PolicyDocument: 
+            Version: "2012-10-17"
+            Statement: 
+              - 
+                Effect: "Allow"
+                Action: 
+                  - "s3:GetObject"
+                  - "s3:PutObject"
+                Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
+              - 
+                Effect: "Allow"
+                Action: "lambda:InvokeFunction"
+                Resource: !Ref DataPlaneHandlerArn
+              - 
+                Effect: "Allow"
+                Action: "sagemaker:InvokeEndpoint"
+                Resource: !Ref EndpointArn
+
+  StepFunctionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action: "sts:AssumeRole"
+            Effect: "Allow"
+            Principal:
+              Service: "states.amazonaws.com"
+      Policies:
+        - PolicyName: "MieSfnLambdaAccess"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              # TODO: Security - Need to scope this down (no good answer for this yet)
+              - Action: "lambda:InvokeFunction"
+                Resource:
+                  - !GetAtt startPoseInference.Arn
+                Effect: "Allow"
+
+  #Pose inference
+  startPoseInference:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "start_pose_inference.lambda_handler"
+      Layers:
+        - !Ref MediaInsightsEnginePython37Layer
+      Role: !GetAtt "PoseInferenceRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "start_pose_inference.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Environment:
+        Variables:
+          OPERATOR_NAME: "poseInference"
+          ENDPOINT_NAME: !Ref EndpointName
+          MIN_CONFIDENCE: "0.5"
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+
+  PoseInferenceOperation:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "poseInference"
+      Configuration: { "MediaType": "Image", "Enabled": true }
+      Type: "Sync"
+      StartLambdaArn: !GetAtt startPoseInference.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
+Outputs:
+  PoseInference:
+    Description: "Pose inference operator"
+    Value: !GetAtt PoseInferenceOperation.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", PoseInference]]
+

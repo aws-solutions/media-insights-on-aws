@@ -1,0 +1,121 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Media Insight Engine - Operator library for frame extraction"
+
+Mappings:
+  SourceCode:
+    General:
+      S3Bucket: "%%BUCKET_NAME%%"
+      KeyPrefix: "media-insights-solution/%%VERSION%%/code"
+
+Parameters:
+  DataPlaneEndpoint:
+    Type: "String"
+    Description: "Name of the dataplane handler lambda function"
+  DataPlaneBucket:
+    Type: "String"
+    Description: "Bucket for the dataplane"
+  DataPlaneHandlerArn:
+    Type: "String"
+    Description: "Arn of dataplane lambda handler"
+
+  WorkflowCustomResourceArn:
+    Type: String
+    Description: "ARN of the Media insights custom resource that handles creating operations, stages and workflows"
+
+  MediaInsightsEnginePython37Layer:
+    Type: String
+    Description: "ARN of the Media insights lambda layer that contains basic python dependencies for boto3, chalice, control plane and dataplane"
+
+
+Resources:
+  frameExtractorRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action:
+              - "sts:AssumeRole"
+            Effect: "Allow"
+            Principal:
+              Service: "lambda.amazonaws.com"
+      Policies:
+        - PolicyName: "MieframeExtractorPolicy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action: "lambda:InvokeFunction"
+                Resource: !Ref DataPlaneHandlerArn
+                Effect: "Allow"
+              # TODO: Security - figure out why this only works with * and fix it
+              - Action: "s3:*"
+                Resource: "*"
+                Effect: "Allow"
+  StepFunctionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action: "sts:AssumeRole"
+            Effect: "Allow"
+            Principal:
+              Service: "states.amazonaws.com"
+      Policies:
+        - PolicyName: "MieSfnLambdaAccess"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              # TODO: Security - Need to scope this down (no good answer for this yet)
+              - Action: "lambda:InvokeFunction"
+                Resource:
+                  - !GetAtt frameExtractor.Arn
+                Effect: "Allow"
+
+  # Frame extractor
+  frameExtractor:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      MemorySize: 512
+      Timeout: 900
+      Handler: "frame_extractor.lambda_handler"
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
+      Role: !GetAtt "frameExtractorRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "frame_extractor.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Environment:
+        Variables:
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          STORE_FRAMES: "resized"
+  FrameExtractorOperation:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "frameExtractor"
+      Type: "Sync"
+      Configuration: { "MediaType": "Video", "Enabled": true }
+      StartLambdaArn: !GetAtt frameExtractor.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
+Outputs:
+  FrameExtractorOperation:
+    Description: "Operation name of the FrameExtractor Operator"
+    Value: !GetAtt FrameExtractorOperation.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", FrameExtractor]]
+
+

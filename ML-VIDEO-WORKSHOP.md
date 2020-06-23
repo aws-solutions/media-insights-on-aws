@@ -36,17 +36,21 @@ Operator inputs include a list of Media, Metadata and the operator Configuration
      VERSION=[enter an arbitrary version name here]
      REGION=[enter the name of the region in which you would like to build MIE]
      
- 3.  [10 minutes] (Prerequisite : wget library ) 
+ 3.  [10 minutes] 
+      Prerequisites : 
+      a) install wget
+      b) install and start docker
       Run the following build command in your terminal from the deployment directory:
+       cd deployment
       ./build-s3-dist.sh $DIST_OUTPUT_BUCKET $VERSION $REGION 
 
  4. Create a S3 bucket named 'pose-bucket-$REGION-$AccountId' to upload pose inference scripts
      NOTE : The bucket has to follow the above format.
      
-  5. Upload model inference scripts to the bucket from this repository at models/
+  5. Copy contents of models/ into the S3 bucket 'pose-bucket-$REGION-$AccountId'
      models/* -> 'pose-bucket-$REGION-$AccountId'/*
      
-  6. Make sure account limits are raised to support 1 sagemaker hosting endpoint instance type. Default is    'ml.g4dn.2xlarge'. If unavailable, you can provide another instance type as a parameter during cloud formation deployment. 
+  6. Make sure account limits are raised to support 1 sagemaker hosting endpoint instance type. For sub-second inference, the default instance type is with GPU  'ml.g4dn.2xlarge'. It is not required to use GPU instance. You can provide another instance type as a parameter during cloud formation deployment. 
   
   7. [20 minutes] Deploy the cloud formation template created in Step 3. 
   
@@ -54,7 +58,10 @@ Operator inputs include a list of Media, Metadata and the operator Configuration
   
   9. Attach the lambda layer to the frame processing operator. Search for '*frameExtractor*' lambda function and add additional layer. 
   
-  10. Upload any video .mp4 file (upto 10 minutes in length) through the MIE console and observe the pose inference results in a new tab named 'Pose'
+  10. Upload any video .mp4 file (upto 10 minutes in length) through the MIE console. Choose 'Configure workflow' to turn off other AI services if not required. 
+Observe the pose inference results in a new tab named 'Pose' . 
+
+  11. Lastly, remember to be frugal and delete your cloud formation stack OR delete the sagemaker endpoint instance (you can recreate it from the stored model and endpoint configuration once again )
   
   
      

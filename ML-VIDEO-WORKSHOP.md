@@ -26,14 +26,18 @@ Operator inputs include a list of Media, Metadata and the operator Configuration
   
  Execution steps : 
  
- 1. Clone this github repository https://github.com/hasanp87/aws-media-insights-engine/tree/pose_inference_pipeline
+ 1. Clone this github repository 
+    git clone -b acvc2020 --single-branch https://github.com/awslabs/aws-media-insights-engine.git (HTTPS) 
+                                OR
+    git clone -b acvc2020 --single-branch git@github.com:awslabs/aws-media-insights-engine.git (SSH)
  
  2. Create a S3 bucket for building MIE with pose inference. 
      DIST_OUTPUT_BUCKET=[enter the name of your bucket here]
      VERSION=[enter an arbitrary version name here]
      REGION=[enter the name of the region in which you would like to build MIE]
      
- 3.  [10 minutes] Run the following build command in your terminal from the deployment directory:
+ 3.  [10 minutes] (Prerequisite : wget library ) 
+      Run the following build command in your terminal from the deployment directory:
       ./build-s3-dist.sh $DIST_OUTPUT_BUCKET $VERSION $REGION 
 
  4. Create a S3 bucket named 'pose-bucket-$REGION-$AccountId' to upload pose inference scripts

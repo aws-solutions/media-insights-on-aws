@@ -414,7 +414,7 @@ export WORKFLOW_API_ENDPOINT=$(aws cloudformation describe-stacks --stack-name $
 
 Get the token like this:
 ```
-export MIE_ACCESS_TOKEN=$(VENV=$(mktemp -d); python3 -m venv $VENV; source $VENV/bin/activate; pip --disable-pip-version-check install -q boto3; python3 $MIE_DEVELOPMENT_HOME/tests/getAccessToken.py | tail -n 1; deactivate; rm -rf $VENV)
+export MIE_ACCESS_TOKEN=$(VENV=$(mktemp -d); python3 -m venv $VENV; source $VENV/bin/activate; pip --disable-pip-version-check install -q boto3; python3 $MIE_DEVELOPMENT_HOME/source/tests/getAccessToken.py | tail -n 1; deactivate; rm -rf $VENV)
 ```
 
 If you set MIE_PASSWORD to your temporary password, you will be prompted to update this password. Update your exported MIE_PASSWORD with the updated one. 

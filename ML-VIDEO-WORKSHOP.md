@@ -22,6 +22,8 @@ Operator inputs include a list of Media, Metadata and the operator Configuration
   Pre-requisities : 
   AWS account with available limits for 1 ml.g4dn.2xlarge instance for sagemaker hosting. (Alternatively, you can specify another instance type during cloud formation deployment) 
   
+  ![](doc/images/PoseInference.jpg)
+  
  Execution steps : 
  
  1. Clone this github repository https://github.com/hasanp87/aws-media-insights-engine/tree/pose_inference_pipeline

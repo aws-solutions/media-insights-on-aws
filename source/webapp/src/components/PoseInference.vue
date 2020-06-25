@@ -287,6 +287,10 @@
                    [5, 6], [5, 7], [7, 9], [6, 8], [8, 10],
                    [5, 11], [6, 12], [11, 12],
                    [11, 13], [12, 14], [13, 15], [14, 16]];
+
+        var model_width = 740; //alpha pose model is using this size in its transformations
+        var model_height = 416; //alpha pose model is using this size in its transformations
+
         this.canvasRefreshInterval = setInterval(function () {
           i++;
           // erase old bounding points
@@ -303,6 +307,12 @@
           }
           // Get current player timestamp to the nearest 1/10th second
           var player_timestamp = Math.round(this.player.currentTime()*10.0);
+
+          var x_scale = canvas.width /model_width;
+          var y_scale = canvas.height/model_height;
+          //console.log("x_scale is " + x_scale);
+          //console.log("y_scale is " + y_scale);
+
           // If we have a pose for the player's timestamp...
           if (pointsMap.has(player_timestamp)) {
             var joints = (pointsMap.get(player_timestamp))[0];
@@ -313,10 +323,12 @@
                 //console.log("joint1 is" + joint1)
                 //console.log("joint2 is " + joint2)
                 if(joints.confidence[joint1][0] > 0.2 && joints.confidence[joint2][0] > 0.2) {
-                    ctx.moveTo(joints.points[joint1][0],joints.points[joint1][1]);
-                    ctx.lineTo(joints.points[joint2][0],joints.points[joint2][1]);
-                    ctx.fillRect(joints.points[joint1][0],joints.points[joint1][1],5,5);
-                    ctx.fillRect(joints.points[joint2][0],joints.points[joint2][1],5,5);
+
+                    ctx.moveTo(joints.points[joint1][0] * x_scale,joints.points[joint1][1] * y_scale);
+                    ctx.lineTo(joints.points[joint2][0]* x_scale,joints.points[joint2][1] * y_scale);
+                    ctx.fillRect(joints.points[joint1][0]* x_scale,joints.points[joint1][1] * y_scale,5,5);
+                    ctx.fillRect(joints.points[joint2][0]* x_scale,joints.points[joint2][1] * y_scale,5,5);
+
                     //console.log("drawing segment from " + joint1 + " to " + joint2)
                 }
             }

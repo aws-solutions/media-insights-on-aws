@@ -1,5 +1,6 @@
 The objective of the workshop is to build custom ML model inference on video assets in Media Insights Engine (MIE) . The use case here is "pose detection" in a video. We will use a SageMaker inference pipeline of 2 pre-trained deep learning models hosted on a single endpoint. 
 
+
 # Components : 
 
 1) Pre-trained models:
@@ -9,19 +10,24 @@ The objective of the workshop is to build custom ML model inference on video ass
    
 2) SageMaker inference pipeline:
 
+
+
    Model inference is hosted on a single SageMaker endpoint with inference pipeline of person detector + pose estimator. A custom MIE operator is created for inference with SageMaker.
    https://docs.aws.amazon.com/sagemaker/latest/dg/inference-pipelines.html
    
 3) Serverless video frame processing:
 
+
    Video is pre-processed at a desired sampling rate (FPS) to generate image frames and their associated timestamps in S3. This  is achieved with opencv library which is added as a lambda layer. A custom MIE operator is created for video frame processing.
    
 4) Custom MIE operators and workflow:
+
 
 MIE generates workflows using Step Function service state machines. Operators are created by implementing resources (e.g. lambda, sagemaker) that can plug in to MIE state machines as tasks and registering them as operators using the MIE API. 
 Operator inputs include a list of Media, Metadata and the operator Configuration plus ids for the workflow execution the operator is part of and the asset the operator is processing.
 
 5) UI integration:
+
 
   The web app is modified to include an additional tab for 'Pose'. Pose inference is associated with the timestamp and visualized as an overlay during playback. 
   
@@ -31,6 +37,7 @@ Operator inputs include a list of Media, Metadata and the operator Configuration
   
   ![](doc/images/PoseInference.jpg)
   
+
  # Execution steps : 
  
  1. Clone this github repository 
@@ -89,6 +96,7 @@ Operator inputs include a list of Media, Metadata and the operator Configuration
 Observe the pose inference results (1 person pose only) in a new tab named 'Pose' . 
 
   11. Lastly, remember to be frugal and delete your cloud formation stack OR delete the sagemaker endpoint instance (you can recreate it from the stored model and endpoint configuration once again )
+
   
   
      

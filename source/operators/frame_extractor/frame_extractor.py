@@ -18,7 +18,8 @@ from MediaInsightsEngineLambdaHelper import DataPlane
 store_frames=os.environ.get("STORE_FRAMES", "None")
 frame_resize_width=int(os.environ.get("FRAME_RESIZE_WIDTH", 480 ))
 frame_resize_height=int(os.environ.get("FRAME_RESIZE_HEIGHT", 320 ))
-FPSE = 10 #setting to 10 frames per second to improve throughput of downstream processing
+FPSE = 2 #setting to 2 frames per second to improve throughput of downstream processing
+
 s3 = boto3.client('s3')
 
 def download_chunk(s3bucket, s3key):

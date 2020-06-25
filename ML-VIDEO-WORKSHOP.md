@@ -73,12 +73,20 @@ Operator inputs include a list of Media, Metadata and the operator Configuration
   7. [20 minutes] Deploy the cloud formation template created in Step 3. 
   
   8. Create a lambda layer for opencv. You can deploy the package pre-built for Amazon Linux available in this repository at opencv/. 
-      Detailed steps to build the package can be found here https://github.com/iandow/opencv_aws_lambda
   
   9. Attach the lambda layer to the frame processing operator. Search for '*frameExtractor*' lambda function and add additional layer. 
   
-  10. Upload any video .mp4 file (upto 10 minutes in length) through the MIE console. Choose 'Configure workflow' to turn off other AI services if not required. 
-Observe the pose inference results in a new tab named 'Pose' . 
+  10. There are 3 example videos uploaded to this repository. You can download and upload them to the Media Insights Engine web app. 
+  
+      Videos are : 
+      https://www.pexels.com/video/a-boxer-training-in-a-boxing-gym-4438086/
+
+      https://www.pexels.com/video/woman-doing-a-stretching-exercise-4536532/
+
+      https://www.pexels.com/video/man-with-prosthetic-leg-practicing-in-a-gym-4108624/
+      
+ Upload any video (landscape mode only) .mp4 file (upto 10 minutes in length) through the MIE console. Choose 'Configure workflow' to turn off other AI services if not required. 
+Observe the pose inference results (1 person pose only) in a new tab named 'Pose' . 
 
   11. Lastly, remember to be frugal and delete your cloud formation stack OR delete the sagemaker endpoint instance (you can recreate it from the stored model and endpoint configuration once again )
   

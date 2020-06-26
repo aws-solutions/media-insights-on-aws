@@ -94,13 +94,13 @@ Operator inputs include a list of Media, Metadata and the operator Configuration
   
   8. Create a lambda layer for opencv (via console or command line). You can deploy the zip package pre-built for Amazon Linux available in this repository at opencv/cv2.zip. 
   
-     [AWS Lambda Console] 
+     [AWS Lambda Console]  ![](doc/images/LambdaLayer.png)
      
      [Command line] https://awscli.amazonaws.com/v2/documentation/api/latest/reference/lambda/publish-layer-version.html
   
   9. Attach the lambda layer to the frame processing operator. Search for '*frameExtractor*' lambda function and add additional layer. 
   
-     [AWS Lambda Console]  
+     [AWS Lambda Console]  ![](doc/images/LambdaFunction.png)
   
   10. There are 3 example videos uploaded to this repository. You can download and upload them to the Media Insights Engine web app. 
   

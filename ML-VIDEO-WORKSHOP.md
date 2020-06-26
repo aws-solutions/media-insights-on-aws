@@ -94,7 +94,7 @@ Operator inputs include a list of Media, Metadata and the operator Configuration
   
   8. Create a lambda layer for opencv (via console or command line). You can deploy the zip package pre-built for Amazon Linux available in this repository at opencv/cv2.zip. 
   
-     [AWS Lambda Console]  ![](doc/images/LambdaLayer.png)
+     [AWS Lambda Console]  ![](doc/images/LambdaLayer2.png)
      
      [Command line] https://awscli.amazonaws.com/v2/documentation/api/latest/reference/lambda/publish-layer-version.html
   

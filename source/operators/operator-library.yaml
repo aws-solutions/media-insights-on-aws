@@ -38,13 +38,6 @@ Parameters:
         Description: Instance type
         Type: String
         Default: "ml.g4dn.2xlarge"
-        AllowedValues:
-            - ml.g4dn.xlarge
-            - ml.g4dn.2xlarge
-            - ml.g4dn.4xlarge
-            - ml.g4dn.8xlarge
-            - ml.g4dn.12xlarge
-            - ml.g4dn.16xlarge
   InstanceCount:
         Description: Number of Instances created
         Type: String

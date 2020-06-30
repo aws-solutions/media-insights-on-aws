@@ -11,6 +11,7 @@ deployment/lambda_layer_factory/lambda_layer-python-*
 *.DS_Store
 *.iml
 .idea/
+.vscode/
 
 # these are not checked in to o.g. git project
 package-lock.json

@@ -48,6 +48,11 @@
                 },
                 {
                   "Effect": "Allow",
+                  "Action": "s3:ListBucket",
+                  "Resource": {"Fn::Sub": "arn:aws:s3:::${DataplaneBucketName}"}
+                },
+                {
+                  "Effect": "Allow",
                   "Action": "dynamodb:*",
                   "Resource": {"Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${DataplaneTableName}"}
                 },

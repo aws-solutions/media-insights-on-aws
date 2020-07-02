@@ -580,8 +580,14 @@ Resources:
       CorsConfiguration:
         CorsRules:
           - AllowedHeaders: ["*"]
-            AllowedMethods: ["GET", "POST"]
+            AllowedMethods: ["HEAD", "GET", "POST", "DELETE", "PUT"]
             AllowedOrigins: ["*"]
+            MaxAge: 3000
+            ExposedHeaders:
+              - x-amz-server-side-encryption
+              - x-amz-request-id
+              - x-amz-id-2
+              - ETag
             Id: AllowUploadsFromWebApp
 
   DataplaneBucketPolicy:
@@ -701,7 +707,6 @@ Resources:
 
   WorkflowSchedulerLambda:
     Properties:
-      FunctionName: !Sub "${AWS::StackName}-workflow-scheduler"
       Environment:
         Variables:
           STAGE_EXECUTION_QUEUE_URL: !Ref StageExecutionQueue
@@ -741,7 +746,6 @@ Resources:
     DependsOn:
       - WorkflowSchedulerLambda
     Properties:
-      FunctionName: !Sub "${AWS::StackName}-complete-workflow"
       Environment:
         Variables:
           STAGE_EXECUTION_QUEUE_URL: !Ref StageExecutionQueue
@@ -776,7 +780,6 @@ Resources:
 
   FilterOperationLambda:
     Properties:
-      FunctionName: !Sub "${AWS::StackName}-filter-operation"
       Environment:
         Variables:
           STAGE_EXECUTION_QUEUE_URL: !Ref StageExecutionQueue
@@ -1199,6 +1202,9 @@ Resources:
 
 Outputs:
   # TODO: Add outputs for rest api IDs of workflow/dataplane apis
+  OperatorLibraryStack:
+    Description: Nested cloudformation stack that contains the MIE operator library
+    Value: !GetAtt OperatorLibrary.Outputs.StackName
   DataplaneBucket:
     Description: Bucket used to store transfomred media object from workflow execution
     Value: !Ref Dataplane

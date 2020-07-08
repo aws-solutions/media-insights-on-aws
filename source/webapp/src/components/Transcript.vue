@@ -51,7 +51,7 @@
           <b-container class="p-0">
             <b-row no-gutters>
               <b-col cols="10">
-          <b-form-textarea :disabled="workflow_status !== 'Complete'" :id="'caption' + data.index" :ref="'caption' + data.index" class="custom-text-field .form-control-sm" max-rows="8" :value="data.item.caption" placeholder="Type subtitle here" @change="new_caption => changeCaption(new_caption, data.index)" @click='captionClickHandler(data.index)'/>
+          <b-form-textarea :disabled="workflow_status !== 'Complete'" :id="'caption' + data.index" :ref="'caption' + data.index" class="custom-text-field .form-control-sm" rows="2" :value="data.item.caption" placeholder="Type subtitle here" @change="new_caption => changeCaption(new_caption, data.index)" @click='captionClickHandler(data.index)'/>
               </b-col>
               <b-col>
                 <span style="position:absolute; top: 0px">
@@ -183,8 +183,6 @@ export default {
     this.handleVideoSeek();
     this.getWorkflowId();
     this.pollWorkflowStatus();
-    // uncomment this whenever we need to get data from Elasticsearch
-    // this.fetchAssetData();
   },
   beforeDestroy: function () {
       this.transcript = ''
@@ -563,8 +561,6 @@ export default {
       const token = await this.$Amplify.Auth.currentSession().then(data =>{
         return data.getIdToken().getJwtToken();
       });
-      // TODO: Get workflow id so you can get the workflow configuration
-      // TODO: Get source language from workflow configuration
       // Get paginated web captions
       const operator_name = "WebCaptions_"+this.sourceLanguageCode
       let cursor=''
@@ -611,33 +607,6 @@ export default {
     },
     delete_row(index) {
       this.webCaptions.splice(index, 1)
-    },
-    async fetchAssetData () {
-      let query = 'AssetId:'+this.asset_id+ ' _index:mietranscript';
-      let apiName = 'mieElasticsearch';
-      let path = '/_search';
-      let apiParams = {
-        headers: {'Content-Type': 'application/json'},
-        queryStringParameters: {'q': query, 'default_operator': 'AND', 'size': 10000}
-      };
-      let response = await this.$Amplify.API.get(apiName, path, apiParams);
-      if (!response) {
-        this.showElasticSearchAlert = true
-      }
-      else {
-        let result = await response;
-        let data = result.hits.hits;
-        if (data.length === 0) {
-          this.noTranscript = true
-        }
-        else {
-          this.noTranscript = false;
-          for (let i = 0, len = data.length; i < len; i++) {
-            this.transcript = data[i]._source.transcript
-          }
-        }
-        this.isBusy = false
-      }
     },
     pollWorkflowStatus() {
       // Poll frequency in milliseconds

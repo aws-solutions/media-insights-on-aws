@@ -1205,6 +1205,8 @@ Outputs:
   OperatorLibraryStack:
     Description: Nested cloudformation stack that contains the MIE operator library
     Value: !GetAtt OperatorLibrary.Outputs.StackName
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", OperatorLibraryStack]]
   DataplaneBucket:
     Description: Bucket used to store transfomred media object from workflow execution
     Value: !Ref Dataplane
@@ -1244,6 +1246,8 @@ Outputs:
   AnalyticsStreamArn:
     Description: Arn of the dataplane pipeline
     Value: !GetAtt Analytics.Outputs.analyticsStreamArn
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", AnalyticsStreamArn]]
   TestStack:
     Condition: DeployTestWorkflowCondition
     Value: !Ref TestWorkflow

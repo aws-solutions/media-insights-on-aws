@@ -3,6 +3,15 @@
     <div v-if="noTranslation === true">
       No translation found for this asset
     </div>
+    <b-alert
+        v-model="showSaveNotification"
+        variant="success"
+        dismissible
+        fade
+    >
+      {{ saveNotificationMessage }}
+    </b-alert>
+    <!-- show spinner while busy loading -->
     <div
       v-if="isBusy"
       class="wrapper"
@@ -15,10 +24,12 @@
         (Loading...)
       </p>
     </div>
+    <!-- show table if not busy loading and translation data exists -->
     <div
       v-else-if="noTranslation === false"
       class="wrapper"
     >
+      <!-- show radio buttons for each available translation language -->
       <b-form-group>
         <b-form-radio-group
             v-model="selected_lang_code"
@@ -26,7 +37,8 @@
             @change="getWebCaptions"
         ></b-form-radio-group>
       </b-form-group>
-      <div v-if="selected_lang_code !== ''">
+      <!-- show translation text when language has been selected -->
+      <div v-if="selected_lang_code !== ''" id="event-line-editor" class="event-line-editor">
         <b-table
             selectable
             select-mode="single"
@@ -43,6 +55,8 @@
                 :style="{ width: field.key === 'caption' ? '80%' : '20%' }"
             >
           </template>
+          <!-- reformat timestamp to hh:mm:ss and -->
+          <!-- disable timestamp edits if workflow status is not Complete -->
           <template v-slot:cell(timeslot)="data">
             <b-form-input :disabled="workflow_status !== 'Complete'" class="compact-height start-time-field " :value="toHHMMSS(data.item.start)" @change="new_time => changeStartTime(new_time, data.index)"/>
             <b-form-input :disabled="workflow_status !== 'Complete'" class="compact-height stop-time-field " :value="toHHMMSS(data.item.end)" @change="new_time => changeEndTime(new_time, data.index)"/>
@@ -51,7 +65,18 @@
             <b-container class="p-0">
               <b-row no-gutters>
                 <b-col cols="10">
-                  <b-form-textarea :disabled="workflow_status !== 'Complete'" :id="'caption' + data.index" :ref="'caption' + data.index" class="custom-text-field .form-control-sm" rows="2" :value="data.item.caption" placeholder="Type subtitle here" @change="new_caption => changeCaption(new_caption, data.index)" @click='captionClickHandler(data.index)'/>
+                  <!-- The state on this text area will show a red alert icon if the user forgets to enter any text. Otherwise we set the state to null so no validity indicator is shown. -->
+                  <b-form-textarea
+                      :disabled="workflow_status !== 'Complete'"
+                      :id="'caption' + data.index"
+                      :ref="'caption' + data.index"
+                      class="custom-text-field .form-control-sm"
+                      rows="2"
+                      :value="data.item.caption"
+                      placeholder="Type translation here"
+                      :state="(data.item.caption.length > 0) ? null : false"
+                      @change="new_caption => changeCaption(new_caption, data.index)"
+                      @click='captionClickHandler(data.index)'/>
                 </b-col>
                 <b-col>
                 <span style="position:absolute; top: 0px">
@@ -69,16 +94,30 @@
             </b-container>
           </template>
         </b-table>
-        <a :href="vtt_url">
-          <b-button type="button" size="sm" class="mb-2">
-            <b-icon v-if="this.webCaptions.length > 0" icon="download" color="white"></b-icon> Download VTT
-          </b-button>
-        </a> &nbsp;
-        <a :href="srt_url">
-          <b-button type="button" size="sm" class="mb-2">
-            <b-icon v-if="this.webCaptions.length > 0" icon="download" color="white"></b-icon> Download SRT
-          </b-button>
-        </a>
+      </div>
+      <br>
+      <!-- this is the download button -->
+      <b-dropdown id="download-dropdown" text="Download VTT/SRT" class="mb-2" size="sm" dropup no-caret>
+        <template slot="button-content"><b-icon icon="download" color="white"></b-icon> Download</template>
+        <b-dropdown-item :href="vtt_url">Download VTT</b-dropdown-item>
+        <b-dropdown-item :href="srt_url">Download SRT</b-dropdown-item>
+      </b-dropdown>
+      &nbsp;
+      <!-- this is the save edits button for when workflow complete -->
+      <b-button v-if="this.workflow_status === 'Complete' || this.workflow_status === 'Error'" id="editCaptions" size="sm" class="mb-2" @click="showSaveConfirmation()">
+      <b-icon icon="play" color="white"></b-icon>
+      Save edits
+      </b-button>
+      <!-- this is the save edits button for when workflow running -->
+      <b-button v-if="this.workflow_status === 'Started'" id="editCaptionsDisabled" size="sm" disabled class="mb-2" @click="saveCaptions()">
+      <b-icon icon="arrow-clockwise" animation="spin"  color="white"></b-icon>
+      Saving edits
+      </b-button>
+      <b-modal ref="save-modal" title="Save Confirmation" @ok="saveCaptions()" ok-title="Confirm">
+        <p>Saving will overwrite the existing {{ selected_lang }} translation. Are you sure?</p>
+      </b-modal>
+      <div style="color:red" v-if="this.webCaptions.length > 0 && this.workflow_status !== 'Complete' && this.workflow_status !== 'Error' && this.workflow_status !== 'Waiting'">
+        Editing is disabled until workflow completes.
       </div>
     </div>
   </div>
@@ -91,6 +130,7 @@ export default {
   name: "Translation",
   data() {
     return {
+      text: "",
       vttcaptions: [
         {
           src: "",
@@ -179,7 +219,7 @@ export default {
       workflow_config: {},
       workflow_definition: {},
       showSaveNotification: 0,
-      saveNotificationMessage: "Captions saved",
+      saveNotificationMessage: "Translation saved",
       results: [],
       webCaptions: [],
       webCaptions_vtt: '',
@@ -295,8 +335,9 @@ export default {
                   {text: languageLabel, value: item.TargetLanguageCode}
                 );
                 // set default language selection
+                this.selected_lang = this.alphabetized_language_collection[0].text
                 this.selected_lang_code = this.alphabetized_language_collection[0].value
-                this.getWebCaptions()
+                this.getWebCaptions(this.selected_lang_code)
               }).catch(err => console.error(err));
             })
           });
@@ -431,6 +472,7 @@ export default {
       this.player.pause()
     },
     // Format a VTT timestamp in HH:MM:SS.mmm
+    // Format a VTT timestamp in HH:MM:SS.mmm
     formatTimeVTT(timeSeconds) {
       const ONE_HOUR = 60 * 60
       const ONE_MINUTE = 60
@@ -444,8 +486,7 @@ export default {
 
       return hours.toString().padStart(2, '0') + ':' + minutes.toString().padStart(2, '0') + ':' + seconds.toString().padStart(2, '0') + '.' + Math.floor(millis * 1000).toString().padStart(3, '0')
     },
-    webToVtt()
-    {
+    webToVtt() {
       let vtt = 'WEBVTT\n\n'
       for (let i = 0; i < this.webCaptions.length; i++) {
         const caption = this.webCaptions[i]
@@ -545,7 +586,17 @@ export default {
               data: data,
             })
           ).then(res => {
-              this.workflow_status = res.data[0].Status
+              const new_workflow_status = res.data[0].Status
+              console.log(this.workflow_status)
+              console.log(new_workflow_status)
+              if (this.workflow_status === 'Started'
+                && new_workflow_status === 'Complete') {
+                console.log('refreshed caption files in video player')
+                this.player.pause()
+                this.player.load()
+                this.player.play()
+              }
+              this.workflow_status = new_workflow_status
             }
           )
         }
@@ -568,31 +619,8 @@ export default {
         }
       )
     },
-    resumeWorkflow: async function() {
-      // This function executes a paused workflow from the WaitingStageName stage.
-      const token = await this.$Amplify.Auth.currentSession().then(data =>{
-        return data.getIdToken().getJwtToken();
-      });
-      const data = JSON.stringify({"WaitingStageName": this.waiting_stage});
-      fetch(this.WORKFLOW_API_ENDPOINT + 'workflow/execution/' + this.workflow_id, {
-        method: 'put',
-        body: data,
-        headers: {'Content-Type': 'application/json', 'Authorization': token}
-      }).then(response =>
-        response.json().then(data => ({
-            data: data,
-            status: response.status
-          })
-        ).then(res => {
-          if (res.status === 200) {
-            console.log("Workflow resumed")
-            this.saveNotificationMessage += " and workflow resumed"
-          }
-        })
-      )
-    },
     disableUpstreamStages()  {
-
+      // This function disables all the operators in stages above TranslateStage2
       let data = {
         "Name": "MieCompleteWorkflow2",
         "Configuration": this.workflow_config
@@ -600,26 +628,28 @@ export default {
       data["Input"] = {
         "AssetId": this.asset_id
       };
-
       let workflow = this.workflow_definition
       let stage_name = workflow.StartAt
       let stage = workflow["Stages"][stage_name]
       let end = false
+      // This loop starts at the first stage and
+      // goes until the staged named "End"
       while (end == false) {
-        console.log("Stage: "+ stage_name)
+        // If the current stage is End then end the loop.
         if ("End" in stage && stage["End"] == true){
           end = true
         }
-        else if (stage_name == "TranslateStage2") {
+        // If the current stage is CaptionFileStage2 then end the loop.
+        else if (stage_name == "CaptionFileStage2") {
           end = true
         }
+        // For all other stages disable all the operators in the stage
         else {
           // Disable all the operators in the stage
-          for (var key in data["Configuration"][stage_name]){
-            data["Configuration"][stage_name][key]["Enabled"] = false
-            console.log(key + " is disabled")
+          for (const operator in data["Configuration"][stage_name]){
+            data["Configuration"][stage_name][operator]["Enabled"] = false
           }
-
+          // Now look at the next stage in the workflow
           stage_name = stage["Next"]
           stage = workflow["Stages"][stage_name]
         }
@@ -629,11 +659,11 @@ export default {
 
     },
     rerunWorkflow: async function (token) {
-      // This function reruns all the operators downstream from transcribe.
+      // This function reruns CaptionFileStage2 in order to
+      // regenerate VTT and SRT files.
       let data = this.disableUpstreamStages();
 
       data["Configuration"]["TranslateStage2"]["TranslateWebCaptions"].MediaType = "MetadataOnly";
-      data["Configuration"]["defaultPrelimVideoStage2"]["Thumbnail"].Enabled = true;
 
       // execute the workflow
       fetch(this.WORKFLOW_API_ENDPOINT + 'workflow/execution', {
@@ -646,6 +676,7 @@ export default {
             status: response.status
           })
         ).then(res => {
+          this.pollWorkflowStatus()
           if (res.status !== 200) {
             console.log("ERROR: Failed to start workflow.");
             console.log(res.data.Code);
@@ -656,7 +687,6 @@ export default {
             console.log((data));
             console.log("Response: " + response.status);
           } else {
-            this.saveNotificationMessage += " and workflow resumed"
             console.log("workflow executing");
             console.log(res);
           }
@@ -664,8 +694,9 @@ export default {
       )
     },
     saveCaptions: async function (token) {
-      // This function saves captions to the dataplane
-      // and reruns or resumes the workflow.
+      clearInterval(this.workflow_status_polling)
+      this.workflow_status = "Started"
+      // This function saves translation edits to the dataplane
       this.$refs['save-modal'].hide()
       this.isSaving=true;
       if (!token) {
@@ -688,15 +719,9 @@ export default {
         ).then(res => {
           if (res.status === 200) {
             this.isSaving=true;
-            console.log("Captions saved")
-            this.saveNotificationMessage = "Captions saved"
-            if (this.workflow_status === "Waiting") {
-              this.resumeWorkflow();
-              this.workflow_status = "Started";
-            } else if (this.workflow_status === "Complete" ||
-              this.workflow_status === "Error") {
-              this.rerunWorkflow(token);
-            }
+            console.log("Translation saved")
+            this.saveNotificationMessage = "Translation saved"
+            this.rerunWorkflow(token);
             this.showSaveNotification = 5;
           }
           if (res.status !== 200) {
@@ -708,39 +733,17 @@ export default {
         })
       )
     },
-    downloadCaptionsVTT() {
-      this.webToVtt()
-      const blob = new Blob([this.webCaptions_vtt], {type: 'text/plain', endings:'native'});
-      const e = document.createEvent('MouseEvents'),
-        a = document.createElement('a');
-      a.download = "WebCaptions.vtt";
-      a.href = window.URL.createObjectURL(blob);
-      a.dataset.downloadurl = ['text/json', a.download, a.href].join(':');
-      e.initEvent('click', true, false, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
-      a.dispatchEvent(e);
-    },
-    // Uncomment to enable Upload button
-    // showModal() {
-    //   this.$refs['my-modal'].show()
-    // },
     showSaveConfirmation() {
       this.$refs['save-modal'].show()
     },
-    uploadCaptionsFile(event) {
-      // Uncomment to enable Upload button
-      // this.$refs['my-modal'].hide()
-      const file = event.target.files[0];
-      const reader = new FileReader();
-      reader.onload = e => this.webCaptions = JSON.parse(e.target.result);
-      reader.readAsText(file);
-      this.sortWebCaptions();
-    },
-    getWebCaptions: async function () {
+    getWebCaptions: async function (selected_lang_code) {
+      this.selected_lang = this.alphabetized_language_collection.filter(x => (x.value === selected_lang_code))[0].text
+      this.selected_lang_code = selected_lang_code
       const token = await this.$Amplify.Auth.currentSession().then(data =>{
         return data.getIdToken().getJwtToken();
       });
       // Get paginated web captions
-      const operator_name = "WebCaptions_"+this.selected_lang_code
+      const operator_name = "WebCaptions_"+selected_lang_code
       let cursor=''
       let url = this.DATAPLANE_API_ENDPOINT + '/metadata/' + this.asset_id + '/' + operator_name
       this.webCaptions = []

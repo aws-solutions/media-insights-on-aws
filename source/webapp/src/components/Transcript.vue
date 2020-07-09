@@ -43,6 +43,8 @@
               :style="{ width: field.key === 'caption' ? '80%' : '20%' }"
           >
         </template>
+        <!-- reformat timestamp to hh:mm:ss and -->
+        <!-- disable timestamp edits if workflow status is not Complete -->
         <template v-slot:cell(timeslot)="data">
           <b-form-input :disabled="workflow_status !== 'Complete'" class="compact-height start-time-field " :value="toHHMMSS(data.item.start)" @change="new_time => changeStartTime(new_time, data.index)"/>
           <b-form-input :disabled="workflow_status !== 'Complete'" class="compact-height stop-time-field " :value="toHHMMSS(data.item.end)" @change="new_time => changeEndTime(new_time, data.index)"/>
@@ -51,7 +53,8 @@
           <b-container class="p-0">
             <b-row no-gutters>
               <b-col cols="10">
-          <b-form-textarea :disabled="workflow_status !== 'Complete'" :id="'caption' + data.index" :ref="'caption' + data.index" class="custom-text-field .form-control-sm" rows="2" :value="data.item.caption" placeholder="Type subtitle here" @change="new_caption => changeCaption(new_caption, data.index)" @click='captionClickHandler(data.index)'/>
+                <!-- The state on this text area will show a red alert icon if the user forgets to enter any text. Otherwise we set the state to null so no validity indicator is shown. -->
+                <b-form-textarea :disabled="workflow_status !== 'Complete'" :id="'caption' + data.index" :ref="'caption' + data.index" class="custom-text-field .form-control-sm" rows="2" :value="data.item.caption" placeholder="Type subtitle here" :state="(data.item.caption.length > 0) ? null : false" @change="new_caption => changeCaption(new_caption, data.index)" @click='captionClickHandler(data.index)'/>
               </b-col>
               <b-col>
                 <span style="position:absolute; top: 0px">
@@ -70,27 +73,30 @@
         </template>
       </b-table>
       </div>
-    </div>
-    <div><br>
+      <br>
 <!-- Uncomment to enable Upload button -->
 <!--      <b-button id="showModal" size="sm" class="mb-2" @click="showModal()">-->
 <!--        <b-icon icon="upload" color="white"></b-icon> Upload JSON-->
 <!--      </b-button> &nbsp;-->
+      <!-- this is the download button -->
       <b-button id="downloadCaptionsVTT" size="sm" class="mb-2" @click="downloadCaptionsVTT()">
         <b-icon v-if="this.webCaptions.length > 0" icon="download" color="white"></b-icon> Download VTT
       </b-button> &nbsp;
+      <!-- this is the save edits button for when workflow is paused -->
       <b-button v-if="this.workflow_status === 'Waiting'" id="saveCaptions" size="sm" class="mb-2" @click="saveCaptions()">
         <b-icon v-if="this.isSaving" icon="arrow-clockwise" animation="spin"  color="white"></b-icon>
         <b-icon v-else icon="play" color="white"></b-icon>
-        Save changes
+        Save edits
       </b-button>
+      <!-- this is the save edits button for when workflow complete -->
       <b-button v-if="this.workflow_status === 'Complete' || this.workflow_status === 'Error'" id="editCaptions" size="sm" class="mb-2" @click="showSaveConfirmation()">
         <b-icon icon="play" color="white"></b-icon>
-        Save captions
+        Save edits
       </b-button>
+      <!-- this is the save edits button for when workflow running -->
       <b-button v-if="this.workflow_status === 'Started'" id="editCaptionsDisabled" size="sm" disabled class="mb-2" @click="saveCaptions()">
         <b-icon icon="arrow-clockwise" animation="spin"  color="white"></b-icon>
-        Save captions
+        Saving edits
       </b-button>
       <b-modal ref="save-modal" title="Save Confirmation" @ok="saveCaptions()" ok-title="Confirm">
         <p>Saving captions will restart a workflow that can take several minutes. You will not be able to edit captions until it has finished. Are you ready to proceed?</p>
@@ -104,7 +110,7 @@
 <!--        </div>-->
 <!--      </b-modal>-->
       <div style="color:red" v-if="this.webCaptions.length > 0 && this.workflow_status !== 'Complete' && this.workflow_status !== 'Error' && this.workflow_status !== 'Waiting'">
-        Caption editing is disabled until workflow completes.
+        Editing is disabled until workflow completes.
       </div>
     </div>
   </div>
@@ -248,8 +254,7 @@ export default {
 
       return hours.toString().padStart(2, '0') + ':' + minutes.toString().padStart(2, '0') + ':' + seconds.toString().padStart(2, '0') + '.' + Math.floor(millis * 1000).toString().padStart(3, '0')
     },
-    webToVtt()
-    {
+    webToVtt() {
       let vtt = 'WEBVTT\n\n'
       for (let i = 0; i < this.webCaptions.length; i++) {
         const caption = this.webCaptions[i]
@@ -414,7 +419,7 @@ export default {
       )
     },
     disableUpstreamStages()  {
-
+      // This function disables all the operators in stages above TranslateStage2
       let data = {
         "Name": "MieCompleteWorkflow2",
         "Configuration": this.workflow_config
@@ -429,19 +434,22 @@ export default {
       let end = false
       while (end == false) {
           console.log("Stage: "+ stage_name)
-          if ("End" in stage && stage["End"] == true){
+        // If the current stage is End then end the loop.
+        if ("End" in stage && stage["End"] == true){
               end = true
           }
+          // If the current stage is TranslateStage2 then end the loop.
           else if (stage_name == "TranslateStage2") {
               end = true
           }
+          // For all other stages disable all the operators in the stage
           else {
               // Disable all the operators in the stage
-              for (var key in data["Configuration"][stage_name]){
-                data["Configuration"][stage_name][key]["Enabled"] = false
-                console.log(key + " is disabled")
+              for (const operator in data["Configuration"][stage_name]){
+                data["Configuration"][stage_name][operator]["Enabled"] = false
+                console.log(operator + " is disabled")
               }
-
+              // Now look at the next stage in the workflow
               stage_name = stage["Next"]
               stage = workflow["Stages"][stage_name]
           }

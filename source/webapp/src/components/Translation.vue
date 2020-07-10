@@ -96,12 +96,12 @@
       </b-dropdown>
       &nbsp;
       <!-- this is the save edits button for when workflow complete -->
-      <b-button v-if="this.workflow_status === 'Complete' || this.workflow_status === 'Error'" id="editCaptions" size="sm" class="mb-2">
+      <b-button v-if="this.workflow_status === 'Complete' || this.workflow_status === 'Error'" id="editCaptions" size="sm" class="mb-2" @click="saveCaptions()">
       <b-icon icon="play" color="white"></b-icon>
       Save edits
       </b-button>
       <!-- this is the save edits button for when workflow running -->
-      <b-button v-else id="editCaptionsDisabled" size="sm" disabled class="mb-2" @click="saveCaptions()">
+      <b-button v-else id="editCaptionsDisabled" size="sm" disabled class="mb-2">
       <b-icon icon="arrow-clockwise" animation="spin"  color="white"></b-icon>
       Saving edits
       </b-button>
@@ -336,6 +336,9 @@ export default {
         })
       });
     },
+    // This asyncForEach function is used to download vtt files.
+    // This approach to async allows us to wait until all the vtt files are downloaded
+    // before proceeding.
     asyncForEach: async function(array, callback) {
       for (let index = 0; index < array.length; index++) {
         await callback(array[index]);
@@ -346,7 +349,8 @@ export default {
         return data.getIdToken().getJwtToken();
       });
       const asset_id = this.$route.params.asset_id;
-
+      // get the WebToVTTCaptions metadata json file that
+      // contains the list of paths to vtt files in s3
       fetch(this.DATAPLANE_API_ENDPOINT + '/metadata/' + asset_id + '/WebToVTTCaptions', {
         method: 'get',
         headers: {
@@ -359,10 +363,11 @@ export default {
         ).then(res => {
           this.vttcaptions = [];
           this.num_caption_tracks = res.data.results.CaptionsCollection.length;
+          // now get signed urls that can be used to download the vtt files from s3
           this.asyncForEach(res.data.results.CaptionsCollection, async(item) => {
             const bucket = item.Results.S3Bucket;
             const key = item.Results.S3Key;
-            // get URL to captions file in S3
+            // get the signed url
             await fetch(this.DATAPLANE_API_ENDPOINT + '/download', {
               method: 'POST',
               mode: 'cors',
@@ -373,11 +378,15 @@ export default {
               body: JSON.stringify({"S3Bucket": bucket, "S3Key": key})
             }).then(data => {
               data.text().then((data) => {
-                console.log("loaded caption file for " + item.LanguageCode)
+                // record the signed urls in an array
                 this.vttcaptions.push({'src': data, 'lang': item.LanguageCode, 'label': item.LanguageCode});
               }).catch(err => console.error(err));
             })
           }).then(result => {
+            // now that we have all the signed urls to download vtt files,
+            // update the captions in the video player for the currently selected
+            // language. This will make sure the video player reflects any edits
+            // that the user may have saved by clicking the Save Edits button.
             if (this.selected_lang_code !== "") {
               // hide all the captions in the video player
               for (let i = 0; i < this.player.textTracks().length; i++) {
@@ -397,7 +406,9 @@ export default {
               // remove the old track for that vtt
               this.player.removeRemoteTextTrack(old_track)
               // add a new text track for that vtt
-              this.player.addRemoteTextTrack(new_track)
+              const manualCleanup = false
+              // manualCleanup is needed in order to avoid a warning
+              this.player.addRemoteTextTrack(new_track, manualCleanup)
             }
           })
 
@@ -679,8 +690,7 @@ export default {
 
       data["Configuration"]["TranslateStage2"]["TranslateWebCaptions"].MediaType = "MetadataOnly";
 
-      // execute the workflow
-      console.log("executing workflow to update VTT and SRT files");
+      // execute workflow to update VTT and SRT files
       fetch(this.WORKFLOW_API_ENDPOINT + 'workflow/execution', {
         method: 'post',
         body: JSON.stringify(data),
@@ -701,9 +711,6 @@ export default {
             console.log(JSON.stringify(data));
             console.log((data));
             console.log("Response: " + response.status);
-          } else {
-            console.log("workflow execution response:");
-            console.log(res);
           }
         })
       )
@@ -734,7 +741,7 @@ export default {
         ).then(res => {
           if (res.status === 200) {
             this.isSaving=true;
-            console.log("Translation saved")
+            console.log("Saving translation for " + this.selected_lang_code)
             this.rerunWorkflow(token);
           }
           if (res.status !== 200) {
@@ -758,6 +765,14 @@ export default {
       let url = this.DATAPLANE_API_ENDPOINT + '/metadata/' + this.asset_id + '/' + operator_name
       this.webCaptions = []
       this.getWebCaptionPages(token, url, cursor)
+      // switch the video player to show the selected language
+      // by first disabling all the text tracks, like this:
+      for (let i = 0; i < this.player.textTracks().length; i++) {
+        let track = this.player.textTracks()[i];
+        track.mode = "disabled";
+      }
+      // then showing the text track for the selected language
+      this.player.textTracks()["tracks_"].filter(x => (x.language == this.selected_lang_code))[0].mode = "showing"
     },
     getWebCaptionPages: async function (token, url, cursor) {
       fetch((cursor.length === 0) ? url : url + '?cursor=' + cursor, {

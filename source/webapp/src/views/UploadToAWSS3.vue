@@ -90,6 +90,12 @@
                   <br>
                   Custom Vocabulary
                   <b-form-input v-model="customVocab" placeholder="(optional)"></b-form-input>
+                  <br>
+
+                </div>
+                <div v-if="enabledOperators.includes('Subtitles')">
+                  Use Existing Subtitles
+                  <b-form-input v-model="existingSubtitlesFilename" placeholder="(optional) Enter subtitles filename (.vtt)"></b-form-input>
                 </div>
               </b-form-group>
               <div v-if="audioFormError" style="color:red">
@@ -210,7 +216,7 @@
         ],
         thumbnail_position: 10,
         upload_in_progress: false,
-        enabledOperators: ['thumbnail', 'Transcribe', 'Translate'],
+        enabledOperators: ['thumbnail', 'Transcribe', 'Translate', 'Subtitles'],
         enable_caption_editing: false,
         videoOperators: [
           {text: 'Object Detection', value: 'labelDetection'},
@@ -223,6 +229,7 @@
         ],
         audioOperators: [
           {text: 'Transcribe', value: 'Transcribe'},
+          {text: 'Subtitles', value: 'Subtitles'}
         ],
         textOperators: [
           {text: 'Comprehend Key Phrases', value: 'ComprehendKeyPhrases'},
@@ -233,6 +240,7 @@
         genericDataFilename: "",
         customVocab: "",
         customTerminology: "",
+        existingSubtitlesFilename: "",
         transcribeLanguage: "en-US",
         transcribeLanguages: [
           {text: 'Arabic, Gulf', value: 'ar-AE'},
@@ -382,6 +390,17 @@
         if (!this.enabledOperators.includes("Transcribe") && (this.enabledOperators.includes("Translate") || this.enabledOperators.includes("ComprehendEntities") || this.enabledOperators.includes("ComprehendKeyPhrases"))) {
           return "Transcribe must be enabled if any text operator is enabled.";
         }
+        if (this.enabledOperators.includes("Transcribe")) {
+          // Validate that the collection ID is defined
+          console.log(this.existingSubtitlesFilename)
+          if (this.existingSubtitlesFilename != "" && !(new RegExp('^.+\\.vtt$')).test(this.existingSubtitlesFilename)) {
+            return "Subtitles filename must have .vtt extension.";
+          }
+          // Validate that the data filename is not too long
+          else if (this.existingSubtitlesFilename.length > 255) {
+            return "Subtitles filename must have fewer than 255 characters.";
+          }
+        }
         return "";
       },
       videoFormError() {
@@ -415,6 +434,7 @@
             return "Data filename must have fewer than 255 characters.";
           }
         }
+        
         return "";
       },
       validForm() {
@@ -537,7 +557,8 @@
       fileAdded: function( file )
       {
         let errorMessage = '';
-        if (!(file.type).match(/image\/.+|video\/.+|application\/json/g) && !this.valid_media_types.includes(file.name.split('.').pop().toLowerCase())) {
+        console.log(file.type)
+        if (!(file.type).match(/image\/.+|video\/.+|application\/json/g) && !(file.name.split('.').pop().toLowerCase() == 'vtt') && !this.valid_media_types.includes(file.name.split('.').pop().toLowerCase())) {
           if (file.type === "") {
             console.log("here")
             errorMessage = "Unsupported file type: unknown";
@@ -546,6 +567,15 @@
             errorMessage = "Unsupported file type: " + file.type;
           this.invalidFileMessages.push(errorMessage);
           this.showInvalidFile = true
+        }
+
+
+        // if this is a VTT file, auto-fill the vtt file input for transcribe
+        if ((file.name.split('.').pop().toLowerCase() == 'vtt')) {
+          if (this.existingSubtitlesFilename == ""){
+            this.existingSubtitlesFilename = file.name
+          }
+
         }
       },
       fileRemoved: function( file )
@@ -559,6 +589,15 @@
         }
         this.invalidFileMessages = this.invalidFileMessages.filter(function(value){ return value != errorMessage})
         if (this.invalidFileMessages.length === 0 ) this.showInvalidFile = false;
+
+        // if this is a VTT file, and the auto-filled file is removed, then remove the autofill
+        if ((file.name.split('.').pop().toLowerCase() == 'vtt')) {
+          if (this.existingSubtitlesFilename == file.name){
+            this.existingSubtitlesFilename = ""
+            
+          }
+
+        }
       },
       s3UploadComplete: async function (location) {
         const token = await this.$Amplify.Auth.currentSession().then(data =>{
@@ -618,6 +657,16 @@
           if (this.customVocab !== "") {
             data.Configuration.defaultAudioStage2.Transcribe.VocabularyName=this.customVocab
           }
+          if (this.existingSubtitlesFilename == "") {
+            if ("ExistingSubtitlesObject" in data.Configuration.WebCaptionsStage2.WebCaptions){
+                delete data.Configuration.WebCaptionsStage2.WebCaptions.ExistingSubtitlesObject
+            } 
+          }
+          else {
+            data.Configuration.WebCaptionsStage2.WebCaptions.ExistingSubtitlesObject = {}
+            data.Configuration.WebCaptionsStage2.WebCaptions.ExistingSubtitlesObject.Bucket=this.DATAPLANE_BUCKET
+            data.Configuration.WebCaptionsStage2.WebCaptions.ExistingSubtitlesObject.Key=this.existingSubtitlesFilename
+          }
           // Add input parameter to workflow config:
           data["Input"] = {
             "Media": {
@@ -631,6 +680,11 @@
           // JSON files may be uploaded for the genericDataLookup operator, but
           // we won't run a workflow for json file types.
           console.log("Data file has been uploaded to s3://" + location.s3ObjectLocation.fields.key);
+          return;
+        } else if (media_type === '' && (location.s3ObjectLocation.fields.key.split('.').pop().toLowerCase() == 'vtt')) {
+          // VTT files may be uploaded for the Transcribe operator, but
+          // we won't run a workflow for VTT file types.
+          console.log("VTT file has been uploaded to s3://" + location.s3ObjectLocation.fields.key);
           return;
         } else {
           vm.s3UploadError("Unsupported media type: " + media_type + ".")

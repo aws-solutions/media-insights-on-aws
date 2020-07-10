@@ -245,8 +245,8 @@ export default {
     ...mapState(['player', 'waveform_seek_position']),
     alphabetized_language_collection: function() {
       return this.translationsCollection.sort(function(a, b) {
-        var textA = a.text.toUpperCase();
-        var textB = b.text.toUpperCase();
+        const textA = a.text.toUpperCase();
+        const textB = b.text.toUpperCase();
         return (textA < textB) ? -1 : (textA > textB) ? 1 : 0;
       });
     },
@@ -291,12 +291,15 @@ export default {
   beforeDestroy: function () {
     },
   methods: {
-    getTxtTranslations: async function () {
+    getLanguageList: async function () {
+      // This function gets the list of languages that the user can choose from
       const token = await this.$Amplify.Auth.currentSession().then(data =>{
         return data.getIdToken().getJwtToken();
       });
       this.translationsCollection = [];
       const asset_id = this.$route.params.asset_id;
+      // Get the all the output for the TranslateWebCaptions operator.
+      // We do this simply so we can get the list of languages that have been translated.
       fetch(this.DATAPLANE_API_ENDPOINT + '/metadata/' + asset_id + '/TranslateWebCaptions', {
         method: 'get',
         headers: {
@@ -306,13 +309,13 @@ export default {
         response.json().then(data => ({
             data: data,
           })
-        ).then(res => {
+        ).then(async (res) => {
           this.num_translations = res.data.results.CaptionsCollection.length;
-          res.data.results.CaptionsCollection.forEach(item => {
+          await Promise.all(res.data.results.CaptionsCollection.map(async (item) => {
             const bucket = item.TranslationText.S3Bucket;
             const key = item.TranslationText.S3Key;
             // get URL to captions file in S3
-            fetch(this.DATAPLANE_API_ENDPOINT + '/download', {
+            await fetch(this.DATAPLANE_API_ENDPOINT + '/download', {
               method: 'POST',
               mode: 'cors',
               headers: {
@@ -326,20 +329,21 @@ export default {
                 this.translationsCollection.push(
                   {text: languageLabel, value: item.TargetLanguageCode}
                 );
-                // set default language selection
-                this.selected_lang = this.alphabetized_language_collection[0].text
-                this.selected_lang_code = this.alphabetized_language_collection[0].value
-                this.getWebCaptions(this.selected_lang_code)
               }).catch(err => console.error(err));
             })
-          });
+          }))
+          // Got all the languages now.
+          // Set the default language to the first one in the alphabetized list.
+          this.selected_lang = this.alphabetized_language_collection[0].text
+          this.selected_lang_code = this.alphabetized_language_collection[0].value
+          this.isBusy = false
+          await this.getWebCaptions()
         })
       });
     },
-    // This asyncForEach function is used to download vtt files.
-    // This approach to async allows us to wait until all the vtt files are downloaded
-    // before proceeding.
     asyncForEach: async function(array, callback) {
+      // This async function allows us to wait for all vtt files to be
+      // downloaded.
       for (let index = 0; index < array.length; index++) {
         await callback(array[index]);
       }
@@ -501,30 +505,6 @@ export default {
       this.player.currentTime(this.webCaptions[index].start)
       this.player.pause()
     },
-    // Format a VTT timestamp in HH:MM:SS.mmm
-    // Format a VTT timestamp in HH:MM:SS.mmm
-    formatTimeVTT(timeSeconds) {
-      const ONE_HOUR = 60 * 60
-      const ONE_MINUTE = 60
-      const hours = Math.floor(timeSeconds / ONE_HOUR)
-      let remainder = timeSeconds - (hours * ONE_HOUR)
-      const minutes = Math.floor(remainder / 60)
-      remainder = remainder - (minutes * ONE_MINUTE)
-      const seconds = Math.floor(remainder)
-      remainder = remainder - seconds
-      const millis = remainder
-
-      return hours.toString().padStart(2, '0') + ':' + minutes.toString().padStart(2, '0') + ':' + seconds.toString().padStart(2, '0') + '.' + Math.floor(millis * 1000).toString().padStart(3, '0')
-    },
-    webToVtt() {
-      let vtt = 'WEBVTT\n\n'
-      for (let i = 0; i < this.webCaptions.length; i++) {
-        const caption = this.webCaptions[i]
-        vtt += this.formatTimeVTT(caption["start"]) + ' --> ' + this.formatTimeVTT(caption["end"]) + '\n';
-        vtt += caption["caption"] + '\n\n';
-      }
-      this.webCaptions_vtt = vtt;
-    },
     handleWaveformSeek() {
       // When user moves the cursor on the waveform
       // then focus the corresponding row in the caption table.
@@ -594,7 +574,8 @@ export default {
               this.workflow_status = res.data[0].Status
               if ("CurrentStage" in res.data[0])
                 this.waiting_stage = res.data[0].CurrentStage
-              this.getTxtTranslations();
+              // get the list of languages to show the user
+              this.getLanguageList();
               // get workflow config, needed for edit captions button
               this.getWorkflowConfig(token);
             }
@@ -603,6 +584,9 @@ export default {
       )
     },
     getWorkflowStatus: async function() {
+      // This function gets the workflow status. If its in a running state
+      // then we temporarily disable the ability for users to edit
+      // translations in the GUI.
       const token = await this.$Amplify.Auth.currentSession().then(data =>{
         return data.getIdToken().getJwtToken();
       });
@@ -628,6 +612,9 @@ export default {
       )
     },
     getWorkflowConfig: async function(token) {
+      // This function gets the workflow configuration that is used
+      // to update the saved vtt and srt caption files after a user saves
+      // translation edits.
       fetch(this.WORKFLOW_API_ENDPOINT + '/workflow/execution/' + this.workflow_id, {
         method: 'get',
         headers: {
@@ -645,7 +632,8 @@ export default {
       )
     },
     disableUpstreamStages()  {
-      // This function disables all the operators in stages above TranslateStage2
+      // This function disables all the operators in stages above TranslateStage2,
+      // so all that's left are the operators that update vtt and srt files.
       let data = {
         "Name": "MieCompleteWorkflow2",
         "Configuration": this.workflow_config
@@ -753,18 +741,16 @@ export default {
         })
       )
     },
-    getWebCaptions: async function (selected_lang_code) {
-      this.selected_lang = this.alphabetized_language_collection.filter(x => (x.value === selected_lang_code))[0].text
-      this.selected_lang_code = selected_lang_code
+    getWebCaptions: async function () {
+      // This functions gets paginated web caption data
       const token = await this.$Amplify.Auth.currentSession().then(data =>{
         return data.getIdToken().getJwtToken();
       });
-      // Get paginated web captions
-      const operator_name = "WebCaptions_"+selected_lang_code
+      const operator_name = "WebCaptions_"+this.selected_lang_code
       let cursor=''
       let url = this.DATAPLANE_API_ENDPOINT + '/metadata/' + this.asset_id + '/' + operator_name
       this.webCaptions = []
-      this.getWebCaptionPages(token, url, cursor)
+      await this.getWebCaptionPages(token, url, cursor)
       // switch the video player to show the selected language
       // by first disabling all the text tracks, like this:
       for (let i = 0; i < this.player.textTracks().length; i++) {

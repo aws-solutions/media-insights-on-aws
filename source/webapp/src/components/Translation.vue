@@ -3,14 +3,6 @@
     <div v-if="noTranslation === true">
       No translation found for this asset
     </div>
-    <b-alert
-        v-model="showSaveNotification"
-        variant="success"
-        dismissible
-        fade
-    >
-      {{ saveNotificationMessage }}
-    </b-alert>
     <!-- show spinner while busy loading -->
     <div
       v-if="isBusy"
@@ -104,15 +96,16 @@
       </b-dropdown>
       &nbsp;
       <!-- this is the save edits button for when workflow complete -->
-      <b-button v-if="this.workflow_status === 'Complete' || this.workflow_status === 'Error'" id="editCaptions" size="sm" class="mb-2" @click="showSaveConfirmation()">
+      <b-button v-if="this.workflow_status === 'Complete' || this.workflow_status === 'Error'" id="editCaptions" size="sm" class="mb-2">
       <b-icon icon="play" color="white"></b-icon>
       Save edits
       </b-button>
       <!-- this is the save edits button for when workflow running -->
-      <b-button v-if="this.workflow_status === 'Started'" id="editCaptionsDisabled" size="sm" disabled class="mb-2" @click="saveCaptions()">
+      <b-button v-else id="editCaptionsDisabled" size="sm" disabled class="mb-2" @click="saveCaptions()">
       <b-icon icon="arrow-clockwise" animation="spin"  color="white"></b-icon>
       Saving edits
       </b-button>
+      <br>
       <b-modal ref="save-modal" title="Save Confirmation" @ok="saveCaptions()" ok-title="Confirm">
         <p>Saving will overwrite the existing {{ selected_lang }} translation. Are you sure?</p>
       </b-modal>
@@ -218,8 +211,6 @@ export default {
       sourceLanguageCode: "",
       workflow_config: {},
       workflow_definition: {},
-      showSaveNotification: 0,
-      saveNotificationMessage: "Translation saved",
       results: [],
       webCaptions: [],
       webCaptions_vtt: '',
@@ -285,6 +276,7 @@ export default {
   },
   deactivated: function () {
     console.log('deactivated component:', this.operator)
+    this.selected_lang_code = ""
   },
   activated: function () {
     console.log('activated component:', this.operator);
@@ -344,6 +336,11 @@ export default {
         })
       });
     },
+    asyncForEach: async function(array, callback) {
+      for (let index = 0; index < array.length; index++) {
+        await callback(array[index]);
+      }
+    },
     getVttCaptions: async function () {
       const token = await this.$Amplify.Auth.currentSession().then(data =>{
         return data.getIdToken().getJwtToken();
@@ -360,14 +357,13 @@ export default {
             data: data,
           })
         ).then(res => {
-          let captions_collection = [];
+          this.vttcaptions = [];
           this.num_caption_tracks = res.data.results.CaptionsCollection.length;
-          res.data.results.CaptionsCollection.forEach(item => {
-            // TODO: map the language code to a language label
+          this.asyncForEach(res.data.results.CaptionsCollection, async(item) => {
             const bucket = item.Results.S3Bucket;
             const key = item.Results.S3Key;
             // get URL to captions file in S3
-            fetch(this.DATAPLANE_API_ENDPOINT + '/download', {
+            await fetch(this.DATAPLANE_API_ENDPOINT + '/download', {
               method: 'POST',
               mode: 'cors',
               headers: {
@@ -377,11 +373,34 @@ export default {
               body: JSON.stringify({"S3Bucket": bucket, "S3Key": key})
             }).then(data => {
               data.text().then((data) => {
-                captions_collection.push({'src': data, 'lang': item.LanguageCode, 'label': item.LanguageCode});
+                console.log("loaded caption file for " + item.LanguageCode)
+                this.vttcaptions.push({'src': data, 'lang': item.LanguageCode, 'label': item.LanguageCode});
               }).catch(err => console.error(err));
             })
-          });
-          this.vttcaptions = captions_collection
+          }).then(result => {
+            if (this.selected_lang_code !== "") {
+              // hide all the captions in the video player
+              for (let i = 0; i < this.player.textTracks().length; i++) {
+                let track = this.player.textTracks()[i];
+                track.mode = "disabled";
+              }
+              // get the src for that language's vtt file
+              let old_track = this.player.textTracks()["tracks_"].filter(x => (x.language == this.selected_lang_code))[0]
+              // create properties for a new track
+              let new_track = {}
+              new_track.label = old_track.label
+              new_track.language = old_track.language
+              new_track.kind = old_track.kind
+              new_track.src = this.vtt_url
+              // show the new caption in the video player
+              new_track.mode = "showing"
+              // remove the old track for that vtt
+              this.player.removeRemoteTextTrack(old_track)
+              // add a new text track for that vtt
+              this.player.addRemoteTextTrack(new_track)
+            }
+          })
+
         })
       });
     },
@@ -587,14 +606,9 @@ export default {
             })
           ).then(res => {
               const new_workflow_status = res.data[0].Status
-              console.log(this.workflow_status)
-              console.log(new_workflow_status)
-              if (this.workflow_status === 'Started'
+              if (this.workflow_status !== 'Complete'
                 && new_workflow_status === 'Complete') {
-                console.log('refreshed caption files in video player')
-                this.player.pause()
-                this.player.load()
-                this.player.play()
+                this.getVttCaptions()
               }
               this.workflow_status = new_workflow_status
             }
@@ -666,6 +680,7 @@ export default {
       data["Configuration"]["TranslateStage2"]["TranslateWebCaptions"].MediaType = "MetadataOnly";
 
       // execute the workflow
+      console.log("executing workflow to update VTT and SRT files");
       fetch(this.WORKFLOW_API_ENDPOINT + 'workflow/execution', {
         method: 'post',
         body: JSON.stringify(data),
@@ -687,7 +702,7 @@ export default {
             console.log((data));
             console.log("Response: " + response.status);
           } else {
-            console.log("workflow executing");
+            console.log("workflow execution response:");
             console.log(res);
           }
         })
@@ -705,8 +720,8 @@ export default {
         });
       }
       const operator_name = "WebCaptions_"+this.selected_lang_code
-      const webCaptions = {"WebCaptions": this.webCaptions}
-      let data='{"OperatorName": "' + operator_name + '", "Results": ' + JSON.stringify(webCaptions) + ', "WorkflowId": "' + this.workflow_id + '"}'
+      const web_captions = {"WebCaptions": this.webCaptions}
+      let data='{"OperatorName": "' + operator_name + '", "Results": ' + JSON.stringify(web_captions) + ', "WorkflowId": "' + this.workflow_id + '"}'
       fetch(this.DATAPLANE_API_ENDPOINT + 'metadata/' + this.asset_id, {
         method: 'post',
         body: data,
@@ -720,9 +735,7 @@ export default {
           if (res.status === 200) {
             this.isSaving=true;
             console.log("Translation saved")
-            this.saveNotificationMessage = "Translation saved"
             this.rerunWorkflow(token);
-            this.showSaveNotification = 5;
           }
           if (res.status !== 200) {
             console.log("ERROR: Failed to upload captions.");
@@ -732,9 +745,6 @@ export default {
           }
         })
       )
-    },
-    showSaveConfirmation() {
-      this.$refs['save-modal'].show()
     },
     getWebCaptions: async function (selected_lang_code) {
       this.selected_lang = this.alphabetized_language_collection.filter(x => (x.value === selected_lang_code))[0].text
@@ -792,6 +802,7 @@ export default {
     pollWorkflowStatus() {
       // Poll frequency in milliseconds
       const poll_frequency = 5000;
+      // clearInterval(this.workflow_status_polling)
       this.workflow_status_polling = setInterval(() => {
         this.getWorkflowStatus();
       }, poll_frequency)

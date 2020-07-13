@@ -141,7 +141,6 @@ export default {
       isBusy: false,
       operator: "translation",
       noTranslation: false,
-      num_translations: 0,
       translationsCollection: [
       ],
       selected_lang: "",
@@ -310,34 +309,22 @@ export default {
             data: data,
           })
         ).then(async (res) => {
-          this.num_translations = res.data.results.CaptionsCollection.length;
-          await Promise.all(res.data.results.CaptionsCollection.map(async (item) => {
-            const bucket = item.TranslationText.S3Bucket;
-            const key = item.TranslationText.S3Key;
-            // get URL to captions file in S3
-            await fetch(this.DATAPLANE_API_ENDPOINT + '/download', {
-              method: 'POST',
-              mode: 'cors',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': token
-              },
-              body: JSON.stringify({"S3Bucket": bucket, "S3Key": key})
-            }).then(data => {
-              data.text().then((data) => {
-                let languageLabel = this.translateLanguages.filter(x => (x.value === item.TargetLanguageCode))[0].text;
-                this.translationsCollection.push(
-                  {text: languageLabel, value: item.TargetLanguageCode}
-                );
-              }).catch(err => console.error(err));
-            })
-          }))
+          // get the list of available languages
+          res.data.results.CaptionsCollection.forEach( (item) => {
+            let languageLabel = this.translateLanguages.filter(x => (x.value === item.TargetLanguageCode))[0].text;
+            // save the language code to the translationsCollection
+            this.translationsCollection.push(
+              {text: languageLabel, value: item.TargetLanguageCode}
+            );
+          })
           // Got all the languages now.
           // Set the default language to the first one in the alphabetized list.
-          this.selected_lang = this.alphabetized_language_collection[0].text
-          this.selected_lang_code = this.alphabetized_language_collection[0].value
+          if (this.alphabetized_language_collection.length > 0) {
+            this.selected_lang = this.alphabetized_language_collection[0].text
+            this.selected_lang_code = this.alphabetized_language_collection[0].value
+            await this.getWebCaptions()
+          }
           this.isBusy = false
-          await this.getWebCaptions()
         })
       });
     },

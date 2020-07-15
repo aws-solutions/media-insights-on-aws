@@ -8,8 +8,11 @@ import math
 import os
 import ntpath
 import html
+import webvtt
+from io import StringIO
 from botocore import config
 from urllib.parse import urlparse
+from datetime import datetime
 
 from MediaInsightsEngineLambdaHelper import MediaInsightsOperationHelper
 from MediaInsightsEngineLambdaHelper import MasExecutionError
@@ -40,20 +43,26 @@ class WebCaptions:
             self.asset_id = operator_object.asset_id
             self.marker = "<span>"
             self.contentType = "text/html"
+            self.existing_subtitles = False
             if "SourceLanguageCode" in self.operator_object.configuration:
                 self.source_language_code = self.operator_object.configuration["SourceLanguageCode"]
                 self.operator_name_with_lang = self.operator_object.name+"_"+self.source_language_code 
             if "TargetLanguageCode" in self.operator_object.configuration:
                 self.target_language_code = self.operator_object.configuration["TargetLanguageCode"]
+            if "ExistingSubtitlesObject" in self.operator_object.configuration:
+                self.existing_subtitles_object = self.operator_object.configuration["ExistingSubtitlesObject"]
+                self.existing_subtitles = True
         except KeyError as e:
             self.operator_object.update_workflow_status("Error")
             self.operator_object.add_workflow_metadata(WebCaptionsError="No valid inputs {e}".format(e=e))
             raise MasExecutionError(operator_object.return_output_object())
     
-    def WebCaptionsOperatorName(self, language_code=None):
+    def WebCaptionsOperatorName(self, language_code=None, source=""):
         
         # Shouldn't assume WebCaptions operator is WebCaptions, maybe pass it in the configuration?
-        operator_name = "WebCaptions"
+        print("WebCaptionsOperatorName {}, {}".format(language_code, source))
+
+        operator_name = "WebCaptions"+source
 
         if language_code != None:
             return operator_name+"_"+language_code 
@@ -83,7 +92,7 @@ class WebCaptions:
             self.operator_object.add_workflow_metadata(WebCaptionsError="Missing language code for WebCaptions {e}".format(e=e))
             raise MasExecutionError(self.operator_object.return_output_object())
         
-        print("WebCaptionsOperatorName() Name {}".format(name))
+        print("CaptionsOperatorName() Name {}".format(name))
         return name
 
 
@@ -202,9 +211,9 @@ class WebCaptions:
         print(response)
         return response["results"]["WebCaptions"]
         
-    def PutWebCaptions(self, webcaptions, language_code=None):
+    def PutWebCaptions(self, webcaptions, language_code=None, source=""):
         
-        webcaptions_operator_name = self.WebCaptionsOperatorName(language_code)
+        webcaptions_operator_name = self.WebCaptionsOperatorName(language_code, source)
 
         WebCaptions = {"WebCaptions": webcaptions}
         response = dataplane.store_asset_metadata(asset_id=self.asset_id, operator_name=webcaptions_operator_name, 
@@ -418,6 +427,15 @@ def web_captions(event, context):
 
     transcript = webcaptions_object.GetTranscript()
     webcaptions = webcaptions_object.TranscribeToWebCaptions(transcript)
+
+    # Save the the original Transcribe generated captions to compare to any ground truth modifications
+    # made later so we can calculate quality metrics of the machine translation 
+    webcaptions_object.PutWebCaptions(webcaptions, source="Transcribe")
+
+    # if a vtt file was input, use that as the most recent version of the webcaptions file
+    if webcaptions_object.existing_subtitles:
+        webcaptions = vttToWebCaptions(operator_object, webcaptions_object.existing_subtitles_object)
+        
     webcaptions_object.PutWebCaptions(webcaptions)
 
     operator_object.update_workflow_status("Complete")
@@ -517,7 +535,7 @@ def start_translate_webcaptions(event, context):
     #webcaptions = get_webcaptions(operator_object, source_lang)
     webcaptions = webcaptions_object.GetWebCaptions(source_lang)
 
-    # Translate takes a list of target languages, but it only allow on item in the list.  Too bad
+    # Translate takes a list of target languages, but it only allow one item in the list.  Too bad
     # life would be so much easier if it truely allowed many targets.
     webcaptions_object.TranslateWebCaptions(webcaptions, source_lang, target_langs, terminology_names)
 
@@ -622,6 +640,7 @@ def check_translate_webcaptions(event, context):
                 (targetLanguageCode, basename, ext) = outputFilename.split(".")
                 #put_webcaptions(operator_object, outputWebCaptions, targetLanguageCode)
                 operator_metadata = webcaptions_object.PutWebCaptions(outputWebCaptions, targetLanguageCode)
+                operator_metadata = webcaptions_object.PutWebCaptions(outputWebCaptions, targetLanguageCode, source="Translate")
 
                 # Save a copy of the translation text without delimiters.  The translation
                 # process may remove or add important whitespace around caption markers
@@ -664,6 +683,33 @@ def check_translate_webcaptions(event, context):
 
     return operator_object.return_output_object()
 
+# Convert VTT to WebCaptions
+def vttToWebCaptions(operator_object, vttObject):
+
+    webcaptions = []
+
+    # Get metadata
+    s3 = boto3.client('s3')
+    try:
+        print("Getting data from s3://"+vttObject["Bucket"]+"/"+vttObject["Key"])
+        data = s3.get_object(Bucket=vttObject["Bucket"], Key=vttObject["Key"])
+        vtt = data['Body'].read().decode('utf-8')
+    except Exception as e:
+        operator_object.update_workflow_status("Error")
+        operator_object.add_workflow_metadata(WebCaptionsError="Unable read VTT file. " + str(e))
+        raise MasExecutionError(operator_object.return_output_object())
+    
+    buffer = StringIO(vtt)
+
+    for caption in webvtt.read_buffer(buffer):
+        webcaption = {}
+        webcaption["start"] = formatTimeVTTtoSeconds(caption.start)
+        webcaption["end"] = formatTimeVTTtoSeconds(caption.end)
+        webcaption["caption"] = caption.text
+        webcaptions.append(webcaption)
+
+    return webcaptions
+
 # Format an SRT timestamp in HH:MM:SS,mmm
 def formatTimeSRT(timeSeconds):
 
@@ -681,7 +727,6 @@ def formatTimeSRT(timeSeconds):
 
 # Format a VTT timestamp in HH:MM:SS.mmm
 def formatTimeVTT(timeSeconds):
-
     ONE_HOUR = 60 * 60
     ONE_MINUTE = 60
     hours = math.floor(timeSeconds / ONE_HOUR)
@@ -691,7 +736,14 @@ def formatTimeVTT(timeSeconds):
     seconds = math.floor(remainder)
     remainder = remainder - seconds
     millis = remainder
-
     return str(hours).zfill(2) + ':' + str(minutes).zfill(2) + ':' + str(seconds).zfill(2) + '.' + str(math.floor(millis * 1000)).zfill(3)
 
 
+# Format a VTT timestamp in HH:MM:SS.mmm
+def formatTimeVTTtoSeconds(timeHMSf):
+    hours, minutes, seconds = (timeHMSf.split(":"))[-3:]
+    hours = int(hours)
+    minutes = int(minutes)
+    seconds = float(seconds)
+    timeSeconds = float(3600 * hours + 60 * minutes + seconds)
+    return str(timeSeconds)

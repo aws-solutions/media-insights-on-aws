@@ -350,8 +350,20 @@ export default {
       }).then(response => {
         response.json().then(data => ({
             data: data,
+            status: response.status
           })
         ).then(res => {
+          if (res.status !== 200) {
+            this.isBusy = false
+            this.noTranslation = true
+            console.log("ERROR: Could not retrieve Translation data.");
+            console.log(res.data.Code);
+            console.log(res.data.Message);
+            console.log("URL: " + this.DATAPLANE_API_ENDPOINT + '/metadata/' + asset_id + '/WebToVTTCaptions');
+            console.log("Data:");
+            console.log((data));
+            console.log("Response: " + res.status);
+          }
           this.vttcaptions = [];
           this.num_caption_tracks = res.data.results.CaptionsCollection.length;
           // now get signed urls that can be used to download the vtt files from s3

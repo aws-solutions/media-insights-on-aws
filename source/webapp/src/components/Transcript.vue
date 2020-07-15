@@ -589,10 +589,12 @@ export default {
           })
         ).then(res => {
           if (res.status !== 200) {
-            console.log("ERROR: Failed to upload captions.");
+            console.log("ERROR: Failed to download captions.");
             console.log(res.data.Code);
             console.log(res.data.Message);
             console.log("Response: " + res.status);
+            this.isBusy = false
+            this.noTranscript = true
           }
           if (res.data.results) {
             cursor = res.data.cursor;

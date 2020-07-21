@@ -29,6 +29,13 @@ Parameters:
     Type: String
     Description: "ARN of the Media insights lambda layer (python3.6) that contains basic python dependencies for boto3, chalice, control plane and dataplane"
 
+  StartWaitOperationLambda:
+    Type: String
+    Description: "ARN of control plane lambda function to set a workflow to Waiting state"
+  CheckWaitOperationLambda:
+    Type: String
+    Description: "ARN of control plane lambda function to if a workflow is in Waiting state"
+
 Resources:
   # SNS topic for storing the output of async Rekognition jobs:
   snsRekognitionTopic:
@@ -234,6 +241,33 @@ Resources:
                 Resource: !Ref DataPlaneHandlerArn
                 Effect: "Allow"
 
+  translateS3Role:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "translate.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Policies:
+        - PolicyName: "TranslateAllowS3"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  - "s3:GetObject"
+                  - "s3:PutObject"
+                Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
+                Effect: "Allow"
+              - Action:
+                  - "s3:ListBucket"
+                Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}"
+                Effect: "Allow"
+  
   translateRole:
     Type: "AWS::IAM::Role"
     Properties:
@@ -249,11 +283,17 @@ Resources:
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
+              - Action:
+                  - iam:PassRole
+                Resource: !GetAtt "translateS3Role.Arn"
+                Effect: "Allow"
               - Action: [
                 "translate:GetTerminology",
                 "translate:ListTerminologies",
                 "translate:ImportTerminology",
-                "translate:TranslateText"
+                "translate:TranslateText",
+                "translate:DescribeTextTranslationJob",
+                "translate:StartTextTranslationJob"
               ]
                 Resource: "*"
                 Effect: "Allow"
@@ -267,6 +307,10 @@ Resources:
                   - "s3:GetObject"
                   - "s3:PutObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
+                Effect: "Allow"
+              - Action:
+                  - "s3:ListBucket"
+                Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}"
                 Effect: "Allow"
               - Action: "lambda:InvokeFunction"
                 Resource: !Ref DataPlaneHandlerArn
@@ -520,6 +564,10 @@ Resources:
                   - !GetAtt TranslateFunction.Arn
                   - !GetAtt StartPollyFunction.Arn
                   - !GetAtt CheckPollyFunction.Arn
+                  - !GetAtt StartTranslateWebcaptionsFunction.Arn
+                  - !GetAtt CheckTranslateWebcaptionsFunction.Arn
+                  - !Ref StartWaitOperationLambda
+                  - !Ref CheckWaitOperationLambda
                 Effect: "Allow"
 
   # Lambda functions
@@ -1355,7 +1403,7 @@ Resources:
   WebCaptionsFunction:
     Type: "AWS::Lambda::Function"
     Properties:
-      Handler: "get_captions.web_captions"
+      Handler: "webcaptions.web_captions"
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "captionsRole.Arn"
@@ -1366,22 +1414,24 @@ Resources:
             "/",
             [
             !FindInMap ["SourceCode", "General", "KeyPrefix"],
-            "get_captions.zip",
+            "webcaptions.zip",
             ],
           ]
       Runtime: "python3.7"
       Timeout: 300
+      MemorySize: 256
       Environment:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
 
   # Create Time Series Lambda
 
   CreateSRTCaptionsFunction:
     Type: "AWS::Lambda::Function"
     Properties:
-      Handler: "get_captions.create_srt"
+      Handler: "webcaptions.create_srt"
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "captionsRole.Arn"
@@ -1392,7 +1442,7 @@ Resources:
             "/",
             [
             !FindInMap ["SourceCode", "General", "KeyPrefix"],
-            "get_captions.zip",
+            "webcaptions.zip",
             ],
           ]
       Runtime: "python3.7"
@@ -1401,11 +1451,12 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
 
   CreateVTTCaptionsFunction:
     Type: "AWS::Lambda::Function"
     Properties:
-      Handler: "get_captions.create_vtt"
+      Handler: "webcaptions.create_vtt"
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "captionsRole.Arn"
@@ -1416,7 +1467,7 @@ Resources:
             "/",
             [
             !FindInMap ["SourceCode", "General", "KeyPrefix"],
-            "get_captions.zip",
+            "webcaptions.zip",
             ],
           ]
       Runtime: "python3.7"
@@ -1425,11 +1476,12 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
 
   WebToSRTCaptionsFunction:
     Type: "AWS::Lambda::Function"
     Properties:
-      Handler: "get_captions.web_to_srt"
+      Handler: "webcaptions.create_srt"
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "captionsRole.Arn"
@@ -1440,7 +1492,7 @@ Resources:
             "/",
             [
             !FindInMap ["SourceCode", "General", "KeyPrefix"],
-            "get_captions.zip",
+            "webcaptions.zip",
             ],
           ]
       Runtime: "python3.7"
@@ -1449,11 +1501,12 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
 
   WebToVTTCaptionsFunction:
     Type: "AWS::Lambda::Function"
     Properties:
-      Handler: "get_captions.web_to_vtt"
+      Handler: "webcaptions.create_vtt"
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "captionsRole.Arn"
@@ -1464,7 +1517,7 @@ Resources:
             "/",
             [
             !FindInMap ["SourceCode", "General", "KeyPrefix"],
-            "get_captions.zip",
+            "webcaptions.zip",
             ],
           ]
       Runtime: "python3.7"
@@ -1473,6 +1526,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
 
   # Translate Lambdas
 
@@ -1502,6 +1556,57 @@ Resources:
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
 
+  StartTranslateWebcaptionsFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "webcaptions.start_translate_webcaptions"
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
+      Role: !GetAtt "translateRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "webcaptions.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Timeout: 300
+      Environment:
+        Variables:
+          translateRole: !GetAtt translateS3Role.Arn
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+
+  CheckTranslateWebcaptionsFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "webcaptions.check_translate_webcaptions"
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
+      Role: !GetAtt "translateRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "webcaptions.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Timeout: 300
+      Environment:
+        Variables:
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+  
   # Polly Lambdas
 
   StartPollyFunction:
@@ -1631,7 +1736,8 @@ Resources:
       ResourceType: "Operation"
       Name: "WebCaptions"
       Type: "Sync"
-      Configuration: { "MediaType": "Text", "Enabled": true }
+      Configuration: 
+        { "MediaType": "MetadataOnly", "SourceLanguageCode": "en", "Enabled": true }
       StartLambdaArn: !GetAtt WebCaptionsFunction.Arn
       StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
@@ -1664,7 +1770,12 @@ Resources:
       ResourceType: "Operation"
       Name: "WebToSRTCaptions"
       Type: "Sync"
-      Configuration: { "MediaType": "MetadataOnly", "Enabled": true }
+      Configuration:
+        {
+          "MediaType": "MetadataOnly",
+          "TargetLanguageCodes": ["en"],
+          "Enabled": true
+        }
       StartLambdaArn: !GetAtt WebToSRTCaptionsFunction.Arn
       StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
@@ -1675,7 +1786,12 @@ Resources:
       ResourceType: "Operation"
       Name: "WebToVTTCaptions"
       Type: "Sync"
-      Configuration: { "MediaType": "MetadataOnly", "Enabled": true }
+      Configuration:
+        {
+          "MediaType": "MetadataOnly",
+          "TargetLanguageCodes": ["en"],
+          "Enabled": true
+        }
       StartLambdaArn: !GetAtt WebToVTTCaptionsFunction.Arn
       StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
@@ -1694,6 +1810,24 @@ Resources:
           "SourceLanguageCode": "en",
         }
       StartLambdaArn: !GetAtt TranslateFunction.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+  
+  TranslateWebCaptionsOperation:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "TranslateWebCaptions"
+      Type: "Async"
+      Configuration: 
+        {
+          "MediaType": "MetadataOnly",
+          "TargetLanguageCodes": ["es"],
+          "Enabled": true,
+          "SourceLanguageCode": "en",
+        }
+      StartLambdaArn: !GetAtt StartTranslateWebcaptionsFunction.Arn
+      MonitorLambdaArn: !GetAtt CheckTranslateWebcaptionsFunction.Arn
       StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
   PollyOperation:
@@ -1906,6 +2040,17 @@ Resources:
       MonitorLambdaArn: !GetAtt checkPersonTracking.Arn
       StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
+  WaitOperation:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "Wait"
+      Type: "Async"
+      Configuration: { "MediaType": "MetadataOnly", "Enabled": false }
+      StartLambdaArn: !Ref StartWaitOperationLambda
+      MonitorLambdaArn: !Ref CheckWaitOperationLambda
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
   # Export operator names as outputs
 
 Outputs:
@@ -1969,6 +2114,11 @@ Outputs:
     Value: !GetAtt TranslateOperation.Name
     Export:
       Name: !Join [":", [!Ref "AWS::StackName", Translate]]
+  TranslateWebCaptionsOperation:
+    Description: "Operation name of translate WebCaptions"
+    Value: !GetAtt TranslateWebCaptionsOperation.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", TranslateWebCaptions]]
   PollyOperation:
     Description: "Operation name of polly"
     Value: !GetAtt PollyOperation.Name
@@ -2063,5 +2213,10 @@ Outputs:
     Value: !GetAtt textDetectionOperationImage.Name
     Export:
       Name: !Join [":", [!Ref "AWS::StackName", TextDetectionImage]]
+  WaitOperation:
+    Description: "Wait operator - wait until /workflow/execution/continue API is called"
+    Value: !GetAtt WaitOperation.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", Wait]]
   StackName:
     Value: !Ref AWS::StackName

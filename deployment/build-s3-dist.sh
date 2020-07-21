@@ -149,9 +149,10 @@ cat requirements.txt.old | grep -v "Media_Insights_Engine_Lambda_Helper" > requi
 echo "/packages/$file" >> requirements.txt;
 # Build Lambda layer zip files and rename them to the filenames expected by media-insights-stack.yaml. The Lambda layer build script runs in Docker.
 # If Docker is not installed, then we'll use prebuilt Lambda layer zip files.
-echo "Running build-lambda-layer.sh"
+echo "Running build-lambda-layer.sh:"
+echo ""
 rm -rf lambda_layer-python-* lambda_layer-python*.zip
-./build-lambda-layer.sh requirements.txt > /dev/null
+./build-lambda-layer.sh requirements.txt
 if [ $? -eq 0 ]; then
   mv lambda_layer-python3.6.zip media_insights_engine_lambda_layer_python3.6.zip
   mv lambda_layer-python3.7.zip media_insights_engine_lambda_layer_python3.7.zip
@@ -188,20 +189,21 @@ cp "$workflows_dir/transcribe.yaml" "$dist_dir/transcribe.template"
 cp "$workflows_dir/rekognition.yaml" "$dist_dir/rekognition.template"
 cp "$workflows_dir/comprehend.yaml" "$dist_dir/comprehend.template"
 cp "$workflows_dir/MieCompleteWorkflow.yaml" "$dist_dir/MieCompleteWorkflow.template"
+cp "$workflows_dir/MieCompleteWorkflowTranslate.yaml" "$dist_dir/MieCompleteWorkflowTranslate.template"
+cp "$workflows_dir/vod_translate_workflow.yaml" "$dist_dir/vod_translate_workflow.template"
 cp "$source_dir/operators/operator-library.yaml" "$dist_dir/media-insights-operator-library.template"
 cp "$template_dir/media-insights-stack.yaml" "$dist_dir/media-insights-stack.template"
 cp "$template_dir/string.yaml" "$dist_dir/string.template"
 cp "$template_dir/media-insights-test-operations-stack.yaml" "$dist_dir/media-insights-test-operations-stack.template"
 cp "$template_dir/media-insights-dataplane-streaming-stack.template" "$dist_dir/media-insights-dataplane-streaming-stack.template"
 cp "$workflows_dir/rekognition.yaml" "$dist_dir/rekognition.template"
-cp "$workflows_dir/MieCompleteWorkflow.yaml" "$dist_dir/MieCompleteWorkflow.template"
 cp "$source_dir/consumers/elastic/media-insights-elasticsearch.yaml" "$dist_dir/media-insights-elasticsearch.template"
 cp "$source_dir/consumers/elastic/media-insights-elasticsearch.yaml" "$dist_dir/media-insights-s3.template"
 cp "$webapp_dir/media-insights-webapp.yaml" "$dist_dir/media-insights-webapp.template"
 find "$dist_dir"
 echo "Updating code source bucket in template files with '$bucket'"
 echo "Updating solution version in template files with '$version'"
-new_bucket="s/%%BUCKET_NAME%%/$bucket/g"
+new_bucket="s/%%BUCKET_NAME%%/$bucket-$region/g"
 new_version="s/%%VERSION%%/$version/g"
 # Update templates in place. Copy originals to [filename].orig
 sed -i.orig -e "$new_bucket" "$dist_dir/media-insights-stack.template"
@@ -312,9 +314,31 @@ echo "Building Stage completion function"
 cd "$source_dir/operators/captions" || exit
 [ -e dist ] && rm -r dist
 mkdir -p dist
-zip -g ./dist/get_captions.zip ./get_captions.py
-cp "./dist/get_captions.zip" "$dist_dir/get_captions.zip"
-rm -rf ./dist
+
+[ -e package ] && rm -r package
+mkdir -p package
+echo "preparing packages from requirements.txt"
+# Package dependencies listed in requirements.txt
+pushd package || exit 1
+# Handle distutils install errors with setup.cfg
+touch ./setup.cfg
+echo "[install]" > ./setup.cfg
+echo "prefix= " >> ./setup.cfg
+# Try and handle failure if pip version mismatch
+if [ -x "$(command -v pip)" ]; then
+  pip install --quiet -r ../requirements.txt --target .
+elif [ -x "$(command -v pip3)" ]; then
+  echo "pip not found, trying with pip3"
+  pip3 install --quiet -r ../requirements.txt --target .
+elif ! [ -x "$(command -v pip)" ] && ! [ -x "$(command -v pip3)" ]; then
+  echo "No version of pip installed. This script requires pip. Cleaning up and exiting."
+  exit 1
+fi
+zip -q -r9 ../dist/webcaptions.zip .
+popd || exit 1
+
+zip -g ./dist/webcaptions.zip ./webcaptions.py
+cp "./dist/webcaptions.zip" "$dist_dir/webcaptions.zip"
 
 # ------------------------------------------------------------------------------"
 # Translate Operations
@@ -665,6 +689,39 @@ fi
 rm -f ./dist
 
 echo "------------------------------------------------------------------------------"
+echo "Workflow Execution DynamoDB Stream Function"
+echo "------------------------------------------------------------------------------"
+
+echo "Building Workflow Execution DDB Stream function"
+cd "$source_dir/workflowstream" || exit 1
+[ -e dist ] && rm -r dist
+mkdir -p dist
+[ -e package ] && rm -r package
+mkdir -p package
+echo "preparing packages from requirements.txt"
+# Package dependencies listed in requirements.txt
+pushd package || exit 1
+# Handle distutils install errors with setup.cfg
+touch ./setup.cfg
+echo "[install]" > ./setup.cfg
+echo "prefix= " >> ./setup.cfg
+# Try and handle failure if pip version mismatch
+if [ -x "$(command -v pip)" ]; then
+  pip install --quiet -r ../requirements.txt --target .
+elif [ -x "$(command -v pip3)" ]; then
+  echo "pip not found, trying with pip3"
+  pip3 install --quiet -r ../requirements.txt --target .
+elif ! [ -x "$(command -v pip)" ] && ! [ -x "$(command -v pip3)" ]; then
+  echo "No version of pip installed. This script requires pip. Cleaning up and exiting."
+  exit 1
+fi
+zip -q -r9 ../dist/workflowstream.zip .
+popd || exit 1
+
+zip -q -g dist/workflowstream.zip ./*.py
+cp "./dist/workflowstream.zip" "$dist_dir/workflowstream.zip"
+
+echo "------------------------------------------------------------------------------"
 echo "Dataplane API Stack"
 echo "------------------------------------------------------------------------------"
 
@@ -718,24 +775,24 @@ echo "Copying the prepared distribution to S3..."
 for file in "$dist_dir"/*.zip
 do
   if [ -n "$profile" ]; then
-    aws s3 cp "$file" s3://"$bucket"/media-insights-solution/"$version"/code/ --profile "$profile"
+    aws s3 cp "$file" s3://"$bucket"-"$region"/media-insights-solution/"$version"/code/ --profile "$profile"
   else
-    aws s3 cp "$file" s3://"$bucket"/media-insights-solution/"$version"/code/
+    aws s3 cp "$file" s3://"$bucket"-"$region"/media-insights-solution/"$version"/code/
   fi
 done
 for file in "$dist_dir"/*.template
 do
   if [ -n "$profile" ]; then
-    aws s3 cp "$file" s3://"$bucket"/media-insights-solution/"$version"/cf/ --profile "$profile"
+    aws s3 cp "$file" s3://"$bucket"-"$region"/media-insights-solution/"$version"/cf/ --profile "$profile"
   else
-    aws s3 cp "$file" s3://"$bucket"/media-insights-solution/"$version"/cf/
+    aws s3 cp "$file" s3://"$bucket"-"$region"/media-insights-solution/"$version"/cf/
   fi
 done
 echo "Uploading the MIE web app..."
 if [ -n "$profile" ]; then
-  aws s3 cp "$webapp_dir"/dist s3://"$bucket"/media-insights-solution/"$version"/code/website --recursive --profile "$profile"
+  aws s3 cp "$webapp_dir"/dist s3://"$bucket"-"$region"/media-insights-solution/"$version"/code/website --recursive --profile "$profile"
 else
-  aws s3 cp "$webapp_dir"/dist s3://"$bucket"/media-insights-solution/"$version"/code/website --recursive
+  aws s3 cp "$webapp_dir"/dist s3://"$bucket"-"$region"/media-insights-solution/"$version"/code/website --recursive
 fi
 
 echo "------------------------------------------------------------------------------"
@@ -753,9 +810,9 @@ echo "--------------------------------------------------------------------------
 echo ""
 echo "Template to deploy:"
 if [ "$region" == "us-east-1" ]; then
-  echo https://"$bucket".s3.amazonaws.com/media-insights-solution/"$version"/cf/media-insights-stack.template
+  echo https://"$bucket"-"$region".s3.amazonaws.com/media-insights-solution/"$version"/cf/media-insights-stack.template
 else
-  echo https://"$bucket".s3."$region".amazonaws.com/media-insights-solution/"$version"/cf/media-insights-stack.template
+  echo https://"$bucket"-"$region".s3."$region".amazonaws.com/media-insights-solution/"$version"/cf/media-insights-stack.template
 fi
 
 echo "------------------------------------------------------------------------------"

@@ -203,7 +203,7 @@ cp "$webapp_dir/media-insights-webapp.yaml" "$dist_dir/media-insights-webapp.tem
 find "$dist_dir"
 echo "Updating code source bucket in template files with '$bucket'"
 echo "Updating solution version in template files with '$version'"
-new_bucket="s/%%BUCKET_NAME%%/$bucket-$region/g"
+new_bucket="s/%%BUCKET_NAME%%/$bucket/g"
 new_version="s/%%VERSION%%/$version/g"
 # Update templates in place. Copy originals to [filename].orig
 sed -i.orig -e "$new_bucket" "$dist_dir/media-insights-stack.template"
@@ -775,24 +775,24 @@ echo "Copying the prepared distribution to S3..."
 for file in "$dist_dir"/*.zip
 do
   if [ -n "$profile" ]; then
-    aws s3 cp "$file" s3://"$bucket"-"$region"/media-insights-solution/"$version"/code/ --profile "$profile"
+    aws s3 cp "$file" s3://"$bucket"/media-insights-solution/"$version"/code/ --profile "$profile"
   else
-    aws s3 cp "$file" s3://"$bucket"-"$region"/media-insights-solution/"$version"/code/
+    aws s3 cp "$file" s3://"$bucket"/media-insights-solution/"$version"/code/
   fi
 done
 for file in "$dist_dir"/*.template
 do
   if [ -n "$profile" ]; then
-    aws s3 cp "$file" s3://"$bucket"-"$region"/media-insights-solution/"$version"/cf/ --profile "$profile"
+    aws s3 cp "$file" s3://"$bucket"/media-insights-solution/"$version"/cf/ --profile "$profile"
   else
-    aws s3 cp "$file" s3://"$bucket"-"$region"/media-insights-solution/"$version"/cf/
+    aws s3 cp "$file" s3://"$bucket"/media-insights-solution/"$version"/cf/
   fi
 done
 echo "Uploading the MIE web app..."
 if [ -n "$profile" ]; then
-  aws s3 cp "$webapp_dir"/dist s3://"$bucket"-"$region"/media-insights-solution/"$version"/code/website --recursive --profile "$profile"
+  aws s3 cp "$webapp_dir"/dist s3://"$bucket"/media-insights-solution/"$version"/code/website --recursive --profile "$profile"
 else
-  aws s3 cp "$webapp_dir"/dist s3://"$bucket"-"$region"/media-insights-solution/"$version"/code/website --recursive
+  aws s3 cp "$webapp_dir"/dist s3://"$bucket"/media-insights-solution/"$version"/code/website --recursive
 fi
 
 echo "------------------------------------------------------------------------------"
@@ -810,9 +810,9 @@ echo "--------------------------------------------------------------------------
 echo ""
 echo "Template to deploy:"
 if [ "$region" == "us-east-1" ]; then
-  echo https://"$bucket"-"$region".s3.amazonaws.com/media-insights-solution/"$version"/cf/media-insights-stack.template
+  echo https://"$bucket".s3.amazonaws.com/media-insights-solution/"$version"/cf/media-insights-stack.template
 else
-  echo https://"$bucket"-"$region".s3."$region".amazonaws.com/media-insights-solution/"$version"/cf/media-insights-stack.template
+  echo https://"$bucket".s3."$region".amazonaws.com/media-insights-solution/"$version"/cf/media-insights-stack.template
 fi
 
 echo "------------------------------------------------------------------------------"

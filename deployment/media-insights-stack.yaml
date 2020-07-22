@@ -78,7 +78,7 @@ Parameters:
   MaxConcurrentWorkflows:
     Type: Number
     Description: Maximum number of workflows to run concurrently.  When the maximum is reached, additional workflows are added to a wait queue.
-    Default: 5
+    Default: 10
     MinValue: 1
   # TranscriberApp:
   #   Type: String
@@ -1617,7 +1617,7 @@ Resources:
             "https://s3.amazonaws.com",
             !FindInMap ["SourceCode", "General", "S3Bucket"],
             !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
-            "MieCompleteWorkflowTranslate.template",
+            "MieCompleteWorkflow.template",
           ],
         ]
       Parameters:

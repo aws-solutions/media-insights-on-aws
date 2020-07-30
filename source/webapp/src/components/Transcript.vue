@@ -133,6 +133,7 @@ export default {
       showSaveNotification: 0,
       saveNotificationMessage: "Captions saved",
       results: [],
+      captionChanges: [],
       webCaptions: [],
       webCaptions_vtt: '',
       webCaptions_fields: [
@@ -233,6 +234,68 @@ export default {
       this.webCaptions[index].end = new_time
     },
     changeCaption(new_caption, index) {
+      const Diff = require('diff');
+      const diff = Diff.diffWords(this.webCaptions[index].caption, new_caption);
+      // if no words were removed (i.e. only new words were added)...
+      console.log("Caption edit:")
+      console.log(diff)
+      let old_word = ''
+      let new_word = ''
+      for (let i=0; i<=(diff.length-1); i++) {
+        // if element contains key removed
+        if ("removed" in diff[i] && diff[i].removed !== undefined) {
+          old_word += diff[i].value+' '
+          console.log("old word: " + old_word + " --> new word: " + new_word)
+        }
+        // if element contains key added
+        else if ("added" in diff[i] && diff[i].added !== undefined) {
+          new_word += diff[i].value+' '
+          console.log("old word: " + old_word + " --> new word: " + new_word)
+          if (old_word === '') {
+            // if old_word is unassigned then use first word of the next element as the old word
+            if ((i+1) < diff.length && !("added" in diff[i+1] || "removed" in diff[i+1])) {
+              old_word = diff[i+1].value.replace(/\s.*/,'')
+              new_word = new_word + ' ' + old_word
+              console.log("old word: " + old_word + " --> new word: " + new_word)
+              i=i+1
+            } else {
+              // or, if there is no next element, then use the last word of the previous element as the old word
+              if ((i-1) >= 0) {
+                old_word = diff[i-1].value.replace(/.*\s/,'')
+                new_word = old_word + ' ' + new_word
+                console.log("old word: " + old_word + " --> new word: " + new_word)
+              } else {
+                // or if there is no previous element then just ignore this new word
+                // since we have no old word to assicate it with in a custom vocabulary
+                break
+              }
+            }
+          }
+        }
+        // otherwise if element is just words, or if it's the last element,
+        // then save word change to custom vocabulary
+        if (i === (diff.length-1) || !("added" in diff[i] || "removed" in diff[i])) {
+          // if this value is a space and next value contains key 'added',
+          // then break so that we can add that value to the new_word
+          if (i !== (diff.length-1) && diff[i].value === ' ' && "added" in diff[i+1] && diff[i+1].added !== 'undefined') {
+            continue
+          } else {
+            // or if this is the last element
+            // or if this value is anything other than a space
+            // then save to custom vocabulary
+            if (old_word != '' && new_word != '') {
+              console.log("Saving to new vocabulary:")
+              // replace multiple spaces with a single space
+              // and remove spaces at beginning or end of word
+              old_word = old_word.replace(/ +(?= )/g,'').trim();
+              new_word = new_word.replace(/ +(?= )/g,'').trim();
+              console.log("NEW VOCAB: old word: " + old_word + " --> new word: " + new_word)
+              old_word = ''
+              new_word = ''
+            }
+          }
+        }
+      }
       this.webCaptions[index].caption = new_caption
     },
     captionClickHandler(index) {

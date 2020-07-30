@@ -251,26 +251,6 @@ export default {
         else if ("added" in diff[i] && diff[i].added !== undefined) {
           new_word += diff[i].value+' '
           console.log("old word: " + old_word + " --> new word: " + new_word)
-          if (old_word === '') {
-            // if old_word is unassigned then use first word of the next element as the old word
-            if ((i+1) < diff.length && !("added" in diff[i+1] || "removed" in diff[i+1])) {
-              old_word = diff[i+1].value.replace(/\s.*/,'')
-              new_word = new_word + ' ' + old_word
-              console.log("old word: " + old_word + " --> new word: " + new_word)
-              i=i+1
-            } else {
-              // or, if there is no next element, then use the last word of the previous element as the old word
-              if ((i-1) >= 0) {
-                old_word = diff[i-1].value.replace(/.*\s/,'')
-                new_word = old_word + ' ' + new_word
-                console.log("old word: " + old_word + " --> new word: " + new_word)
-              } else {
-                // or if there is no previous element then just ignore this new word
-                // since we have no old word to assicate it with in a custom vocabulary
-                break
-              }
-            }
-          }
         }
         // otherwise if element is just words, or if it's the last element,
         // then save word change to custom vocabulary
@@ -287,12 +267,12 @@ export default {
               console.log("Saving to new vocabulary:")
               // replace multiple spaces with a single space
               // and remove spaces at beginning or end of word
-              old_word = old_word.replace(/ +(?= )/g,'').trim();
-              new_word = new_word.replace(/ +(?= )/g,'').trim();
+              old_word = old_word.replace(/ +(?= )/g, '').trim();
+              new_word = new_word.replace(/ +(?= )/g, '').trim();
               console.log("NEW VOCAB: old word: " + old_word + " --> new word: " + new_word)
-              old_word = ''
-              new_word = ''
             }
+            old_word = ''
+            new_word = ''
           }
         }
       }

@@ -82,6 +82,11 @@
       <b-button id="downloadCaptionsVTT" size="sm" class="mb-2" @click="downloadCaptionsVTT()">
         <b-icon v-if="this.webCaptions.length > 0" icon="download" color="white"></b-icon> Download VTT
       </b-button> &nbsp;
+      <!-- this is the save vocabulary button -->
+      <b-button id="saveVocabulary" size="sm" class="mb-2" @click="showVocabConfirmation()">
+        <b-icon icon="card-text" color="white" ></b-icon>
+        Save vocabulary
+      </b-button> &nbsp;
       <!-- this is the save edits button for when workflow is paused -->
       <b-button v-if="this.workflow_status === 'Waiting'" id="saveCaptions" size="sm" class="mb-2" @click="saveCaptions()">
         <b-icon v-if="this.isSaving" icon="arrow-clockwise" animation="spin"  color="white"></b-icon>
@@ -100,6 +105,54 @@
       </b-button>
       <b-modal ref="save-modal" title="Save Confirmation" @ok="saveCaptions()" ok-title="Confirm">
         <p>Saving captions will restart a workflow that can take several minutes. You will not be able to edit captions until it has finished. Are you ready to proceed?</p>
+      </b-modal>
+      <b-modal ref="vocab-modal-noop" title="Save Vocabulary" ok-only>
+        <p>The custom vocabulary is empty. Make changes to the captions in order to build the custom vocabulary.</p>
+      </b-modal>
+      <b-modal ref="vocab-modal" title="Save Vocabulary" @ok="saveVocabulary()" ok-title="Confirm">
+        <p>The following vocabulary will be used for AWS Transcribe.</p>
+        <b-table
+          :items="customVocabulary"
+          selectable
+          select-mode="single"
+          fixed responsive="sm"
+          bordered
+          small
+        >
+        <template v-slot:cell(original_phrase)="row">
+          <b-row no-gutters>
+            <b-col cols="10">
+              <b-form-input v-model="row.item.original_phrase" class="custom-text-field"/>
+            </b-col>
+          </b-row>
+        </template>
+        <template v-slot:cell(new_phrase)="row">
+          <b-row no-gutters>
+            <b-col cols="10">
+              <b-form-input v-model="row.item.new_phrase" class="custom-text-field"/>
+            </b-col>
+          </b-row>
+        </template>
+        <template v-slot:cell(display_as)="row">
+          <b-row no-gutters>
+          <b-col cols="9">
+            <b-form-input v-model="row.item.display_as" class="custom-text-field"/>
+          </b-col>
+          <b-col nopadding cols="1">
+            <span style="position:absolute; top: 0px">
+              <b-button size="sm" style="display: flex;" variant="link" @click="delete_vocab_row(row.index)">
+                <b-icon font-scale=".9" icon="x-circle" color="lightgrey"></b-icon>
+              </b-button>
+            </span>
+            <span style="position:absolute; bottom: 0px">
+              <b-button size="sm"  style="display: flex;" variant="link" @click="add_vocab_row(row.index)">
+                <b-icon font-scale=".9" icon="plus-square" color="lightgrey"></b-icon>
+              </b-button>
+            </span>
+          </b-col>
+          </b-row>
+        </template>
+        </b-table>
       </b-modal>
 
 <!-- Uncomment to enable Upload button -->
@@ -133,7 +186,7 @@ export default {
       showSaveNotification: 0,
       saveNotificationMessage: "Captions saved",
       results: [],
-      captionChanges: [],
+      customVocabulary: [],
       webCaptions: [],
       webCaptions_vtt: '',
       webCaptions_fields: [
@@ -245,12 +298,10 @@ export default {
         // if element contains key removed
         if ("removed" in diff[i] && diff[i].removed !== undefined) {
           old_word += diff[i].value+' '
-          console.log("old word: " + old_word + " --> new word: " + new_word)
         }
         // if element contains key added
         else if ("added" in diff[i] && diff[i].added !== undefined) {
           new_word += diff[i].value+' '
-          console.log("old word: " + old_word + " --> new word: " + new_word)
         }
         // otherwise if element is just words, or if it's the last element,
         // then save word change to custom vocabulary
@@ -269,7 +320,19 @@ export default {
               // and remove spaces at beginning or end of word
               old_word = old_word.replace(/ +(?= )/g, '').trim();
               new_word = new_word.replace(/ +(?= )/g, '').trim();
-              console.log("NEW VOCAB: old word: " + old_word + " --> new word: " + new_word)
+              // transcribe requires numbers to be spelled out in custom vocab phrases,
+              // so we derive the number spelling here:
+              const converter = require('number-to-words');
+              let new_word_with_numbers_as_words = new_word
+              if (new_word.match(/\d+/g) != null)
+              {
+                new_word_with_numbers_as_words = new_word.replace(new_word.match(/\d+/g)[0], converter.toWords(new_word.match(/\d+/g)[0]))
+              }
+              // remove old_word from custom vocab if it already exists
+              this.customVocabulary = this.customVocabulary.filter(function (item) {return item.original_phrase !== old_word;});
+              // add old_word to custom vocab
+              this.customVocabulary.push({"original_phrase": old_word, "new_phrase": new_word_with_numbers_as_words, "display_as": new_word})
+              console.log("CUSTOM VOCABULARY: " + JSON.stringify(this.customVocabulary))
             }
             old_word = ''
             new_word = ''
@@ -536,6 +599,11 @@ export default {
         })
       )
     },
+    saveVocabulary: async function (token) {
+      // This function saves custom vocabulary
+      this.$refs['vocab-modal'].hide()
+      console.log("Method to save vocabulary not implemented yet.")
+    },
     saveCaptions: async function (token) {
       // This function saves captions to the dataplane
       // and reruns or resumes the workflow.
@@ -599,6 +667,12 @@ export default {
     showSaveConfirmation() {
       this.$refs['save-modal'].show()
     },
+    showVocabConfirmation() {
+      if (this.customVocabulary.length > 0)
+        this.$refs['vocab-modal'].show()
+      else
+        this.$refs['vocab-modal-noop'].show()
+    },
     uploadCaptionsFile(event) {
       // Uncomment to enable Upload button
       // this.$refs['my-modal'].hide()
@@ -661,6 +735,12 @@ export default {
     delete_row(index) {
       this.webCaptions.splice(index, 1)
     },
+    add_vocab_row(index) {
+      this.customVocabulary.splice(index+1, 0, {})
+    },
+    delete_vocab_row(index) {
+      this.customVocabulary.splice(index, 1)
+    },
     pollWorkflowStatus() {
       // Poll frequency in milliseconds
       const poll_frequency = 5000;
@@ -711,10 +791,10 @@ export default {
   .custom-text-field {
     background-color: white !important;
     border: 0;
-  }
-  .highlightedBorder {
-    border-left: 1px solid #cc181e;
-    background-color: green;
+    padding-left: 0px !important;
+    padding-right: 0px !important;
+    margin-top: 0px !important;
+    margin-bottom: 0px !important;
   }
   tr.b-table-row-selected {
     border-left: 1px solid #cc181e !important;

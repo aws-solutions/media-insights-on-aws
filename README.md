@@ -24,16 +24,18 @@ The Media Insights sample application lets you upload videos, images, audio and 
 * Locate technical cues such as black frames, end credits, and color bars in your videos using Amazon Rekognition.
 * Identify start, end, and duration of each unique shot in your videos using Amazon Rekognition. 
 
+
 Data are stored in Amazon Elasticsearch Service and can be retrieved using _Lucene_ queries in the Collection view search page.
 
 # Installation
 You can deploy MIE and the demo GUI in your AWS account with the following instructions:
 
 #### *Step 1. Launch the Stack*
-  Region| Launch
-  ------|-----
-  US East (N. Virginia) | [![Launch in us-east-1](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-east-1.s3.amazonaws.com/media-insights-solution/v0.1.8/cf/media-insights-stack.template)
-  US West (Oregon) | [![Launch in us-west-2](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-west-2.s3.amazonaws.com/media-insights-solution/v0.1.8/cf/media-insights-stack.template)
+
+Region| Launch
+------|-----
+US East (N. Virginia) | [![Launch in us-east-1](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-east-1.s3.amazonaws.com/media-insights-solution/beta01/cf/media-insights-stack.template)
+US West (Oregon) | [![Launch in us-west-2](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-west-2.s3.us-west-2.amazonaws.com/media-insights-solution/beta01/cf/media-insights-stack.template)
 
 1. Sign in to the AWS Management Console in either the US-East-1 or US-West-2 regions.
 2. Select a template to launch from the table above based on the region you are signed into. This will take you to the 

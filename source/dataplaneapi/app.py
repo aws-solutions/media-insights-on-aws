@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from chalice import Chalice
+from chalice import IAMAuthorizer
 from chalice import NotFoundError, BadRequestError, ChaliceViewError, CognitoUserPoolAuthorizer
 from botocore.client import ClientError
 from decimal import Decimal
@@ -47,17 +48,13 @@ dataplane_s3_bucket = os.environ['DATAPLANE_BUCKET']
 
 # Cognito resources
 # From cloudformation stack
-cognito_user_pool_arn = os.environ['USER_POOL_ARN']
+authorizer = IAMAuthorizer()
 
 # TODO: Should we add a variable for the upload bucket?
 
 base_s3_uri = 'private/assets/'
 s3_client = boto3.client('s3')
 s3_resource = boto3.resource('s3')
-
-authorizer = CognitoUserPoolAuthorizer(
-    'MieUserPool', header='Authorization',
-    provider_arns=[cognito_user_pool_arn])
 
 
 class DecimalEncoder(json.JSONEncoder):

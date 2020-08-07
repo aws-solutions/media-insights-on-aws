@@ -60,6 +60,15 @@
                   "Resource": "*",
                   "Effect": "Allow",
                   "Sid": "Logging"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "transcribe:CreateVocabulary",
+                    "transcribe:DeleteVocabulary",
+                    "transcribe:ListVocabularies"
+                  ],
+                  "Resource": "*"
                 }
               ]
             },

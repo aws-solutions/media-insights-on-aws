@@ -74,29 +74,33 @@
             </b-card>
             <b-card header="Audio Operators">
               <b-form-group>
-                <b-form-checkbox-group
-                    id="checkbox-group-2"
-                    v-model="enabledOperators"
-                    :options="audioOperators"
-                    name="flavour-2"
-                ></b-form-checkbox-group>
-                <div v-if="enabledOperators.includes('Transcribe')">
-                  Source Language
-                  <b-form-select v-model="transcribeLanguage" :options="transcribeLanguages"></b-form-select>
-<!--                  <b-form-checkbox-->
-<!--                      id="enable_caption_editing"-->
-<!--                      v-model="enable_caption_editing"-->
-<!--                  >Pause workflow to edit captions before downstream processing</b-form-checkbox>-->
-                  <br>
-                  Custom Vocabulary
-                  <b-form-input v-model="customVocab" placeholder="(optional)"></b-form-input>
-                  <br>
-
-                </div>
-                <div v-if="enabledOperators.includes('Subtitles')">
-                  Use Existing Subtitles
-                  <b-form-input v-model="existingSubtitlesFilename" placeholder="(optional) Enter subtitles filename (.vtt)"></b-form-input>
-                </div>
+<!--                <b-form-checkbox-group-->
+<!--                    id="checkbox-group-2"-->
+<!--                    v-model="enabledOperators"-->
+<!--                    :options="audioOperators"-->
+<!--                    name="audioOperators"-->
+<!--                >-->
+<!--                </b-form-checkbox-group>-->
+                <b-form-checkbox-group id="checkbox-group-2" v-model="enabledOperators" name="audioOperators">
+                  <b-form-checkbox value="Transcribe">Transcribe</b-form-checkbox>
+                    <div v-if="enabledOperators.includes('Transcribe')">
+                      Source Language
+                      <b-form-select v-model="transcribeLanguage" :options="transcribeLanguages"></b-form-select>
+                      <!--                  <b-form-checkbox-->
+                      <!--                      id="enable_caption_editing"-->
+                      <!--                      v-model="enable_caption_editing"-->
+                      <!--                  >Pause workflow to edit captions before downstream processing</b-form-checkbox>-->
+                      <br>
+                      Custom Vocabulary
+                      <b-form-select v-model="customVocab" :options="customVocabularyList"></b-form-select>
+                      <br>
+                    </div>
+                  <b-form-checkbox value="Subtitles">Subtitles</b-form-checkbox>
+                  <div v-if="enabledOperators.includes('Subtitles')">
+                    Use Existing Subtitles
+                    <b-form-input v-model="existingSubtitlesFilename" placeholder="(optional) Enter .vtt filename"></b-form-input>
+                  </div>
+                </b-form-checkbox-group>
               </b-form-group>
               <div v-if="audioFormError" style="color:red">
                 {{ audioFormError }}
@@ -189,6 +193,7 @@
     },
     data() {
       return {
+        customVocabularyList: [],
         rerenderComponent: 0,
         selectedTags: [
         ],
@@ -434,7 +439,7 @@
             return "Data filename must have fewer than 255 characters.";
           }
         }
-        
+
         return "";
       },
       validForm() {
@@ -525,12 +530,36 @@
     },
     mounted: function() {
       this.executed_assets = this.execution_history;
+      this.listVocabulariesRequest()
       this.pollWorkflowStatus();
     },
     beforeDestroy () {
       clearInterval(this.workflow_status_polling)
     },
     methods: {
+      listVocabulariesRequest: async function () {
+        const token = await this.$Amplify.Auth.currentSession().then(data =>{
+          return data.getIdToken().getJwtToken();
+        });
+        console.log("List vocabularies request:")
+        console.log('curl -L -k -X GET -H \'Content-Type: application/json\' -H \'Authorization: \''+token+' '+this.DATAPLANE_API_ENDPOINT+'/transcribe/list_vocabularies')
+        fetch(this.DATAPLANE_API_ENDPOINT + '/transcribe/list_vocabularies', {
+          method: 'get',
+          mode: 'cors',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token
+          },
+        }).then(response =>
+            response.json().then(data => ({
+                  data: data,
+                })
+            ).then(res => {
+              this.customVocabularyList.push({ value: "", text: '(optional)' })
+              res.data.map(item => item.VocabularyName).forEach(item => this.customVocabularyList.push({ value: item, text: item}))
+            })
+        )
+      },
       selectAll: function (){
         this.enabledOperators = ['labelDetection', 'celebrityRecognition', 'textDetection', 'contentModeration', 'faceDetection', 'thumbnail', 'Transcribe', 'Translate', 'ComprehendKeyPhrases', 'ComprehendEntities'];
         this.show_disclaimer = true;
@@ -594,7 +623,7 @@
         if ((file.name.split('.').pop().toLowerCase() == 'vtt')) {
           if (this.existingSubtitlesFilename == file.name){
             this.existingSubtitlesFilename = ""
-            
+
           }
 
         }
@@ -660,7 +689,7 @@
           if (this.existingSubtitlesFilename == "") {
             if ("ExistingSubtitlesObject" in data.Configuration.WebCaptionsStage2.WebCaptions){
                 delete data.Configuration.WebCaptionsStage2.WebCaptions.ExistingSubtitlesObject
-            } 
+            }
           }
           else {
             data.Configuration.WebCaptionsStage2.WebCaptions.ExistingSubtitlesObject = {}

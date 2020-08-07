@@ -106,11 +106,31 @@
       <b-modal ref="save-modal" title="Save Confirmation" @ok="saveCaptions()" ok-title="Confirm">
         <p>Saving captions will restart a workflow that can take several minutes. You will not be able to edit captions until it has finished. Are you ready to proceed?</p>
       </b-modal>
-      <b-modal ref="vocab-modal-noop" title="Save Vocabulary" ok-only>
-        <p>The custom vocabulary is empty. Make changes to the captions in order to build the custom vocabulary.</p>
+      <b-modal ref="vocab-modal-noop" title="Warning" ok-only>
+        <p>Make changes to the captions in order to build the custom vocabulary.
+        </p>
+        <div slot="modal-title">
+          <b-icon icon="exclamation-triangle" variant="danger"></b-icon>
+          Vocabulary is empty
+        </div>
       </b-modal>
-      <b-modal ref="vocab-modal" title="Save Vocabulary" @ok="saveVocabulary()" ok-title="Confirm">
-        <p>The following vocabulary will be used for AWS Transcribe.</p>
+      <b-modal ref="vocab-modal" size="lg" title="Save Vocabulary" @ok="saveVocabulary()" ok-title="Save">
+        <b-form-group label="Overwrite an existing vocabulary or create a new one:">
+          <b-form-radio-group
+              id="custom-vocab-selection"
+              v-model="customVocabularySelected"
+              :options="customVocabularyList"
+              name="custom-vocab-list"
+              stacked
+          >
+            <template>
+              <b-form-radio value="new_vocab">
+                <b-form-input size="sm" v-model="customVocabularyCreateNew" placeholder="Enter new name"></b-form-input>
+              </b-form-radio>
+            </template>
+          </b-form-radio-group>
+        </b-form-group>
+        <p>Custom vocabulary (click to edit):</p>
         <b-table
           :items="customVocabulary"
           selectable
@@ -130,6 +150,20 @@
           <b-row no-gutters>
             <b-col cols="10">
               <b-form-input v-model="row.item.new_phrase" class="custom-text-field"/>
+            </b-col>
+          </b-row>
+        </template>
+        <template v-slot:cell(sounds_like)="row">
+          <b-row no-gutters>
+            <b-col cols="10">
+              <b-form-input v-model="row.item.sounds_like" class="custom-text-field"/>
+            </b-col>
+          </b-row>
+        </template>
+        <template v-slot:cell(IPA)="row">
+          <b-row no-gutters>
+            <b-col cols="10">
+              <b-form-input v-model="row.item.IPA" class="custom-text-field"/>
             </b-col>
           </b-row>
         </template>
@@ -187,6 +221,10 @@ export default {
       saveNotificationMessage: "Captions saved",
       results: [],
       customVocabulary: [],
+      customVocabularyList: [],
+      customVocabularySelected: "",
+      customVocabularyCreateNew: "",
+      transcribe_language_code: "",
       webCaptions: [],
       webCaptions_vtt: '',
       webCaptions_fields: [
@@ -203,6 +241,19 @@ export default {
     }
   },
   computed: {
+    customVocabularyName: function () {
+      if (this.customVocabularyCreateNew !== "")
+        return this.customVocabularyCreateNew
+      else
+        return this.customVocabularySelected
+    },
+    customVocabularyFile: function () {
+      let vocab_file = "Phrase\tSoundsLike\tIPA\tDisplayAs"
+      for (const i in this.customVocabulary) {
+        vocab_file += "\n" + this.customVocabulary[i].new_phrase + "\t\t\t" + this.customVocabulary[i].display_as
+      }
+      return vocab_file
+    },
     inputListeners: function () {
       var vm = this
       // `Object.assign` merges objects together to form a new object
@@ -315,7 +366,6 @@ export default {
             // or if this value is anything other than a space
             // then save to custom vocabulary
             if (old_word != '' && new_word != '') {
-              console.log("Saving to new vocabulary:")
               // replace multiple spaces with a single space
               // and remove spaces at beginning or end of word
               old_word = old_word.replace(/ +(?= )/g, '').trim();
@@ -331,7 +381,7 @@ export default {
               // remove old_word from custom vocab if it already exists
               this.customVocabulary = this.customVocabulary.filter(function (item) {return item.original_phrase !== old_word;});
               // add old_word to custom vocab
-              this.customVocabulary.push({"original_phrase": old_word, "new_phrase": new_word_with_numbers_as_words, "display_as": new_word})
+              this.customVocabulary.push({"original_phrase": old_word, "new_phrase": new_word_with_numbers_as_words, "sounds_like":"", "IPA":"", "display_as": new_word})
               console.log("CUSTOM VOCABULARY: " + JSON.stringify(this.customVocabulary))
             }
             old_word = ''
@@ -477,8 +527,9 @@ export default {
               data: data,
             })
           ).then(res => {
-              this.sourceLanguageCode = res.data.Configuration.WebCaptionsStage2.WebCaptions.SourceLanguageCode
-              this.getWebCaptions()
+            this.sourceLanguageCode = res.data.Configuration.WebCaptionsStage2.WebCaptions.SourceLanguageCode
+            this.transcribe_language_code = res.data.Configuration.defaultAudioStage2.Transcribe.TranscribeLanguage
+            this.getWebCaptions()
             }
           )
         }
@@ -599,21 +650,137 @@ export default {
         })
       )
     },
-    saveVocabulary: async function (token) {
+    listVocabulariesRequest: async function () {
+      const token = await this.$Amplify.Auth.currentSession().then(data =>{
+        return data.getIdToken().getJwtToken();
+      });
+      console.log("List vocabularies request:")
+      console.log('curl -L -k -X GET -H \'Content-Type: application/json\' -H \'Authorization: \''+token+' '+this.DATAPLANE_API_ENDPOINT+'/transcribe/list_vocabularies')
+      fetch(this.DATAPLANE_API_ENDPOINT + '/transcribe/list_vocabularies', {
+        method: 'get',
+        mode: 'cors',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token
+        },
+      }).then(response =>
+        response.json().then(data => ({
+              data: data,
+            })
+        ).then(res => {
+          this.customVocabularyList = res.data.map(item => item.VocabularyName)
+          if (this.customVocabularySelected === '' && this.customVocabularyList.length > 0)
+            this.customVocabularySelected = this.customVocabularyList[0]
+        })
+      )
+    },
+    overwriteVocabularyRequest: async function (token) {
+      console.log("Delete vocabulary request:")
+      console.log('curl -L -k -X POST -H \'Content-Type: application/json\' -H \'Authorization: \''+token+'\' --data \'{"vocabulary_name":"'+this.customVocabularyName+'}\' '+this.DATAPLANE_API_ENDPOINT+'/transcribe/delete_vocabulary')
+      await fetch(this.DATAPLANE_API_ENDPOINT+'/transcribe/delete_vocabulary',{
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'Authorization': token},
+        body: JSON.stringify({"vocabulary_name":this.customVocabularyName})
+      }).then(response =>
+          response.json().then(data => ({
+                data: data,
+                status: response.status
+              })
+          ).then(res => {
+            if (res.status === 200) {
+              console.log("Success! Vocabulary deleted.")
+              this.saveVocabularyRequest(token)
+            } else {
+              console.log("Failed to delete vocabulary")
+            }
+          })
+      )
+    },
+    saveVocabularyRequest: async function (token) {
+      const s3uri = "s3://"+this.DATAPLANE_BUCKET+"/"+this.customVocabularyName
+      console.log("Create vocabulary request:")
+      console.log('curl -L -k -X POST -H \'Content-Type: application/json\' -H \'Authorization: \''+token+' --data \'{"s3uri":'+s3uri+', "vocabulary_name":'+this.customVocabularyName+', "language_code": '+this.transcribe_language_code+'}\' '+this.DATAPLANE_API_ENDPOINT+'/transcribe/create_vocabulary')
+      await fetch(this.DATAPLANE_API_ENDPOINT+'/transcribe/create_vocabulary',{
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'Authorization': token},
+        body: JSON.stringify({"s3uri": s3uri, "vocabulary_name":this.customVocabularyName, "language_code": this.transcribe_language_code})
+      }).then(response =>
+        response.json().then(data => ({
+              data: data,
+              status: response.status
+            })
+        ).then(res => {
+          if (res.status === 200) {
+            console.log("Success! Custom vocabulary saved.")
+          } else {
+            console.log("Failed to save vocabulary")
+          }
+          // clear the custom vocabulary name used in the save vocab modal form
+          this.customVocabularyCreateNew = ''
+        })
+      )
+    },
+    saveVocabulary: async function () {
       // This function saves custom vocabulary
       this.$refs['vocab-modal'].hide()
-      console.log("Method to save vocabulary not implemented yet.")
+      const signedUrl = this.DATAPLANE_API_ENDPOINT + '/upload';
+      const token = await this.$Amplify.Auth.currentSession().then(data =>{
+        return data.getIdToken().getJwtToken();
+      });
+      // Get presigned url to upload custom vocab file.
+      console.log("Pre-signed URL request:")
+      console.log("curl -L -k -X POST -H 'Content-Type: application/json' -H 'Authorization: "+token+"' --data '{\"S3Bucket\":\""+this.DATAPLANE_BUCKET+"\",\"S3Key\":\""+this.customVocabularyName+"\"}' "+this.DATAPLANE_API_ENDPOINT+'/upload')
+      fetch(signedUrl,{
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'Authorization': token},
+        body: JSON.stringify(
+            {"S3Bucket": this.DATAPLANE_BUCKET, "S3Key":this.customVocabularyName}
+        )
+      }).then(response =>
+        response.json().then(data => ({
+              data: data,
+              status: response.status
+            })
+        ).then(res => {
+          if (res.status === 200) {
+            // Now that we have the presigned url, upload the custom vocab file.
+            res.data.fields["file"] = this.customVocabularyFile
+            console.log("Upload request:")
+            let curl_command = "curl --request POST"
+            for (let key in res.data.fields) {
+              curl_command += " -F " + key + "=\""+res.data.fields[key]+"\""
+            }
+            curl_command += " " + res.data.url
+            console.log(curl_command)
+            let formData  = new FormData();
+            for(const name in res.data.fields) {
+              formData.append(name, res.data.fields[name]);
+            }
+            fetch(res.data.url, {
+              method: 'POST',
+              body: formData
+            }).then(() => {
+              // Now that the custom vocab file is in s3, create the custom vocab in AWS Transcribe.
+              // If the custom vocab already exists then overwrite it.
+              if (this.customVocabularyList.includes(this.customVocabularyName)) {
+                console.log("Overwriting custom vocabulary")
+                this.overwriteVocabularyRequest(token)
+              } else {
+                this.saveVocabularyRequest(token)
+              }
+            })
+          }
+        })
+        )
     },
-    saveCaptions: async function (token) {
+    saveCaptions: async function () {
       // This function saves captions to the dataplane
       // and reruns or resumes the workflow.
       this.$refs['save-modal'].hide()
       this.isSaving=true;
-      if (!token) {
-        token = await this.$Amplify.Auth.currentSession().then(data =>{
-          return data.getIdToken().getJwtToken();
-        });
-      }
+      const token = await this.$Amplify.Auth.currentSession().then(data =>{
+        return data.getIdToken().getJwtToken();
+      });
       const operator_name = "WebCaptions_"+this.sourceLanguageCode
       const webCaptions = {"WebCaptions": this.webCaptions}
       let data='{"OperatorName": "' + operator_name + '", "Results": ' + JSON.stringify(webCaptions) + ', "WorkflowId": "' + this.workflow_id + '"}'
@@ -667,11 +834,13 @@ export default {
     showSaveConfirmation() {
       this.$refs['save-modal'].show()
     },
-    showVocabConfirmation() {
-      if (this.customVocabulary.length > 0)
+    showVocabConfirmation: async function() {
+      if (this.customVocabulary.length > 0){
+        await this.listVocabulariesRequest()
         this.$refs['vocab-modal'].show()
-      else
+      } else {
         this.$refs['vocab-modal-noop'].show()
+      }
     },
     uploadCaptionsFile(event) {
       // Uncomment to enable Upload button

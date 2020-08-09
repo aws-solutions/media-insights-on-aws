@@ -11,6 +11,14 @@
     >
       {{ saveNotificationMessage }}
     </b-alert>
+    <b-alert
+        v-model="showVocabularyNotification"
+        :variant=vocabularyNotificationStatus
+        dismissible
+        fade
+    >
+      {{ vocabularyNotificationMessage }}
+    </b-alert>
     <div v-if="isBusy">
       <b-spinner
         variant="secondary"
@@ -53,7 +61,9 @@
           <b-container class="p-0">
             <b-row no-gutters>
               <b-col cols="10">
-                <!-- The state on this text area will show a red alert icon if the user forgets to enter any text. Otherwise we set the state to null so no validity indicator is shown. -->
+                <!-- The state on this text area will show a red alert icon
+                if the user forgets to enter any text. Otherwise we set the
+                state to null so no validity indicator is shown. -->
                 <b-form-textarea :disabled="workflow_status !== 'Complete'" :id="'caption' + data.index" :ref="'caption' + data.index" class="custom-text-field .form-control-sm" rows="2" :value="data.item.caption" placeholder="Type subtitle here" :state="(data.item.caption.length > 0) ? null : false" @change="new_caption => changeCaption(new_caption, data.index)" @click='captionClickHandler(data.index)'/>
               </b-col>
               <b-col>
@@ -125,7 +135,10 @@
           >
             <template>
               <b-form-radio value="new_vocab">
-                <b-form-input size="sm" v-model="customVocabularyCreateNew" placeholder="Enter new name"></b-form-input>
+                <!-- The state on this text area will show a red alert icon if
+                the user enters an invalid custom vocabulary name. Otherwise we
+                set the state to null so no validity indicator is shown. -->
+                <b-form-input size="sm" v-model="customVocabularyCreateNew" placeholder="Enter new name" :state="validVocabularyName ? null : false"></b-form-input>
               </b-form-radio>
             </template>
           </b-form-radio-group>
@@ -219,6 +232,9 @@ export default {
       workflow_definition: {},
       showSaveNotification: 0,
       saveNotificationMessage: "Captions saved",
+      showVocabularyNotification: 0,
+      vocabularyNotificationStatus: "success",
+      vocabularyNotificationMessage: "",
       results: [],
       customVocabulary: [],
       customVocabularyList: [],
@@ -241,6 +257,17 @@ export default {
     }
   },
   computed: {
+    validVocabularyName: function() {
+      const letterNumber = /^[0-9a-zA-Z]+$/;
+      // The name can be up to 200 characters long. Valid characters are a-z, A-Z, and 0-9.
+      if (this.customVocabularyCreateNew == "" || (this.customVocabularyCreateNew.match(letterNumber) && this.customVocabularyCreateNew.length<200)) {
+        return true;
+      }
+      else
+      {
+        return false;
+      }
+    },
     customVocabularyName: function () {
       if (this.customVocabularyCreateNew !== "")
         return this.customVocabularyCreateNew
@@ -712,8 +739,14 @@ export default {
         ).then(res => {
           if (res.status === 200) {
             console.log("Success! Custom vocabulary saved.")
+            this.vocabularyNotificationMessage = "Custom vocabulary saved."
+            this.vocabularyNotificationStatus = "success"
+            this.showVocabularyNotification = 5
           } else {
             console.log("Failed to save vocabulary")
+            this.vocabularyNotificationMessage = "Failed to save vocabulary."
+            this.vocabularyNotificationStatus = "danger"
+            this.showVocabularyNotification = 5
           }
           // clear the custom vocabulary name used in the save vocab modal form
           this.customVocabularyCreateNew = ''

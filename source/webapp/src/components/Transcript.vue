@@ -113,7 +113,7 @@
         <b-icon icon="arrow-clockwise" animation="spin"  color="white"></b-icon>
         Saving edits
       </b-button>
-      <b-modal ref="save-modal" title="Save Confirmation" @ok="saveCaptions()" ok-title="Confirm">
+      <b-modal ref="save-modal" title="Save Captions?" @ok="saveCaptions()" ok-title="Confirm">
         <p>Saving captions will restart a workflow that can take several minutes. You will not be able to edit captions until it has finished. Are you ready to proceed?</p>
       </b-modal>
       <b-modal ref="vocab-modal-noop" title="Warning" ok-only>
@@ -124,8 +124,11 @@
           Vocabulary is empty
         </div>
       </b-modal>
-      <b-modal ref="vocab-modal" size="lg" title="Save Vocabulary" @ok="saveVocabulary()" ok-title="Save">
-        <b-form-group label="Overwrite an existing vocabulary or create a new one:">
+      <b-modal ref="delete-vocab-modal" title="Delete Vocabulary?" @ok="deleteVocabularyRequest()" ok-variant="danger" ok-title="Confirm">
+        <p>Are you sure you want to permanently delete the custom vocabulary <b>{{ customVocabularyName }}</b>?</p>
+      </b-modal>
+      <b-modal ref="vocab-modal" size="lg" title="Save Vocabulary?" @ok="saveVocabulary()" ok-title="Save">
+        <b-form-group label="Select a vocabulary or create a new one:">
           <b-form-radio-group
               id="custom-vocab-selection"
               v-model="customVocabularySelected"
@@ -143,6 +146,8 @@
             </template>
           </b-form-radio-group>
         </b-form-group>
+        <b-button size="sm" variant="danger" v-b-tooltip.hover.right title="Delete selected vocabulary" @click="deleteVocabulary">Delete</b-button>
+        <hr>
         <p>Custom vocabulary (click to edit):</p>
         <b-table
           :items="customVocabulary"
@@ -187,12 +192,12 @@
           </b-col>
           <b-col nopadding cols="1">
             <span style="position:absolute; top: 0px">
-              <b-button size="sm" style="display: flex;" variant="link" @click="delete_vocab_row(row.index)">
+              <b-button size="sm" style="display: flex;" variant="link" v-b-tooltip.hover.right title="Remove row" @click="delete_vocab_row(row.index)">
                 <b-icon font-scale=".9" icon="x-circle" color="lightgrey"></b-icon>
               </b-button>
             </span>
             <span style="position:absolute; bottom: 0px">
-              <b-button size="sm"  style="display: flex;" variant="link" @click="add_vocab_row(row.index)">
+              <b-button size="sm"  style="display: flex;" variant="link" v-b-tooltip.hover.right title="Add row" @click="add_vocab_row(row.index)">
                 <b-icon font-scale=".9" icon="plus-square" color="lightgrey"></b-icon>
               </b-button>
             </span>
@@ -701,7 +706,17 @@ export default {
         })
       )
     },
-    overwriteVocabularyRequest: async function (token) {
+    deleteVocabulary: async function () {
+      this.$refs['delete-vocab-modal'].show()
+    },
+    deleteVocabularyRequest: async function (token) {
+      this.$refs['vocab-modal'].hide()
+      if (!token) {
+        token = await this.$Amplify.Auth.currentSession().then(data =>{
+          return data.getIdToken().getJwtToken();
+        });
+      }
+      this.$refs['delete-vocab-modal'].hide()
       console.log("Delete vocabulary request:")
       console.log('curl -L -k -X POST -H \'Content-Type: application/json\' -H \'Authorization: \''+token+'\' --data \'{"vocabulary_name":"'+this.customVocabularyName+'}\' '+this.DATAPLANE_API_ENDPOINT+'/transcribe/delete_vocabulary')
       await fetch(this.DATAPLANE_API_ENDPOINT+'/transcribe/delete_vocabulary',{
@@ -709,21 +724,39 @@ export default {
         headers: {'Content-Type': 'application/json', 'Authorization': token},
         body: JSON.stringify({"vocabulary_name":this.customVocabularyName})
       }).then(response =>
-          response.json().then(data => ({
-                data: data,
-                status: response.status
-              })
-          ).then(res => {
-            if (res.status === 200) {
-              console.log("Success! Vocabulary deleted.")
-              this.saveVocabularyRequest(token)
-            } else {
-              console.log("Failed to delete vocabulary")
-            }
-          })
+        response.json().then(data => ({
+              data: data,
+              status: response.status
+            })
+        ).then(res => {
+          if (res.status === 200) {
+            console.log("Success! Vocabulary deleted.")
+            this.vocabularyNotificationMessage = "Deleted vocabulary: " + this.customVocabularyName
+            this.vocabularyNotificationStatus = "success"
+            this.showVocabularyNotification = 5
+          } else {
+            console.log("Failed to delete vocabulary")
+            this.vocabularyNotificationMessage = "Failed to delete vocabulary: " + this.customVocabularyName
+            this.vocabularyNotificationStatus = "danger"
+            this.showVocabularyNotification = 5
+          }
+        })
+      )
+    },
+    overwriteVocabularyRequest: async function () {
+      const token = await this.$Amplify.Auth.currentSession().then(data =>{
+        return data.getIdToken().getJwtToken();
+      });
+      await this.deleteVocabularyRequest(token).then(() =>
+        this.saveVocabularyRequest(token)
       )
     },
     saveVocabularyRequest: async function (token) {
+      if (token === null) {
+        const token = await this.$Amplify.Auth.currentSession().then(data =>{
+          return data.getIdToken().getJwtToken();
+        });
+      }
       const s3uri = "s3://"+this.DATAPLANE_BUCKET+"/"+this.customVocabularyName
       console.log("Create vocabulary request:")
       console.log('curl -L -k -X POST -H \'Content-Type: application/json\' -H \'Authorization: \''+token+' --data \'{"s3uri":'+s3uri+', "vocabulary_name":'+this.customVocabularyName+', "language_code": '+this.transcribe_language_code+'}\' '+this.DATAPLANE_API_ENDPOINT+'/transcribe/create_vocabulary')
@@ -739,12 +772,12 @@ export default {
         ).then(res => {
           if (res.status === 200) {
             console.log("Success! Custom vocabulary saved.")
-            this.vocabularyNotificationMessage = "Custom vocabulary saved."
+            this.vocabularyNotificationMessage = "Saved vocabulary: " + this.customVocabularyName
             this.vocabularyNotificationStatus = "success"
             this.showVocabularyNotification = 5
           } else {
             console.log("Failed to save vocabulary")
-            this.vocabularyNotificationMessage = "Failed to save vocabulary."
+            this.vocabularyNotificationMessage = "Failed to save vocabulary: " + this.customVocabularyName
             this.vocabularyNotificationStatus = "danger"
             this.showVocabularyNotification = 5
           }

@@ -66,7 +66,7 @@
                     fill
                   >
                     <b-tab
-                      title="Captions"
+                      title="Subtitles"
                       @click="currentView = 'Transcript'"
                     />
                     <b-tab

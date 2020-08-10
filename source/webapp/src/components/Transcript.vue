@@ -132,8 +132,11 @@
           <b-form-radio-group
               id="custom-vocab-selection"
               v-model="customVocabularySelected"
-              :options="customVocabularyList"
               name="custom-vocab-list"
+              :options="customVocabularyList"
+              text-field="name_and_status"
+              value-field="name"
+              disabled-field="notEnabled"
               stacked
           >
             <template>
@@ -241,6 +244,8 @@ export default {
       vocabularyNotificationStatus: "success",
       vocabularyNotificationMessage: "",
       results: [],
+      workflow_status_polling: null,
+      vocab_status_polling: null,
       customVocabulary: [],
       customVocabularyList: [],
       customVocabularySelected: "",
@@ -328,7 +333,9 @@ export default {
     this.pollWorkflowStatus();
   },
   beforeDestroy: function () {
-      this.transcript = ''
+    this.transcript = ''
+    clearInterval(this.workflow_status_polling)
+    clearInterval(this.vocab_status_polling)
   },
   methods: {
     toHHMMSS(secs) {
@@ -700,9 +707,22 @@ export default {
               data: data,
             })
         ).then(res => {
-          this.customVocabularyList = res.data.map(item => item.VocabularyName)
-          if (this.customVocabularySelected === '' && this.customVocabularyList.length > 0)
-            this.customVocabularySelected = this.customVocabularyList[0]
+          this.customVocabularyList = res.data.map(({VocabularyName, VocabularyState}) => ({
+            name: VocabularyName,
+            status: VocabularyState,
+            name_and_status: VocabularyState==="READY" ? VocabularyName : VocabularyName+" ["+VocabularyState+"]",
+            notEnabled: VocabularyState === "PENDING"}))
+          // if any vocab is PENDING, then poll status until it is not PENDING. This is necessary so custom vocabs become selectable in the GUI as soon as they become ready.
+          if (this.customVocabularyList.filter(item => item.status === "PENDING").length > 0) {
+            if (this.vocab_status_polling == null) {
+              this.pollVocabularyStatus();
+            }
+          } else {
+            if (this.vocab_status_polling != null) {
+              clearInterval(this.vocab_status_polling)
+              this.vocab_status_polling = null
+            }
+          }
         })
       )
     },
@@ -788,6 +808,9 @@ export default {
     },
     saveVocabulary: async function () {
       // This function saves custom vocabulary
+      if (this.customVocabularyName === "") {
+
+      }
       this.$refs['vocab-modal'].hide()
       const signedUrl = this.DATAPLANE_API_ENDPOINT + '/upload';
       const token = await this.$Amplify.Auth.currentSession().then(data =>{
@@ -828,7 +851,7 @@ export default {
             }).then(() => {
               // Now that the custom vocab file is in s3, create the custom vocab in AWS Transcribe.
               // If the custom vocab already exists then overwrite it.
-              if (this.customVocabularyList.includes(this.customVocabularyName)) {
+              if (this.customVocabularyList.some(item => item.name === this.customVocabularyName)) {
                 console.log("Overwriting custom vocabulary")
                 this.overwriteVocabularyRequest(token)
               } else {
@@ -981,6 +1004,13 @@ export default {
       const poll_frequency = 5000;
       this.workflow_status_polling = setInterval(() => {
         this.getWorkflowStatus();
+      }, poll_frequency)
+    },
+    pollVocabularyStatus() {
+      // Poll frequency in milliseconds
+      const poll_frequency = 10000;
+      this.vocab_status_polling = setInterval(() => {
+        this.listVocabulariesRequest();
       }, poll_frequency)
     },
   },

@@ -128,7 +128,7 @@
         <p>Are you sure you want to permanently delete the custom vocabulary <b>{{ customVocabularySelected }}</b>?</p>
       </b-modal>
       <b-modal ref="vocab-modal" size="lg" title="Save Vocabulary?" @ok="saveVocabulary()" :ok-disabled="validVocabularyName === false || (customVocabularySelected === '' && customVocabularyCreateNew === '')" ok-title="Save">
-        <b-form-group v-if="customVocabularyList.length>0" label="Select a vocabulary to overwrite or create a new one.">
+        <b-form-group v-if="customVocabularyList.length>0" label="Select a vocabulary to overwrite or specify a new name:">
           <b-form-radio-group
               id="custom-vocab-selection"
               v-model="customVocabularySelected"
@@ -162,7 +162,15 @@
           bordered
           small
         >
-        <template v-slot:cell(original_phrase)="row">
+          <!-- This template adds an additional row in the header
+ to highlight the fields in the custom vocab schema. -->
+          <template v-slot:thead-top="data">
+            <b-tr>
+              <b-th colspan="1"></b-th>
+              <b-th colspan="4" variant="secondary" class="text-center">Custom Vocabulary Fields</b-th>
+            </b-tr>
+          </template>
+          <template v-slot:cell(original_phrase)="row">
           <b-row no-gutters>
             <b-col cols="10">
               <b-form-input v-model="row.item.original_phrase" class="custom-text-field"/>

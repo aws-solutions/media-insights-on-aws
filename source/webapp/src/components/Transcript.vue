@@ -707,20 +707,23 @@ export default {
               data: data,
             })
         ).then(res => {
-          this.customVocabularyList = res.data.map(({VocabularyName, VocabularyState}) => ({
-            name: VocabularyName,
-            status: VocabularyState,
-            name_and_status: VocabularyState==="READY" ? VocabularyName : VocabularyName+" ["+VocabularyState+"]",
-            notEnabled: VocabularyState === "PENDING"}))
-          // if any vocab is PENDING, then poll status until it is not PENDING. This is necessary so custom vocabs become selectable in the GUI as soon as they become ready.
-          if (this.customVocabularyList.filter(item => item.status === "PENDING").length > 0) {
-            if (this.vocab_status_polling == null) {
-              this.pollVocabularyStatus();
-            }
-          } else {
-            if (this.vocab_status_polling != null) {
-              clearInterval(this.vocab_status_polling)
-              this.vocab_status_polling = null
+          if (this.customVocabularyList.length > 0) {
+            this.customVocabularyList = res.data.map(({VocabularyName, VocabularyState}) => ({
+              name: VocabularyName,
+              status: VocabularyState,
+              name_and_status: VocabularyState === "READY" ? VocabularyName : VocabularyName + " [" + VocabularyState + "]",
+              notEnabled: VocabularyState === "PENDING"
+            }))
+            // if any vocab is PENDING, then poll status until it is not PENDING. This is necessary so custom vocabs become selectable in the GUI as soon as they become ready.
+            if (this.customVocabularyList.filter(item => item.status === "PENDING").length > 0) {
+              if (this.vocab_status_polling == null) {
+                this.pollVocabularyStatus();
+              }
+            } else {
+              if (this.vocab_status_polling != null) {
+                clearInterval(this.vocab_status_polling)
+                this.vocab_status_polling = null
+              }
             }
           }
         })

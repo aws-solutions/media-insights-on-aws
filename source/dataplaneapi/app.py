@@ -610,9 +610,13 @@ def list_vocabularies():
     # List all custom vocabularies
     print('get_vocabularies request: '+app.current_request.raw_body.decode())
     transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
-    response = transcribe_client.list_vocabularies()['Vocabularies']
+    response = transcribe_client.list_vocabularies(MaxResults=100)
+    vocabularies = response['Vocabularies']
+    while ('NextToken' in response):
+        response = transcribe_client.list_vocabularies(MaxResults=100, NextToken=response['NextToken'])
+        vocabularies = vocabularies + response['Vocabularies']
     # Convert time field to a format that is JSON serializable
-    for item in response:
+    for item in vocabularies:
         item['LastModifiedTime'] = item['LastModifiedTime'].isoformat()
     return response
 

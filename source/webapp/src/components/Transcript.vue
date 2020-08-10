@@ -125,10 +125,10 @@
         </div>
       </b-modal>
       <b-modal ref="delete-vocab-modal" title="Delete Vocabulary?" @ok="deleteVocabularyRequest()" ok-variant="danger" ok-title="Confirm">
-        <p>Are you sure you want to permanently delete the custom vocabulary <b>{{ customVocabularyName }}</b>?</p>
+        <p>Are you sure you want to permanently delete the custom vocabulary <b>{{ customVocabularySelected }}</b>?</p>
       </b-modal>
-      <b-modal ref="vocab-modal" size="lg" title="Save Vocabulary?" @ok="saveVocabulary()" ok-title="Save">
-        <b-form-group label="Select a vocabulary or create a new one:">
+      <b-modal ref="vocab-modal" size="lg" title="Save Vocabulary?" @ok="saveVocabulary()" :ok-disabled="validVocabularyName === false || (customVocabularySelected === '' && customVocabularyCreateNew === '')" ok-title="Save">
+        <b-form-group v-if="customVocabularyList.length>0" label="Select a vocabulary to overwrite or create a new one.">
           <b-form-radio-group
               id="custom-vocab-selection"
               v-model="customVocabularySelected"
@@ -139,17 +139,19 @@
               disabled-field="notEnabled"
               stacked
           >
-            <template>
-              <b-form-radio value="new_vocab">
-                <!-- The state on this text area will show a red alert icon if
-                the user enters an invalid custom vocabulary name. Otherwise we
-                set the state to null so no validity indicator is shown. -->
-                <b-form-input size="sm" v-model="customVocabularyCreateNew" placeholder="Enter new name" :state="validVocabularyName ? null : false"></b-form-input>
-              </b-form-radio>
-            </template>
           </b-form-radio-group>
         </b-form-group>
-        <b-button size="sm" variant="danger" v-b-tooltip.hover.right title="Delete selected vocabulary" @click="deleteVocabulary">Delete</b-button>
+        <!-- The state on this text area will show a red alert icon if
+        the user enters an invalid custom vocabulary name. Otherwise we
+        set the state to null so no validity indicator is shown. -->
+        <b-form-input v-if="customVocabularyList.length>0" size="sm" v-model="customVocabularyCreateNew" placeholder="Enter new vocabulary name (optional)" :state="validVocabularyName ? null : false"></b-form-input>
+        <b-form-input v-else size="sm" v-model="customVocabularyCreateNew" placeholder="Enter new vocabulary name" :state="validVocabularyName ? null : false"></b-form-input>
+        <div v-if="validVocabularyName === false" class='text-danger'>
+          Name must be alphanumeric with no spaces
+        </div>
+        <div v-if="customVocabularyList.length>0 && customVocabularySelected !== ''">
+          Delete the selected vocabulary (optional): <b-button  size="sm" variant="danger" v-b-tooltip.hover.right title="Delete selected vocabulary" @click="deleteVocabulary">Delete</b-button>
+        </div>
         <hr>
         <p>Custom vocabulary (click to edit):</p>
         <b-table
@@ -268,9 +270,11 @@ export default {
   },
   computed: {
     validVocabularyName: function() {
+      // when user begins typing new vocab name, then deselect the radio buttons
+      this.customVocabularySelected=""
       const letterNumber = /^[0-9a-zA-Z]+$/;
       // The name can be up to 200 characters long. Valid characters are a-z, A-Z, and 0-9.
-      if (this.customVocabularyCreateNew == "" || (this.customVocabularyCreateNew.match(letterNumber) && this.customVocabularyCreateNew.length<200)) {
+      if (this.customVocabularyCreateNew === "" || (this.customVocabularyCreateNew.match(letterNumber) && this.customVocabularyCreateNew.length<200)) {
         return true;
       }
       else
@@ -707,8 +711,7 @@ export default {
               data: data,
             })
         ).then(res => {
-          if (this.customVocabularyList.length > 0) {
-            this.customVocabularyList = res.data.map(({VocabularyName, VocabularyState}) => ({
+            this.customVocabularyList = res.data["Vocabularies"].map(({VocabularyName, VocabularyState}) => ({
               name: VocabularyName,
               status: VocabularyState,
               name_and_status: VocabularyState === "READY" ? VocabularyName : VocabularyName + " [" + VocabularyState + "]",
@@ -725,7 +728,6 @@ export default {
                 this.vocab_status_polling = null
               }
             }
-          }
         })
       )
     },
@@ -741,11 +743,11 @@ export default {
       }
       this.$refs['delete-vocab-modal'].hide()
       console.log("Delete vocabulary request:")
-      console.log('curl -L -k -X POST -H \'Content-Type: application/json\' -H \'Authorization: \''+token+'\' --data \'{"vocabulary_name":"'+this.customVocabularyName+'}\' '+this.DATAPLANE_API_ENDPOINT+'/transcribe/delete_vocabulary')
+      console.log('curl -L -k -X POST -H \'Content-Type: application/json\' -H \'Authorization: \''+token+'\' --data \'{"vocabulary_name":"'+this.customVocabularySelected+'}\' '+this.DATAPLANE_API_ENDPOINT+'/transcribe/delete_vocabulary')
       await fetch(this.DATAPLANE_API_ENDPOINT+'/transcribe/delete_vocabulary',{
         method: 'POST',
         headers: {'Content-Type': 'application/json', 'Authorization': token},
-        body: JSON.stringify({"vocabulary_name":this.customVocabularyName})
+        body: JSON.stringify({"vocabulary_name":this.customVocabularySelected})
       }).then(response =>
         response.json().then(data => ({
               data: data,
@@ -754,12 +756,12 @@ export default {
         ).then(res => {
           if (res.status === 200) {
             console.log("Success! Vocabulary deleted.")
-            this.vocabularyNotificationMessage = "Deleted vocabulary: " + this.customVocabularyName
+            this.vocabularyNotificationMessage = "Deleted vocabulary: " + this.customVocabularySelected
             this.vocabularyNotificationStatus = "success"
             this.showVocabularyNotification = 5
           } else {
             console.log("Failed to delete vocabulary")
-            this.vocabularyNotificationMessage = "Failed to delete vocabulary: " + this.customVocabularyName
+            this.vocabularyNotificationMessage = "Failed to delete vocabulary: " + this.customVocabularySelected
             this.vocabularyNotificationStatus = "danger"
             this.showVocabularyNotification = 5
           }

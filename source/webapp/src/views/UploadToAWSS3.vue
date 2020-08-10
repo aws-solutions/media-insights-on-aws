@@ -92,7 +92,17 @@
                       <!--                  >Pause workflow to edit captions before downstream processing</b-form-checkbox>-->
                       <br>
                       Custom Vocabulary
-                      <b-form-select v-model="customVocab" :options="customVocabularyList"></b-form-select>
+                      <b-form-select
+                          v-model="customVocab"
+                          :options="customVocabularyList"
+                          text-field="name_and_status"
+                          value-field="name"
+                          disabled-field="notEnabled"
+                      >
+                        <template v-slot:first>
+                          <b-form-select-option :value="null" disabled>(optional)</b-form-select-option>
+                        </template>
+                      </b-form-select>
                       <br>
                     </div>
                   <b-form-checkbox value="Subtitles">Subtitles</b-form-checkbox>
@@ -243,7 +253,7 @@
         ],
         faceCollectionId: "",
         genericDataFilename: "",
-        customVocab: "",
+        customVocab: null,
         customTerminology: "",
         existingSubtitlesFilename: "",
         transcribeLanguage: "en-US",
@@ -551,13 +561,28 @@
             'Authorization': token
           },
         }).then(response =>
-            response.json().then(data => ({
-                  data: data,
-                })
-            ).then(res => {
-              this.customVocabularyList.push({ value: "", text: '(optional)' })
-              res.data.map(item => item.VocabularyName).forEach(item => this.customVocabularyList.push({ value: item, text: item}))
-            })
+          response.json().then(data => ({
+                data: data,
+              })
+          ).then(res => {
+            this.customVocabularyList = res.data["Vocabularies"].map(({VocabularyName, VocabularyState}) => ({
+              name: VocabularyName,
+              status: VocabularyState,
+              name_and_status: VocabularyState === "READY" ? VocabularyName : VocabularyName + " [" + VocabularyState + "]",
+              notEnabled: VocabularyState === "PENDING"
+            }))
+            // if any vocab is PENDING, then poll status until it is not PENDING. This is necessary so custom vocabs become selectable in the GUI as soon as they become ready.
+            if (this.customVocabularyList.filter(item => item.status === "PENDING").length > 0) {
+              if (this.vocab_status_polling == null) {
+                this.pollVocabularyStatus();
+              }
+            } else {
+              if (this.vocab_status_polling != null) {
+                clearInterval(this.vocab_status_polling)
+                this.vocab_status_polling = null
+              }
+            }
+          })
         )
       },
       selectAll: function (){
@@ -683,7 +708,7 @@
           if (this.customTerminology !== "") {
             data.Configuration.TranslateStage2.TranslateWebCaptions.TerminologyNames = [this.customTerminology]
           }
-          if (this.customVocab !== "") {
+          if (this.customVocab !== null) {
             data.Configuration.defaultAudioStage2.Transcribe.VocabularyName=this.customVocab
           }
           if (this.existingSubtitlesFilename == "") {
@@ -800,7 +825,14 @@
         this.executed_assets = [];
         this.$store.commit('updateExecutedAssets', this.executed_assets);
 
-      }
+      },
+      pollVocabularyStatus() {
+        // Poll frequency in milliseconds
+        const poll_frequency = 10000;
+        this.vocab_status_polling = setInterval(() => {
+          this.listVocabulariesRequest();
+        }, poll_frequency)
+      },
     }
   }
 </script>

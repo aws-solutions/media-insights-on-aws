@@ -36,11 +36,11 @@
               </div>
               <div v-if="overall_bit_rate !== 'undefined'">
                 <label>Video bit rate:</label>
-                {{ overall_bit_rate }} Mbps
+                {{ Math.round(overall_bit_rate/1000) }} kbps
               </div>
               <div v-if="frame_rate !== 'undefined'">
                 <label>Video frame rate:</label>
-                {{ frame_rate }} fps
+                {{ Math.round(frame_rate) }} fps
               </div>
               <div v-if="width !== 'undefined' && height !== 'undefined' ">
                 <label>Video resolution:</label>

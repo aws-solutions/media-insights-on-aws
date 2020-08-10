@@ -17,4 +17,7 @@ export default {
   updateWaveformSeekPosition (state, value){
     state.waveform_seek_position = value
   },
+  updateUsedVocabulary (state, value){
+    state.used_vocabulary = value
+  },
 }

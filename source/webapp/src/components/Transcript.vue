@@ -146,8 +146,8 @@
         set the state to null so no validity indicator is shown. -->
         <b-form-input v-if="customVocabularyList.length>0" size="sm" v-model="customVocabularyCreateNew" placeholder="Enter new vocabulary name (optional)" :state="validVocabularyName ? null : false"></b-form-input>
         <b-form-input v-else size="sm" v-model="customVocabularyCreateNew" placeholder="Enter new vocabulary name" :state="validVocabularyName ? null : false"></b-form-input>
-        <div v-if="validVocabularyName === false" class='text-danger'>
-          Name must be alphanumeric with no spaces
+        <div v-if="validVocabularyName === false" style="color:red">
+          Name must be alphanumeric with no spaces.
         </div>
         <div v-if="customVocabularyList.length>0 && customVocabularySelected !== ''">
           Delete the selected vocabulary (optional): <b-button  size="sm" variant="danger" v-b-tooltip.hover.right title="Delete selected vocabulary" @click="deleteVocabulary">Delete</b-button>
@@ -253,6 +253,7 @@ export default {
       customVocabularySelected: "",
       customVocabularyCreateNew: "",
       transcribe_language_code: "",
+      vocabulary_used: "",
       webCaptions: [],
       webCaptions_vtt: '',
       webCaptions_fields: [
@@ -517,6 +518,8 @@ export default {
       const token = await this.$Amplify.Auth.currentSession().then(data =>{
         return data.getIdToken().getJwtToken();
       });
+      console.log("workflow status request:")
+      console.log('curl -L -k -X GET -H \'Content-Type: application/json\' -H \'Authorization: \''+token+' '+this.WORKFLOW_API_ENDPOINT+'/workflow/execution/asset/' + this.asset_id)
       fetch(this.WORKFLOW_API_ENDPOINT + '/workflow/execution/asset/' + this.asset_id, {
         method: 'get',
         headers: {
@@ -572,6 +575,10 @@ export default {
           ).then(res => {
             this.sourceLanguageCode = res.data.Configuration.WebCaptionsStage2.WebCaptions.SourceLanguageCode
             this.transcribe_language_code = res.data.Configuration.defaultAudioStage2.Transcribe.TranscribeLanguage
+            this.vocabulary_used = res.data.Configuration.defaultAudioStage2.Transcribe.VocabularyName
+            console.log("used vocabulary:")
+            console.log(this.vocabulary_used)
+            this.$store.commit('updateUsedVocabulary', this.vocabulary_used)
             this.getWebCaptions()
             }
           )

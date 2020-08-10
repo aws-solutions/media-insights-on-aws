@@ -6,4 +6,5 @@ export default {
   selected_label: '',
   execution_history: [],
   waveform_seek_position: null,
+  used_vocabulary: "",
 }

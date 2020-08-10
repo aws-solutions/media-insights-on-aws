@@ -64,6 +64,10 @@
                 <label>Encoded date:</label>
                 {{ encoded_date }}
               </div>
+              <div v-if="used_vocabulary !== ''">
+                <label>Custom Vocabulary:</label>
+                {{ used_vocabulary }}
+              </div>
             </b-col>
           </b-row>
         </div>
@@ -73,6 +77,8 @@
 </template>
 
 <script>
+  import { mapState } from 'vuex'
+
   export default {
     name: 'MediaSummary',
     props: ['s3Uri','filename','videoUrl'],
@@ -93,6 +99,9 @@
         encoded_date: "undefined",
         isBusy: false,
       }
+    },
+    computed: {
+      ...mapState(['used_vocabulary']),
     },
     deactivated: function () {
       this.lineChart = Object

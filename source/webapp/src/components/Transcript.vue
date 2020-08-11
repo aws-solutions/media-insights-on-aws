@@ -116,18 +116,10 @@
       <b-modal ref="save-modal" title="Save Captions?" @ok="saveCaptions()" ok-title="Confirm">
         <p>Saving captions will restart a workflow that can take several minutes. You will not be able to edit captions until it has finished. Are you ready to proceed?</p>
       </b-modal>
-      <b-modal ref="vocab-modal-noop" title="Warning" ok-only>
-        <p>Make changes to the captions in order to build the custom vocabulary.
-        </p>
-        <div slot="modal-title">
-          <b-icon icon="exclamation-triangle" variant="danger"></b-icon>
-          Vocabulary is empty
-        </div>
-      </b-modal>
       <b-modal ref="delete-vocab-modal" title="Delete Vocabulary?" @ok="deleteVocabularyRequest()" ok-variant="danger" ok-title="Confirm">
         <p>Are you sure you want to permanently delete the custom vocabulary <b>{{ customVocabularySelected }}</b>?</p>
       </b-modal>
-      <b-modal ref="vocab-modal" size="lg" title="Save Vocabulary?" @ok="saveVocabulary()" :ok-disabled="validVocabularyName === false || (customVocabularySelected === '' && customVocabularyCreateNew === '')" ok-title="Save">
+      <b-modal ref="vocab-modal" size="lg" title="Save Vocabulary?" @ok="saveVocabulary()" :ok-disabled="validVocabularyName === false || (customVocabularySelected === '' && customVocabularyCreateNew === '' || customVocabulary.length === 0)" ok-title="Save">
         <b-form-group v-if="customVocabularyList.length>0" label="Select a vocabulary to overwrite or specify a new name:">
           <b-form-radio-group
               id="custom-vocab-selection"
@@ -153,9 +145,10 @@
           Delete the selected vocabulary (optional): <b-button  size="sm" variant="danger" v-b-tooltip.hover.right title="Delete selected vocabulary" @click="deleteVocabulary">Delete</b-button>
         </div>
         <hr>
-        <p>Custom vocabulary (click to edit):</p>
+        <div v-if="customVocabulary.length !== 0">Custom vocabulary (click to edit):</div>
         <b-table
           :items="customVocabulary"
+          :fields="customVocabularyFields"
           selectable
           select-mode="single"
           fixed responsive="sm"
@@ -218,6 +211,9 @@
           </b-row>
         </template>
         </b-table>
+        <div v-if="customVocabulary.length === 0" style="color:red">
+          Vocabulary is empty. Make changes to the subtitles in order to build a custom vocabulary.<br>
+        </div>
       </b-modal>
 
 <!-- Uncomment to enable Upload button -->
@@ -257,6 +253,7 @@ export default {
       workflow_status_polling: null,
       vocab_status_polling: null,
       customVocabulary: [],
+      customVocabularyFields: ["original_phrase","new_phrase","sounds_like","IPA","display_as"],
       customVocabularyList: [],
       customVocabularySelected: "",
       customVocabularyCreateNew: "",
@@ -430,7 +427,7 @@ export default {
               {
                 new_word_with_numbers_as_words = new_word.replace(new_word.match(/\d+/g)[0], converter.toWords(new_word.match(/\d+/g)[0]))
               }
-              // remove old_word from custom vocab if it already exists
+              // remove old_word from custom vocab, if it already exists
               this.customVocabulary = this.customVocabulary.filter(function (item) {return item.original_phrase !== old_word;});
               // add old_word to custom vocab
               this.customVocabulary.push({"original_phrase": old_word, "new_phrase": new_word_with_numbers_as_words, "sounds_like":"", "IPA":"", "display_as": new_word})
@@ -750,7 +747,6 @@ export default {
       this.$refs['delete-vocab-modal'].show()
     },
     deleteVocabularyRequest: async function (token) {
-      this.$refs['vocab-modal'].hide()
       if (!token) {
         token = await this.$Amplify.Auth.currentSession().then(data =>{
           return data.getIdToken().getJwtToken();
@@ -774,6 +770,7 @@ export default {
             this.vocabularyNotificationMessage = "Deleted vocabulary: " + this.customVocabularySelected
             this.vocabularyNotificationStatus = "success"
             this.showVocabularyNotification = 5
+            this.listVocabulariesRequest()
           } else {
             console.log("Failed to delete vocabulary")
             this.vocabularyNotificationMessage = "Failed to delete vocabulary: " + this.customVocabularySelected
@@ -831,7 +828,6 @@ export default {
       if (this.customVocabularyName === "") {
 
       }
-      this.$refs['vocab-modal'].hide()
       const signedUrl = this.DATAPLANE_API_ENDPOINT + '/upload';
       const token = await this.$Amplify.Auth.currentSession().then(data =>{
         return data.getIdToken().getJwtToken();
@@ -885,7 +881,6 @@ export default {
     saveCaptions: async function () {
       // This function saves captions to the dataplane
       // and reruns or resumes the workflow.
-      this.$refs['save-modal'].hide()
       this.isSaving=true;
       const token = await this.$Amplify.Auth.currentSession().then(data =>{
         return data.getIdToken().getJwtToken();
@@ -944,12 +939,8 @@ export default {
       this.$refs['save-modal'].show()
     },
     showVocabConfirmation: async function() {
-      if (this.customVocabulary.length > 0){
-        await this.listVocabulariesRequest()
-        this.$refs['vocab-modal'].show()
-      } else {
-        this.$refs['vocab-modal-noop'].show()
-      }
+      await this.listVocabulariesRequest()
+      this.$refs['vocab-modal'].show()
     },
     uploadCaptionsFile(event) {
       // Uncomment to enable Upload button
@@ -1018,6 +1009,9 @@ export default {
     },
     delete_vocab_row(index) {
       this.customVocabulary.splice(index, 1)
+      if (this.customVocabulary.length === 0){
+        this.customVocabulary = [{"original_phrase":"","new_phrase":"","sounds_like":"","IPA":"","display_as":""}]
+      }
     },
     pollWorkflowStatus() {
       // Poll frequency in milliseconds

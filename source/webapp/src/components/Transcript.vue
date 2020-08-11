@@ -19,6 +19,112 @@
     >
       {{ vocabularyNotificationMessage }}
     </b-alert>
+    <b-modal ref="vocab-modal" size="lg" title="Save Vocabulary?" @ok="saveVocabulary()" :ok-disabled="validVocabularyName === false || (customVocabularySelected === '' && customVocabularyCreateNew === '') || customVocabulary.length === 0" ok-title="Save">
+      <b-form-group v-if="customVocabularyList.length>0" label="Select a vocabulary to overwrite or specify a new name:">
+        <b-form-radio-group
+            id="custom-vocab-selection"
+            v-model="customVocabularySelected"
+            name="custom-vocab-list"
+            :options="customVocabularyList"
+            text-field="name_and_status"
+            value-field="name"
+            disabled-field="notEnabled"
+            stacked
+        >
+        </b-form-radio-group>
+      </b-form-group>
+      <!-- The state on this text area will show a red alert icon if
+      the user enters an invalid custom vocabulary name. Otherwise we
+      set the state to null so no validity indicator is shown. -->
+      <b-form-input v-if="customVocabularyList.length>0" size="sm" v-model="customVocabularyCreateNew" placeholder="Enter new vocabulary name (optional)" :state="validVocabularyName ? null : false"></b-form-input>
+      <b-form-input v-else size="sm" v-model="customVocabularyCreateNew" placeholder="Enter new vocabulary name" :state="validVocabularyName ? null : false"></b-form-input>
+      <div v-if="customVocabularyList.length>0 && customVocabularySelected !== ''">
+        Delete the selected vocabulary (optional): <b-button  size="sm" variant="danger" v-b-tooltip.hover.right title="Delete selected vocabulary" @click="deleteVocabulary">Delete</b-button>
+      </div>
+      <hr>
+      <div v-if="customVocabulary.length !== 0">Custom vocabulary (click to edit):</div>
+      <b-table
+          :items="customVocabulary"
+          :fields="customVocabularyFields"
+          selectable
+          select-mode="single"
+          fixed responsive="sm"
+          bordered
+          small
+      >
+        <!-- This template adds an additional row in the header
+to highlight the fields in the custom vocab schema. -->
+        <template v-slot:thead-top="data">
+          <b-tr>
+            <b-th colspan="1"></b-th>
+            <b-th colspan="4" variant="secondary" class="text-center">Custom Vocabulary Fields</b-th>
+          </b-tr>
+        </template>
+        <template v-slot:cell(original_phrase)="row">
+          <b-row no-gutters>
+            <b-col cols="10">
+              <b-form-input v-model="row.item.original_phrase" class="custom-text-field"/>
+            </b-col>
+          </b-row>
+        </template>
+        <template v-slot:cell(new_phrase)="row">
+          <b-row no-gutters>
+            <b-col cols="10">
+              <b-form-input v-model="row.item.new_phrase" class="custom-text-field"/>
+            </b-col>
+          </b-row>
+        </template>
+        <template v-slot:cell(sounds_like)="row">
+          <b-row no-gutters>
+            <b-col cols="10">
+              <b-form-input v-model="row.item.sounds_like" class="custom-text-field"/>
+            </b-col>
+          </b-row>
+        </template>
+        <template v-slot:cell(IPA)="row">
+          <b-row no-gutters>
+            <b-col cols="10">
+              <b-form-input v-model="row.item.IPA" class="custom-text-field"/>
+            </b-col>
+          </b-row>
+        </template>
+        <template v-slot:cell(display_as)="row">
+          <b-row no-gutters>
+            <b-col cols="9">
+              <b-form-input v-model="row.item.display_as" class="custom-text-field"/>
+            </b-col>
+            <b-col nopadding cols="1">
+            <span style="position:absolute; top: 0px">
+              <b-button size="sm" style="display: flex;" variant="link" v-b-tooltip.hover.right title="Remove row" @click="delete_vocab_row(row.index)">
+                <b-icon font-scale=".9" icon="x-circle" color="lightgrey"></b-icon>
+              </b-button>
+            </span>
+              <span style="position:absolute; bottom: 0px">
+              <b-button size="sm"  style="display: flex;" variant="link" v-b-tooltip.hover.right title="Add row" @click="add_vocab_row(row.index)">
+                <b-icon font-scale=".9" icon="plus-square" color="lightgrey"></b-icon>
+              </b-button>
+            </span>
+            </b-col>
+          </b-row>
+        </template>
+      </b-table>
+      <div v-if="customVocabulary.length === 0" style="color:red">
+        Vocabulary is empty. Make changes to the subtitles in order to build a custom vocabulary.<br>
+      </div>
+      <div v-else-if="validVocabularyName === false" style="color:red">
+        Vocabulary name must be alphanumeric with no spaces.
+      </div>
+      <div v-else-if="customVocabularySelected === '' && customVocabularyCreateNew === ''" style="color:red">
+        Specify a vocabulary name.<br>
+      </div>
+    </b-modal>
+    <b-modal ref="save-modal" title="Save Captions?" @ok="saveCaptions()" ok-title="Confirm">
+      <p>Saving captions will restart a workflow that can take several minutes. You will not be able to edit captions until it has finished. Are you ready to proceed?</p>
+    </b-modal>
+    <b-modal ref="delete-vocab-modal" title="Delete Vocabulary?" @ok="deleteVocabularyRequest()" ok-variant="danger" ok-title="Confirm">
+      <p>Are you sure you want to permanently delete the custom vocabulary <b>{{ customVocabularySelected }}</b>?</p>
+    </b-modal>
+
     <div v-if="isBusy">
       <b-spinner
         variant="secondary"
@@ -113,108 +219,6 @@
         <b-icon icon="arrow-clockwise" animation="spin"  color="white"></b-icon>
         Saving edits
       </b-button>
-      <b-modal ref="save-modal" title="Save Captions?" @ok="saveCaptions()" ok-title="Confirm">
-        <p>Saving captions will restart a workflow that can take several minutes. You will not be able to edit captions until it has finished. Are you ready to proceed?</p>
-      </b-modal>
-      <b-modal ref="delete-vocab-modal" title="Delete Vocabulary?" @ok="deleteVocabularyRequest()" ok-variant="danger" ok-title="Confirm">
-        <p>Are you sure you want to permanently delete the custom vocabulary <b>{{ customVocabularySelected }}</b>?</p>
-      </b-modal>
-      <b-modal ref="vocab-modal" size="lg" title="Save Vocabulary?" @ok="saveVocabulary()" :ok-disabled="validVocabularyName === false || (customVocabularySelected === '' && customVocabularyCreateNew === '' || customVocabulary.length === 0)" ok-title="Save">
-        <b-form-group v-if="customVocabularyList.length>0" label="Select a vocabulary to overwrite or specify a new name:">
-          <b-form-radio-group
-              id="custom-vocab-selection"
-              v-model="customVocabularySelected"
-              name="custom-vocab-list"
-              :options="customVocabularyList"
-              text-field="name_and_status"
-              value-field="name"
-              disabled-field="notEnabled"
-              stacked
-          >
-          </b-form-radio-group>
-        </b-form-group>
-        <!-- The state on this text area will show a red alert icon if
-        the user enters an invalid custom vocabulary name. Otherwise we
-        set the state to null so no validity indicator is shown. -->
-        <b-form-input v-if="customVocabularyList.length>0" size="sm" v-model="customVocabularyCreateNew" placeholder="Enter new vocabulary name (optional)" :state="validVocabularyName ? null : false"></b-form-input>
-        <b-form-input v-else size="sm" v-model="customVocabularyCreateNew" placeholder="Enter new vocabulary name" :state="validVocabularyName ? null : false"></b-form-input>
-        <div v-if="validVocabularyName === false" style="color:red">
-          Name must be alphanumeric with no spaces.
-        </div>
-        <div v-if="customVocabularyList.length>0 && customVocabularySelected !== ''">
-          Delete the selected vocabulary (optional): <b-button  size="sm" variant="danger" v-b-tooltip.hover.right title="Delete selected vocabulary" @click="deleteVocabulary">Delete</b-button>
-        </div>
-        <hr>
-        <div v-if="customVocabulary.length !== 0">Custom vocabulary (click to edit):</div>
-        <b-table
-          :items="customVocabulary"
-          :fields="customVocabularyFields"
-          selectable
-          select-mode="single"
-          fixed responsive="sm"
-          bordered
-          small
-        >
-          <!-- This template adds an additional row in the header
- to highlight the fields in the custom vocab schema. -->
-          <template v-slot:thead-top="data">
-            <b-tr>
-              <b-th colspan="1"></b-th>
-              <b-th colspan="4" variant="secondary" class="text-center">Custom Vocabulary Fields</b-th>
-            </b-tr>
-          </template>
-          <template v-slot:cell(original_phrase)="row">
-          <b-row no-gutters>
-            <b-col cols="10">
-              <b-form-input v-model="row.item.original_phrase" class="custom-text-field"/>
-            </b-col>
-          </b-row>
-        </template>
-        <template v-slot:cell(new_phrase)="row">
-          <b-row no-gutters>
-            <b-col cols="10">
-              <b-form-input v-model="row.item.new_phrase" class="custom-text-field"/>
-            </b-col>
-          </b-row>
-        </template>
-        <template v-slot:cell(sounds_like)="row">
-          <b-row no-gutters>
-            <b-col cols="10">
-              <b-form-input v-model="row.item.sounds_like" class="custom-text-field"/>
-            </b-col>
-          </b-row>
-        </template>
-        <template v-slot:cell(IPA)="row">
-          <b-row no-gutters>
-            <b-col cols="10">
-              <b-form-input v-model="row.item.IPA" class="custom-text-field"/>
-            </b-col>
-          </b-row>
-        </template>
-        <template v-slot:cell(display_as)="row">
-          <b-row no-gutters>
-          <b-col cols="9">
-            <b-form-input v-model="row.item.display_as" class="custom-text-field"/>
-          </b-col>
-          <b-col nopadding cols="1">
-            <span style="position:absolute; top: 0px">
-              <b-button size="sm" style="display: flex;" variant="link" v-b-tooltip.hover.right title="Remove row" @click="delete_vocab_row(row.index)">
-                <b-icon font-scale=".9" icon="x-circle" color="lightgrey"></b-icon>
-              </b-button>
-            </span>
-            <span style="position:absolute; bottom: 0px">
-              <b-button size="sm"  style="display: flex;" variant="link" v-b-tooltip.hover.right title="Add row" @click="add_vocab_row(row.index)">
-                <b-icon font-scale=".9" icon="plus-square" color="lightgrey"></b-icon>
-              </b-button>
-            </span>
-          </b-col>
-          </b-row>
-        </template>
-        </b-table>
-        <div v-if="customVocabulary.length === 0" style="color:red">
-          Vocabulary is empty. Make changes to the subtitles in order to build a custom vocabulary.<br>
-        </div>
-      </b-modal>
 
 <!-- Uncomment to enable Upload button -->
 <!--      <b-modal ref="my-modal" hide-footer title="Upload a file">-->
@@ -940,6 +944,7 @@ export default {
     },
     showVocabConfirmation: async function() {
       await this.listVocabulariesRequest()
+      this.$refs['save-modal'].hide()
       this.$refs['vocab-modal'].show()
     },
     uploadCaptionsFile(event) {

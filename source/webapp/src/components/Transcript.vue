@@ -70,7 +70,7 @@ to highlight the fields in the custom vocab schema. -->
         <template v-slot:cell(new_phrase)="row">
           <b-row no-gutters>
             <b-col cols="10">
-              <b-form-input v-model="row.item.new_phrase" class="custom-text-field"/>
+              <b-form-input v-model="row.item.new_phrase" class="custom-text-field" :formatter="phrase_formatter" lazy-formatter/>
             </b-col>
           </b-row>
         </template>
@@ -112,7 +112,7 @@ to highlight the fields in the custom vocab schema. -->
         Vocabulary is empty. Make changes to the subtitles in order to build a custom vocabulary.<br>
       </div>
       <div v-else-if="validVocabularyName === false" style="color:red">
-        Vocabulary name must be alphanumeric with no spaces.
+        Invalid vocabulary name. Valid characters are a-z, A-Z, and 0-9. Max length is 200.
       </div>
       <div v-else-if="customVocabularySelected === '' && customVocabularyCreateNew === ''" style="color:red">
         Specify a vocabulary name.<br>
@@ -236,6 +236,7 @@ to highlight the fields in the custom vocab schema. -->
 
 <script>
 import { mapState } from 'vuex'
+const converter = require('number-to-words');
 
 export default {
   name: "Transcript",
@@ -423,14 +424,10 @@ export default {
               // and remove spaces at beginning or end of word
               old_word = old_word.replace(/ +(?= )/g, '').trim();
               new_word = new_word.replace(/ +(?= )/g, '').trim();
-              // transcribe requires numbers to be spelled out in custom vocab phrases,
-              // so we derive the number spelling here:
-              const converter = require('number-to-words');
-              let new_word_with_numbers_as_words = new_word
-              if (new_word.match(/\d+/g) != null)
-              {
-                new_word_with_numbers_as_words = new_word.replace(new_word.match(/\d+/g)[0], converter.toWords(new_word.match(/\d+/g)[0]))
-              }
+              // Transcribe requires numbers to be spelled out in the phrase field.
+              // Transcribe also requires spaces to be dashes in the phrase field.
+              // So we make those changes here:
+              let new_word_with_numbers_as_words = this.phrase_formatter(new_word)
               // remove old_word from custom vocab, if it already exists
               this.customVocabulary = this.customVocabulary.filter(function (item) {return item.original_phrase !== old_word;});
               // add old_word to custom vocab
@@ -585,9 +582,9 @@ export default {
             this.sourceLanguageCode = res.data.Configuration.WebCaptionsStage2.WebCaptions.SourceLanguageCode
             this.transcribe_language_code = res.data.Configuration.defaultAudioStage2.Transcribe.TranscribeLanguage
             this.vocabulary_used = res.data.Configuration.defaultAudioStage2.Transcribe.VocabularyName
-            console.log("used vocabulary:")
-            console.log(this.vocabulary_used)
-            this.$store.commit('updateUsedVocabulary', this.vocabulary_used)
+            if (this.vocabulary_used) {
+              this.$store.commit('updateUsedVocabulary', this.vocabulary_used)
+            }
             this.getWebCaptions()
             }
           )
@@ -1031,6 +1028,18 @@ export default {
       this.vocab_status_polling = setInterval(() => {
         this.listVocabulariesRequest();
       }, poll_frequency)
+    },
+    phrase_formatter(phrase) {
+      // Transcribe requires numbers to be spelled out in the phrase field.
+      // Transcribe also requires spaces to be dashes in the phrase field.
+      // This function will automatically make those changes for user input to the phrase field.
+      let phrase_with_numbers_as_words = phrase
+      if (phrase.match(/\d+/g) != null)
+      {
+        phrase_with_numbers_as_words = phrase
+            .replace(phrase.match(/\d+/g)[0], converter.toWords(phrase.match(/\d+/g)[0]))
+      }
+      return phrase_with_numbers_as_words.replace(/\s+/g, '-')
     },
   },
 }

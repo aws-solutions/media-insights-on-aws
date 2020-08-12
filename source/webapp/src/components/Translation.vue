@@ -59,16 +59,17 @@
                 <b-col cols="10">
                   <!-- The state on this text area will show a red alert icon if the user forgets to enter any text. Otherwise we set the state to null so no validity indicator is shown. -->
                   <b-form-textarea
-                      :disabled="workflow_status !== 'Complete'"
-                      :id="'caption' + data.index"
-                      :ref="'caption' + data.index"
-                      class="custom-text-field .form-control-sm"
-                      rows="2"
-                      :value="data.item.caption"
-                      placeholder="Type translation here"
-                      :state="(data.item.caption.length > 0) ? null : false"
-                      @change="new_caption => changeCaption(new_caption, data.index)"
-                      @click='captionClickHandler(data.index)'/>
+                    :disabled="workflow_status !== 'Complete'"
+                    :id="'caption' + data.index"
+                    :ref="'caption' + data.index"
+                    class="custom-text-field .form-control-sm"
+                    rows="2"
+                    :value="data.item.caption"
+                    :dir="text_direction"
+                    placeholder="Type translation here"
+                    :state="(data.item.caption.length > 0) ? null : false"
+                    @change="new_caption => changeCaption(new_caption, data.index)"
+                    @click='captionClickHandler(data.index)'/>
                 </b-col>
                 <b-col>
                 <span style="position:absolute; top: 0px">
@@ -265,6 +266,11 @@ export default {
         }
       }
     },
+    text_direction: function() {
+      // This function is used to change text direction for right-to-left languages
+      if (this.selected_lang_code === "ar" || this.selected_lang_code === "fa" || this.selected_lang_code === "he" || this.selected_lang_code === "ur" ) return "rtl"
+      else return "ltr"
+    }
   },
   watch: {
     // When user moves the cursor on the waveform

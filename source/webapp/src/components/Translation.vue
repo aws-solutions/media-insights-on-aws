@@ -24,34 +24,35 @@
       <!-- show radio buttons for each available translation language -->
       <b-form-group>
         <b-form-radio-group
-            v-model="selected_lang_code"
-            :options="alphabetized_language_collection"
-            @change="getWebCaptions"
+          v-model="selected_lang_code"
+          :options="alphabetized_language_collection"
+          @change="getWebCaptions"
         ></b-form-radio-group>
       </b-form-group>
       <!-- show translation text when language has been selected -->
       <div v-if="selected_lang_code !== ''" id="event-line-editor" class="event-line-editor">
         <b-table
-            selectable
-            select-mode="single"
-            thead-class="hidden_header"
-            fixed responsive="sm"
-            :items="webCaptions"
-            :fields="webCaptions_fields" ref="selectableTable"
+          ref="selectableTable"
+          selectable
+          select-mode="single"
+          thead-class="hidden_header"
+          fixed responsive="sm"
+          :items="webCaptions"
+          :fields="webCaptions_fields"
         >
           <!-- adjust column width for captions -->
           <template v-slot:table-colgroup="scope">
             <col
-                v-for="field in scope.fields"
-                :key="field.key"
-                :style="{ width: field.key === 'caption' ? '80%' : '20%' }"
+              v-for="field in scope.fields"
+              :key="field.key"
+              :style="{ width: field.key === 'caption' ? '80%' : '20%' }"
             >
           </template>
           <!-- reformat timestamp to hh:mm:ss and -->
           <!-- disable timestamp edits if workflow status is not Complete -->
           <template v-slot:cell(timeslot)="data">
-            <b-form-input :disabled="workflow_status !== 'Complete'" class="compact-height start-time-field " :value="toHHMMSS(data.item.start)" @change="new_time => changeStartTime(new_time, data.index)"/>
-            <b-form-input :disabled="workflow_status !== 'Complete'" class="compact-height stop-time-field " :value="toHHMMSS(data.item.end)" @change="new_time => changeEndTime(new_time, data.index)"/>
+            <b-form-input :disabled="workflow_status !== 'Complete'" class="compact-height start-time-field " :value="toHHMMSS(data.item.start)" @change="new_time => changeStartTime(new_time, data.index)" />
+            <b-form-input :disabled="workflow_status !== 'Complete'" class="compact-height stop-time-field " :value="toHHMMSS(data.item.end)" @change="new_time => changeEndTime(new_time, data.index)" />
           </template>
           <template v-slot:cell(caption)="data">
             <b-container class="p-0">
@@ -59,28 +60,30 @@
                 <b-col cols="10">
                   <!-- The state on this text area will show a red alert icon if the user forgets to enter any text. Otherwise we set the state to null so no validity indicator is shown. -->
                   <b-form-textarea
-                      :disabled="workflow_status !== 'Complete'"
-                      :id="'caption' + data.index"
-                      :ref="'caption' + data.index"
-                      class="custom-text-field .form-control-sm"
-                      rows="2"
-                      :value="data.item.caption"
-                      placeholder="Type translation here"
-                      :state="(data.item.caption.length > 0) ? null : false"
-                      @change="new_caption => changeCaption(new_caption, data.index)"
-                      @click='captionClickHandler(data.index)'/>
+                    :id="'caption' + data.index"
+                    :ref="'caption' + data.index"
+                    class="custom-text-field .form-control-sm"
+                    rows="2"
+                    placeholder="Type translation here"
+                    :value="data.item.caption"
+                    :dir="text_direction"
+                    :disabled="workflow_status !== 'Complete'"
+                    :state="(data.item.caption.length > 0) ? null : false"
+                    @change="new_caption => changeCaption(new_caption, data.index)"
+                    @click="captionClickHandler(data.index)"
+                  />
                 </b-col>
                 <b-col>
-                <span style="position:absolute; top: 0px">
-                  <b-button v-if="workflow_status === 'Complete'" size="sm" variant="link" @click="delete_row(data.index)">
-                    <b-icon icon="x-circle" color="lightgrey"></b-icon>
-                  </b-button>
-                </span>
+                  <span style="position:absolute; top: 0px">
+                    <b-button v-if="workflow_status === 'Complete'" size="sm" variant="link" @click="delete_row(data.index)">
+                      <b-icon icon="x-circle" color="lightgrey"></b-icon>
+                    </b-button>
+                  </span>
                   <span style="position:absolute; bottom: 0px">
-                  <b-button v-if="workflow_status === 'Complete'" size="sm" variant="link" @click="add_row(data.index)">
-                    <b-icon icon="plus-square" color="lightgrey"></b-icon>
-                  </b-button>
-                </span>
+                    <b-button v-if="workflow_status === 'Complete'" size="sm" variant="link" @click="add_row(data.index)">
+                      <b-icon icon="plus-square" color="lightgrey"></b-icon>
+                    </b-button>
+                  </span>
                 </b-col>
               </b-row>
             </b-container>
@@ -90,26 +93,32 @@
       <br>
       <!-- this is the download button -->
       <b-dropdown id="download-dropdown" text="Download VTT/SRT" class="mb-2" size="sm" dropup no-caret>
-        <template slot="button-content"><b-icon icon="download" color="white"></b-icon> Download</template>
-        <b-dropdown-item :href="vtt_url">Download VTT</b-dropdown-item>
-        <b-dropdown-item :href="srt_url">Download SRT</b-dropdown-item>
+        <template slot="button-content">
+          <b-icon icon="download" color="white"></b-icon> Download
+        </template>
+        <b-dropdown-item :href="vtt_url">
+          Download VTT
+        </b-dropdown-item>
+        <b-dropdown-item :href="srt_url">
+          Download SRT
+        </b-dropdown-item>
       </b-dropdown>
       &nbsp;
       <!-- this is the save edits button for when workflow complete -->
-      <b-button v-if="this.workflow_status === 'Complete' || this.workflow_status === 'Error'" id="editCaptions" size="sm" class="mb-2" @click="saveCaptions()">
-      <b-icon icon="play" color="white"></b-icon>
-      Save edits
+      <b-button v-if="workflow_status === 'Complete' || workflow_status === 'Error'" id="editCaptions" size="sm" class="mb-2" @click="saveCaptions()">
+        <b-icon icon="play" color="white"></b-icon>
+        Save edits
       </b-button>
       <!-- this is the save edits button for when workflow running -->
       <b-button v-else id="editCaptionsDisabled" size="sm" disabled class="mb-2">
-      <b-icon icon="arrow-clockwise" animation="spin"  color="white"></b-icon>
-      Saving edits
+        <b-icon icon="arrow-clockwise" animation="spin" color="white"></b-icon>
+        Saving edits
       </b-button>
       <br>
-      <b-modal ref="save-modal" title="Save Confirmation" @ok="saveCaptions()" ok-title="Confirm">
+      <b-modal ref="save-modal" title="Save Confirmation" ok-title="Confirm" @ok="saveCaptions()">
         <p>Saving will overwrite the existing {{ selected_lang }} translation. Are you sure?</p>
       </b-modal>
-      <div style="color:red" v-if="this.webCaptions.length > 0 && this.workflow_status !== 'Complete' && this.workflow_status !== 'Error' && this.workflow_status !== 'Waiting'">
+      <div v-if="webCaptions.length > 0 && workflow_status !== 'Complete' && workflow_status !== 'Error' && workflow_status !== 'Waiting'" style="color:red">
         Editing is disabled until workflow completes.
       </div>
     </div>
@@ -255,6 +264,8 @@ export default {
         if (vttcaption) {
           return vttcaption.src
         }
+      } else {
+        return null
       }
     },
     srt_url: function() {
@@ -263,8 +274,15 @@ export default {
         if (srtcaption) {
           return srtcaption.src
         }
+      } else {
+        return null
       }
     },
+    text_direction: function() {
+      // This function is used to change text direction for right-to-left languages
+      if (this.selected_lang_code === "ar" || this.selected_lang_code === "fa" || this.selected_lang_code === "he" || this.selected_lang_code === "ur" ) return "rtl"
+      else return "ltr"
+    }
   },
   watch: {
     // When user moves the cursor on the waveform
@@ -385,7 +403,7 @@ export default {
                 this.vttcaptions.push({'src': data, 'lang': item.LanguageCode, 'label': item.LanguageCode});
               }).catch(err => console.error(err));
             })
-          }).then(result => {
+          }).then(() => {
             // now that we have all the signed urls to download vtt files,
             // update the captions in the video player for the currently selected
             // language. This will make sure the video player reflects any edits
@@ -507,7 +525,7 @@ export default {
     handleWaveformSeek() {
       // When user moves the cursor on the waveform
       // then focus the corresponding row in the caption table.
-      let timeline_position = this.webCaptions.findIndex(function (item, i) {
+      let timeline_position = this.webCaptions.findIndex(function (item) {
         return (parseInt(item.start) <= this.waveform_seek_position && parseInt(item.end) >= this.waveform_seek_position)
       }.bind(this));
       if (timeline_position === -1) {
@@ -526,7 +544,7 @@ export default {
       if (this.player) {
         this.player.controlBar.progressControl.on('mouseup', function () {
           const current_position = Math.round(this.player.currentTime());
-          let timeline_position = this.webCaptions.findIndex(function (item, i) {
+          let timeline_position = this.webCaptions.findIndex(function (item) {
             return (parseInt(item.start) <= current_position && parseInt(item.end) >= current_position)
           })
           if (timeline_position === -1) {
@@ -547,7 +565,7 @@ export default {
       this.player.on('timeupdate', function () {
         const current_position = Math.round(this.player.currentTime());
         if (current_position !== last_position) {
-          let timeline_position = this.webCaptions.findIndex(function(item, i){return (parseInt(item.start) <= current_position && parseInt(item.end) >= current_position)})
+          let timeline_position = this.webCaptions.findIndex(function(item){return (parseInt(item.start) <= current_position && parseInt(item.end) >= current_position)})
           if (this.$refs.selectableTable) {
             this.$refs.selectableTable.selectRow(timeline_position)
           }

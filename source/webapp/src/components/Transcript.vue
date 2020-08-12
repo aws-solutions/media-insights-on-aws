@@ -4,13 +4,133 @@
       No transcript found for this asset
     </div>
     <b-alert
-        v-model="showSaveNotification"
-        variant="success"
-        dismissible
-        fade
+      v-model="showSaveNotification"
+      variant="success"
+      dismissible
+      fade
     >
       {{ saveNotificationMessage }}
     </b-alert>
+    <b-alert
+      v-model="showVocabularyNotification"
+      :variant="vocabularyNotificationStatus"
+      dismissible
+      fade
+    >
+      {{ vocabularyNotificationMessage }}
+    </b-alert>
+    <b-modal ref="vocab-modal" size="lg" title="Save Vocabulary?" :ok-disabled="validVocabularyName === false || (customVocabularySelected === '' && customVocabularyCreateNew === '') || customVocabulary.length === 0" ok-title="Save" @ok="saveVocabulary()">
+      <b-form-group v-if="customVocabularyList.length>0" label="Select a vocabulary to overwrite or specify a new name:">
+        <b-form-radio-group
+          id="custom-vocab-selection"
+          v-model="customVocabularySelected"
+          name="custom-vocab-list"
+          :options="customVocabularyList"
+          text-field="name_and_status"
+          value-field="name"
+          disabled-field="notEnabled"
+          stacked
+        >
+        </b-form-radio-group>
+      </b-form-group>
+      <!-- The state on this text area will show a red alert icon if
+      the user enters an invalid custom vocabulary name. Otherwise we
+      set the state to null so no validity indicator is shown. -->
+      <b-form-input v-if="customVocabularyList.length>0" v-model="customVocabularyCreateNew" size="sm" placeholder="Enter new vocabulary name (optional)" :state="validVocabularyName ? null : false"></b-form-input>
+      <b-form-input v-else v-model="customVocabularyCreateNew" size="sm" placeholder="Enter new vocabulary name" :state="validVocabularyName ? null : false"></b-form-input>
+      <div v-if="customVocabularyList.length>0 && customVocabularySelected !== ''">
+        Delete the selected vocabulary (optional): <b-button v-b-tooltip.hover.right size="sm" title="Delete selected vocabulary" variant="danger" @click="deleteVocabulary">
+          Delete
+        </b-button>
+      </div>
+      <hr>
+      <div v-if="customVocabulary.length !== 0">
+        Custom vocabulary (click to edit):
+      </div>
+      <b-table
+        :items="customVocabulary"
+        :fields="customVocabularyFields"
+        selectable
+        select-mode="single"
+        fixed responsive="sm"
+        bordered
+        small
+      >
+        <!-- This template adds an additional row in the header
+to highlight the fields in the custom vocab schema. -->
+        <template v-slot:thead-top="data">
+          <b-tr>
+            <b-th colspan="1"></b-th>
+            <b-th colspan="4" variant="secondary" class="text-center">
+              Custom Vocabulary Fields
+            </b-th>
+          </b-tr>
+        </template>
+        <template v-slot:cell(original_phrase)="row">
+          <b-row no-gutters>
+            <b-col cols="10">
+              <b-form-input v-model="row.item.original_phrase" class="custom-text-field" />
+            </b-col>
+          </b-row>
+        </template>
+        <template v-slot:cell(new_phrase)="row">
+          <b-row no-gutters>
+            <b-col cols="10">
+              <b-form-input v-model="row.item.new_phrase" class="custom-text-field" :formatter="phrase_formatter" lazy-formatter />
+            </b-col>
+          </b-row>
+        </template>
+        <template v-slot:cell(sounds_like)="row">
+          <b-row no-gutters>
+            <b-col cols="10">
+              <b-form-input v-model="row.item.sounds_like" class="custom-text-field" />
+            </b-col>
+          </b-row>
+        </template>
+        <template v-slot:cell(IPA)="row">
+          <b-row no-gutters>
+            <b-col cols="10">
+              <b-form-input v-model="row.item.IPA" class="custom-text-field" />
+            </b-col>
+          </b-row>
+        </template>
+        <template v-slot:cell(display_as)="row">
+          <b-row no-gutters>
+            <b-col cols="9">
+              <b-form-input v-model="row.item.display_as" class="custom-text-field" />
+            </b-col>
+            <b-col nopadding cols="1">
+              <span style="position:absolute; top: 0px">
+                <b-button v-b-tooltip.hover.right size="sm" style="display: flex;" variant="link" title="Remove row" @click="delete_vocab_row(row.index)">
+                  <b-icon font-scale=".9" icon="x-circle" color="lightgrey"></b-icon>
+                </b-button>
+              </span>
+              <span style="position:absolute; bottom: 0px">
+                <b-button v-b-tooltip.hover.right size="sm" style="display: flex;" variant="link" title="Add row" @click="add_vocab_row(row.index)">
+                  <b-icon font-scale=".9" icon="plus-square" color="lightgrey"></b-icon>
+                </b-button>
+              </span>
+            </b-col>
+          </b-row>
+        </template>
+      </b-table>
+      <div v-if="customVocabulary.length === 0" style="color:red">
+        Vocabulary is empty. Make changes to the subtitles in order to build a custom vocabulary.<br>
+      </div>
+      <div v-else-if="validVocabularyName === false" style="color:red">
+        Invalid vocabulary name. Valid characters are a-z, A-Z, and 0-9. Max length is 200.
+      </div>
+      <div v-else-if="customVocabularySelected === '' && customVocabularyCreateNew === ''" style="color:red">
+        Specify a vocabulary name.<br>
+      </div>
+    </b-modal>
+    <b-modal ref="save-modal" ok-title="Confirm" title="Save Captions?" @ok="saveCaptions()">
+      <p>Saving captions will restart a workflow that can take several minutes. You will not be able to edit captions until it has finished. Are you ready to proceed?</p>
+    </b-modal>
+    <b-modal ref="delete-vocab-modal" ok-title="Confirm" ok-variant="danger" title="Delete Vocabulary?" @ok="deleteVocabularyRequest()">
+      <p>Are you sure you want to permanently delete the custom vocabulary <b>{{ customVocabularySelected }}</b>?</p>
+    </b-modal>
+
     <div v-if="isBusy">
       <b-spinner
         variant="secondary"
@@ -27,89 +147,95 @@
         <br>
       </div>
       <div id="event-line-editor" class="event-line-editor">
-      <b-table
+        <b-table
+          ref="selectableTable"
           selectable
+          fixed
           select-mode="single"
           thead-class="hidden_header"
-          fixed responsive="sm"
+          responsive="sm"
           :items="webCaptions"
-          :fields="webCaptions_fields" ref="selectableTable"
-      >
-        <!-- adjust column width for captions -->
-        <template v-slot:table-colgroup="scope">
-          <col
+          :fields="webCaptions_fields"
+        >
+          <!-- adjust column width for captions -->
+          <template v-slot:table-colgroup="scope">
+            <col
               v-for="field in scope.fields"
               :key="field.key"
               :style="{ width: field.key === 'caption' ? '80%' : '20%' }"
-          >
-        </template>
-        <!-- reformat timestamp to hh:mm:ss and -->
-        <!-- disable timestamp edits if workflow status is not Complete -->
-        <template v-slot:cell(timeslot)="data">
-          <b-form-input :disabled="workflow_status !== 'Complete'" class="compact-height start-time-field " :value="toHHMMSS(data.item.start)" @change="new_time => changeStartTime(new_time, data.index)"/>
-          <b-form-input :disabled="workflow_status !== 'Complete'" class="compact-height stop-time-field " :value="toHHMMSS(data.item.end)" @change="new_time => changeEndTime(new_time, data.index)"/>
-        </template>
-        <template v-slot:cell(caption)="data">
-          <b-container class="p-0">
-            <b-row no-gutters>
-              <b-col cols="10">
-                <!-- The state on this text area will show a red alert icon if the user forgets to enter any text. Otherwise we set the state to null so no validity indicator is shown. -->
-                <b-form-textarea :disabled="workflow_status !== 'Complete'" :id="'caption' + data.index" :ref="'caption' + data.index" class="custom-text-field .form-control-sm" rows="2" :value="data.item.caption" placeholder="Type subtitle here" :state="(data.item.caption.length > 0) ? null : false" @change="new_caption => changeCaption(new_caption, data.index)" @click='captionClickHandler(data.index)'/>
-              </b-col>
-              <b-col>
-                <span style="position:absolute; top: 0px">
-                  <b-button v-if="workflow_status === 'Complete'" size="sm" variant="link" @click="delete_row(data.index)">
-                    <b-icon icon="x-circle" color="lightgrey"></b-icon>
-                  </b-button>
-                </span>
-                <span style="position:absolute; bottom: 0px">
-                  <b-button v-if="workflow_status === 'Complete'" size="sm" variant="link" @click="add_row(data.index)">
-                    <b-icon icon="plus-square" color="lightgrey"></b-icon>
-                  </b-button>
-                </span>
-              </b-col>
-            </b-row>
-          </b-container>
-        </template>
-      </b-table>
+            >
+          </template>
+          <!-- reformat timestamp to hh:mm:ss and -->
+          <!-- disable timestamp edits if workflow status is not Complete -->
+          <template v-slot:cell(timeslot)="data">
+            <b-form-input :disabled="workflow_status !== 'Complete'" class="compact-height start-time-field " :value="toHHMMSS(data.item.start)" @change="new_time => changeStartTime(new_time, data.index)" />
+            <b-form-input :disabled="workflow_status !== 'Complete'" class="compact-height stop-time-field " :value="toHHMMSS(data.item.end)" @change="new_time => changeEndTime(new_time, data.index)" />
+          </template>
+          <template v-slot:cell(caption)="data">
+            <b-container class="p-0">
+              <b-row no-gutters>
+                <b-col cols="10">
+                  <!-- The state on this text area will show a red alert icon
+                  if the user forgets to enter any text. Otherwise we set the
+                  state to null so no validity indicator is shown. -->
+                  <b-form-textarea :id="'caption' + data.index" :ref="'caption' + data.index" :disabled="workflow_status !== 'Complete'" class="custom-text-field .form-control-sm" rows="2" :value="data.item.caption" placeholder="Type subtitle here" :state="(data.item.caption.length > 0) ? null : false" @change="new_caption => changeCaption(new_caption, data.index)" @click="captionClickHandler(data.index)" />
+                </b-col>
+                <b-col>
+                  <span style="position:absolute; top: 0px">
+                    <b-button v-if="workflow_status === 'Complete'" size="sm" variant="link" @click="delete_row(data.index)">
+                      <b-icon icon="x-circle" color="lightgrey"></b-icon>
+                    </b-button>
+                  </span>
+                  <span style="position:absolute; bottom: 0px">
+                    <b-button v-if="workflow_status === 'Complete'" size="sm" variant="link" @click="add_row(data.index)">
+                      <b-icon icon="plus-square" color="lightgrey"></b-icon>
+                    </b-button>
+                  </span>
+                </b-col>
+              </b-row>
+            </b-container>
+          </template>
+        </b-table>
       </div>
       <br>
-<!-- Uncomment to enable Upload button -->
-<!--      <b-button id="showModal" size="sm" class="mb-2" @click="showModal()">-->
-<!--        <b-icon icon="upload" color="white"></b-icon> Upload JSON-->
-<!--      </b-button> &nbsp;-->
+      <!-- Uncomment to enable Upload button -->
+      <!--      <b-button id="showModal" size="sm" class="mb-2" @click="showModal()">-->
+      <!--        <b-icon icon="upload" color="white"></b-icon> Upload JSON-->
+      <!--      </b-button> &nbsp;-->
       <!-- this is the download button -->
       <b-button id="downloadCaptionsVTT" size="sm" class="mb-2" @click="downloadCaptionsVTT()">
-        <b-icon v-if="this.webCaptions.length > 0" icon="download" color="white"></b-icon> Download VTT
+        <b-icon v-if="webCaptions.length > 0" icon="download" color="white"></b-icon> Download VTT
+      </b-button> &nbsp;
+      <!-- this is the save vocabulary button -->
+      <b-button id="saveVocabulary" size="sm" class="mb-2" @click="showVocabConfirmation()">
+        <b-icon icon="card-text" color="white"></b-icon>
+        Save vocabulary
       </b-button> &nbsp;
       <!-- this is the save edits button for when workflow is paused -->
-      <b-button v-if="this.workflow_status === 'Waiting'" id="saveCaptions" size="sm" class="mb-2" @click="saveCaptions()">
-        <b-icon v-if="this.isSaving" icon="arrow-clockwise" animation="spin"  color="white"></b-icon>
+      <b-button v-if="workflow_status === 'Waiting'" id="saveCaptions" size="sm" class="mb-2" @click="saveCaptions()">
+        <b-icon v-if="isSaving" icon="arrow-clockwise" animation="spin" color="white"></b-icon>
         <b-icon v-else icon="play" color="white"></b-icon>
         Save edits
       </b-button>
       <!-- this is the save edits button for when workflow complete -->
-      <b-button v-if="this.workflow_status === 'Complete' || this.workflow_status === 'Error'" id="editCaptions" size="sm" class="mb-2" @click="showSaveConfirmation()">
+      <b-button v-if="workflow_status === 'Complete' || workflow_status === 'Error'" id="editCaptions" size="sm" class="mb-2" @click="showSaveConfirmation()">
         <b-icon icon="play" color="white"></b-icon>
         Save edits
       </b-button>
       <!-- this is the save edits button for when workflow running -->
-      <b-button v-if="this.workflow_status === 'Started'" id="editCaptionsDisabled" size="sm" disabled class="mb-2" @click="saveCaptions()">
-        <b-icon icon="arrow-clockwise" animation="spin"  color="white"></b-icon>
+      <b-button v-if="workflow_status === 'Started'" id="editCaptionsDisabled" size="sm" disabled class="mb-2" @click="saveCaptions()">
+        <b-icon icon="arrow-clockwise" animation="spin" color="white"></b-icon>
         Saving edits
       </b-button>
-      <b-modal ref="save-modal" title="Save Confirmation" @ok="saveCaptions()" ok-title="Confirm">
-        <p>Saving captions will restart a workflow that can take several minutes. You will not be able to edit captions until it has finished. Are you ready to proceed?</p>
-      </b-modal>
 
-<!-- Uncomment to enable Upload button -->
-<!--      <b-modal ref="my-modal" hide-footer title="Upload a file">-->
-<!--        <p>Upload a timed subtitles file in the Webcaptions JSON format.</p>-->
-<!--        <div>-->
-<!--          <input type="file" @change="uploadCaptionsFile">-->
-<!--        </div>-->
-<!--      </b-modal>-->
-      <div style="color:red" v-if="this.webCaptions.length > 0 && this.workflow_status !== 'Complete' && this.workflow_status !== 'Error' && this.workflow_status !== 'Waiting'">
+      <!-- Uncomment to enable Upload button -->
+      <!--      <b-modal ref="my-modal" hide-footer title="Upload a file">-->
+      <!--        <p>Upload a timed subtitles file in the Webcaptions JSON format.</p>-->
+      <!--        <div>-->
+      <!--          <input type="file" @change="uploadCaptionsFile">-->
+      <!--        </div>-->
+      <!--      </b-modal>-->
+      <div v-if="webCaptions.length > 0 && workflow_status !== 'Complete' && workflow_status !== 'Error' && workflow_status !== 'Waiting'" style="color:red">
         Editing is disabled until workflow completes.
       </div>
     </div>
@@ -118,6 +244,7 @@
 
 <script>
 import { mapState } from 'vuex'
+const converter = require('number-to-words');
 
 export default {
   name: "Transcript",
@@ -132,7 +259,19 @@ export default {
       workflow_definition: {},
       showSaveNotification: 0,
       saveNotificationMessage: "Captions saved",
+      showVocabularyNotification: 0,
+      vocabularyNotificationStatus: "success",
+      vocabularyNotificationMessage: "",
       results: [],
+      workflow_status_polling: null,
+      vocab_status_polling: null,
+      customVocabulary: [],
+      customVocabularyFields: ["original_phrase","new_phrase","sounds_like","IPA","display_as"],
+      customVocabularyList: [],
+      customVocabularySelected: "",
+      customVocabularyCreateNew: "",
+      transcribe_language_code: "",
+      vocabulary_used: "",
       webCaptions: [],
       webCaptions_vtt: '',
       webCaptions_fields: [
@@ -149,6 +288,30 @@ export default {
     }
   },
   computed: {
+    validVocabularyName: function() {
+      const letterNumber = /^[0-9a-zA-Z]+$/;
+      // The name can be up to 200 characters long. Valid characters are a-z, A-Z, and 0-9.
+      if (this.customVocabularyCreateNew === "" || (this.customVocabularyCreateNew.match(letterNumber) && this.customVocabularyCreateNew.length<200)) {
+        return true;
+      }
+      else
+      {
+        return false;
+      }
+    },
+    customVocabularyName: function () {
+      if (this.customVocabularyCreateNew !== "")
+        return this.customVocabularyCreateNew
+      else
+        return this.customVocabularySelected
+    },
+    customVocabularyFile: function () {
+      let vocab_file = "Phrase\tSoundsLike\tIPA\tDisplayAs"
+      for (const i in this.customVocabulary) {
+        vocab_file += "\n" + this.customVocabulary[i].new_phrase + "\t\t\t" + this.customVocabulary[i].display_as
+      }
+      return vocab_file
+    },
     inputListeners: function () {
       var vm = this
       // `Object.assign` merges objects together to form a new object
@@ -178,6 +341,10 @@ export default {
     waveform_seek_position: function () {
       this.handleWaveformSeek();
     },
+    // when user begins typing new vocab name, then deselect the radio buttons
+    customVocabularyCreateNew: function() {
+      this.customVocabularySelected = ""
+    },
   },
   deactivated: function () {
     console.log('deactivated component:', this.operator)
@@ -191,7 +358,9 @@ export default {
     this.pollWorkflowStatus();
   },
   beforeDestroy: function () {
-      this.transcript = ''
+    this.transcript = ''
+    clearInterval(this.workflow_status_polling)
+    clearInterval(this.vocab_status_polling)
   },
   methods: {
     toHHMMSS(secs) {
@@ -233,6 +402,53 @@ export default {
       this.webCaptions[index].end = new_time
     },
     changeCaption(new_caption, index) {
+      const Diff = require('diff');
+      const diff = Diff.diffWords(this.webCaptions[index].caption, new_caption);
+      // if no words were removed (i.e. only new words were added)...
+      console.log("Caption edit:")
+      console.log(diff)
+      let old_phrase = ''
+      let new_phrase = ''
+      for (let i=0; i<=(diff.length-1); i++) {
+        // if element contains key removed
+        if ("removed" in diff[i] && diff[i].removed !== undefined) {
+          old_phrase += diff[i].value+' '
+        }
+        // if element contains key added
+        else if ("added" in diff[i] && diff[i].added !== undefined) {
+          new_phrase += diff[i].value+' '
+        }
+        // otherwise if element is just words, or if it's the last element,
+        // then save word change to custom vocabulary
+        if (i === (diff.length-1) || !("added" in diff[i] || "removed" in diff[i])) {
+          // if this value is a space and next value contains key 'added',
+          // then break so that we can add that value to the new_phrase
+          if (i !== (diff.length-1) && diff[i].value === ' ' && "added" in diff[i+1] && diff[i+1].added !== 'undefined') {
+            continue
+          } else {
+            // or if this is the last element
+            // or if this value is anything other than a space
+            // then save to custom vocabulary
+            if (old_phrase != '' && new_phrase != '') {
+              // replace multiple spaces with a single space
+              // and remove spaces at beginning or end of word
+              old_phrase = old_phrase.replace(/ +(?= )/g, '').trim();
+              new_phrase = new_phrase.replace(/ +(?= )/g, '').trim();
+              // Transcribe requires numbers to be spelled out in the phrase field.
+              // Transcribe also requires spaces to be dashes in the phrase field.
+              // So we make those changes here:
+              let new_phrase_with_numbers_as_words = this.phrase_formatter(new_phrase)
+              // remove old_phrase from custom vocab, if it already exists
+              this.customVocabulary = this.customVocabulary.filter(function (item) {return item.original_phrase !== old_phrase;});
+              // add old_phrase to custom vocab
+              this.customVocabulary.push({"original_phrase": old_phrase, "new_phrase": new_phrase_with_numbers_as_words, "sounds_like":"", "IPA":"", "display_as": new_phrase})
+              console.log("CUSTOM VOCABULARY: " + JSON.stringify(this.customVocabulary))
+            }
+            old_phrase = ''
+            new_phrase = ''
+          }
+        }
+      }
       this.webCaptions[index].caption = new_caption
     },
     captionClickHandler(index) {
@@ -266,7 +482,7 @@ export default {
     handleWaveformSeek() {
       // When user moves the cursor on the waveform
       // then focus the corresponding row in the caption table.
-      let timeline_position = this.webCaptions.findIndex(function (item, i) {
+      let timeline_position = this.webCaptions.findIndex(function (item) {
         return (parseInt(item.start) <= this.waveform_seek_position && parseInt(item.end) >= this.waveform_seek_position)
       }.bind(this));
       if (timeline_position === -1) {
@@ -285,7 +501,7 @@ export default {
       if (this.player) {
         this.player.controlBar.progressControl.on('mouseup', function () {
           const current_position = Math.round(this.player.currentTime());
-          let timeline_position = this.webCaptions.findIndex(function (item, i) {
+          let timeline_position = this.webCaptions.findIndex(function (item) {
             return (parseInt(item.start) <= current_position && parseInt(item.end) >= current_position)
           })
           if (timeline_position === -1) {
@@ -306,7 +522,7 @@ export default {
       this.player.on('timeupdate', function () {
         const current_position = Math.round(this.player.currentTime());
         if (current_position !== last_position) {
-          let timeline_position = this.webCaptions.findIndex(function(item, i){return (parseInt(item.start) <= current_position && parseInt(item.end) >= current_position)})
+          let timeline_position = this.webCaptions.findIndex(function(item){return (parseInt(item.start) <= current_position && parseInt(item.end) >= current_position)})
           if (this.$refs.selectableTable) {
             this.$refs.selectableTable.selectRow(timeline_position)
           }
@@ -318,6 +534,8 @@ export default {
       const token = await this.$Amplify.Auth.currentSession().then(data =>{
         return data.getIdToken().getJwtToken();
       });
+      console.log("workflow status request:")
+      console.log('curl -L -k -X GET -H \'Content-Type: application/json\' -H \'Authorization: \''+token+' '+this.WORKFLOW_API_ENDPOINT+'/workflow/execution/asset/' + this.asset_id)
       fetch(this.WORKFLOW_API_ENDPOINT + '/workflow/execution/asset/' + this.asset_id, {
         method: 'get',
         headers: {
@@ -371,8 +589,13 @@ export default {
               data: data,
             })
           ).then(res => {
-              this.sourceLanguageCode = res.data.Configuration.WebCaptionsStage2.WebCaptions.SourceLanguageCode
-              this.getWebCaptions()
+            this.sourceLanguageCode = res.data.Configuration.WebCaptionsStage2.WebCaptions.SourceLanguageCode
+            this.transcribe_language_code = res.data.Configuration.defaultAudioStage2.Transcribe.TranscribeLanguage
+            this.vocabulary_used = res.data.Configuration.defaultAudioStage2.Transcribe.VocabularyName
+            if (this.vocabulary_used) {
+              this.$store.commit('updateUsedVocabulary', this.vocabulary_used)
+            }
+            this.getWebCaptions()
             }
           )
         }
@@ -493,16 +716,183 @@ export default {
         })
       )
     },
-    saveCaptions: async function (token) {
-      // This function saves captions to the dataplane
-      // and reruns or resumes the workflow.
-      this.$refs['save-modal'].hide()
-      this.isSaving=true;
+    listVocabulariesRequest: async function () {
+      const token = await this.$Amplify.Auth.currentSession().then(data =>{
+        return data.getIdToken().getJwtToken();
+      });
+      console.log("List vocabularies request:")
+      console.log('curl -L -k -X GET -H \'Content-Type: application/json\' -H \'Authorization: \''+token+' '+this.DATAPLANE_API_ENDPOINT+'/transcribe/list_vocabularies')
+      fetch(this.DATAPLANE_API_ENDPOINT + '/transcribe/list_vocabularies', {
+        method: 'get',
+        mode: 'cors',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token
+        },
+      }).then(response =>
+        response.json().then(data => ({
+              data: data,
+            })
+        ).then(res => {
+          this.customVocabularyList = res.data["Vocabularies"].map(({VocabularyName, VocabularyState}) => ({
+            name: VocabularyName,
+            status: VocabularyState,
+            name_and_status: VocabularyState === "READY" ? VocabularyName : VocabularyName + " [" + VocabularyState + "]",
+            notEnabled: VocabularyState === "PENDING"
+          }))
+          // if any vocab is PENDING, then poll status until it is not PENDING. This is necessary so custom vocabs become selectable in the GUI as soon as they become ready.
+          if (this.customVocabularyList.filter(item => item.status === "PENDING").length > 0) {
+            if (this.vocab_status_polling == null) {
+              this.pollVocabularyStatus();
+            }
+          } else {
+            if (this.vocab_status_polling != null) {
+              clearInterval(this.vocab_status_polling)
+              this.vocab_status_polling = null
+            }
+          }
+        })
+      )
+    },
+    deleteVocabulary: async function () {
+      this.$refs['delete-vocab-modal'].show()
+    },
+    deleteVocabularyRequest: async function (token) {
       if (!token) {
         token = await this.$Amplify.Auth.currentSession().then(data =>{
           return data.getIdToken().getJwtToken();
         });
       }
+      this.$refs['delete-vocab-modal'].hide()
+      console.log("Delete vocabulary request:")
+      console.log('curl -L -k -X POST -H \'Content-Type: application/json\' -H \'Authorization: \''+token+'\' --data \'{"vocabulary_name":"'+this.customVocabularySelected+'}\' '+this.DATAPLANE_API_ENDPOINT+'/transcribe/delete_vocabulary')
+      await fetch(this.DATAPLANE_API_ENDPOINT+'/transcribe/delete_vocabulary',{
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'Authorization': token},
+        body: JSON.stringify({"vocabulary_name":this.customVocabularySelected})
+      }).then(response =>
+        response.json().then(data => ({
+              data: data,
+              status: response.status
+            })
+        ).then(res => {
+          if (res.status === 200) {
+            console.log("Success! Vocabulary deleted.")
+            this.vocabularyNotificationMessage = "Deleted vocabulary: " + this.customVocabularySelected
+            this.vocabularyNotificationStatus = "success"
+            this.showVocabularyNotification = 5
+            this.listVocabulariesRequest()
+          } else {
+            console.log("Failed to delete vocabulary")
+            this.vocabularyNotificationMessage = "Failed to delete vocabulary: " + this.customVocabularySelected
+            this.vocabularyNotificationStatus = "danger"
+            this.showVocabularyNotification = 5
+          }
+        })
+      )
+    },
+    overwriteVocabularyRequest: async function () {
+      const token = await this.$Amplify.Auth.currentSession().then(data =>{
+        return data.getIdToken().getJwtToken();
+      });
+      await this.deleteVocabularyRequest(token).then(() =>
+        this.saveVocabularyRequest(token)
+      )
+    },
+    saveVocabularyRequest: async function (token) {
+      if (token === null) {
+        token = await this.$Amplify.Auth.currentSession().then(data =>{
+          return data.getIdToken().getJwtToken();
+        });
+      }
+      const s3uri = "s3://"+this.DATAPLANE_BUCKET+"/"+this.customVocabularyName
+      console.log("Create vocabulary request:")
+      console.log('curl -L -k -X POST -H \'Content-Type: application/json\' -H \'Authorization: \''+token+' --data \'{"s3uri":'+s3uri+', "vocabulary_name":'+this.customVocabularyName+', "language_code": '+this.transcribe_language_code+'}\' '+this.DATAPLANE_API_ENDPOINT+'/transcribe/create_vocabulary')
+      await fetch(this.DATAPLANE_API_ENDPOINT+'/transcribe/create_vocabulary',{
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'Authorization': token},
+        body: JSON.stringify({"s3uri": s3uri, "vocabulary_name":this.customVocabularyName, "language_code": this.transcribe_language_code})
+      }).then(response =>
+        response.json().then(data => ({
+              data: data,
+              status: response.status
+            })
+        ).then(res => {
+          if (res.status === 200) {
+            console.log("Success! Custom vocabulary saved.")
+            this.vocabularyNotificationMessage = "Saved vocabulary: " + this.customVocabularyName
+            this.vocabularyNotificationStatus = "success"
+            this.showVocabularyNotification = 5
+          } else {
+            console.log("Failed to save vocabulary")
+            this.vocabularyNotificationMessage = "Failed to save vocabulary: " + this.customVocabularyName
+            this.vocabularyNotificationStatus = "danger"
+            this.showVocabularyNotification = 5
+          }
+          // clear the custom vocabulary name used in the save vocab modal form
+          this.customVocabularyCreateNew = ''
+        })
+      )
+    },
+    saveVocabulary: async function () {
+      // This function saves custom vocabulary
+      const signedUrl = this.DATAPLANE_API_ENDPOINT + '/upload';
+      const token = await this.$Amplify.Auth.currentSession().then(data =>{
+        return data.getIdToken().getJwtToken();
+      });
+      // Get presigned url to upload custom vocab file.
+      console.log("Pre-signed URL request:")
+      console.log("curl -L -k -X POST -H 'Content-Type: application/json' -H 'Authorization: "+token+"' --data '{\"S3Bucket\":\""+this.DATAPLANE_BUCKET+"\",\"S3Key\":\""+this.customVocabularyName+"\"}' "+this.DATAPLANE_API_ENDPOINT+'/upload')
+      fetch(signedUrl,{
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'Authorization': token},
+        body: JSON.stringify(
+            {"S3Bucket": this.DATAPLANE_BUCKET, "S3Key":this.customVocabularyName}
+        )
+      }).then(response =>
+        response.json().then(data => ({
+              data: data,
+              status: response.status
+            })
+        ).then(res => {
+          if (res.status === 200) {
+            // Now that we have the presigned url, upload the custom vocab file.
+            res.data.fields["file"] = this.customVocabularyFile
+            console.log("Upload request:")
+            let curl_command = "curl --request POST"
+            for (let key in res.data.fields) {
+              curl_command += " -F " + key + "=\""+res.data.fields[key]+"\""
+            }
+            curl_command += " " + res.data.url
+            console.log(curl_command)
+            let formData  = new FormData();
+            for(const name in res.data.fields) {
+              formData.append(name, res.data.fields[name]);
+            }
+            fetch(res.data.url, {
+              method: 'POST',
+              body: formData
+            }).then(() => {
+              // Now that the custom vocab file is in s3, create the custom vocab in AWS Transcribe.
+              // If the custom vocab already exists then overwrite it.
+              if (this.customVocabularyList.some(item => item.name === this.customVocabularyName)) {
+                console.log("Overwriting custom vocabulary")
+                this.overwriteVocabularyRequest(token)
+              } else {
+                this.saveVocabularyRequest(token)
+              }
+            })
+          }
+        })
+        )
+    },
+    saveCaptions: async function () {
+      // This function saves captions to the dataplane
+      // and reruns or resumes the workflow.
+      this.isSaving=true;
+      const token = await this.$Amplify.Auth.currentSession().then(data =>{
+        return data.getIdToken().getJwtToken();
+      });
       const operator_name = "WebCaptions_"+this.sourceLanguageCode
       const webCaptions = {"WebCaptions": this.webCaptions}
       let data='{"OperatorName": "' + operator_name + '", "Results": ' + JSON.stringify(webCaptions) + ', "WorkflowId": "' + this.workflow_id + '"}'
@@ -555,6 +945,11 @@ export default {
     // },
     showSaveConfirmation() {
       this.$refs['save-modal'].show()
+    },
+    showVocabConfirmation: async function() {
+      await this.listVocabulariesRequest()
+      this.$refs['save-modal'].hide()
+      this.$refs['vocab-modal'].show()
     },
     uploadCaptionsFile(event) {
       // Uncomment to enable Upload button
@@ -618,12 +1013,40 @@ export default {
     delete_row(index) {
       this.webCaptions.splice(index, 1)
     },
+    add_vocab_row(index) {
+      this.customVocabulary.splice(index+1, 0, {})
+    },
+    delete_vocab_row(index) {
+      this.customVocabulary.splice(index, 1)
+      if (this.customVocabulary.length === 0){
+        this.customVocabulary = [{"original_phrase":"","new_phrase":"","sounds_like":"","IPA":"","display_as":""}]
+      }
+    },
     pollWorkflowStatus() {
       // Poll frequency in milliseconds
       const poll_frequency = 5000;
       this.workflow_status_polling = setInterval(() => {
         this.getWorkflowStatus();
       }, poll_frequency)
+    },
+    pollVocabularyStatus() {
+      // Poll frequency in milliseconds
+      const poll_frequency = 10000;
+      this.vocab_status_polling = setInterval(() => {
+        this.listVocabulariesRequest();
+      }, poll_frequency)
+    },
+    phrase_formatter(phrase) {
+      // Transcribe requires numbers to be spelled out in the phrase field.
+      // Transcribe also requires spaces to be dashes in the phrase field.
+      // This function will automatically make those changes for user input to the phrase field.
+      let phrase_with_numbers_as_words = phrase
+      if (phrase.match(/\d+/g) != null)
+      {
+        phrase_with_numbers_as_words = phrase
+            .replace(phrase.match(/\d+/g)[0], converter.toWords(phrase.match(/\d+/g)[0]))
+      }
+      return phrase_with_numbers_as_words.replace(/\s+/g, '-')
     },
   },
 }
@@ -668,10 +1091,10 @@ export default {
   .custom-text-field {
     background-color: white !important;
     border: 0;
-  }
-  .highlightedBorder {
-    border-left: 1px solid #cc181e;
-    background-color: green;
+    padding-left: 0px !important;
+    padding-right: 0px !important;
+    margin-top: 0px !important;
+    margin-bottom: 0px !important;
   }
   tr.b-table-row-selected {
     border-left: 1px solid #cc181e !important;

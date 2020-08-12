@@ -36,11 +36,11 @@
               </div>
               <div v-if="overall_bit_rate !== 'undefined'">
                 <label>Video bit rate:</label>
-                {{ overall_bit_rate }} Mbps
+                {{ Math.round(overall_bit_rate/1000) }} kbps
               </div>
               <div v-if="frame_rate !== 'undefined'">
                 <label>Video frame rate:</label>
-                {{ frame_rate }} fps
+                {{ Math.round(frame_rate) }} fps
               </div>
               <div v-if="width !== 'undefined' && height !== 'undefined' ">
                 <label>Video resolution:</label>
@@ -64,6 +64,10 @@
                 <label>Encoded date:</label>
                 {{ encoded_date }}
               </div>
+              <div v-if="used_vocabulary !== ''">
+                <label>Custom Vocabulary:</label>
+                {{ used_vocabulary }}
+              </div>
             </b-col>
           </b-row>
         </div>
@@ -73,6 +77,8 @@
 </template>
 
 <script>
+  import { mapState } from 'vuex'
+
   export default {
     name: 'MediaSummary',
     props: ['s3Uri','filename','videoUrl'],
@@ -93,6 +99,9 @@
         encoded_date: "undefined",
         isBusy: false,
       }
+    },
+    computed: {
+      ...mapState(['used_vocabulary']),
     },
     deactivated: function () {
       this.lineChart = Object

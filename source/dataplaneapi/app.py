@@ -605,6 +605,51 @@ def put_asset_metadata(asset_id):
         return {"Status": "Failed"}
 
 
+@app.route('/transcribe/list_vocabularies', cors=True, methods=['GET'], authorizer=authorizer)
+def list_vocabularies():
+    # List all custom vocabularies
+    print('get_vocabularies request: '+app.current_request.raw_body.decode())
+    transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
+    response = transcribe_client.list_vocabularies(MaxResults=100)
+    vocabularies = response['Vocabularies']
+    while ('NextToken' in response):
+        response = transcribe_client.list_vocabularies(MaxResults=100, NextToken=response['NextToken'])
+        vocabularies = vocabularies + response['Vocabularies']
+    # Convert time field to a format that is JSON serializable
+    for item in vocabularies:
+        item['LastModifiedTime'] = item['LastModifiedTime'].isoformat()
+    return response
+
+
+@app.route('/transcribe/delete_vocabulary', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
+def delete_vocabulary():
+    # Delete the specified vocabulary if it exists
+    print('delete_vocabulary request: '+app.current_request.raw_body.decode())
+    transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
+    vocabulary_name = json.loads(app.current_request.raw_body.decode())['vocabulary_name']
+    vocabs = transcribe_client.list_vocabularies()['Vocabularies']
+    response = {}
+    for vocab in vocabs:
+        if vocab['VocabularyName'] == vocabulary_name:
+            response = transcribe_client.delete_vocabulary(VocabularyName=vocabulary_name)
+    return response
+
+
+@app.route('/transcribe/create_vocabulary', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
+def create_vocabulary():
+    # Save the input vocab to a new vocabulary
+    print('create_vocabulary request: '+app.current_request.raw_body.decode())
+    transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
+    vocabulary_name = json.loads(app.current_request.raw_body.decode())['vocabulary_name']
+    language_code = json.loads(app.current_request.raw_body.decode())['language_code']
+    response = transcribe_client.create_vocabulary(
+        VocabularyName=vocabulary_name,
+        LanguageCode=language_code,
+        VocabularyFileUri=json.loads(app.current_request.raw_body.decode())['s3uri']
+    )
+    return response
+
+
 @app.route('/metadata/{asset_id}', cors=True, methods=['GET'], authorizer=authorizer)
 def get_asset_metadata(asset_id):
     """

@@ -105,7 +105,7 @@
             </div>
           </div>
           <div v-else>
-            <div v-if="videoOptions.sources[0].src === '' || (videoOptions.captions.length > 0 && videoOptions.captions.length !== this.num_caption_tracks)">
+            <div v-if="videoOptions.sources[0].src === '' || (videoOptions.captions.length > 0 && videoOptions.captions.length !== num_caption_tracks)">
               <Loading />
             </div>
             <div v-else>

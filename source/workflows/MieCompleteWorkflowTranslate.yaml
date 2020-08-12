@@ -63,6 +63,8 @@ Resources:
             Fn::Sub: "${OperatorLibraryStack}:WebToSRTCaptions"
         - Fn::ImportValue:
             Fn::Sub: "${OperatorLibraryStack}:WebToVTTCaptions"
+        - Fn::ImportValue:
+            Fn::Sub: "${OperatorLibraryStack}:PollyWebCaptions"
   PreliminaryStage:
     Type: Custom::CustomResource
     Properties:

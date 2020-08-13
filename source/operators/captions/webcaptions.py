@@ -835,6 +835,9 @@ def start_polly_webcaptions (event, context):
                 polly_job_id = polly_response['SynthesisTask']['TaskId']
                 caption["PollyTaskId"] = polly_job_id
                 caption["PollyStatus"] = "started"
+
+                # Polly adds the polly task id to the S3 Key of the output
+                caption["PollyAudio"]["S3Key"] = 'private/assets/' + operator_object.asset_id + "/workflows/" + operator_object.workflow_execution_id + "/" + "audio_only" + "_" + caption["TargetLanguageCode"] + "." + polly_job_id + ".mp3"
             
     
     operator_object.add_workflow_metadata(PollyCollection=captions_collection, WorkflowExecutionId=operator_object.workflow_execution_id, AssetId=operator_object.asset_id)

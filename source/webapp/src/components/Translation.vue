@@ -102,6 +102,12 @@
         <b-dropdown-item :href="srt_url">
           Download SRT
         </b-dropdown-item>
+        <b-dropdown-item v-if="pollyaudio_url" :href=pollyaudio_url autostart="0" autoplay=false>
+          Download Audio
+        </b-dropdown-item>
+        <b-dropdown-item v-else disabled>
+          Download Audio (language not supported)
+        </b-dropdown-item>
       </b-dropdown>
       &nbsp;
       <!-- this is the save edits button for when workflow complete -->
@@ -141,6 +147,13 @@ export default {
         }
       ],
       srtcaptions: [
+        {
+          src: "",
+          lang: "",
+          label: ""
+        }
+      ],
+      pollyaudiotranscripts: [
         {
           src: "",
           lang: "",
@@ -278,6 +291,16 @@ export default {
         return null
       }
     },
+    pollyaudio_url: function() {
+      if (this.selected_lang_code !== '') {
+        let pollyaudiotranscript = this.pollyaudiotranscripts.filter(x => (x.lang === this.selected_lang_code))[0];
+        if (pollyaudiotranscript) {
+          return pollyaudiotranscript.src
+        }
+      } else {
+        return null
+      }
+    },
     text_direction: function() {
       // This function is used to change text direction for right-to-left languages
       if (this.selected_lang_code === "ar" || this.selected_lang_code === "fa" || this.selected_lang_code === "he" || this.selected_lang_code === "ur" ) return "rtl"
@@ -299,6 +322,7 @@ export default {
     console.log('activated component:', this.operator);
     this.getVttCaptions();
     this.getSrtCaptions();
+    this.getPollyAudioTranscripts()
     this.isBusy = true;
     this.handleVideoPlay();
     this.handleVideoSeek();
@@ -476,6 +500,58 @@ export default {
           this.srtcaptions = captions_collection
         })
       });
+    },
+    getPollyAudioTranscripts: async function () {
+      const token = await this.$Amplify.Auth.currentSession().then(data =>{
+        return data.getIdToken().getJwtToken();
+      });
+      const asset_id = this.$route.params.asset_id;
+
+      fetch(this.DATAPLANE_API_ENDPOINT + '/metadata/' + asset_id + '/PollyWebCaptions', {
+        method: 'get',
+        headers: {
+          'Authorization': token
+        }
+      }).then(response => {
+        response.json().then(data => ({
+            data: data,
+          })
+        ).then(res => {
+          let captions_collection = [];
+          res.data.results.CaptionsCollection.forEach(item => {
+            // TODO: map the language code to a language label
+            if (item.PollyStatus != "not supported") {
+              const bucket = item.PollyAudio.S3Bucket;
+              const key = item.PollyAudio.S3Key;
+              // get URL to captions file in S3
+              fetch(this.DATAPLANE_API_ENDPOINT + '/download', {
+                method: 'POST',
+                mode: 'cors',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': token
+                },
+                body: JSON.stringify({"S3Bucket": bucket, "S3Key": key})
+              }).then(data => {
+                data.text().then((data) => {
+                  captions_collection.push({'src': data, 'lang': item.TargetLanguageCode, 'label': item.TargetLanguageCode});
+                }).catch(err => console.error(err));
+              });
+            }
+          });
+          this.pollyaudiotranscripts = captions_collection
+        })
+      });
+    },
+    downloadAudioFile() {
+      const blob = new Blob([this.pollyaudio_url], {type: 'audio/mpeg', autoplay:'0', autostart:'false', endings:'native'});
+      const e = document.createEvent('MouseEvents'),
+        a = document.createElement('a');
+      a.download = "audiofile.mp3";
+      a.href = window.URL.createObjectURL(blob);
+      a.dataset.downloadurl = ['audio/mpeg', a.download, a.href].join(':');
+      e.initEvent('click', true, false, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+      a.dispatchEvent(e);
     },
     toHHMMSS(secs) {
       var sec_num = parseInt(secs, 10)

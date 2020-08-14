@@ -70,10 +70,10 @@ to highlight the fields in the custom vocab schema. -->
           <b-row no-gutters>
             <b-col cols="10">
               <div v-if="row.index < customVocabularyUnsaved.length">
-                <b-form-input v-model="row.item.original_phrase" class="custom-text-field text-info" :formatter="phrase_formatter" lazy-formatter />
+                <b-form-input v-model="row.item.original_phrase" class="custom-text-field" :formatter="phrase_formatter" lazy-formatter />
               </div>
               <div v-else>
-                <b-form-input v-model="row.item.original_phrase" class="custom-text-field text-secondary" :formatter="phrase_formatter" lazy-formatter />
+                <b-form-input v-model="row.item.original_phrase" class="custom-text-field text-info" :formatter="phrase_formatter" lazy-formatter />
               </div>
             </b-col>
           </b-row>
@@ -82,10 +82,10 @@ to highlight the fields in the custom vocab schema. -->
           <b-row no-gutters>
             <b-col cols="10">
               <div v-if="row.index < customVocabularyUnsaved.length">
-                <b-form-input v-model="row.item.new_phrase" class="custom-text-field text-info" :formatter="phrase_formatter" lazy-formatter />
+                <b-form-input v-model="row.item.new_phrase" class="custom-text-field" :formatter="phrase_formatter" lazy-formatter />
               </div>
               <div v-else>
-                <b-form-input v-model="row.item.new_phrase" class="custom-text-field text-secondary" :formatter="phrase_formatter" lazy-formatter />
+                <b-form-input v-model="row.item.new_phrase" class="custom-text-field text-info" :formatter="phrase_formatter" lazy-formatter />
               </div>
             </b-col>
           </b-row>
@@ -94,10 +94,10 @@ to highlight the fields in the custom vocab schema. -->
           <b-row no-gutters>
             <b-col cols="10">
               <div v-if="row.index < customVocabularyUnsaved.length">
-                <b-form-input v-model="row.item.sounds_like" class="custom-text-field text-info" />
+                <b-form-input v-model="row.item.sounds_like" class="custom-text-field" />
               </div>
               <div v-else>
-                <b-form-input v-model="row.item.sounds_like" class="custom-text-field text-secondary" />
+                <b-form-input v-model="row.item.sounds_like" class="custom-text-field text-info" />
               </div>
             </b-col>
           </b-row>
@@ -106,10 +106,10 @@ to highlight the fields in the custom vocab schema. -->
           <b-row no-gutters>
             <b-col cols="10">
               <div v-if="row.index < customVocabularyUnsaved.length">
-                <b-form-input v-model="row.item.IPA" class="custom-text-field text-info" />
+                <b-form-input v-model="row.item.IPA" class="custom-text-field" />
               </div>
               <div v-else>
-                <b-form-input v-model="row.item.IPA" class="custom-text-field text-secondary" />
+                <b-form-input v-model="row.item.IPA" class="custom-text-field text-info" />
               </div>
             </b-col>
           </b-row>
@@ -118,10 +118,10 @@ to highlight the fields in the custom vocab schema. -->
           <b-row no-gutters>
             <b-col cols="9">
               <div v-if="row.index < customVocabularyUnsaved.length">
-                <b-form-input v-model="row.item.display_as" class="custom-text-field text-info" />
+                <b-form-input v-model="row.item.display_as" class="custom-text-field" />
               </div>
               <div v-else>
-                <b-form-input v-model="row.item.display_as" class="custom-text-field text-secondary" />
+                <b-form-input v-model="row.item.display_as" class="custom-text-field text-info" />
               </div>
             </b-col>
             <b-col nopadding cols="1">
@@ -139,7 +139,7 @@ to highlight the fields in the custom vocab schema. -->
           </b-row>
         </template>
       </b-table>
-      <div v-if="customVocabularyUnsaved.length > 0" class="text-secondary">Rows shown in blue text are unsaved.</div>
+      <div v-if="customVocabularySelected != ''" class="text-info">Rows shown in blue text are from vocabulary, <b>{{ customVocabularySelected }}.</b></div>
       <div v-if="customVocabularyUnion.length === 0" style="color:red">
         Make changes to the subtitles in order to build a custom vocabulary.<br>
       </div>

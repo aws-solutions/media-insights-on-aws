@@ -69,69 +69,44 @@ to highlight the fields in the custom vocab schema. -->
         <template v-slot:cell(original_phrase)="row">
           <b-row no-gutters>
             <b-col cols="10">
-              <div v-if="row.item.immutable === false">
-                <b-form-input v-model="row.item.original_phrase" class="custom-text-field" />
-              </div>
-              <div v-else class="text-secondary">
-                {{ row.item.original_phrase }}
-              </div>
+              <b-form-input v-model="row.item.original_phrase" class="custom-text-field" />
             </b-col>
           </b-row>
         </template>
         <template v-slot:cell(new_phrase)="row">
           <b-row no-gutters>
             <b-col cols="10">
-              <div v-if="row.item.immutable === false">
-                <b-form-input v-model="row.item.new_phrase" class="custom-text-field" :formatter="phrase_formatter" lazy-formatter />
-              </div>
-              <div v-else class="text-secondary">
-                {{ row.item.new_phrase }}
-              </div>
+              <b-form-input v-model="row.item.new_phrase" class="custom-text-field" :formatter="phrase_formatter" lazy-formatter />
             </b-col>
           </b-row>
         </template>
         <template v-slot:cell(sounds_like)="row">
           <b-row no-gutters>
             <b-col cols="10">
-              <div v-if="row.item.immutable === false">
-                <b-form-input v-model="row.item.sounds_like" class="custom-text-field" />
-              </div>
-              <div v-else class="text-secondary">
-                {{ row.item.sounds_like }}
-              </div>
+              <b-form-input v-model="row.item.sounds_like" class="custom-text-field" />
             </b-col>
           </b-row>
         </template>
         <template v-slot:cell(IPA)="row">
           <b-row no-gutters>
             <b-col cols="10">
-              <div v-if="row.item.immutable === false">
-                <b-form-input v-model="row.item.IPA" class="custom-text-field" />
-              </div>
-              <div v-else class="text-secondary">
-                {{ row.item.IPA }}
-              </div>
+              <b-form-input v-model="row.item.IPA" class="custom-text-field" />
             </b-col>
           </b-row>
         </template>
         <template v-slot:cell(display_as)="row">
           <b-row no-gutters>
             <b-col cols="9">
-              <div v-if="row.item.immutable === false">
-                <b-form-input v-model="row.item.display_as" class="custom-text-field" />
-              </div>
-              <div v-else class="text-secondary">
-                {{ row.item.display_as }}
-              </div>
+              <b-form-input v-model="row.item.display_as" class="custom-text-field" />
             </b-col>
             <b-col nopadding cols="1">
               <span style="position:absolute; top: 0px">
-                <b-button v-if="row.item.immutable === false" v-b-tooltip.hover.right size="sm" style="display: flex;" variant="link" title="Remove row" @click="delete_vocab_row(row.index)">
+                <b-button v-b-tooltip.hover.right size="sm" style="display: flex;" variant="link" title="Remove row" @click="delete_vocab_row(row.index)">
                   <b-icon font-scale=".9" icon="x-circle" color="lightgrey"></b-icon>
                 </b-button>
               </span>
               <span style="position:absolute; bottom: 0px">
-                <b-button v-if="row.item.immutable === false" v-b-tooltip.hover.right size="sm" style="display: flex;" variant="link" title="Add row" @click="add_vocab_row(row.index)">
+                <b-button v-b-tooltip.hover.right size="sm" style="display: flex;" variant="link" title="Add row" @click="add_vocab_row(row.index)">
                   <b-icon font-scale=".9" icon="plus-square" color="lightgrey"></b-icon>
                 </b-button>
               </span>
@@ -139,7 +114,6 @@ to highlight the fields in the custom vocab schema. -->
           </b-row>
         </template>
       </b-table>
-      <div v-if="customVocabularySelected !== ''" class="text-secondary">* Previously saved vocabularies cannot be changed.</div>
       <div v-if="customVocabularyUnsaved.length === 0" style="color:red">
         Vocabulary is empty. Make changes to the subtitles in order to build a custom vocabulary.<br>
       </div>
@@ -338,8 +312,8 @@ export default {
     },
     customVocabularyFile: function () {
       let vocab_file = "Phrase\tSoundsLike\tIPA\tDisplayAs"
-      for (const i in this.customVocabularyUnsaved) {
-        vocab_file += "\n" + this.customVocabularyUnsaved[i].new_phrase + "\t\t\t" + this.customVocabularyUnsaved[i].display_as
+      for (const i in this.customVocabularyUnion) {
+        vocab_file += "\n" + this.customVocabularyUnion[i].new_phrase + "\t" + this.customVocabularyUnion[i].sounds_like + "\t" + this.customVocabularyUnion[i].IPA + "\t" + this.customVocabularyUnion[i].display_as
       }
       return vocab_file
     },
@@ -479,7 +453,7 @@ export default {
               // remove old_phrase from custom vocab, if it already exists
               this.customVocabularyUnsaved = this.customVocabularyUnsaved.filter(item => {return item.original_phrase !== old_phrase;});
               // add old_phrase to custom vocab
-              this.customVocabularyUnsaved.push({"original_phrase": old_phrase, "new_phrase": new_phrase_with_numbers_as_words, "sounds_like":"", "IPA":"", "display_as": new_phrase, "immutable": false})
+              this.customVocabularyUnsaved.push({"original_phrase": old_phrase, "new_phrase": new_phrase_with_numbers_as_words, "sounds_like":"", "IPA":"", "display_as": new_phrase})
               console.log("CUSTOM VOCABULARY: " + JSON.stringify(this.customVocabularyUnsaved))
             }
             old_phrase = ''
@@ -659,7 +633,7 @@ export default {
           })
         ).then(res => {
           // save phrases from the currently selected vocabulary
-          this.customVocabularySaved = res.data.vocabulary.map(({Phrase, SoundsLike, IPA, DisplayAs}) => ({original_phrase: "", immutable: true, new_phrase: Phrase, sounds_like: SoundsLike, IPA: IPA, display_as: DisplayAs}));
+          this.customVocabularySaved = res.data.vocabulary.map(({Phrase, SoundsLike, IPA, DisplayAs}) => ({original_phrase: "", new_phrase: Phrase, sounds_like: SoundsLike, IPA: IPA, display_as: DisplayAs}));
           console.log("saved:")
           console.log(this.customVocabularySaved)
           console.log("concat:")
@@ -1091,7 +1065,7 @@ export default {
     delete_vocab_row(index) {
       this.customVocabularyUnsaved.splice(index, 1)
       if (this.customVocabularyUnsaved.length === 0){
-        this.customVocabularyUnsaved = [{"original_phrase":"","new_phrase":"","sounds_like":"","IPA":"","display_as":"", "immutable": false}]
+        this.customVocabularyUnsaved = [{"original_phrase":"","new_phrase":"","sounds_like":"","IPA":"","display_as":""}]
       }
     },
     pollWorkflowStatus() {

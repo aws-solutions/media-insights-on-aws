@@ -605,6 +605,38 @@ def put_asset_metadata(asset_id):
         return {"Status": "Failed"}
 
 
+@app.route('/transcribe/get_vocabulary', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
+def get_vocabulary():
+    print('get_vocabulary request: '+app.current_request.raw_body.decode())
+    transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
+    vocabulary_name = json.loads(app.current_request.raw_body.decode())['vocabulary_name']
+    response = transcribe_client.get_vocabulary(VocabularyName=vocabulary_name)
+    # Convert time field to a format that is JSON serializable
+    response['LastModifiedTime'] = response['LastModifiedTime'].isoformat()
+    return response\
+
+@app.route('/transcribe/download_vocabulary', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
+def get_vocabulary():
+    print('download_vocabulary request: '+app.current_request.raw_body.decode())
+    transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
+    vocabulary_name = json.loads(app.current_request.raw_body.decode())['vocabulary_name']
+    url = transcribe_client.get_vocabulary(VocabularyName=vocabulary_name)['DownloadUri']
+    import urllib.request
+    vocabulary_file = urllib.request.urlopen(url).read().decode("utf-8")
+    vocabulary_json = []
+    vocabulary_fields = vocabulary_file.split('\n')[0].split('\t')
+    for line in vocabulary_file.split('\n')[1:]:
+        vocabulary_item_array = line.split('\t')
+        vocabulary_item_json = {}
+        # if vocab item is missing any fields, then skip it
+        if len(vocabulary_item_array) == len(vocabulary_fields):
+            i = 0
+            for field in vocabulary_fields:
+                vocabulary_item_json[field] = vocabulary_item_array[i]
+                i = i + 1
+        vocabulary_json.append(vocabulary_item_json)
+    return {"vocabulary": vocabulary_json}
+
 @app.route('/transcribe/list_vocabularies', cors=True, methods=['GET'], authorizer=authorizer)
 def list_vocabularies():
     # List all custom vocabularies

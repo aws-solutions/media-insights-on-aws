@@ -66,6 +66,7 @@
                   "Action": [
                     "transcribe:CreateVocabulary",
                     "transcribe:DeleteVocabulary",
+                    "transcribe:GetVocabulary",
                     "transcribe:ListVocabularies"
                   ],
                   "Resource": "*"

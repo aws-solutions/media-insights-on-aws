@@ -19,7 +19,7 @@
     >
       {{ vocabularyNotificationMessage }}
     </b-alert>
-    <b-modal ref="vocab-modal" size="lg" title="Save Vocabulary?" :ok-disabled="validVocabularyName === false || (customVocabularySelected === '' && customVocabularyCreateNew === '') || customVocabularyUnsaved.length === 0" ok-title="Save" @ok="saveVocabulary()">
+    <b-modal ref="vocab-modal" size="lg" title="Save Vocabulary?" :ok-disabled="validVocabularyName === false || (customVocabularySelected === '' && customVocabularyCreateNew === '') || customVocabularyUnion.length === 0" ok-title="Save" @ok="saveVocabulary()">
       <b-form-group v-if="customVocabularyList.length>0" label="Select a vocabulary to overwrite or specify a new name:">
         <b-form-radio-group
           id="custom-vocab-selection"
@@ -36,9 +36,9 @@
       <!-- The state on this text area will show a red alert icon if
       the user enters an invalid custom vocabulary name. Otherwise we
       set the state to null so no validity indicator is shown. -->
-      <b-form-input v-if="customVocabularyList.length>0" v-model="customVocabularyCreateNew" size="sm" placeholder="Enter new vocabulary name (optional)" :state="validVocabularyName ? null : false"></b-form-input>
+      <b-form-input v-if="customVocabularyList.length>0" v-model="customVocabularyCreateNew" size="sm" placeholder="Enter new vocabulary name (optional)" :state="validVocabularyName ? null : false" @focus="customVocabularySelected=''"></b-form-input>
       <b-form-input v-else v-model="customVocabularyCreateNew" size="sm" placeholder="Enter new vocabulary name" :state="validVocabularyName ? null : false"></b-form-input>
-      <div v-if="customVocabularyList.length>0 && customVocabularySelected !== ''">
+      <div v-if="customVocabularyList.length > 0 && customVocabularySelected !== ''">
         Delete the selected vocabulary (optional): <b-button v-b-tooltip.hover.right size="sm" title="Delete selected vocabulary" variant="danger" @click="deleteVocabulary">
           Delete
         </b-button>
@@ -69,35 +69,60 @@ to highlight the fields in the custom vocab schema. -->
         <template v-slot:cell(original_phrase)="row">
           <b-row no-gutters>
             <b-col cols="10">
-              <b-form-input v-model="row.item.original_phrase" class="custom-text-field" />
+              <div v-if="row.index < customVocabularyUnsaved.length">
+                <b-form-input v-model="row.item.original_phrase" class="custom-text-field" :formatter="phrase_formatter" lazy-formatter />
+              </div>
+              <div v-else>
+                <b-form-input v-model="row.item.original_phrase" class="custom-text-field text-info" :formatter="phrase_formatter" lazy-formatter />
+              </div>
             </b-col>
           </b-row>
         </template>
         <template v-slot:cell(new_phrase)="row">
           <b-row no-gutters>
             <b-col cols="10">
-              <b-form-input v-model="row.item.new_phrase" class="custom-text-field" :formatter="phrase_formatter" lazy-formatter />
+              <div v-if="row.index < customVocabularyUnsaved.length">
+                <b-form-input v-model="row.item.new_phrase" class="custom-text-field" :formatter="phrase_formatter" lazy-formatter />
+              </div>
+              <div v-else>
+                <b-form-input v-model="row.item.new_phrase" class="custom-text-field text-info" :formatter="phrase_formatter" lazy-formatter />
+              </div>
             </b-col>
           </b-row>
         </template>
         <template v-slot:cell(sounds_like)="row">
           <b-row no-gutters>
             <b-col cols="10">
-              <b-form-input v-model="row.item.sounds_like" class="custom-text-field" />
+              <div v-if="row.index < customVocabularyUnsaved.length">
+                <b-form-input v-model="row.item.sounds_like" class="custom-text-field" />
+              </div>
+              <div v-else>
+                <b-form-input v-model="row.item.sounds_like" class="custom-text-field text-info" />
+              </div>
             </b-col>
           </b-row>
         </template>
         <template v-slot:cell(IPA)="row">
           <b-row no-gutters>
             <b-col cols="10">
-              <b-form-input v-model="row.item.IPA" class="custom-text-field" />
+              <div v-if="row.index < customVocabularyUnsaved.length">
+                <b-form-input v-model="row.item.IPA" class="custom-text-field" />
+              </div>
+              <div v-else>
+                <b-form-input v-model="row.item.IPA" class="custom-text-field text-info" />
+              </div>
             </b-col>
           </b-row>
         </template>
         <template v-slot:cell(display_as)="row">
           <b-row no-gutters>
             <b-col cols="9">
-              <b-form-input v-model="row.item.display_as" class="custom-text-field" />
+              <div v-if="row.index < customVocabularyUnsaved.length">
+                <b-form-input v-model="row.item.display_as" class="custom-text-field" />
+              </div>
+              <div v-else>
+                <b-form-input v-model="row.item.display_as" class="custom-text-field text-info" />
+              </div>
             </b-col>
             <b-col nopadding cols="1">
               <span style="position:absolute; top: 0px">
@@ -114,8 +139,9 @@ to highlight the fields in the custom vocab schema. -->
           </b-row>
         </template>
       </b-table>
-      <div v-if="customVocabularyUnsaved.length === 0" style="color:red">
-        Vocabulary is empty. Make changes to the subtitles in order to build a custom vocabulary.<br>
+      <div v-if="customVocabularySelected != ''" class="text-info">Rows shown in blue text are from vocabulary, <b>{{ customVocabularySelected }}.</b></div>
+      <div v-if="customVocabularyUnion.length === 0" style="color:red">
+        Make changes to the subtitles in order to build a custom vocabulary.<br>
       </div>
       <div v-else-if="validVocabularyName === false" style="color:red">
         Invalid vocabulary name. Valid characters are a-z, A-Z, and 0-9. Max length is 200.
@@ -311,10 +337,23 @@ export default {
         return this.customVocabularySelected
     },
     customVocabularyFile: function () {
+      for (const i in this.customVocabularyUnion) {
+        if (this.customVocabularyUnion[i].new_phrase === undefined)
+          this.customVocabularyUnion[i].new_phrase = ""
+        if (this.customVocabularyUnion[i].sounds_like === undefined)
+          this.customVocabularyUnion[i].sounds_like = ""
+        if (this.customVocabularyUnion[i].IPA === undefined)
+          this.customVocabularyUnion[i].IPA = ""
+        if (this.customVocabularyUnion[i].display_as === undefined)
+          this.customVocabularyUnion[i].display_as = ""
+      }
+
       let vocab_file = "Phrase\tSoundsLike\tIPA\tDisplayAs"
       for (const i in this.customVocabularyUnion) {
         vocab_file += "\n" + this.customVocabularyUnion[i].new_phrase + "\t" + this.customVocabularyUnion[i].sounds_like + "\t" + this.customVocabularyUnion[i].IPA + "\t" + this.customVocabularyUnion[i].display_as
       }
+      console.log("vocab_file")
+      console.log(vocab_file)
       return vocab_file
     },
     inputListeners: function () {
@@ -604,6 +643,7 @@ export default {
         ).then(res => {
           this.sourceLanguageCode = res.data.Configuration.WebCaptionsStage2.WebCaptions.SourceLanguageCode
           this.transcribe_language_code = res.data.Configuration.defaultAudioStage2.Transcribe.TranscribeLanguage
+          this.vocabulary_used = res.data.Configuration.defaultAudioStage2.Transcribe.VocabularyName
           if (this.vocabulary_used) {
             this.$store.commit('updateUsedVocabulary', this.vocabulary_used)
           }
@@ -822,6 +862,9 @@ export default {
             this.vocabularyNotificationMessage = "Deleted vocabulary: " + this.customVocabularySelected
             this.vocabularyNotificationStatus = "success"
             this.showVocabularyNotification = 5
+            // reset the radio button selection
+            this.customVocabularySelected = ""
+            this.customVocabularySaved = []
             this.listVocabulariesRequest()
           } else {
             console.log("Failed to delete vocabulary")
@@ -1060,11 +1103,25 @@ export default {
       this.webCaptions.splice(index, 1)
     },
     add_vocab_row(index) {
-      this.customVocabularyUnsaved.splice(index+1, 0, {})
+      // The index provided is the index into the concattenated unsaved and saved vocabularies
+      // Unsaved vocab will always be listed first, so we convert the index as follows so that
+      // we can splice appropriately in the unsaved or saved vocabulary.
+      if (index < this.customVocabularyUnsaved.length) {
+        this.customVocabularyUnsaved.splice(index+1, 0, {})
+      } else {
+        this.customVocabularyUnsaved.splice(index-this.customVocabularyUnsaved.length, 0, {})      }
     },
     delete_vocab_row(index) {
-      this.customVocabularyUnsaved.splice(index, 1)
-      if (this.customVocabularyUnsaved.length === 0){
+      // The index provided is the index into the concattenated unsaved and saved vocabularies
+      // Unsaved vocab will always be listed first, so we convert the index as follows so that
+      // we can splice appropriately in the unsaved or saved vocabulary.
+      if (index < this.customVocabularyUnsaved.length) {
+        this.customVocabularyUnsaved.splice(index, 1)
+      } else {
+        const index_into_saved_vocab = index - this.customVocabularyUnsaved.length
+        this.customVocabularySaved.splice(index_into_saved_vocab, 1)
+      }
+      if (this.customVocabularyUnion.length === 0){
         this.customVocabularyUnsaved = [{"original_phrase":"","new_phrase":"","sounds_like":"","IPA":"","display_as":""}]
       }
     },

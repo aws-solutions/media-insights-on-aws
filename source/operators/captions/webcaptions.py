@@ -27,6 +27,7 @@ dataplane = DataPlane()
 mie_config = json.loads(os.environ['botoConfig'])
 config = config.Config(**mie_config)
 translate_client = boto3.client('translate', config=config)
+polly = boto3.client('polly', config=config)
 
 class WebCaptions:
     def __init__(self, operator_object):
@@ -239,8 +240,55 @@ class WebCaptions:
         }
 
         return metadata
+
+    def GetWebCaptionsCollection(self):
+        webcaptions_collection_name = "TranslateWebCaptions"
+        print(webcaptions_collection_name)
+
+        response = dataplane.retrieve_asset_metadata(self.asset_id, operator_name=webcaptions_collection_name)
+        print(response)
+        return response["results"]["CaptionsCollection"]
     
-    
+    def GetTextOnlyTranscript(self, language_code):
+
+        webcaptions = self.GetWebCaptions(language_code)
+        transcript = self.WebCaptionsToTextTranscript(webcaptions)
+
+        return transcript
+
+        # Convert most recently saved WebCaptions to a text only transcript
+
+    def WebCaptionsToTextTranscript(self, webcaptions):
+
+        transcript = ""
+
+        for caption in webcaptions:
+            transcript = transcript + caption["caption"]
+            
+
+        return transcript
+
+    def PutWebCaptionsCollection(self, operator, collection):
+
+        collection_dict = {}
+        collection_dict["CaptionsCollection"] = collection
+        response = dataplane.store_asset_metadata(self.asset_id, self.operator_object.name, self.workflow_id,
+                                collection_dict)
+
+        if "Status" not in response:
+            self.operator_object.update_workflow_status("Error")
+            self.operator_object.add_workflow_metadata(WebCaptionsError="Unable to store captions collection metadata {e}".format(e=response))
+            raise MasExecutionError(self.operator_object.return_output_object())
+        else:
+            if response["Status"] == "Success":
+                self.operator_object.update_workflow_status("Complete")
+                return self.operator_object.return_output_object()
+            else:
+                self.operator_object.update_workflow_status("Error")
+                self.operator_object.add_workflow_metadata(
+                    WebCaptionsError="Unable to store captions collection {e}".format(e=response))
+                raise MasExecutionError(self.operator_object.return_output_object())
+
     def WebCaptionsToSRT(self, webcaptions):
         srt = ''
 
@@ -415,7 +463,6 @@ class WebCaptions:
             self.operator_object.update_workflow_status("Error")
             self.operator_object.add_workflow_metadata(TranslateError="Unable to start translation WebCaptions job: {e}".format(e=str(e)))
             raise MasExecutionError(self.operator_object.return_output_object())
-
 
 # Create web captions with line by line captions from the transcribe output
 def web_captions(event, context):
@@ -663,7 +710,7 @@ def check_translate_webcaptions(event, context):
             metadata = {
                 "OperatorName": "TranslateWebCaptions_"+translateJobLanguageCode,
                 "TranslationText": {"S3Bucket": bucket, "S3Key": translation_text_key},
-                "WebCaptions": operator_metadata,
+                #"WebCaptions": operator_metadata,
                 "WorkflowId": workflow_id,
                 "TargetLanguageCode": translateJobLanguageCode
             }
@@ -680,6 +727,183 @@ def check_translate_webcaptions(event, context):
     data = {}
     data["CaptionsCollection"] = webcaptions_collection
     webcaptions_object.PutMediaCollection(operator_object.name, data)
+
+    return operator_object.return_output_object()
+
+def translate_to_polly_language_code(translate_language_code):
+
+    code_lookup = {
+        "ar":"arb",
+        "zh":"cmn-CN",
+        "zh-TW":"cmn-CN",
+        "da":"da-DK",
+        "de":"de-DE",
+        "en":"en-GB",
+        "es":"es-ES",
+        "es-MX":"es-MX",
+        "fr":"fr-FR",
+        "fr-CA":"fr-CA",
+        "it":"it-IT",
+        "ja":"ja-JP",
+        "hi":"hi-IN",
+        "ko":"ko-KR",
+        "no":"nb-NO",
+        "nl":"nl-NL",
+        "pl":"pl-PL",
+        "pt":"pt-PT",
+        "ro":"ro-RO",
+        "ru":"ru-RU",
+        "sv":"sv-SE",
+        "tr":"tr-TR"
+    }
+
+    if translate_language_code in code_lookup:
+        return code_lookup[translate_language_code]
+    else:
+        return "not supported"
+
+# Create a Polly track using the text only transcript for each language in the WebCaptions collection for this AssetId
+# The pacing of this polly track is determined bu the Polly service 
+def start_polly_webcaptions (event, context):
+    print("We got this event:\n", event)
+
+    operator_object = MediaInsightsOperationHelper(event)
+    webcaptions_object = WebCaptions(operator_object)
+
+    captions_collection = webcaptions_object.GetWebCaptionsCollection()
+    print("INPUT CAPTIONS COLLECTION")
+    print(json.dumps(captions_collection))
+
+    for caption in captions_collection:
+    
+        
+        # Always start from WebCaptions data since these are the most recently edited version
+        # Convert WebCaptions to a text only transcript
+        transcript = webcaptions_object.GetTextOnlyTranscript(caption["TargetLanguageCode"])
+
+
+        # If input text is empty then we're done.
+        if len(transcript) < 1:
+            operator_object.update_workflow_status("Complete")
+            return operator_object.return_output_object()
+
+        # Get language code of the transcript, we should just pass this along in the event later
+        language_code = translate_to_polly_language_code(caption["TargetLanguageCode"])
+
+        if language_code == "not supported":
+            caption["PollyStatus"] = "not supported"
+        else:
+
+            try:
+                # set voice_id based on language
+                response = polly.describe_voices(
+                    #Engine='standard'|'neural',
+                    LanguageCode=language_code
+                    #IncludeAdditionalLanguageCodes=True|False,
+                    #NextToken='string'
+                )
+                
+            except Exception as e:
+                operator_object.update_workflow_status("Error")
+                operator_object.add_workflow_metadata(PollyCollectionError="Unable to get response from polly describe_voices: {e}".format(e=str(e)))
+                raise MasExecutionError(operator_object.return_output_object())
+            else:
+                # just take the fisrt voice in the list.  Maybe later we can extend to choose voice based on other criteria such 
+                # as gender
+                voice_id = response["Voices"][0]["Id"]
+                caption["VoiceId"] = voice_id
+
+            caption["PollyAudio"] = {}
+            caption["PollyAudio"]["S3Key"] = 'private/assets/' + operator_object.asset_id + "/workflows/" + operator_object.workflow_execution_id + "/" + "audio_only" + "_" + caption["TargetLanguageCode"]
+            caption["PollyAudio"]["S3Bucket"] = caption["TranslationText"]["S3Bucket"]
+
+            try:
+                polly_response = polly.start_speech_synthesis_task(
+                    OutputFormat='mp3',
+                    OutputS3BucketName=caption["PollyAudio"]["S3Bucket"],
+                    OutputS3KeyPrefix=caption["PollyAudio"]["S3Key"],
+                    Text=transcript,
+                    TextType='text',
+                    VoiceId=voice_id
+                )
+
+            except Exception as e:
+                operator_object.update_workflow_status("Error")
+                operator_object.add_workflow_metadata(PollyCollectionError="Unable to get response from polly: {e}".format(e=str(e)))
+                raise MasExecutionError(operator_object.return_output_object())
+            else:
+                polly_job_id = polly_response['SynthesisTask']['TaskId']
+                caption["PollyTaskId"] = polly_job_id
+                caption["PollyStatus"] = "started"
+
+                # Polly adds the polly task id to the S3 Key of the output
+                caption["PollyAudio"]["S3Key"] = 'private/assets/' + operator_object.asset_id + "/workflows/" + operator_object.workflow_execution_id + "/" + "audio_only" + "_" + caption["TargetLanguageCode"] + "." + polly_job_id + ".mp3"
+            
+    
+    operator_object.add_workflow_metadata(PollyCollection=captions_collection, WorkflowExecutionId=operator_object.workflow_execution_id, AssetId=operator_object.asset_id)
+    operator_object.update_workflow_status('Executing')
+    return operator_object.return_output_object()
+
+def check_polly_webcaptions(event, context):
+    print("We got this event:\n", event)
+
+    operator_object = MediaInsightsOperationHelper(event)
+    webcaptions_object = WebCaptions(operator_object)
+
+    print("We got this event:\n", event)
+
+    operator_object = MediaInsightsOperationHelper(event)
+
+    try:
+        polly_collection = operator_object.metadata["PollyCollection"]
+    except KeyError as e:
+        operator_object.update_workflow_status("Error")
+        operator_object.add_workflow_metadata(PollyCollectionError="Missing a required metadata key {e}".format(e=e))
+        raise MasExecutionError(operator_object.return_output_object())
+    
+    finished_tasks = 0
+    for caption in polly_collection:
+        if caption["PollyStatus"] in ["completed", "failed", "not supported"]:
+            finished_tasks = finished_tasks +1
+        else:
+            try:
+                polly_response = polly.get_speech_synthesis_task(
+                    TaskId=caption["PollyTaskId"]
+
+                )
+            except Exception as e:
+                operator_object.update_workflow_status("Error")
+                operator_object.add_workflow_metadata(PollyCollectionError="Unable to get response from polly: {e}".format(e=str(e)))
+                raise MasExecutionError(operator_object.return_output_object())
+            else:
+                polly_status = polly_response["SynthesisTask"]["TaskStatus"]
+                print("The status from polly is:\n", polly_status)
+                if polly_status in ["inProgress", "scheduled"]:
+                    operator_object.update_workflow_status("Executing")
+                elif polly_status == "completed":
+                    # TODO: Store job details as metadata in dataplane
+                    finished_tasks = finished_tasks +1
+
+                    caption["PollyAudio"]["Uri"] = polly_response["SynthesisTask"]["OutputUri"]
+                    
+                    operator_object.update_workflow_status("Executing")
+
+                elif polly_status == "failed":
+                    finished_tasks = finished_tasks +1
+                    operator_object.update_workflow_status("Error")
+                    operator_object.add_workflow_metadata(PollyCollectionError="Polly returned as failed: {e}".format(e=str(polly_response["SynthesisTask"]["TaskStatusReason"])))
+                    raise MasExecutionError(operator_object.return_output_object())
+                else:
+                    operator_object.update_workflow_status("Error")
+                    operator_object.add_workflow_metadata(PollyCollectionError="Polly returned as failed: {e}".format(e=str(polly_response["SynthesisTask"]["TaskStatusReason"])))
+                    raise MasExecutionError(operator_object.return_output_object())
+
+    # If all the Polly jobs are done then the operator is complete
+    if finished_tasks == len(polly_collection):
+        operator_object.update_workflow_status("Complete")
+        webcaptions_object.PutWebCaptionsCollection("CaptionsCollection", polly_collection)
+
+    operator_object.add_workflow_metadata(PollyCollection=polly_collection)
 
     return operator_object.return_output_object()
 

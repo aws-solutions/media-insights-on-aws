@@ -563,6 +563,8 @@ Resources:
                   - !GetAtt CheckPollyFunction.Arn
                   - !GetAtt StartTranslateWebcaptionsFunction.Arn
                   - !GetAtt CheckTranslateWebcaptionsFunction.Arn
+                  - !GetAtt StartPollyWebCaptionsFunction.Arn
+                  - !GetAtt CheckPollyWebCaptionsFunction.Arn
                   - !Ref StartWaitOperationLambda
                   - !Ref CheckWaitOperationLambda
                 Effect: "Allow"
@@ -1482,6 +1484,57 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+
+  # WebCaptions Polly tracks
+  StartPollyWebCaptionsFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "webcaptions.start_polly_webcaptions"
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
+      Role: !GetAtt "pollyRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "webcaptions.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Timeout: 300
+      Environment:
+        Variables:
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+
+  CheckPollyWebCaptionsFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "webcaptions.check_polly_webcaptions"
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
+      Role: !GetAtt "pollyRole.Arn"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            "webcaptions.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Timeout: 300
+      Environment:
+        Variables:
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
   
   # Polly Lambdas
 
@@ -1615,6 +1668,19 @@ Resources:
       Configuration: 
         { "MediaType": "MetadataOnly", "SourceLanguageCode": "en", "Enabled": true }
       StartLambdaArn: !GetAtt WebCaptionsFunction.Arn
+      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+
+  PollyWebCaptionsOperation:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "PollyWebCaptions"
+      Type: "Async"
+      Configuration: 
+        { "MediaType": "MetadataOnly", "SourceLanguageCode": "en", "Enabled": true }
+      StartLambdaArn: !GetAtt StartPollyWebCaptionsFunction.Arn
+      MonitorLambdaArn: !GetAtt CheckPollyWebCaptionsFunction.Arn
       StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
   CreateSRTCaptionsOperation:
@@ -1941,6 +2007,11 @@ Outputs:
     Value: !GetAtt WebCaptionsOperation.Name
     Export:
       Name: !Join [":", [!Ref "AWS::StackName", WebCaptions]]
+  PollyWebCaptionsOperation:
+    Description: "Operation to create audio tracks from webcaptions collection transcripts"
+    Value: !GetAtt PollyWebCaptionsOperation.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", PollyWebCaptions]]
   CreateSRTCaptionsOperation:
     Description: "Operation to create SRT captions"
     Value: !GetAtt CreateSRTCaptionsOperation.Name

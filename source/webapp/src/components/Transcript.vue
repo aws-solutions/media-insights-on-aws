@@ -19,7 +19,7 @@
     >
       {{ vocabularyNotificationMessage }}
     </b-alert>
-    <b-modal ref="vocab-modal" size="lg" title="Save Vocabulary?" :ok-disabled="validVocabularyName === false || (customVocabularySelected === '' && customVocabularyCreateNew === '') || customVocabulary.length === 0" ok-title="Save" @ok="saveVocabulary()">
+    <b-modal ref="vocab-modal" size="lg" title="Save Vocabulary?" :ok-disabled="validVocabularyName === false || (customVocabularySelected === '' && customVocabularyCreateNew === '') || customVocabularyUnsaved.length === 0" ok-title="Save" @ok="saveVocabulary()">
       <b-form-group v-if="customVocabularyList.length>0" label="Select a vocabulary to overwrite or specify a new name:">
         <b-form-radio-group
           id="custom-vocab-selection"
@@ -43,12 +43,12 @@
           Delete
         </b-button>
       </div>
-      <hr>
-      <div v-if="customVocabulary.length !== 0">
-        Custom vocabulary (click to edit):
+      <br>
+      <div v-if="customVocabularyUnsaved.length !== 0">
+        Draft vocabulary (click to edit):
       </div>
       <b-table
-        :items="customVocabulary"
+        :items="customVocabularyUnion"
         :fields="customVocabularyFields"
         selectable
         select-mode="single"
@@ -69,44 +69,69 @@ to highlight the fields in the custom vocab schema. -->
         <template v-slot:cell(original_phrase)="row">
           <b-row no-gutters>
             <b-col cols="10">
-              <b-form-input v-model="row.item.original_phrase" class="custom-text-field" />
+              <div v-if="row.item.immutable === false">
+                <b-form-input v-model="row.item.original_phrase" class="custom-text-field" />
+              </div>
+              <div v-else class="text-secondary">
+                {{ row.item.original_phrase }}
+              </div>
             </b-col>
           </b-row>
         </template>
         <template v-slot:cell(new_phrase)="row">
           <b-row no-gutters>
             <b-col cols="10">
-              <b-form-input v-model="row.item.new_phrase" class="custom-text-field" :formatter="phrase_formatter" lazy-formatter />
+              <div v-if="row.item.immutable === false">
+                <b-form-input v-model="row.item.new_phrase" class="custom-text-field" :formatter="phrase_formatter" lazy-formatter />
+              </div>
+              <div v-else class="text-secondary">
+                {{ row.item.new_phrase }}
+              </div>
             </b-col>
           </b-row>
         </template>
         <template v-slot:cell(sounds_like)="row">
           <b-row no-gutters>
             <b-col cols="10">
-              <b-form-input v-model="row.item.sounds_like" class="custom-text-field" />
+              <div v-if="row.item.immutable === false">
+                <b-form-input v-model="row.item.sounds_like" class="custom-text-field" />
+              </div>
+              <div v-else class="text-secondary">
+                {{ row.item.sounds_like }}
+              </div>
             </b-col>
           </b-row>
         </template>
         <template v-slot:cell(IPA)="row">
           <b-row no-gutters>
             <b-col cols="10">
-              <b-form-input v-model="row.item.IPA" class="custom-text-field" />
+              <div v-if="row.item.immutable === false">
+                <b-form-input v-model="row.item.IPA" class="custom-text-field" />
+              </div>
+              <div v-else class="text-secondary">
+                {{ row.item.IPA }}
+              </div>
             </b-col>
           </b-row>
         </template>
         <template v-slot:cell(display_as)="row">
           <b-row no-gutters>
             <b-col cols="9">
-              <b-form-input v-model="row.item.display_as" class="custom-text-field" />
+              <div v-if="row.item.immutable === false">
+                <b-form-input v-model="row.item.display_as" class="custom-text-field" />
+              </div>
+              <div v-else class="text-secondary">
+                {{ row.item.display_as }}
+              </div>
             </b-col>
             <b-col nopadding cols="1">
               <span style="position:absolute; top: 0px">
-                <b-button v-b-tooltip.hover.right size="sm" style="display: flex;" variant="link" title="Remove row" @click="delete_vocab_row(row.index)">
+                <b-button v-if="row.item.immutable === false" v-b-tooltip.hover.right size="sm" style="display: flex;" variant="link" title="Remove row" @click="delete_vocab_row(row.index)">
                   <b-icon font-scale=".9" icon="x-circle" color="lightgrey"></b-icon>
                 </b-button>
               </span>
               <span style="position:absolute; bottom: 0px">
-                <b-button v-b-tooltip.hover.right size="sm" style="display: flex;" variant="link" title="Add row" @click="add_vocab_row(row.index)">
+                <b-button v-if="row.item.immutable === false" v-b-tooltip.hover.right size="sm" style="display: flex;" variant="link" title="Add row" @click="add_vocab_row(row.index)">
                   <b-icon font-scale=".9" icon="plus-square" color="lightgrey"></b-icon>
                 </b-button>
               </span>
@@ -114,7 +139,8 @@ to highlight the fields in the custom vocab schema. -->
           </b-row>
         </template>
       </b-table>
-      <div v-if="customVocabulary.length === 0" style="color:red">
+      <div v-if="customVocabularySelected !== ''" class="text-secondary">* Previously saved vocabularies cannot be changed.</div>
+      <div v-if="customVocabularyUnsaved.length === 0" style="color:red">
         Vocabulary is empty. Make changes to the subtitles in order to build a custom vocabulary.<br>
       </div>
       <div v-else-if="validVocabularyName === false" style="color:red">
@@ -265,13 +291,15 @@ export default {
       results: [],
       workflow_status_polling: null,
       vocab_status_polling: null,
-      customVocabulary: [],
+      customVocabularyUnsaved: [],
+      customVocabularySaved: [],
       customVocabularyFields: ["original_phrase","new_phrase","sounds_like","IPA","display_as"],
       customVocabularyList: [],
       customVocabularySelected: "",
       customVocabularyCreateNew: "",
       transcribe_language_code: "",
       vocabulary_used: "",
+      vocabulary_uri: null,
       webCaptions: [],
       webCaptions_vtt: '',
       webCaptions_fields: [
@@ -288,6 +316,9 @@ export default {
     }
   },
   computed: {
+    customVocabularyUnion: function() {
+      return this.customVocabularyUnsaved.concat(this.customVocabularySaved)
+    },
     validVocabularyName: function() {
       const letterNumber = /^[0-9a-zA-Z]+$/;
       // The name can be up to 200 characters long. Valid characters are a-z, A-Z, and 0-9.
@@ -307,8 +338,8 @@ export default {
     },
     customVocabularyFile: function () {
       let vocab_file = "Phrase\tSoundsLike\tIPA\tDisplayAs"
-      for (const i in this.customVocabulary) {
-        vocab_file += "\n" + this.customVocabulary[i].new_phrase + "\t\t\t" + this.customVocabulary[i].display_as
+      for (const i in this.customVocabularyUnsaved) {
+        vocab_file += "\n" + this.customVocabularyUnsaved[i].new_phrase + "\t\t\t" + this.customVocabularyUnsaved[i].display_as
       }
       return vocab_file
     },
@@ -345,6 +376,13 @@ export default {
     customVocabularyCreateNew: function() {
       this.customVocabularySelected = ""
     },
+    customVocabularySelected: async function() {
+      // remove phrases from the previously selected vocabulary
+      // before we add phrases from the newly selected vocabulary
+      if (this.customVocabularySelected!=="")
+        // add phrases from the selected vocabulary
+        await this.downloadVocabulary()
+    }
   },
   deactivated: function () {
     console.log('deactivated component:', this.operator)
@@ -355,7 +393,7 @@ export default {
     this.handleVideoPlay();
     this.handleVideoSeek();
     this.getWorkflowId();
-    this.pollWorkflowStatus();
+    this.getWorkflowStatus();
   },
   beforeDestroy: function () {
     this.transcript = ''
@@ -439,10 +477,10 @@ export default {
               // So we make those changes here:
               let new_phrase_with_numbers_as_words = this.phrase_formatter(new_phrase)
               // remove old_phrase from custom vocab, if it already exists
-              this.customVocabulary = this.customVocabulary.filter(function (item) {return item.original_phrase !== old_phrase;});
+              this.customVocabularyUnsaved = this.customVocabularyUnsaved.filter(item => {return item.original_phrase !== old_phrase;});
               // add old_phrase to custom vocab
-              this.customVocabulary.push({"original_phrase": old_phrase, "new_phrase": new_phrase_with_numbers_as_words, "sounds_like":"", "IPA":"", "display_as": new_phrase})
-              console.log("CUSTOM VOCABULARY: " + JSON.stringify(this.customVocabulary))
+              this.customVocabularyUnsaved.push({"original_phrase": old_phrase, "new_phrase": new_phrase_with_numbers_as_words, "sounds_like":"", "IPA":"", "display_as": new_phrase, "immutable": false})
+              console.log("CUSTOM VOCABULARY: " + JSON.stringify(this.customVocabularyUnsaved))
             }
             old_phrase = ''
             new_phrase = ''
@@ -579,26 +617,54 @@ export default {
       )
     },
     getTranscribeLanguage: async function(token) {
+      // This function gets the source language from the workflow configuration
       fetch(this.WORKFLOW_API_ENDPOINT + '/workflow/execution/' + this.workflow_id, {
         method: 'get',
         headers: {
           'Authorization': token
         }
       }).then(response => {
-          response.json().then(data => ({
-              data: data,
-            })
-          ).then(res => {
-            this.sourceLanguageCode = res.data.Configuration.WebCaptionsStage2.WebCaptions.SourceLanguageCode
-            this.transcribe_language_code = res.data.Configuration.defaultAudioStage2.Transcribe.TranscribeLanguage
-            this.vocabulary_used = res.data.Configuration.defaultAudioStage2.Transcribe.VocabularyName
-            if (this.vocabulary_used) {
-              this.$store.commit('updateUsedVocabulary', this.vocabulary_used)
-            }
-            this.getWebCaptions()
-            }
-          )
+        response.json().then(data => ({
+            data: data,
+          })
+        ).then(res => {
+          this.sourceLanguageCode = res.data.Configuration.WebCaptionsStage2.WebCaptions.SourceLanguageCode
+          this.transcribe_language_code = res.data.Configuration.defaultAudioStage2.Transcribe.TranscribeLanguage
+          if (this.vocabulary_used) {
+            this.$store.commit('updateUsedVocabulary', this.vocabulary_used)
+          }
+          this.getWebCaptions()
+          }
+        )
         }
+      )
+    },
+    downloadVocabulary: async function() {
+      const token = await this.$Amplify.Auth.currentSession().then(data =>{
+        return data.getIdToken().getJwtToken();
+      });
+      console.log("Get vocabulary request:")
+      console.log('curl -L -k -X POST -H \'Content-Type: application/json\' -H \'Authorization: \''+token+' --data \'{"vocabulary_name":"'+this.customVocabularySelected+'}\' '+this.DATAPLANE_API_ENDPOINT+'/transcribe/download_vocabulary')
+      fetch(this.DATAPLANE_API_ENDPOINT + '/transcribe/download_vocabulary', {
+        method: 'post',
+        mode: 'cors',
+        body: JSON.stringify({"vocabulary_name":this.customVocabularySelected}),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token
+        },
+      }).then(response =>
+        response.json().then(data => ({
+            data: data,
+          })
+        ).then(res => {
+          // save phrases from the currently selected vocabulary
+          this.customVocabularySaved = res.data.vocabulary.map(({Phrase, SoundsLike, IPA, DisplayAs}) => ({original_phrase: "", immutable: true, new_phrase: Phrase, sounds_like: SoundsLike, IPA: IPA, display_as: DisplayAs}));
+          console.log("saved:")
+          console.log(this.customVocabularySaved)
+          console.log("concat:")
+          console.log(this.customVocabularySaved.concat(this.customVocabularyUnsaved))
+        })
       )
     },
     getWorkflowConfig: async function(token) {
@@ -637,6 +703,7 @@ export default {
           if (res.status === 200) {
             console.log("Workflow resumed")
             this.saveNotificationMessage += " and workflow resumed"
+            this.pollWorkflowStatus()
           }
         })
       )
@@ -895,6 +962,10 @@ export default {
       });
       const operator_name = "WebCaptions_"+this.sourceLanguageCode
       const webCaptions = {"WebCaptions": this.webCaptions}
+      console.log("this.webCaptions")
+      console.log(JSON.stringify(this.webCaptions))
+      console.log("low confidence words:")
+      x.forEach(item => {console.log(item.wordConfidence.filter(word => word.c < "0.90"))})
       let data='{"OperatorName": "' + operator_name + '", "Results": ' + JSON.stringify(webCaptions) + ', "WorkflowId": "' + this.workflow_id + '"}'
       fetch(this.DATAPLANE_API_ENDPOINT + 'metadata/' + this.asset_id, {
         method: 'post',
@@ -909,6 +980,7 @@ export default {
           if (res.status === 200) {
             this.isSaving=true;
             console.log("Captions saved")
+            clearInterval(this.workflow_status_polling)
             this.saveNotificationMessage = "Captions saved"
             if (this.workflow_status === "Waiting") {
               this.resumeWorkflow();
@@ -930,12 +1002,12 @@ export default {
     },
     downloadCaptionsVTT() {
       this.webToVtt()
-      const blob = new Blob([this.webCaptions_vtt], {type: 'text/plain', endings:'native'});
+      const blob = new Blob([this.webCaptions_vtt], {type: 'audio/mpeg', autostart:'false', endings:'native'});
       const e = document.createEvent('MouseEvents'),
         a = document.createElement('a');
-      a.download = "WebCaptions.vtt";
+      a.download = "audiofile.mp4";
       a.href = window.URL.createObjectURL(blob);
-      a.dataset.downloadurl = ['text/json', a.download, a.href].join(':');
+      a.dataset.downloadurl = ['audio/mpeg', a.download, a.href].join(':');
       e.initEvent('click', true, false, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
       a.dispatchEvent(e);
     },
@@ -1014,12 +1086,12 @@ export default {
       this.webCaptions.splice(index, 1)
     },
     add_vocab_row(index) {
-      this.customVocabulary.splice(index+1, 0, {})
+      this.customVocabularyUnsaved.splice(index+1, 0, {})
     },
     delete_vocab_row(index) {
-      this.customVocabulary.splice(index, 1)
-      if (this.customVocabulary.length === 0){
-        this.customVocabulary = [{"original_phrase":"","new_phrase":"","sounds_like":"","IPA":"","display_as":""}]
+      this.customVocabularyUnsaved.splice(index, 1)
+      if (this.customVocabularyUnsaved.length === 0){
+        this.customVocabularyUnsaved = [{"original_phrase":"","new_phrase":"","sounds_like":"","IPA":"","display_as":"", "immutable": false}]
       }
     },
     pollWorkflowStatus() {
@@ -1044,7 +1116,8 @@ export default {
       if (phrase.match(/\d+/g) != null)
       {
         phrase_with_numbers_as_words = phrase
-            .replace(phrase.match(/\d+/g)[0], converter.toWords(phrase.match(/\d+/g)[0]))
+          .replace(phrase.match(/\d+/g)[0], converter.toWords(phrase.match(/\d+/g)[0]))
+          .replace(/,/g, '')
       }
       return phrase_with_numbers_as_words.replace(/\s+/g, '-')
     },

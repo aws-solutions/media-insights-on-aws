@@ -102,7 +102,7 @@
         <b-dropdown-item :href="srt_url">
           Download SRT
         </b-dropdown-item>
-        <b-dropdown-item v-if="pollyaudio_url" :href=pollyaudio_url autostart="0" autoplay=false>
+        <b-dropdown-item v-if="pollyaudio_url" :href=pollyaudio_url target="_blank" download>
           Download Audio
         </b-dropdown-item>
         <b-dropdown-item v-else disabled>
@@ -296,10 +296,12 @@ export default {
         let pollyaudiotranscript = this.pollyaudiotranscripts.filter(x => (x.lang === this.selected_lang_code))[0];
         if (pollyaudiotranscript) {
           return pollyaudiotranscript.src
+        } else {
+        return null
         }
       } else {
         return null
-      }
+      } 
     },
     text_direction: function() {
       // This function is used to change text direction for right-to-left languages

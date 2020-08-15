@@ -102,7 +102,7 @@
         <b-dropdown-item :href="srt_url">
           Download SRT
         </b-dropdown-item>
-        <b-dropdown-item v-if="pollyaudio_url" :href=pollyaudio_url target="_blank" download>
+        <b-dropdown-item v-if="pollyaudio_url" :href="pollyaudio_url" target="_blank" download>
           Download Audio
         </b-dropdown-item>
         <b-dropdown-item v-else disabled>
@@ -265,7 +265,8 @@ export default {
     },
     ...mapState(['player', 'waveform_seek_position']),
     alphabetized_language_collection: function() {
-      return this.translationsCollection.sort(function(a, b) {
+      let translationsCollection = this.translationsCollection
+      return translationsCollection.sort(function(a, b) {
         const textA = a.text.toUpperCase();
         const textB = b.text.toUpperCase();
         return (textA < textB) ? -1 : (textA > textB) ? 1 : 0;
@@ -277,9 +278,8 @@ export default {
         if (vttcaption) {
           return vttcaption.src
         }
-      } else {
-        return null
       }
+      return null
     },
     srt_url: function() {
       if (this.selected_lang_code !== '') {
@@ -287,9 +287,8 @@ export default {
         if (srtcaption) {
           return srtcaption.src
         }
-      } else {
-        return null
       }
+      return null
     },
     pollyaudio_url: function() {
       if (this.selected_lang_code !== '') {
@@ -301,7 +300,7 @@ export default {
         }
       } else {
         return null
-      } 
+      }
     },
     text_direction: function() {
       // This function is used to change text direction for right-to-left languages

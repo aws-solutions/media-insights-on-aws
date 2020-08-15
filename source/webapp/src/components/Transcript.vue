@@ -43,9 +43,12 @@
           Delete
         </b-button>
       </div>
-      <br>
+      <hr>
       <div v-if="customVocabularyUnsaved.length !== 0">
         Draft vocabulary (click to edit):
+        <div v-if="customVocabularySelected != ''" class="text-info" style="font-size: 80%">
+          Rows shown in blue are from vocabulary, <b>{{ customVocabularySelected }}.</b>
+        </div>
       </div>
       <b-table
         :items="customVocabularyUnion"
@@ -139,7 +142,6 @@ to highlight the fields in the custom vocab schema. -->
           </b-row>
         </template>
       </b-table>
-      <div v-if="customVocabularySelected != ''" class="text-info">Rows shown in blue text are from vocabulary, <b>{{ customVocabularySelected }}.</b></div>
       <div v-if="customVocabularyUnion.length === 0" style="color:red">
         Make changes to the subtitles in order to build a custom vocabulary.<br>
       </div>
@@ -153,7 +155,7 @@ to highlight the fields in the custom vocab schema. -->
     <b-modal ref="save-modal" ok-title="Confirm" title="Save Captions?" @ok="saveCaptions()">
       <p>Saving captions will restart a workflow that can take several minutes. You will not be able to edit captions until it has finished. Are you ready to proceed?</p>
     </b-modal>
-    <b-modal ref="delete-vocab-modal" ok-title="Confirm" ok-variant="danger" title="Delete Vocabulary?" @ok="deleteVocabularyRequest()">
+    <b-modal ref="delete-vocab-modal" ok-title="Confirm" ok-variant="danger" title="Delete Vocabulary?" @ok="deleteVocabularyRequest(token=null, customVocabularyName=customVocabularySelected)">
       <p>Are you sure you want to permanently delete the custom vocabulary <b>{{ customVocabularySelected }}</b>?</p>
     </b-modal>
 
@@ -337,22 +339,23 @@ export default {
         return this.customVocabularySelected
     },
     customVocabularyFile: function () {
-      for (const i in this.customVocabularyUnion) {
-        if (this.customVocabularyUnion[i].new_phrase === undefined)
-          this.customVocabularyUnion[i].new_phrase = ""
-        if (this.customVocabularyUnion[i].sounds_like === undefined)
-          this.customVocabularyUnion[i].sounds_like = ""
-        if (this.customVocabularyUnion[i].IPA === undefined)
-          this.customVocabularyUnion[i].IPA = ""
-        if (this.customVocabularyUnion[i].display_as === undefined)
-          this.customVocabularyUnion[i].display_as = ""
+      let customVocabularyUnion = this.customVocabularyUnion
+      for (const i in customVocabularyUnion) {
+        if (customVocabularyUnion[i].new_phrase === undefined)
+          customVocabularyUnion[i].new_phrase = ""
+        if (customVocabularyUnion[i].sounds_like === undefined)
+          customVocabularyUnion[i].sounds_like = ""
+        if (customVocabularyUnion[i].IPA === undefined)
+          customVocabularyUnion[i].IPA = ""
+        if (customVocabularyUnion[i].display_as === undefined)
+          customVocabularyUnion[i].display_as = ""
       }
 
       let vocab_file = "Phrase\tSoundsLike\tIPA\tDisplayAs"
-      for (const i in this.customVocabularyUnion) {
-        vocab_file += "\n" + this.customVocabularyUnion[i].new_phrase + "\t" + this.customVocabularyUnion[i].sounds_like + "\t" + this.customVocabularyUnion[i].IPA + "\t" + this.customVocabularyUnion[i].display_as
+      for (const i in customVocabularyUnion) {
+        vocab_file += "\n" + customVocabularyUnion[i].new_phrase + "\t" + customVocabularyUnion[i].sounds_like + "\t" + customVocabularyUnion[i].IPA + "\t" + customVocabularyUnion[i].display_as
       }
-      console.log("vocab_file")
+      console.log("vocabulary file")
       console.log(vocab_file)
       return vocab_file
     },
@@ -674,10 +677,6 @@ export default {
         ).then(res => {
           // save phrases from the currently selected vocabulary
           this.customVocabularySaved = res.data.vocabulary.map(({Phrase, SoundsLike, IPA, DisplayAs}) => ({original_phrase: "", new_phrase: Phrase, sounds_like: SoundsLike, IPA: IPA, display_as: DisplayAs}));
-          console.log("saved:")
-          console.log(this.customVocabularySaved)
-          console.log("concat:")
-          console.log(this.customVocabularySaved.concat(this.customVocabularyUnsaved))
         })
       )
     },
@@ -838,7 +837,7 @@ export default {
     deleteVocabulary: async function () {
       this.$refs['delete-vocab-modal'].show()
     },
-    deleteVocabularyRequest: async function (token) {
+    deleteVocabularyRequest: async function (token, customVocabularyName) {
       if (!token) {
         token = await this.$Amplify.Auth.currentSession().then(data =>{
           return data.getIdToken().getJwtToken();
@@ -846,11 +845,11 @@ export default {
       }
       this.$refs['delete-vocab-modal'].hide()
       console.log("Delete vocabulary request:")
-      console.log('curl -L -k -X POST -H \'Content-Type: application/json\' -H \'Authorization: \''+token+'\' --data \'{"vocabulary_name":"'+this.customVocabularySelected+'}\' '+this.DATAPLANE_API_ENDPOINT+'/transcribe/delete_vocabulary')
+      console.log('curl -L -k -X POST -H \'Content-Type: application/json\' -H \'Authorization: \''+token+'\' --data \'{"vocabulary_name":"'+customVocabularyName+'}\' '+this.DATAPLANE_API_ENDPOINT+'/transcribe/delete_vocabulary')
       await fetch(this.DATAPLANE_API_ENDPOINT+'/transcribe/delete_vocabulary',{
         method: 'POST',
         headers: {'Content-Type': 'application/json', 'Authorization': token},
-        body: JSON.stringify({"vocabulary_name":this.customVocabularySelected})
+        body: JSON.stringify({"vocabulary_name":customVocabularyName})
       }).then(response =>
         response.json().then(data => ({
               data: data,
@@ -859,7 +858,7 @@ export default {
         ).then(res => {
           if (res.status === 200) {
             console.log("Success! Vocabulary deleted.")
-            this.vocabularyNotificationMessage = "Deleted vocabulary: " + this.customVocabularySelected
+            this.vocabularyNotificationMessage = "Deleted vocabulary: " + customVocabularyName
             this.vocabularyNotificationStatus = "success"
             this.showVocabularyNotification = 5
             // reset the radio button selection
@@ -868,34 +867,36 @@ export default {
             this.listVocabulariesRequest()
           } else {
             console.log("Failed to delete vocabulary")
-            this.vocabularyNotificationMessage = "Failed to delete vocabulary: " + this.customVocabularySelected
+            this.vocabularyNotificationMessage = "Failed to delete vocabulary: " + customVocabularyName
             this.vocabularyNotificationStatus = "danger"
             this.showVocabularyNotification = 5
           }
         })
       )
     },
-    overwriteVocabularyRequest: async function () {
-      const token = await this.$Amplify.Auth.currentSession().then(data =>{
-        return data.getIdToken().getJwtToken();
-      });
-      await this.deleteVocabularyRequest(token).then(() =>
-        this.saveVocabularyRequest(token)
-      )
-    },
-    saveVocabularyRequest: async function (token) {
+    overwriteVocabularyRequest: async function (token, customVocabularyName) {
       if (token === null) {
         token = await this.$Amplify.Auth.currentSession().then(data =>{
           return data.getIdToken().getJwtToken();
         });
       }
-      const s3uri = "s3://"+this.DATAPLANE_BUCKET+"/"+this.customVocabularyName
+      await this.deleteVocabularyRequest(token, customVocabularyName).then(() => {
+        this.saveVocabularyRequest(token, customVocabularyName)
+      })
+    },
+    saveVocabularyRequest: async function (token, customVocabularyName) {
+      if (token === null) {
+        token = await this.$Amplify.Auth.currentSession().then(data =>{
+          return data.getIdToken().getJwtToken();
+        });
+      }
+      const s3uri = "s3://"+this.DATAPLANE_BUCKET+"/"+customVocabularyName
       console.log("Create vocabulary request:")
-      console.log('curl -L -k -X POST -H \'Content-Type: application/json\' -H \'Authorization: \''+token+' --data \'{"s3uri":'+s3uri+', "vocabulary_name":'+this.customVocabularyName+', "language_code": '+this.transcribe_language_code+'}\' '+this.DATAPLANE_API_ENDPOINT+'/transcribe/create_vocabulary')
+      console.log('curl -L -k -X POST -H \'Content-Type: application/json\' -H \'Authorization: \''+token+' --data \'{"s3uri":'+s3uri+', "vocabulary_name":'+customVocabularyName+', "language_code": '+this.transcribe_language_code+'}\' '+this.DATAPLANE_API_ENDPOINT+'/transcribe/create_vocabulary')
       await fetch(this.DATAPLANE_API_ENDPOINT+'/transcribe/create_vocabulary',{
         method: 'POST',
         headers: {'Content-Type': 'application/json', 'Authorization': token},
-        body: JSON.stringify({"s3uri": s3uri, "vocabulary_name":this.customVocabularyName, "language_code": this.transcribe_language_code})
+        body: JSON.stringify({"s3uri": s3uri, "vocabulary_name":customVocabularyName, "language_code": this.transcribe_language_code})
       }).then(response =>
         response.json().then(data => ({
               data: data,
@@ -904,12 +905,13 @@ export default {
         ).then(res => {
           if (res.status === 200) {
             console.log("Success! Custom vocabulary saved.")
-            this.vocabularyNotificationMessage = "Saved vocabulary: " + this.customVocabularyName
+            this.vocabularyNotificationMessage = "Saved vocabulary: " + customVocabularyName
             this.vocabularyNotificationStatus = "success"
             this.showVocabularyNotification = 5
+            this.customVocabularyUnsaved = []
           } else {
             console.log("Failed to save vocabulary")
-            this.vocabularyNotificationMessage = "Failed to save vocabulary: " + this.customVocabularyName
+            this.vocabularyNotificationMessage = "Failed to save vocabulary: " + customVocabularyName
             this.vocabularyNotificationStatus = "danger"
             this.showVocabularyNotification = 5
           }
@@ -919,7 +921,6 @@ export default {
       )
     },
     saveVocabulary: async function () {
-      // This function saves custom vocabulary
       const signedUrl = this.DATAPLANE_API_ENDPOINT + '/upload';
       const token = await this.$Amplify.Auth.currentSession().then(data =>{
         return data.getIdToken().getJwtToken();
@@ -959,11 +960,12 @@ export default {
             }).then(() => {
               // Now that the custom vocab file is in s3, create the custom vocab in AWS Transcribe.
               // If the custom vocab already exists then overwrite it.
+              const customVocabularyName = this.customVocabularyName
               if (this.customVocabularyList.some(item => item.name === this.customVocabularyName)) {
-                console.log("Overwriting custom vocabulary")
-                this.overwriteVocabularyRequest(token)
+                console.log("Overwriting custom vocabulary: " + customVocabularyName)
+                this.overwriteVocabularyRequest(token, customVocabularyName)
               } else {
-                this.saveVocabularyRequest(token)
+                this.saveVocabularyRequest(token, customVocabularyName)
               }
             })
           }
@@ -981,8 +983,6 @@ export default {
       const webCaptions = {"WebCaptions": this.webCaptions}
       console.log("this.webCaptions")
       console.log(JSON.stringify(this.webCaptions))
-      console.log("low confidence words:")
-      x.forEach(item => {console.log(item.wordConfidence.filter(word => word.c < "0.90"))})
       let data='{"OperatorName": "' + operator_name + '", "Results": ' + JSON.stringify(webCaptions) + ', "WorkflowId": "' + this.workflow_id + '"}'
       fetch(this.DATAPLANE_API_ENDPOINT + 'metadata/' + this.asset_id, {
         method: 'post',
@@ -1019,12 +1019,12 @@ export default {
     },
     downloadCaptionsVTT() {
       this.webToVtt()
-      const blob = new Blob([this.webCaptions_vtt], {type: 'audio/mpeg', autostart:'false', endings:'native'});
+      const blob = new Blob([this.webCaptions_vtt], {type: 'text/plain', endings:'native'});
       const e = document.createEvent('MouseEvents'),
-        a = document.createElement('a');
-      a.download = "audiofile.mp4";
+          a = document.createElement('a');
+      a.download = "WebCaptions.vtt";
       a.href = window.URL.createObjectURL(blob);
-      a.dataset.downloadurl = ['audio/mpeg', a.download, a.href].join(':');
+      a.dataset.downloadurl = ['text/json', a.download, a.href].join(':');
       e.initEvent('click', true, false, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
       a.dispatchEvent(e);
     },
@@ -1083,6 +1083,21 @@ export default {
           if (res.data.results) {
             cursor = res.data.cursor;
             this.webCaptions = res.data.results["WebCaptions"]
+            console.log("low confidence words:")
+            // TODO: highlight low confidence words in GUI
+            const low_confidence_words = []
+            const confidence_threshold = 0.90
+            console.log("confidence threshold: " + confidence_threshold)
+            this.webCaptions.forEach(item => {
+              item.wordConfidence.filter(word => word.c < "0.99")
+                .forEach(word => {
+                  // add low confidence word to array if it hasn't already been added
+                  if (low_confidence_words.includes(word.w) === false) {
+                    low_confidence_words.push(word.w)
+                  }
+                })
+            })
+            console.log(low_confidence_words)
             this.sortWebCaptions()
             this.isBusy = false
             if (cursor)

@@ -235,7 +235,7 @@ to highlight the fields in the custom vocab schema. -->
         <b-icon v-if="webCaptions.length > 0" icon="download" color="white"></b-icon> Download VTT
       </b-button> &nbsp;
       <!-- this is the save vocabulary button -->
-      <b-button id="saveVocabulary" size="sm" class="mb-2" @click="showVocabConfirmation()">
+      <b-button id="saveVocabulary" v-b-tooltip.hover title="Save vocabulary will open a window where you can create or modify custom vocabularies for AWS Transcribe" size="sm" class="mb-2" @click="showVocabConfirmation()">
         <b-icon icon="card-text" color="white"></b-icon>
         Save vocabulary
       </b-button> &nbsp;
@@ -246,7 +246,7 @@ to highlight the fields in the custom vocab schema. -->
         Save edits
       </b-button>
       <!-- this is the save edits button for when workflow complete -->
-      <b-button v-if="workflow_status === 'Complete' || workflow_status === 'Error'" id="editCaptions" size="sm" class="mb-2" @click="showSaveConfirmation()">
+      <b-button v-if="workflow_status === 'Complete' || workflow_status === 'Error'" v-b-tooltip.hover title="Save edits will regenerate the VTT and SRT caption files so they include any changes you may have made to captions." id="editCaptions" size="sm" class="mb-2" @click="showSaveConfirmation()">
         <b-icon icon="play" color="white"></b-icon>
         Save edits
       </b-button>

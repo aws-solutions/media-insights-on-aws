@@ -613,7 +613,7 @@ def get_vocabulary():
     response = transcribe_client.get_vocabulary(VocabularyName=vocabulary_name)
     # Convert time field to a format that is JSON serializable
     response['LastModifiedTime'] = response['LastModifiedTime'].isoformat()
-    return response\
+    return response
 
 @app.route('/transcribe/download_vocabulary', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
 def get_vocabulary():

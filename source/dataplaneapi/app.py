@@ -615,8 +615,9 @@ def get_vocabulary():
     response['LastModifiedTime'] = response['LastModifiedTime'].isoformat()
     return response
 
+
 @app.route('/transcribe/download_vocabulary', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
-def get_vocabulary():
+def download_vocabulary():
     print('download_vocabulary request: '+app.current_request.raw_body.decode())
     transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
     vocabulary_name = json.loads(app.current_request.raw_body.decode())['vocabulary_name']
@@ -637,10 +638,11 @@ def get_vocabulary():
         vocabulary_json.append(vocabulary_item_json)
     return {"vocabulary": vocabulary_json}
 
+
 @app.route('/transcribe/list_vocabularies', cors=True, methods=['GET'], authorizer=authorizer)
 def list_vocabularies():
     # List all custom vocabularies
-    print('get_vocabularies request: '+app.current_request.raw_body.decode())
+    print('list_vocabularies request: '+app.current_request.raw_body.decode())
     transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
     response = transcribe_client.list_vocabularies(MaxResults=100)
     vocabularies = response['Vocabularies']
@@ -659,11 +661,7 @@ def delete_vocabulary():
     print('delete_vocabulary request: '+app.current_request.raw_body.decode())
     transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
     vocabulary_name = json.loads(app.current_request.raw_body.decode())['vocabulary_name']
-    vocabs = transcribe_client.list_vocabularies()['Vocabularies']
-    response = {}
-    for vocab in vocabs:
-        if vocab['VocabularyName'] == vocabulary_name:
-            response = transcribe_client.delete_vocabulary(VocabularyName=vocabulary_name)
+    response = transcribe_client.delete_vocabulary(VocabularyName=vocabulary_name)
     return response
 
 
@@ -678,6 +676,74 @@ def create_vocabulary():
         VocabularyName=vocabulary_name,
         LanguageCode=language_code,
         VocabularyFileUri=json.loads(app.current_request.raw_body.decode())['s3uri']
+    )
+    return response
+
+
+@app.route('/translate/get_terminology', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
+def get_terminology():
+    print('get_terminology request: '+app.current_request.raw_body.decode())
+    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
+    terminology_name = json.loads(app.current_request.raw_body.decode())['terminology_name']
+    response = translate_client.get_terminology(Name=terminology_name, TerminologyDataFormat='CSV')
+    # Remove response metadata since we don't need it
+    del response['ResponseMetadata']
+    # Convert time field to a format that is JSON serializable
+    response['TerminologyProperties']['CreatedAt'] = response['TerminologyProperties']['CreatedAt'].isoformat()
+    response['TerminologyProperties']['LastUpdatedAt'] = response['TerminologyProperties']['LastUpdatedAt'].isoformat()
+    return response
+
+
+@app.route('/translate/download_terminology', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
+def download_terminology():
+    # This function returns the specified terminology in CSV format, wrapped in a JSON formatted response.
+    print('download_terminology request: '+app.current_request.raw_body.decode())
+    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
+    terminology_name = json.loads(app.current_request.raw_body.decode())['terminology_name']
+    url = translate_client.get_terminology(Name=terminology_name, TerminologyDataFormat='CSV')['TerminologyDataLocation']['Location']
+    import urllib.request
+    terminology_csv = urllib.request.urlopen(url).read().decode("utf-8")
+    return {"terminology": terminology_csv}
+
+
+@app.route('/translate/list_terminologies', cors=True, methods=['GET'], authorizer=authorizer)
+def list_terminologies():
+    # This function returns a list of saved terminologies
+    print('list_terminologies request: '+app.current_request.raw_body.decode())
+    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
+    response = translate_client.list_terminologies(MaxResults=100)
+    terminologies = response['TerminologyPropertiesList']
+    while ('NextToken' in response):
+        response = translate_client.list_terminologies(MaxResults=100, NextToken=response['NextToken'])
+        terminologies = terminologies + response['TerminologyPropertiesList']
+    # Convert time field to a format that is JSON serializable
+    for item in terminologies:
+        item['CreatedAt'] = item['CreatedAt'].isoformat()
+        item['LastUpdatedAt'] = item['LastUpdatedAt'].isoformat()
+    return response
+
+
+@app.route('/translate/delete_terminology', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
+def delete_terminology():
+    # Delete the specified terminology if it exists
+    print('delete_terminology request: '+app.current_request.raw_body.decode())
+    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
+    terminology_name = json.loads(app.current_request.raw_body.decode())['terminology_name']
+    response = translate_client.delete_terminology(Name=terminology_name)
+    return response
+
+
+@app.route('/translate/create_terminology', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
+def create_terminology():
+    # Save the input terminology to a new terminology
+    print('create_terminology request: '+app.current_request.raw_body.decode())
+    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
+    terminology_name = json.loads(app.current_request.raw_body.decode())['terminology_name']
+    terminology_csv = json.loads(app.current_request.raw_body.decode())['terminology_csv']
+    response = translate_client.import_terminology(
+        Name=terminology_name,
+        MergeStrategy='OVERWRITE',
+        TerminologyData={'File': terminology_csv, 'Format':'CSV'}
     )
     return response
 

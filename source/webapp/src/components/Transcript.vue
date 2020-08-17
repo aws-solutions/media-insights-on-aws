@@ -1118,7 +1118,7 @@ export default {
       this.webCaptions.splice(index, 1)
     },
     add_vocab_row(index) {
-      // The index provided is the index into the concattenated unsaved and saved vocabularies
+      // The index provided is the index into the concatenated unsaved and saved vocabularies
       // Unsaved vocab will always be listed first, so we convert the index as follows so that
       // we can splice appropriately in the unsaved or saved vocabulary.
       if (index < this.customVocabularyUnsaved.length) {

@@ -677,6 +677,8 @@ def create_vocabulary():
         LanguageCode=language_code,
         VocabularyFileUri=json.loads(app.current_request.raw_body.decode())['s3uri']
     )
+    response['TerminologyProperties']['CreatedAt'] = response['TerminologyProperties']['CreatedAt'].isoformat()
+    response['TerminologyProperties']['LastUpdatedAt'] = response['TerminologyProperties']['LastUpdatedAt'].isoformat()
     return response
 
 
@@ -745,6 +747,8 @@ def create_terminology():
         MergeStrategy='OVERWRITE',
         TerminologyData={'File': terminology_csv, 'Format':'CSV'}
     )
+    response['TerminologyProperties']['CreatedAt'] = response['TerminologyProperties']['CreatedAt'].isoformat()
+    response['TerminologyProperties']['LastUpdatedAt'] = response['TerminologyProperties']['LastUpdatedAt'].isoformat()
     return response
 
 

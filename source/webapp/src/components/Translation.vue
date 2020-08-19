@@ -3,6 +3,14 @@
     <div v-if="noTranslation === true">
       No translation found for this asset
     </div>
+    <b-alert
+        v-model="showTerminologyNotification"
+        :variant="terminologyNotificationStatus"
+        dismissible
+        fade
+    >
+      {{ terminologyNotificationMessage }}
+    </b-alert>
     <!-- show spinner while busy loading -->
     <div
       v-if="isBusy"
@@ -108,8 +116,12 @@
         <b-dropdown-item v-else disabled>
           Download Audio (language not supported)
         </b-dropdown-item>
-      </b-dropdown>
-      &nbsp;
+      </b-dropdown>&nbsp;
+      <!-- this is the save vocabulary button -->
+      <b-button id="saveTerminology" v-b-tooltip.hover title="Save terminology will open a window where you can create or modify custom terminologies for AWS Translate" size="sm" class="mb-2" @click="showTerminologyConfirmation()">
+        <b-icon icon="card-text" color="white"></b-icon>
+        Save terminology
+      </b-button>&nbsp;
       <!-- this is the save edits button for when workflow complete -->
       <b-button v-if="workflow_status === 'Complete' || workflow_status === 'Error'" id="editCaptions" size="sm" class="mb-2" @click="saveCaptions()">
         <b-icon icon="play" color="white"></b-icon>
@@ -121,6 +133,100 @@
         Saving edits
       </b-button>
       <br>
+      <b-modal ref="delete-terminology-modal" ok-title="Confirm" ok-variant="danger" title="Delete Terminology?" @ok="deleteTerminologyRequest(customTerminologyName=customTerminologySelected)">
+        <p>Are you sure you want to permanently delete the custom terminology <b>{{ customTerminologySelected }}</b>?</p>
+      </b-modal>
+      <b-modal ref="terminology-modal" size="lg" title="Save Terminology?" :ok-disabled="validTerminologyName === false || (customTerminologySelected === '' && customTerminologyCreateNew === '') || customTerminologyUnion.length === 0" ok-title="Save" @ok="saveTerminology()">
+        <b-form-group v-if="customTerminologyList.length > 0" label="Select a terminology:">
+          <b-form-radio-group
+              id="custom-terminology-selection"
+              v-model="customTerminologySelected"
+              name="custom-terminology-list"
+              :options="customTerminologyList"
+              text-field="name_and_status"
+              value-field="name"
+              disabled-field="notEnabled"
+              stacked
+          >
+          </b-form-radio-group>
+        </b-form-group>
+        <div v-if="customTerminologyList.length > 0">Or create a new terminology:</div>
+        <div v-else>Create a new terminology:</div>
+        <!-- The state on this text area will show a red alert icon if
+        the user enters an invalid custom terminology name. Otherwise we
+        set the state to null so no validity indicator is shown. -->
+        <b-form-input v-if="customTerminologyList.length>0" v-model="customTerminologyCreateNew" size="sm" placeholder="Enter new terminology name (optional)" :state="validTerminologyName ? null : false" @focus="customTerminologySelected=''"></b-form-input>
+        <b-form-input v-else v-model="customTerminologyCreateNew" size="sm" placeholder="Enter new terminology name" :state="validTerminologyName ? null : false"></b-form-input>
+        <div v-if="customTerminologyList.length > 0 && customTerminologySelected !== ''">
+          Delete the selected terminology (optional): <b-button v-b-tooltip.hover.right size="sm" title="Delete selected terminology" variant="danger" @click="deleteTerminology">
+          Delete
+        </b-button>
+        </div>
+        <hr>
+        <div v-if="customTerminologyUnsaved.length !== 0">
+          Draft terminology (click to edit):
+          <div v-if="customTerminologySelected != ''" class="text-info" style="font-size: 80%">
+            Rows shown in blue are from terminology, <b>{{ customTerminologySelected }}.</b>
+          </div>
+        </div>
+        <b-table
+            :items="customTerminologyUnion"
+            :fields="alphabetized_language_collection"
+            selectable
+            select-mode="single"
+            fixed responsive="sm"
+            bordered
+            small
+        >
+          <template v-slot:head()="row">
+            <b-row no-gutters>
+              <b-col cols="9">
+                {{ row.field.key }}
+              </b-col>
+              <b-col nopadding cols="1">
+                <b-button v-if="row.field.key !== sourceLanguageCode" v-b-tooltip.hover.top title="Remove language column" size="sm" style="display: flex;" variant="link" @click="delete_terminology_column(row.field.key)">
+                  <b-icon font-scale=".9" icon="x-circle" color="lightgrey"></b-icon>
+                </b-button>
+              </b-col>
+            </b-row>
+          </template>
+          <template v-slot:cell()="{ item, index, field: { key } }">
+            <div v-if="key === customTerminologyLastTableField">
+              <b-row no-gutters>
+                <b-col cols="9">
+                  <b-form-input v-model="item[key]" class="custom-text-field" />
+                </b-col>
+                <b-col nopadding cols="1">
+                  <span style="position:absolute; top: 0px">
+                    <b-button v-b-tooltip.hover.right size="sm" style="display: flex;" variant="link" title="Remove row" @click="delete_terminology_row(index)">
+                      <b-icon font-scale=".9" icon="x-circle" color="lightgrey"></b-icon>
+                    </b-button>
+                  </span>
+                  <span style="position:absolute; bottom: 0px">
+                    <b-button v-b-tooltip.hover.right size="sm" style="display: flex;" variant="link" title="Add row" @click="add_terminology_row(index)">
+                      <b-icon font-scale=".9" icon="plus-square" color="lightgrey"></b-icon>
+                    </b-button>
+                  </span>
+                </b-col>
+              </b-row>
+            </div>
+            <div v-else>
+              <b-form-input v-model="item[key]" class="custom-text-field" />
+            </div>
+          </template>
+          <template v-slot:table-caption>
+            <span style="position:absolute; right: 10px">
+            <b-button v-b-tooltip.hover.top title="Add a new language" variant="outline-secondary" class="btn-xs" @click="add_terminology_column()">Add Column</b-button>
+              </span>
+          </template>
+        </b-table>
+        <div v-if="validTerminologyName === false" style="color:red">
+          Invalid terminology name. Valid characters are a-z, A-Z, and 0-9. Max length is 200.
+        </div>
+        <div v-else-if="customTerminologySelected === '' && customTerminologyCreateNew === ''" style="color:red">
+          Specify a terminology name.<br>
+        </div>
+      </b-modal>
       <b-modal ref="save-modal" title="Save Confirmation" ok-title="Confirm" @ok="saveCaptions()">
         <p>Saving will overwrite the existing {{ selected_lang }} translation. Are you sure?</p>
       </b-modal>
@@ -163,8 +269,7 @@ export default {
       isBusy: false,
       operator: "translation",
       noTranslation: false,
-      translationsCollection: [
-      ],
+      translationsCollection: [],
       selected_lang: "",
       selected_lang_code: "",
       translatedText: "",
@@ -233,6 +338,15 @@ export default {
       workflow_config: {},
       workflow_definition: {},
       results: [],
+      customTerminologyUnsaved: [],
+      customTerminologySaved: [],
+      customTerminologyFields: [],
+      customTerminologyList: [],
+      customTerminologySelected: "",
+      customTerminologyCreateNew: "",
+      showTerminologyNotification: 0,
+      terminologyNotificationStatus: "success",
+      terminologyNotificationMessage: "",
       webCaptions: [],
       webCaptions_vtt: '',
       webCaptions_fields: [
@@ -247,6 +361,34 @@ export default {
     }
   },
   computed: {
+    customTerminologyLastTableField: function() {
+      return "da"
+      // return this.customTerminologyFields[this.customTerminologyFields.length-1]
+    },
+    customTerminologyUnion: function() {
+      console.log("this.customTerminologyUnsaved")
+      console.log(this.customTerminologyUnsaved)
+      console.log("this.customTerminologySaved")
+      console.log(this.customTerminologySaved)
+      return this.customTerminologyUnsaved.concat(this.customTerminologySaved)
+    },
+    validTerminologyName: function() {
+      const letterNumber = /^([A-Za-z0-9-]_?)+$/;
+      // The name can be up to 256 characters long. Valid characters are a-z, A-Z, 0-9, -, and _.
+      if (this.customTerminologyCreateNew === "" || (this.customTerminologyCreateNew.match(letterNumber) && this.customTerminologyCreateNew.length<256)) {
+        return true;
+      }
+      else
+      {
+        return false;
+      }
+    },
+    customTerminologyName: function () {
+      if (this.customTerminologyCreateNew !== "")
+        return this.customTerminologyCreateNew
+      else
+        return this.customTerminologySelected
+    },
     inputListeners: function () {
       var vm = this
       // `Object.assign` merges objects together to form a new object
@@ -314,10 +456,23 @@ export default {
     waveform_seek_position: function () {
       this.handleWaveformSeek();
     },
+    // when user begins typing new terminology name, then deselect the radio buttons
+    customTerminologyCreateNew: function() {
+      this.customVocabularySelected = ""
+    },
+    customTerminologySelected: async function() {
+      // remove phrases from the previously selected terminology
+      // before we add phrases from the newly selected terminology
+      if (this.customTerminologySelected!=="")
+          // add phrases from the selected terminology
+        await this.downloadTerminology()
+    }
+
   },
   deactivated: function () {
     console.log('deactivated component:', this.operator)
     this.selected_lang_code = ""
+    clearInterval(this.workflow_status_polling)
   },
   activated: function () {
     console.log('activated component:', this.operator);
@@ -331,8 +486,45 @@ export default {
     this.pollWorkflowStatus();
   },
   beforeDestroy: function () {
-    },
+    clearInterval(this.workflow_status_polling)
+  },
   methods: {
+    getEmptyTerminologyRecord: function() {
+      // Initialize an empty terminology record which will be used when
+      // we add terminology rows in the terminology editor.
+      // add a column for the source language
+      const emptyTerminologyRecord = {}
+      emptyTerminologyRecord[this.sourceLanguageCode] = ""
+      // add a column for every target translate language
+      for (const lang of this.translationsCollection) {
+        emptyTerminologyRecord[lang.value]=""
+      }
+      console.log("emptyTerminologyRecord")
+      console.log(emptyTerminologyRecord)
+      return emptyTerminologyRecord
+    },
+    listTerminologiesRequest: async function () {
+      const token = await this.$Amplify.Auth.currentSession().then(data =>{
+        return data.getIdToken().getJwtToken();
+      });
+      console.log("List terminologies request:")
+      console.log('curl -L -k -X GET -H \'Content-Type: application/json\' -H \'Authorization: \''+token+' '+this.DATAPLANE_API_ENDPOINT+'translate/list_terminologies')
+      fetch(this.DATAPLANE_API_ENDPOINT + 'translate/list_terminologies', {
+        method: 'get',
+        mode: 'cors',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token
+        },
+      }).then(response =>
+        response.json().then(data => ({
+              data: data,
+            })
+        ).then(res => {
+          this.customTerminologyList = res.data['TerminologyPropertiesList'].map(terminology => terminology.Name)
+        })
+      )
+    },
     getLanguageList: async function () {
       // This function gets the list of languages that the user can choose from
       const token = await this.$Amplify.Auth.currentSession().then(data =>{
@@ -592,6 +784,49 @@ export default {
       this.webCaptions[index].end = new_time
     },
     changeCaption(new_caption, index) {
+      const Diff = require('diff');
+      const diff = Diff.diffWords(this.webCaptions[index].caption, new_caption);
+      // if no words were removed (i.e. only new words were added)...
+      console.log("Translation edit:")
+      console.log(diff)
+      let old_phrase = ''
+      let new_phrase = ''
+      for (let i=0; i<=(diff.length-1); i++) {
+        // if element contains key removed
+        if ("removed" in diff[i] && diff[i].removed !== undefined) {
+          old_phrase += diff[i].value+' '
+        }
+        // if element contains key added
+        else if ("added" in diff[i] && diff[i].added !== undefined) {
+          new_phrase += diff[i].value+' '
+        }
+        // otherwise if element is just words, or if it's the last element,
+        // then save word change to custom terminology
+        if (i === (diff.length-1) || !("added" in diff[i] || "removed" in diff[i])) {
+          // if this value is a space and next value contains key 'added',
+          // then break so that we can add that value to the new_phrase
+          if (i !== (diff.length-1) && diff[i].value === ' ' && "added" in diff[i+1] && diff[i+1].added !== 'undefined') {
+            continue
+          } else {
+            // or if this is the last element
+            // or if this value is anything other than a space
+            // then save to custom terminology
+            if (old_phrase != '' && new_phrase != '') {
+              // replace multiple spaces with a single space
+              // and remove spaces at beginning or end of word
+              old_phrase = old_phrase.replace(/ +(?= )/g, '').trim();
+              new_phrase = new_phrase.replace(/ +(?= )/g, '').trim();
+              // remove old_phrase from custom vocab, if it already exists
+              this.customTerminologyUnsaved = this.customTerminologyUnsaved.filter(item => {return item.original_phrase !== old_phrase;});
+              // add old_phrase to custom vocab
+              this.customTerminologyUnsaved.push({"original_phrase": old_phrase, "new_phrase": new_phrase})
+              console.log("CUSTOM TERMINOLOGY: " + JSON.stringify(this.customTerminologyUnsaved))
+            }
+            old_phrase = ''
+            new_phrase = ''
+          }
+        }
+      }
       this.webCaptions[index].caption = new_caption
     },
     captionClickHandler(index) {
@@ -664,16 +899,15 @@ export default {
               data: data,
             })
           ).then(res => {
-              this.workflow_id = res.data[0].Id
-              this.workflow_status = res.data[0].Status
-              if ("CurrentStage" in res.data[0])
-                this.waiting_stage = res.data[0].CurrentStage
-              // get the list of languages to show the user
-              this.getLanguageList();
-              // get workflow config, needed for edit captions button
-              this.getWorkflowConfig(token);
-            }
-          )
+            this.workflow_id = res.data[0].Id
+            this.workflow_status = res.data[0].Status
+            if ("CurrentStage" in res.data[0])
+              this.waiting_stage = res.data[0].CurrentStage
+            // get the list of languages to show the user
+            this.getLanguageList();
+            // get workflow config, needed for edit captions button
+            this.getWorkflowConfig(token);
+          })
         }
       )
     },
@@ -720,6 +954,7 @@ export default {
             })
           ).then(res => {
             this.workflow_config = res.data.Configuration
+            this.sourceLanguageCode = res.data.Configuration.WebCaptionsStage2.WebCaptions.SourceLanguageCode
             this.workflow_definition = res.data.Workflow
           })
         }
@@ -798,7 +1033,6 @@ export default {
       )
     },
     saveCaptions: async function (token) {
-      clearInterval(this.workflow_status_polling)
       this.workflow_status = "Started"
       // This function saves translation edits to the dataplane
       this.$refs['save-modal'].hide()
@@ -834,6 +1068,150 @@ export default {
           }
         })
       )
+    },
+    showTerminologyConfirmation: async function() {
+      // When we open the custom terminology modal, then we'll initialize the
+      // terminology table to include a single empty terminology so the table shows
+      // at least one row.
+      if (this.customTerminologyUnsaved.length === 0) {
+        this.customTerminologyUnsaved = [this.getEmptyTerminologyRecord()]
+      }
+      await this.listTerminologiesRequest()
+      this.$refs['terminology-modal'].show()
+    },
+    convertToCSV: function(objArray) {
+      var array = typeof objArray != 'object' ? JSON.parse(objArray) : objArray;
+      var str = '';
+      for (var i = 0; i < array.length; i++) {
+        var line = '';
+        for (var index in array[i]) {
+          if (line != '') line += ','
+          line += array[i][index];
+        }
+        str += line + '\r\n';
+      }
+      return str;
+    },
+    saveTerminology: async function () {
+      const csv_header = (this.translationsCollection.map(x => x.value)).concat(this.sourceLanguageCode).toString()
+      const csv = csv_header+'\n'+this.convertToCSV(this.customTerminologyUnsaved)
+      console.log(csv)
+      await this.saveTerminologyRequest(csv)
+    },
+    saveTerminologyRequest: async function (csv) {
+      const token = await this.$Amplify.Auth.currentSession().then(data =>{
+        return data.getIdToken().getJwtToken();
+      });
+      console.log("Create terminology request:")
+      console.log('curl -L -k -X POST -H \'Content-Type: application/json\' -H \'Authorization: \''+token+' --data \'{"terminology_name": \"'+this.customTerminologyName+'\", "terminology_csv": '+JSON.stringify(csv)+'}\' '+this.DATAPLANE_API_ENDPOINT+'translate/create_terminology')
+      await fetch(this.DATAPLANE_API_ENDPOINT+'translate/create_terminology',{
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'Authorization': token},
+        body: JSON.stringify({"terminology_name": this.customTerminologyName, "terminology_csv": csv})
+      }).then(response =>
+        response.json().then(data => ({
+              data: data,
+              status: response.status
+            })
+        ).then(res => {
+          if (res.status === 200) {
+            console.log("Success! Custom terminology saved.")
+            this.terminologyNotificationMessage = "Saved terminology: " + this.customTerminologyName
+            this.terminologyNotificationStatus = "success"
+            this.showTerminologyNotification = 5
+            this.customTerminologyUnsaved = []
+          } else {
+            console.log("Failed to save vocabulary")
+            this.vocabularyNotificationMessage = "Failed to save vocabulary: " + this.customTerminologyName
+            this.terminologyNotificationStatus = "danger"
+            this.showTerminologyNotification = 5
+          }
+          // clear the custom vocabulary name used in the save vocab modal form
+          this.customTerminologyCreateNew = ''
+        })
+      )
+    },
+    deleteTerminology: async function () {
+      this.$refs['delete-terminology-modal'].show()
+    },
+    deleteTerminologyRequest: async function (customTerminologyName) {
+      let token = await this.$Amplify.Auth.currentSession().then(data =>{
+        return data.getIdToken().getJwtToken();
+      });
+      this.$refs['delete-terminology-modal'].hide()
+      console.log("Delete terminology request:")
+      console.log('curl -L -k -X POST -H \'Content-Type: application/json\' -H \'Authorization: \''+token+'\' --data \'{"terminology_name":"'+customTerminologyName+'}\' '+this.DATAPLANE_API_ENDPOINT+'translate/delete_terminology')
+      await fetch(this.DATAPLANE_API_ENDPOINT+'translate/delete_terminology',{
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'Authorization': token},
+        body: JSON.stringify({"terminology_name":customTerminologyName})
+      }).then(response =>
+        response.json().then(data => ({
+              data: data,
+              status: response.status
+            })
+        ).then(res => {
+          if (res.status === 200) {
+            console.log("Success! Terminology deleted.")
+            this.terminologyNotificationMessage = "Deleted terminology: " + customTerminologyName
+            this.terminologyNotificationStatus = "success"
+            this.showTerminologyNotification = 5
+            // reset the radio button selection
+            this.customTerminologySelected = ""
+            this.customTerminologySaved = []
+            this.listTerminologiesRequest()
+          } else {
+            console.log("Failed to delete vocabulary")
+            this.terminologyNotificationMessage = "Failed to delete vocabulary: " + customTerminologyName
+            this.terminologyNotificationStatus = "danger"
+            this.showTerminologyNotification = 5
+          }
+        })
+      )
+    },
+    downloadTerminology: async function() {
+      const token = await this.$Amplify.Auth.currentSession().then(data =>{
+        return data.getIdToken().getJwtToken();
+      });
+      console.log("Get terminology request:")
+      console.log('curl -L -k -X POST -H \'Content-Type: application/json\' -H \'Authorization: \''+token+' --data \'{"terminology_name":"'+this.customTerminologySelected+'"}\' '+this.DATAPLANE_API_ENDPOINT+'translate/download_terminology')
+      fetch(this.DATAPLANE_API_ENDPOINT + 'translate/download_terminology', {
+        method: 'post',
+        body: JSON.stringify({"terminology_name":this.customTerminologySelected}),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token
+        },
+      }).then(response =>
+        response.json().then(data => ({
+              data: data,
+            })
+        ).then(res => {
+          console.log("res")
+          console.log(res.data.terminology)
+          const csv = res.data.terminology.replace(/"/g, '')
+          console.log("csv")
+          console.log(csv)
+          const json = this.csvJSON(csv)
+          this.customTerminologySaved = json
+          // save phrases from the currently selected terminology
+          // this.customTerminologySaved = res.data.vocabulary.map(({Phrase, SoundsLike, IPA, DisplayAs}) => ({original_phrase: "", new_phrase: Phrase, sounds_like: SoundsLike, IPA: IPA, display_as: DisplayAs}));
+        })
+      )
+    },
+    csvJSON: function(csv) {
+      var lines=csv.split("\n");
+      var json = [];
+      var headers=lines[0].split(",");
+      for(let i=1;i<lines.length;i++){
+        let obj = {};
+        let currentline = lines[i].split(",");
+        for(let j = 0; j<headers.length; j++){
+          obj[headers[j]] = currentline[j];
+        }
+        json.push(obj);
+      }
+      return json;
     },
     getWebCaptions: async function () {
       // This functions gets paginated web caption data
@@ -894,10 +1272,50 @@ export default {
     delete_row(index) {
       this.webCaptions.splice(index, 1)
     },
+    add_terminology_column() {
+      // TODO
+      // this.translationsCollection.concat({"text":"new", "value": "new"})
+      // this.customTerminologyUnsaved.forEach(item => { item.new = "" });
+      console.log(this.translationsCollection)
+      console.log(this.customTerminologyUnsaved)
+    },
+    delete_terminology_column(language) {
+      this.translationsCollection = this.translationsCollection.filter(item => item !== language)
+      this.customTerminologyUnsaved.forEach(item => { delete item[language] });
+    },
+    add_terminology_row(index) {
+      // The index provided is the index into the concatenated unsaved and saved terminologies
+      // Unsaved vocab will always be listed first, so we convert the index as follows so that
+      // we can splice appropriately in the unsaved or saved terminology.
+      if (index < this.customTerminologyUnsaved.length) {
+        this.customTerminologyUnsaved.splice(index+1, 0, this.getEmptyTerminologyRecord())
+      } else {
+        this.customTerminologyUnsaved.splice(index-this.customTerminologyUnsaved.length, 0, this.getEmptyTerminologyRecord())
+      }
+      console.log("added " + JSON.stringify(this.getEmptyTerminologyRecord()))
+    },
+    delete_terminology_row(index) {
+      console.log(index)
+      console.log(this.customTerminologyUnsaved.length)
+      // The index provided is the index into the concatenated unsaved and saved terminologies
+      // Unsaved terminologies will always be listed first, so we convert the index as follows so that
+      // we can splice appropriately in the unsaved or saved terminology.
+      if (index < this.customTerminologyUnsaved.length) {
+        this.customTerminologyUnsaved.splice(index, 1)
+      } else {
+        const index_into_saved_terminology = index - this.customTerminologyUnsaved.length
+        this.customTerminologySaved.splice(index_into_saved_terminology, 1)
+      }
+      // if (this.customTerminologyUnion.length === 0){
+      //   this.customTerminologyUnsaved.push(this.emptyTerminologyRecord)
+      // }
+      console.log(this.customTerminologyUnsaved.length)
+      console.log(this.customTerminologyUnsaved)
+    },
     pollWorkflowStatus() {
       // Poll frequency in milliseconds
       const poll_frequency = 5000;
-      // clearInterval(this.workflow_status_polling)
+      clearInterval(this.workflow_status_polling)
       this.workflow_status_polling = setInterval(() => {
         this.getWorkflowStatus();
       }, poll_frequency)
@@ -955,6 +1373,12 @@ export default {
   }
   table.b-table-selectable > tbody > tr.b-table-row-selected > td {
     background-color: white !important;
+  }
+  .btn-group-xs > .btn, .btn-xs {
+    padding: .25rem .4rem;
+    font-size: .875rem;
+    line-height: .5;
+    border-radius: .2rem;
   }
 </style>
 

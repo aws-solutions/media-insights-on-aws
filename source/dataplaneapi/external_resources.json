@@ -67,7 +67,11 @@
                     "transcribe:CreateVocabulary",
                     "transcribe:DeleteVocabulary",
                     "transcribe:GetVocabulary",
-                    "transcribe:ListVocabularies"
+                    "transcribe:ListVocabularies",
+                    "translate:DeleteTerminology",
+                    "translate:GetTerminology",
+                    "translate:ImportTerminology",
+                    "translate:ListTerminologies"
                   ],
                   "Resource": "*"
                 }

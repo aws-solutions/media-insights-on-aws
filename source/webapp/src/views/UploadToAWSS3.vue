@@ -131,10 +131,22 @@
                   name="flavour-3"
                 ></b-form-checkbox-group>
                 <div v-if="enabledOperators.includes('Translate')">
+                  Custom Terminology
+                  <b-form-select
+                    v-model="customTerminology"
+                    :options="customTerminologyList"
+                  >
+                    <template v-slot:first>
+                      <b-form-select-option :value="null" disabled>
+                        (optional)
+                      </b-form-select-option>
+                    </template>
+                  </b-form-select>
                   <b-form-group>
                     <div v-if="textFormError" style="color:red">
                       {{ textFormError }}
                     </div>
+                    Target Languages
                     <voerro-tags-input
                       v-model="selectedTranslateLanguages"
                       element-id="target_language_tags"
@@ -150,8 +162,6 @@
                       :typeahead-hide-discard="true"
                       :typeahead="true"
                     />
-                    Custom Terminology
-                    <b-form-input v-model="customTerminology" placeholder="(optional)"></b-form-input>
                   </b-form-group>
                 </div>
               </b-form-group>
@@ -260,6 +270,7 @@
         genericDataFilename: "",
         customVocab: null,
         customTerminology: "",
+        customTerminologyList: [],
         existingSubtitlesFilename: "",
         transcribeLanguage: "en-US",
         transcribeLanguages: [
@@ -414,17 +425,6 @@
         if (!this.enabledOperators.includes("Transcribe") && (this.enabledOperators.includes("Translate") || this.enabledOperators.includes("ComprehendEntities") || this.enabledOperators.includes("ComprehendKeyPhrases"))) {
           return "Transcribe must be enabled if any text operator is enabled.";
         }
-        if (this.enabledOperators.includes("Transcribe")) {
-          // Validate that the collection ID is defined
-          console.log(this.existingSubtitlesFilename)
-          if (this.existingSubtitlesFilename != "" && !(new RegExp('^.+\\.vtt$')).test(this.existingSubtitlesFilename)) {
-            return "Subtitles filename must have .vtt extension.";
-          }
-          // Validate that the data filename is not too long
-          else if (this.existingSubtitlesFilename.length > 255) {
-            return "Subtitles filename must have fewer than 255 characters.";
-          }
-        }
         return "";
       },
       videoFormError() {
@@ -550,12 +550,35 @@
     mounted: function() {
       this.executed_assets = this.execution_history;
       this.listVocabulariesRequest()
-      this.pollWorkflowStatus();
+      this.listTerminologiesRequest()
     },
     beforeDestroy () {
       clearInterval(this.workflow_status_polling)
     },
     methods: {
+      listTerminologiesRequest: async function () {
+        const token = await this.$Amplify.Auth.currentSession().then(data =>{
+          return data.getIdToken().getJwtToken();
+        });
+        console.log("List terminologies request:")
+        console.log('curl -L -k -X GET -H \'Content-Type: application/json\' -H \'Authorization: \''+token+' '+this.DATAPLANE_API_ENDPOINT+'translate/list_terminologies')
+        fetch(this.DATAPLANE_API_ENDPOINT + 'translate/list_terminologies', {
+          method: 'get',
+          mode: 'cors',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token
+          },
+        }).then(response =>
+            response.json().then(data => ({
+                  data: data,
+                })
+            ).then(res => {
+              this.customTerminologyList = res.data['TerminologyPropertiesList'].map(terminology => terminology.Name)
+            })
+        )
+      },
+
       listVocabulariesRequest: async function () {
         const token = await this.$Amplify.Auth.currentSession().then(data =>{
           return data.getIdToken().getJwtToken();
@@ -655,8 +678,8 @@
 
         // if this is a VTT file, and the auto-filled file is removed, then remove the autofill
         if ((file.name.split('.').pop().toLowerCase() == 'vtt')) {
-          if (this.existingSubtitlesFilename == file.name){
-            this.existingSubtitlesFilename = ""
+          if (this.customTerminology == file.name){
+            this.customTerminology = ""
 
           }
 
@@ -720,7 +743,7 @@
           if (this.customVocab !== null) {
             data.Configuration.defaultAudioStage2.Transcribe.VocabularyName=this.customVocab
           }
-          if (this.existingSubtitlesFilename == "") {
+          if (this.customTerminology == "") {
             if ("ExistingSubtitlesObject" in data.Configuration.WebCaptionsStage2.WebCaptions){
                 delete data.Configuration.WebCaptionsStage2.WebCaptions.ExistingSubtitlesObject
             }
@@ -728,7 +751,7 @@
           else {
             data.Configuration.WebCaptionsStage2.WebCaptions.ExistingSubtitlesObject = {}
             data.Configuration.WebCaptionsStage2.WebCaptions.ExistingSubtitlesObject.Bucket=this.DATAPLANE_BUCKET
-            data.Configuration.WebCaptionsStage2.WebCaptions.ExistingSubtitlesObject.Key=this.existingSubtitlesFilename
+            data.Configuration.WebCaptionsStage2.WebCaptions.ExistingSubtitlesObject.Key=this.customTerminology
           }
           // Add input parameter to workflow config:
           data["Input"] = {

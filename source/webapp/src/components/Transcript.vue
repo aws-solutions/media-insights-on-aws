@@ -246,7 +246,7 @@ to highlight the fields in the custom vocab schema. -->
         Save edits
       </b-button>
       <!-- this is the save edits button for when workflow complete -->
-      <b-button v-if="workflow_status === 'Complete' || workflow_status === 'Error'" v-b-tooltip.hover title="Save edits will regenerate the VTT and SRT caption files so they include any changes you may have made to captions." id="editCaptions" size="sm" class="mb-2" @click="showSaveConfirmation()">
+      <b-button v-if="workflow_status === 'Complete' || workflow_status === 'Error'" id="editCaptions" v-b-tooltip.hover title="Save edits will regenerate the VTT and SRT caption files so they include any changes you may have made to captions." size="sm" class="mb-2" @click="showSaveConfirmation()">
         <b-icon icon="play" color="white"></b-icon>
         Save edits
       </b-button>
@@ -661,7 +661,7 @@ export default {
         return data.getIdToken().getJwtToken();
       });
       console.log("Get vocabulary request:")
-      console.log('curl -L -k -X POST -H \'Content-Type: application/json\' -H \'Authorization: \''+token+' --data \'{"vocabulary_name":"'+this.customVocabularySelected+'}\' '+this.DATAPLANE_API_ENDPOINT+'/transcribe/download_vocabulary')
+      console.log('curl -L -k -X POST -H \'Content-Type: application/json\' -H \'Authorization: \''+token+' --data \'{"vocabulary_name":"'+this.customVocabularySelected+'"}\' '+this.DATAPLANE_API_ENDPOINT+'/transcribe/download_vocabulary')
       fetch(this.DATAPLANE_API_ENDPOINT + '/transcribe/download_vocabulary', {
         method: 'post',
         mode: 'cors',

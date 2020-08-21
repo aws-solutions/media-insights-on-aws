@@ -150,7 +150,7 @@
                     <voerro-tags-input
                       v-model="selectedTranslateLanguages"
                       element-id="target_language_tags"
-                      limit="10"
+                      :limit="10"
                       :hide-input-on-limit="true"
                       :existing-tags="translateLanguageTags"
                       :only-existing-tags="true"
@@ -269,7 +269,7 @@
         faceCollectionId: "",
         genericDataFilename: "",
         customVocab: null,
-        customTerminology: "",
+        customTerminology: null,
         customTerminologyList: [],
         existingSubtitlesFilename: "",
         transcribeLanguage: "en-US",
@@ -547,6 +547,17 @@
         }
       }
     },
+    watch: {
+      transcribeLanguage: function() {
+        // Transcribe will fail if the custom vocabulary language
+        // does not match the transcribe job language.
+        // So, this function prevents users from selecting vocabularies
+        // which don't match the selected Transcribe source language.
+        this.customVocabularyList.map(item => {
+          item.notEnabled=(item.language_code !== this.transcribeLanguage)
+        })
+      }
+    },
     mounted: function() {
       this.executed_assets = this.execution_history;
       this.listVocabulariesRequest()
@@ -597,12 +608,16 @@
                 data: data,
               })
           ).then(res => {
-            this.customVocabularyList = res.data["Vocabularies"].map(({VocabularyName, VocabularyState}) => ({
+            this.customVocabularyList = res.data["Vocabularies"].map(({VocabularyName, VocabularyState, LanguageCode}) => ({
               name: VocabularyName,
               status: VocabularyState,
-              name_and_status: VocabularyState === "READY" ? VocabularyName : VocabularyName + " [" + VocabularyState + "]",
-              notEnabled: VocabularyState === "PENDING"
+              language_code: LanguageCode,
+              name_and_status: VocabularyState === "READY" ?
+                  VocabularyName+" ("+LanguageCode+")" :
+                  VocabularyName + " [" + VocabularyState + "]",
+              notEnabled: (VocabularyState === "PENDING" || LanguageCode !== this.transcribeLanguage)
             }))
+            console.log(this.customVocabularyList)
             // if any vocab is PENDING, then poll status until it is not PENDING. This is necessary so custom vocabs become selectable in the GUI as soon as they become ready.
             if (this.customVocabularyList.filter(item => item.status === "PENDING").length > 0) {
               if (this.vocab_status_polling == null) {
@@ -678,11 +693,9 @@
 
         // if this is a VTT file, and the auto-filled file is removed, then remove the autofill
         if ((file.name.split('.').pop().toLowerCase() == 'vtt')) {
-          if (this.customTerminology == file.name){
-            this.customTerminology = ""
-
+          if (this.existingSubtitlesFilename == file.name) {
+            this.existingSubtitlesFilename = ""
           }
-
         }
       },
       s3UploadComplete: async function (location) {
@@ -743,7 +756,7 @@
           if (this.customVocab !== null) {
             data.Configuration.defaultAudioStage2.Transcribe.VocabularyName=this.customVocab
           }
-          if (this.customTerminology == "") {
+          if (this.existingSubtitlesFilename == "") {
             if ("ExistingSubtitlesObject" in data.Configuration.WebCaptionsStage2.WebCaptions){
                 delete data.Configuration.WebCaptionsStage2.WebCaptions.ExistingSubtitlesObject
             }

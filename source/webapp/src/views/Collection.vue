@@ -2,6 +2,10 @@
   <div>
     <div class="headerTextBackground">
       <Header :is-collection-active="true" />
+      <b-modal ref="delete-confirmation-modal" ok-title="Confirm" ok-variant="danger" title="Delete Asset?" @ok="deleteAsset">
+        <p>Are you sure you want to permanently delete asset ID <b>{{ delete_asset_id }}</b>?</p>
+      </b-modal>
+
       <b-container fluid>
         <b-alert
           v-model="showElasticSearchAlert"
@@ -106,7 +110,7 @@
                       <b-button
                         :pressed="false"
                         variant="red"
-                        @click="deleteAsset(`${data.item.asset_id}`)"
+                        @click="deleteConfirm(`${data.item.asset_id}`)"
                       >
                         Delete
                       </b-button>
@@ -164,6 +168,7 @@
         showDataplaneAlert: false,
         showDeletedAlert: 0,
         noAssets: null,
+        delete_asset_id: "",
         currentPage: 1,
         perPage: 10,
         isBusy: false,
@@ -228,7 +233,12 @@
       openWindow: function (url) {
         window.open(url);
       },
-      async deleteAsset(asset_id) {
+      async deleteConfirm(asset_id) {
+        this.$refs['delete-confirmation-modal'].show()
+        this.delete_asset_id = asset_id
+      },
+      async deleteAsset() {
+        const asset_id = this.delete_asset_id
         let token = await this.getAccessToken();
         let response = await fetch(this.DATAPLANE_API_ENDPOINT+'/metadata/'+asset_id, {
           method: 'delete',

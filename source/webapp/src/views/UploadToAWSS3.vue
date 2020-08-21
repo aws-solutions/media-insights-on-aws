@@ -495,6 +495,11 @@
                 "MediaType": "MetadataOnly",
                 "TargetLanguageCodes": Object.values(this.selectedTranslateLanguages.map(x => x.text)).filter(x => x !== this.sourceLanguageCode).concat(this.sourceLanguageCode),
                 "Enabled": this.enabledOperators.includes("Translate")
+              },
+              "PollyWebCaptions": {
+                "MediaType":"MetadataOnly",
+                "Enabled": this.enabledOperators.includes("Translate"),
+                "SourceLanguageCode": this.sourceLanguageCode
               }
             },
             "WebCaptionsStage2": {

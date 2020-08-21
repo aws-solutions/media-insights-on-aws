@@ -64,9 +64,9 @@
                 <label>Encoded date:</label>
                 {{ encoded_date }}
               </div>
-              <div v-if="used_vocabulary !== ''">
-                <label>Custom Vocabulary:</label>
-                {{ used_vocabulary }}
+              <div v-for="property in operator_info" :key="property.name">
+                <label>{{ property.name }}:</label>
+                {{ property.value }}
               </div>
             </b-col>
           </b-row>
@@ -101,7 +101,7 @@
       }
     },
     computed: {
-      ...mapState(['used_vocabulary']),
+      ...mapState(['operator_info']),
     },
     deactivated: function () {
       this.lineChart = Object
@@ -168,9 +168,6 @@
           }
           if ("other_sampling_rate" in track_data["Audio"][0]) {
             this.other_sampling_rate = track_data["Audio"][0].other_sampling_rate[0];
-          }
-          if ("other_language" in track_data["Audio"][0]) {
-            this.other_language = track_data["Audio"][0].other_language[0];
           }
           if ("encoded_date" in track_data["Audio"][0]) {
             this.encoded_date = track_data["Audio"][0].encoded_date;

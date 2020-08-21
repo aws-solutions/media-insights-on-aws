@@ -989,7 +989,16 @@ export default {
           ).then(res => {
             this.workflow_config = res.data.Configuration
             this.sourceLanguageCode = res.data.Configuration.WebCaptionsStage2.WebCaptions.SourceLanguageCode
+            this.terminology_used = res.data.Configuration.TranslateStage2.TranslateWebCaptions.TerminologyNames
             this.workflow_definition = res.data.Workflow
+            const operator_info = []
+            const sourceLanguage = this.translateLanguages.filter(x => (x.value === this.sourceLanguageCode))[0].text;
+            operator_info.push({"name": "Source Language", "value": sourceLanguage})
+            if (this.terminology_used) {
+              // TODO TerminologyNames should not be an array since it will only ever be one value
+              operator_info.push({"name": "Custom Terminology", "value": this.terminology_used[0]})
+            }
+            this.$store.commit('updateOperatorInfo', operator_info)
           })
         }
       )

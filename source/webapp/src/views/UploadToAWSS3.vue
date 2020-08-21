@@ -143,10 +143,10 @@
                     </template>
                   </b-form-select>
                   <b-form-group>
+                    Target Languages
                     <div v-if="textFormError" style="color:red">
                       {{ textFormError }}
                     </div>
-                    Target Languages
                     <voerro-tags-input
                       v-model="selectedTranslateLanguages"
                       element-id="target_language_tags"
@@ -750,7 +750,8 @@
           // Create workflow config from user-specified options:
           data = vm.kitchenSinkWorkflowConfig;
           // Add optional parameters to workflow config:
-          if (this.customTerminology !== "") {
+          if (this.customTerminology !== null) {
+            // TODO TerminologyNames should not be an array since it will only ever be one value
             data.Configuration.TranslateStage2.TranslateWebCaptions.TerminologyNames = [this.customTerminology]
           }
           if (this.customVocab !== null) {

@@ -314,7 +314,42 @@ export default {
       isBusy: false,
       isSaving: false,
       operator: "transcript",
-      noTranscript: false
+      noTranscript: false,
+      transcribeLanguages: [
+        {text: 'Arabic, Gulf', value: 'ar-AE'},
+        {text: 'Arabic, Modern Standard', value: 'ar-SA'},
+        {text: 'Chinese Mandarin', value: 'zh-CN'},
+        {text: 'Dutch', value: 'nl-NL'},
+        {text: 'English, Australian', value: 'en-AU'},
+        {text: 'English, British', value: 'en-GB'},
+        {text: 'English, Indian-accented', value: 'en-IN'},
+        {text: 'English, Irish', value: 'en-IE'},
+        {text: 'English, Scottish', value: 'en-AB'},
+        {text: 'English, US', value: 'en-US'},
+        {text: 'English, Welsh', value: 'en-WL'},
+        // Disabled until 'fa' supported by AWS Translate
+        // {text: 'Farsi', value: 'fa-IR'},
+        {text: 'French', value: 'fr-FR'},
+        {text: 'French, Canadian', value: 'fr-CA'},
+        {text: 'German', value: 'de-DE'},
+        {text: 'German, Swiss', value: 'de-CH'},
+        {text: 'Hebrew', value: 'he-IL'},
+        {text: 'Hindi', value: 'hi-IN'},
+        {text: 'Indonesian', value: 'id-ID'},
+        {text: 'Italian', value: 'it-IT'},
+        {text: 'Japanese', value: 'ja-JP'},
+        {text: 'Korean', value: 'ko-KR'},
+        {text: 'Malay', value: 'ms-MY'},
+        {text: 'Portuguese', value: 'pt-PT'},
+        {text: 'Portuguese, Brazilian', value: 'pt-BR'},
+        {text: 'Russian', value: 'ru-RU'},
+        {text: 'Spanish', value: 'es-ES'},
+        {text: 'Spanish, US', value: 'es-US'},
+        {text: 'Tamil', value: 'ta-IN'},
+        // Disabled until 'te' supported by AWS Translate
+        // {text: 'Telugu', value: 'te-IN'},
+        {text: 'Turkish', value: 'tr-TR'},
+      ]
     }
   },
   computed: {
@@ -647,9 +682,13 @@ export default {
           this.sourceLanguageCode = res.data.Configuration.WebCaptionsStage2.WebCaptions.SourceLanguageCode
           this.transcribe_language_code = res.data.Configuration.defaultAudioStage2.Transcribe.TranscribeLanguage
           this.vocabulary_used = res.data.Configuration.defaultAudioStage2.Transcribe.VocabularyName
+          const operator_info = []
+          const transcribe_language = this.transcribeLanguages.filter(x => (x.value === this.transcribe_language_code))[0].text;
+          operator_info.push({"name": "Source Language", "value": transcribe_language})
           if (this.vocabulary_used) {
-            this.$store.commit('updateUsedVocabulary', this.vocabulary_used)
+            operator_info.push({"name": "Custom Vocabulary", "value": this.vocabulary_used})
           }
+          this.$store.commit('updateOperatorInfo', operator_info)
           this.getWebCaptions()
           }
         )

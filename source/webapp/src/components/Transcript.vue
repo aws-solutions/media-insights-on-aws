@@ -20,29 +20,51 @@
       {{ vocabularyNotificationMessage }}
     </b-alert>
     <b-modal ref="vocab-modal" size="lg" title="Save Vocabulary?" :ok-disabled="validVocabularyName === false || (customVocabularySelected === '' && customVocabularyCreateNew === '') || customVocabularyUnion.length === 0" ok-title="Save" @ok="saveVocabulary()">
-      <b-form-group v-if="customVocabularyList.length>0" label="Select a vocabulary to overwrite or specify a new name:">
-        <b-form-radio-group
-          id="custom-vocab-selection"
-          v-model="customVocabularySelected"
-          name="custom-vocab-list"
-          :options="customVocabularyList"
-          text-field="name_and_status"
-          value-field="name"
-          disabled-field="notEnabled"
-          stacked
-        >
-        </b-form-radio-group>
-      </b-form-group>
-      <!-- The state on this text area will show a red alert icon if
-      the user enters an invalid custom vocabulary name. Otherwise we
-      set the state to null so no validity indicator is shown. -->
-      <b-form-input v-if="customVocabularyList.length>0" v-model="customVocabularyCreateNew" size="sm" placeholder="Enter new vocabulary name (optional)" :state="validVocabularyName ? null : false" @focus="customVocabularySelected=''"></b-form-input>
-      <b-form-input v-else v-model="customVocabularyCreateNew" size="sm" placeholder="Enter new vocabulary name" :state="validVocabularyName ? null : false"></b-form-input>
-      <div v-if="customVocabularyList.length > 0 && customVocabularySelected !== ''">
-        Delete the selected vocabulary (optional): <b-button v-b-tooltip.hover.right size="sm" title="Delete selected vocabulary" variant="danger" @click="deleteVocabulary">
-          Delete
-        </b-button>
-      </div>
+      <b-row>
+        <b-col>
+          <b>Select a vocabulary to overwrite:</b>
+          <b-form-group v-if="customVocabularyList.length>0">
+            <b-form-radio-group
+              id="custom-vocab-selection"
+              v-model="customVocabularySelected"
+              name="custom-vocab-list"
+              :options="customVocabularyList"
+              text-field="name_and_status"
+              value-field="name"
+              disabled-field="notEnabled"
+              stacked
+            >
+            </b-form-radio-group>
+          </b-form-group>
+          <div v-if="customVocabularyList.length > 0 && customVocabularySelected !== ''">
+            Delete the selected vocabulary (optional): <b-button v-b-tooltip.hover.right size="sm" title="Delete selected vocabulary" variant="danger" @click="deleteVocabulary">
+            Delete
+          </b-button>
+          </div>
+        </b-col>
+        <b-col>
+          <b>Or create a new vocabulary:</b><br>
+          <!-- The state on this text area will show a red alert icon if
+    the user enters an invalid custom vocabulary name. Otherwise we
+    set the state to null so no validity indicator is shown. -->
+          Vocabulary Name:
+          <b-form-input v-if="customVocabularyList.length>0" v-model="customVocabularyCreateNew" size="sm" placeholder="Enter vocabulary name (optional)" :state="validVocabularyName ? null : false" @focus="customVocabularySelected=''"></b-form-input>
+          <b-form-input v-else v-model="customVocabularyCreateNew" size="sm" placeholder="Enter vocabulary name" :state="validVocabularyName ? null : false"></b-form-input>
+          Vocabulary Language:
+          <b-form-select
+            v-model="vocabulary_language_code"
+            :options="transcribeLanguages"
+            size="sm"
+          />
+          <hr>
+          <label>Draft vocabulary name: </label> {{ customVocabularyName }}
+          <div v-if="customVocabularySelected === '' && customVocabularyCreateNew === ''" style="color:red">
+            Select a vocabulary name or specify a new vocabulary name.
+          </div>
+          <br>
+          <label>Draft vocabulary language:</label> {{ vocabulary_language_code }}
+        </b-col>
+      </b-row>
       <hr>
       <div v-if="customVocabularyUnsaved.length !== 0">
         Draft vocabulary (click to edit):
@@ -142,14 +164,14 @@ to highlight the fields in the custom vocab schema. -->
           </b-row>
         </template>
       </b-table>
-      <div v-if="customVocabularyUnion.length === 0" style="color:red">
+      <div v-if="customVocabularyUnion.length === 0 && customVocabularyList.length !== 0" style="color:red">
+        Select an existing vocabulary.<br>
+      </div>
+      <div v-if="customVocabularyUnion.length === 0 && customVocabularyList.length === 0" style="color:red">
         Make changes to the subtitles in order to build a custom vocabulary.<br>
       </div>
       <div v-else-if="validVocabularyName === false" style="color:red">
         Invalid vocabulary name. Valid characters are a-z, A-Z, and 0-9. Max length is 200.
-      </div>
-      <div v-else-if="customVocabularySelected === '' && customVocabularyCreateNew === ''" style="color:red">
-        Specify a vocabulary name.<br>
       </div>
     </b-modal>
     <b-modal ref="save-modal" ok-title="Confirm" title="Save Captions?" @ok="saveCaptions()">
@@ -300,6 +322,7 @@ export default {
       customVocabularySelected: "",
       customVocabularyCreateNew: "",
       transcribe_language_code: "",
+      vocabulary_language_code: "",
       vocabulary_used: "",
       vocabulary_uri: null,
       webCaptions: [],
@@ -428,11 +451,15 @@ export default {
       this.customVocabularySelected = ""
     },
     customVocabularySelected: async function() {
-      // remove phrases from the previously selected vocabulary
-      // before we add phrases from the newly selected vocabulary
-      if (this.customVocabularySelected!=="")
+      // Remove phrases from the previously selected vocabulary
+      // before we add phrases from the newly selected vocabulary.
+      if (this.customVocabularySelected !== "") {
+        // update the vocabulary language shown in the web form.
+        this.vocabulary_language_code = this.customVocabularyList.filter(item => (item.name === this.customVocabularySelected))[0].language_code
         // add phrases from the selected vocabulary
         await this.downloadVocabulary()
+      }
+
     }
   },
   deactivated: function () {
@@ -681,6 +708,7 @@ export default {
         ).then(res => {
           this.sourceLanguageCode = res.data.Configuration.WebCaptionsStage2.WebCaptions.SourceLanguageCode
           this.transcribe_language_code = res.data.Configuration.defaultAudioStage2.Transcribe.TranscribeLanguage
+          this.vocabulary_language_code = this.transcribe_language_code
           this.vocabulary_used = res.data.Configuration.defaultAudioStage2.Transcribe.VocabularyName
           const operator_info = []
           const transcribe_language = this.transcribeLanguages.filter(x => (x.value === this.transcribe_language_code))[0].text;
@@ -853,9 +881,10 @@ export default {
               data: data,
             })
         ).then(res => {
-          this.customVocabularyList = res.data["Vocabularies"].map(({VocabularyName, VocabularyState}) => ({
+          this.customVocabularyList = res.data["Vocabularies"].map(({VocabularyName, VocabularyState, LanguageCode}) => ({
             name: VocabularyName,
             status: VocabularyState,
+            language_code: LanguageCode,
             name_and_status: VocabularyState === "READY" ? VocabularyName : VocabularyName + " [" + VocabularyState + "]",
             notEnabled: VocabularyState === "PENDING"
           }))
@@ -935,7 +964,7 @@ export default {
       await fetch(this.DATAPLANE_API_ENDPOINT+'/transcribe/create_vocabulary',{
         method: 'POST',
         headers: {'Content-Type': 'application/json', 'Authorization': token},
-        body: JSON.stringify({"s3uri": s3uri, "vocabulary_name":customVocabularyName, "language_code": this.transcribe_language_code})
+        body: JSON.stringify({"s3uri": s3uri, "vocabulary_name":customVocabularyName, "language_code": this.vocabulary_language_code})
       }).then(response =>
         response.json().then(data => ({
               data: data,

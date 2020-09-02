@@ -1323,10 +1323,10 @@ export default {
     add_language_request() {
       console.log("adding language " + this.newLanguageCode)
       // add the new language as a new column in the terminology table
-      this.translationsCollection = this.translationsCollection.concat({"text":"", "value": this.newLanguageCode})
+      this.translationsCollection = this.translationsCollection.concat({"text":this.newLanguageCode, "value": this.newLanguageCode})
       // add the new language as a column in the terminology table data
       this.customTerminologyUnsaved[0][this.newLanguageCode] = ""
-      // reset the language code used in the form on add-language-modal
+      // reset the language code used in the add-language-modal form
       this.newLanguageCode=""
     },
     remove_language() {

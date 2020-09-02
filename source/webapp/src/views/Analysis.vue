@@ -66,8 +66,12 @@
                     fill
                   >
                     <b-tab
-                      title="Subtitles"
+                      title="Transcript"
                       @click="currentView = 'Transcript'"
+                    />
+                    <b-tab
+                      title="Subtitles"
+                      @click="currentView = 'Subtitles'"
                     />
                     <b-tab
                       title="Translation"
@@ -111,7 +115,7 @@
             <div v-else>
               <VideoPlayer :options="videoOptions" />
             </div>
-            <div v-if="currentView === 'Transcript' || currentView === 'Translation' || currentView === 'KeyPhrases' || currentView === 'Entities'">
+            <div v-if="currentView === 'Transcript' || currentView === 'Subtitles' || currentView === 'Translation' || currentView === 'KeyPhrases' || currentView === 'Entities'">
               <Waveform />
             </div>
             <div v-else>
@@ -192,6 +196,14 @@
         component: new Promise(function(resolve) {
           setTimeout(function() {
             resolve(import('@/components/Transcript.vue'));
+        }, 1000);
+        }),
+        loading: Loading,
+      }),
+      Subtitles: () => ({
+        component: new Promise(function(resolve) {
+          setTimeout(function() {
+            resolve(import('@/components/Subtitles.vue'));
         }, 1000);
         }),
         loading: Loading,

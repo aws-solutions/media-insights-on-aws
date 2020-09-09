@@ -15,6 +15,7 @@
     "bad-words": "^3.0.3",
     "chart.js": "^2.9.3",
     "core-js": "^2.6.11",
+    "diff": "^4.0.2",
     "dropzone": "^5.7.0",
     "jquery": "^1.12.4",
     "jwt-decode": "^2.2.0",

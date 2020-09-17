@@ -37,15 +37,24 @@ def process_text_detection(asset, workflow, results):
             if len(page["TextDetections"]) > 0:
                 for item in page["TextDetections"]:
                     try:
-                        text_detection = item["TextDetection"]
-                        text_detection["Timestamp"] = item["Timestamp"]
-                        text_detection["Operator"] = "textDetection"
-                        text_detection["Workflow"] = workflow
-                        # Flatten the bbox Label array
-                        text_detection["BoundingBox"] = text_detection["Geometry"]["BoundingBox"]
-                        del text_detection["Geometry"]
-                        print(text_detection)
-                        extracted_items.append(text_detection)
+                        # Handle text detection schema for videos
+                        if "TextDetection" in item:
+                            text_detection = item["TextDetection"]
+                            text_detection["Timestamp"] = item["Timestamp"]
+                            text_detection["Operator"] = "textDetection"
+                            text_detection["Workflow"] = workflow
+                            # Flatten the bbox Label array
+                            text_detection["BoundingBox"] = text_detection["Geometry"]["BoundingBox"]
+                            del text_detection["Geometry"]
+                            print(text_detection)
+                            extracted_items.append(text_detection)
+                        # Handle text detection schema for images
+                        else:
+                            text_detection = item
+                            text_detection["Operator"] = "textDetection"
+                            text_detection["Workflow"] = workflow
+                            print(text_detection)
+                            extracted_items.append(text_detection)
                     except KeyError as e:
                         print("KeyError: " + str(e))
                         print("Item: " + json.dumps(item))
@@ -54,14 +63,24 @@ def process_text_detection(asset, workflow, results):
         if len(metadata["TextDetections"]) > 0:
                 for item in metadata["TextDetections"]:
                     try:
-                        text_detection = item["TextDetection"]
-                        text_detection["Timestamp"] = item["Timestamp"]
-                        text_detection["Operator"] = "textDetection"
-                        text_detection["Workflow"] = workflow
-                        # Flatten the bbox Label array
-                        text_detection["BoundingBox"] = text_detection["Geometry"]["BoundingBox"]
-                        del text_detection["Geometry"]
-                        extracted_items.append(text_detection)
+                        # Handle text detection schema for videos
+                        if "TextDetection" in item:
+                            text_detection = item["TextDetection"]
+                            text_detection["Timestamp"] = item["Timestamp"]
+                            text_detection["Operator"] = "textDetection"
+                            text_detection["Workflow"] = workflow
+                            # Flatten the bbox Label array
+                            text_detection["BoundingBox"] = text_detection["Geometry"]["BoundingBox"]
+                            del text_detection["Geometry"]
+                            print(text_detection)
+                            extracted_items.append(text_detection)
+                        # Handle text detection schema for images
+                        else:
+                            text_detection = item
+                            text_detection["Operator"] = "textDetection"
+                            text_detection["Workflow"] = workflow
+                            print(text_detection)
+                            extracted_items.append(text_detection)
                     except KeyError as e:
                         print("KeyError: " + str(e))
                         print("Item: " + json.dumps(item))

@@ -29,6 +29,7 @@ bucket=$1
 version=$2
 region=$3
 if [ -n "$4" ]; then profile=$4; fi
+s3domain="s3.$region.amazonaws.com"
 
 # Check if region is supported:
 if [ "$region" != "us-east-1" ] &&
@@ -158,10 +159,6 @@ if [ $? -eq 0 ]; then
   echo "Lambda layer build script completed.";
 else
   echo "WARNING: Lambda layer build script failed. We'll use a pre-built Lambda layers instead.";
-  s3domain="s3-$region.amazonaws.com"
-  if [ "$region" = "us-east-1" ]; then
-    s3domain="s3.amazonaws.com"
-  fi
   echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.6.zip"
   wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.6.zip
   echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.7.zip"
@@ -648,17 +645,17 @@ echo "Copying the prepared distribution to S3..."
 for file in "$dist_dir"/*.zip
 do
   if [ -n "$profile" ]; then
-    aws s3 cp "$file" s3://"$bucket"/media-insights-solution/"$version"/code/ --profile "$profile"
+    aws s3 cp "$file" s3://"$bucket"."$s3domain"/media-insights-solution/"$version"/code/ --profile "$profile"
   else
-    aws s3 cp "$file" s3://"$bucket"/media-insights-solution/"$version"/code/
+    aws s3 cp "$file" s3://"$bucket"."$s3domain"/media-insights-solution/"$version"/code/
   fi
 done
 for file in "$dist_dir"/*.template
 do
   if [ -n "$profile" ]; then
-    aws s3 cp "$file" s3://"$bucket"/media-insights-solution/"$version"/cf/ --profile "$profile"
+    aws s3 cp "$file" s3://"$bucket"."$s3domain"/media-insights-solution/"$version"/cf/ --profile "$profile"
   else
-    aws s3 cp "$file" s3://"$bucket"/media-insights-solution/"$version"/cf/
+    aws s3 cp "$file" s3://"$bucket"."$s3domain"/media-insights-solution/"$version"/cf/
   fi
 done
 
@@ -676,11 +673,7 @@ echo "--------------------------------------------------------------------------
 
 echo ""
 echo "Template to deploy:"
-if [ "$region" == "us-east-1" ]; then
-  echo https://"$bucket".s3.amazonaws.com/media-insights-solution/"$version"/cf/media-insights-stack.template
-else
-  echo https://"$bucket".s3."$region".amazonaws.com/media-insights-solution/"$version"/cf/media-insights-stack.template
-fi
+echo https://"$bucket"."$s3domain"/media-insights-solution/"$version"/cf/media-insights-stack.template
 
 echo "------------------------------------------------------------------------------"
 echo "Done"

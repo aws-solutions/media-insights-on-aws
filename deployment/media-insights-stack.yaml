@@ -784,12 +784,15 @@ Resources:
     Properties:
       TemplateURL:
         !Join [
-          "/",
+          "",
           [
-            "https://s3.amazonaws.com",
+            "https://",
             !FindInMap ["SourceCode", "General", "S3Bucket"],
+            ".s3.",
+            Ref: "AWS::Region",
+            ".amazonaws.com/",
             !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
-            "media-insights-dataplane-api-stack.template",
+            "/media-insights-dataplane-api-stack.template",
           ],
         ]
       Parameters:
@@ -814,12 +817,15 @@ Resources:
     Properties:
       TemplateURL:
         !Join [
-          "/",
+          "",
           [
-            "https://s3.amazonaws.com",
+            "https://",
             !FindInMap ["SourceCode", "General", "S3Bucket"],
+            ".s3.",
+            Ref: "AWS::Region",
+            ".amazonaws.com/",
             !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
-            "media-insights-dataplane-streaming-stack.template",
+            "/media-insights-dataplane-streaming-stack.template",
           ],
         ]
       Parameters:
@@ -835,12 +841,15 @@ Resources:
     Properties:
       TemplateURL:
         !Join [
-          "/",
+          "",
           [
-            "https://s3.amazonaws.com",
+            "https://",
             !FindInMap ["SourceCode", "General", "S3Bucket"],
+            ".s3.",
+            Ref: "AWS::Region",
+            ".amazonaws.com/",
             !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
-            "media-insights-workflowapi-stack.template",
+            "/media-insights-workflowapi-stack.template",
           ],
         ]
       Parameters:
@@ -894,12 +903,15 @@ Resources:
     Properties:
       TemplateURL:
         !Join [
-          "/",
+          "",
           [
-            "https://s3.amazonaws.com",
+            "https://",
             !FindInMap ["SourceCode", "General", "S3Bucket"],
+            ".s3.",
+            Ref: "AWS::Region",
+            ".amazonaws.com/",
             !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
-            "media-insights-operator-library.template",
+            "/media-insights-operator-library.template",
           ],
         ]
       Parameters:
@@ -923,12 +935,15 @@ Resources:
     Properties:
       TemplateURL:
         !Join [
-          "/",
+          "",
           [
-            "https://s3.amazonaws.com",
+            "https://",
             !FindInMap ["SourceCode", "General", "S3Bucket"],
+            ".s3.",
+            Ref: "AWS::Region",
+            ".amazonaws.com/",
             !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
-            "media-insights-test-operations-stack.template",
+            "/media-insights-test-operations-stack.template",
           ],
         ]
       Parameters:

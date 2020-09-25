@@ -1,36 +1,13 @@
 ![MIE logo](doc/images/MIE_logo.png)
 
-Media Insights Engine (MIE) is a framework to accelerate the development of serverless applications that process video, images, audio, and text with artificial intelligence services and multimedia services on AWS. MIE is most often used to: 
+Media Insights Engine (MIE) is a development framework for building serverless applications that process video, images, audio, and text  on AWS. This repository contains just MIE framework, not any particular implementation of the framework. You will not find a graphical user interface (GUI) in this repository, but a reference application that includes MIE and a GUI is in the [media insights](https://github.com/awslabs/aws-media-insights) repository. Users interact with MIE through REST APIs or by invoking MIE Lambda functions directly.
 
-1. Create media analysis workflows using [Amazon Rekognition](https://aws.amazon.com/rekognition/), [Amazon Transcribe](https://aws.amazon.com/transcribe/), [Amazon Translate](https://aws.amazon.com/translate/), [Amazon Cognito](https://aws.amazon.com/cognito/), [Amazon Polly](https://aws.amazon.com/polly/), and [AWS Elemental MediaConvert](https://aws.amazon.com/mediaconvert/).
-2. Build analytical applications on top of data extracted by workflows and saved in the [Amazon Elasticsearch Service](https://aws.amazon.com/elasticsearch-service/)
-
-MIE includes a demo GUI for video content analysis and search. The [Implementation Guide](https://github.com/awslabs/aws-media-insights-engine/blob/master/IMPLEMENTATION_GUIDE.md) explains how to build other applications with MIE. 
-
-![](doc/images/MIEDemo.gif)
-
-The Media Insights sample application lets you upload videos, images, audio and text files for content analysis and add the results to a collection that can be searched to find media that has attributes you are looking for.  It runs an MIE workflow that extracts insights using many of the ML content analysis services available on AWS and stores them in a search engine for easy exploration.  A web based GUI is used to search and visualize the resulting data along-side the input media.  The analysis and transformations included in MIE workflow for this application include:
-
-* Proxy encode of videos and separation of video and audio tracks using **AWS Elemental MediaConvert**. 
-* Object, scene, and activity detection in images and video using **Amazon Rekognition**. 
-* Celebrity detection in images and video using **Amazon Rekognition**
-* Face search from a collection of known faces in images and video using **Amazon Rekognition**
-* Facial analysis to detect facial features and faces in images and videos to determine things like happiness, age range, eyes open, glasses, facial hair, etc. In video, you can also measure how these things change over time, such as constructing a timeline of the emotions expressed by an actor.  From **Amazon Rekognition**.
-* Unsafe content detection using **Amazon Rekognition**. Identify potentially unsafe or inappropriate content across both image and video assets. 
-* Convert speech to text from audio and video assets using **Amazon Transcribe**.
-* Convert text from one language to another using **Amazon Translate**.
-* Identify entities in text using **Amazon Comprehend**. 
-* Identify key phrases in text using **Amazon Comprehend**
-* Locate technical cues such as black frames, end credits, and color bars in your videos using Amazon Rekognition.
-* Identify start, end, and duration of each unique shot in your videos using Amazon Rekognition. 
-
-
-Data are stored in Amazon Elasticsearch Service and can be retrieved using _Lucene_ queries in the Collection view search page.
+For a high level summary of MIE and its use cases, please read, [How to Rapidly Prototype Multimedia Applications on AWS with the Media Insights Engine](https://aws.amazon.com/blogs/media/how-to-rapidly-prototype-multimedia-applications-on-aws-with-the-media-insights-engine/) on the AWS Media blog.
 
 # Installation
-You can deploy MIE and the demo GUI in your AWS account with the following instructions:
+You can deploy MIE in your AWS account with the following instructions:
 
-#### *Step 1. Launch the Stack*
+#### *Option 1. One-click Deploy*
 
 Region| Launch
 ------|-----
@@ -56,20 +33,34 @@ column. You should see a status of CREATE_COMPLETE in approximately 15-30 minute
 
 For more information about stack deployment, see the section on [installation parameters](#installation-parameters).
 
-#### *Step 2. Access the Web Application*
+#### *Option 2. Build From Scratch*
 
-To access the web application, you will need the email address you provided in the AWS
-CloudFormation template, a temporary password, which is emailed to your specified
-address, and the URL of your deployed MIE sample application.
+Run the following commands to build and deploy MIE cloud formation templates from scratch. Be sure to define values for `MIE_STACK_NAME` and `REGION` first.
 
-In the same email that includes your temp password, there is a link to the MIE stack overview.
+```
+git clone https://github.com/awslabs/aws-media-insights-engine
+cd aws-media-insights-engine (https://github.com/awslabs/aws-media-insights-engine)
+git checkout development_merge_isolated (https://github.com/awslabs/aws-media-insights-engine/tree/development_merge_isolated) 
+cd deployment
+MIE_STACK_NAME=[YOUR STACK NAME]
+REGION=[YOUR REGION]
+VERSION=1.0.0
+DATETIME=$(date '+%s')
+DIST_OUTPUT_BUCKET=media-insights-engine-$DATETIME
+aws s3 mb s3://$DIST_OUTPUT_BUCKET-$REGION --region $REGION
+./build-s3-dist.sh $DIST_OUTPUT_BUCKET-$REGION $VERSION $REGION 
+aws cloudformation create-stack --stack-name $MIE_STACK_NAME --template-url https://$DIST_OUTPUT_BUCKET-$REGION.s3.$REGION.amazonaws.com/media-insights-solution/$VERSION/cf/media-insights-stack.template --region $REGION --parameters ParameterKey=DeployOperatorLibrary,ParameterValue=true ParameterKey=DeployTestWorkflow,ParameterValue=true ParameterKey=MaxConcurrentWorkflows,ParameterValue=10 ParameterKey=DeployAnalyticsPipeline,ParameterValue=true --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --profile default --disable-rollback
+```
 
-1. Click that link to access the stack overview page.
-2. Navigate to the `Outputs` tab of the MIE stack.
-3. Copy the value of the `MediaInsightsWebAppUrl` output. This is the URL you will use to access the sample application.
-4. In a new browser tab, paste the `MediaInsightsWebAppUrl` value into the navigation bar and access the app.
-5. Sign in with the email address you provided and the temp password from the automated email. You will be prompted to set a new password.
-6. Upload some content from the `Upload` link in the navigation header and explore the application.
+After the stack finished deploying then you should see the following 6 nested stacks (with slightly different names than shown below):
+
+![](doc/images/stack_resources.png)
+
+After the stack finishes deploying then remove the temporary build bucket like this:
+
+```
+aws s3 rb s3://$DIST_OUTPUT_BUCKET-$REGION --region $REGION --profile default --force
+```
 
 ## Outputs
 
@@ -89,7 +80,6 @@ After the stack successfully deploys, you can find important interface resources
 
 **WorkflowCustomResourceArn** is the custom resource that can be used to create MIE workflows in CloudFormation scripts
 
-
 # Cost
 
 MIE itself does not have a significant cost footprint. The MIE control plane and data plane generally cost less than $1 per month. However, when people talk about the cost of MIE they're generally talking about the cost of running some specific application that was built on top of MIE. Because those costs can vary widely you will need to get pricing information from the documentation for those applications. As a point of reference, see the README for the Content Analysis application that is included under the webapp directory.
@@ -100,7 +90,13 @@ The latest MIE release has been verified to support videos up to 2 hours in dura
 
 # Architecture Overview
 
-Media Insights Engine is a _serverless_ architecture on AWS. The following diagram is an overview of the major components of MIE and how they interact when an MIE workflow is executed.  
+MIE provides the following three constructs for building multimedia applications:
+
+1. ***Operators:*** AWS Lambda functions that transform or analyze media objects. MIE includes a Python library that you can use to control how operators execute in workflows and to control how operators persist data.
+2. ***Workflows:*** a sequence of operators that work together to derive new media objects or new media metadata. MIE provides a REST API for creating and executing workflows within AWS Step Functions.
+3. ***Persistence:*** a storage system for storing or retrieving multimodal data, like binary media objects and plain text metadata. MIE provides a REST API for CRUD functions in a data plane that uses both Amazon S3 and Amazon DynamoDB. 
+
+ The following diagram shows how operators, workflows, and data persistence fit in the MIE architecture:
 
 ![](doc/images/MIE-execute-workflow-architecture.png)
 
@@ -159,21 +155,13 @@ You can deploy MIE and the demo GUI in your AWS account with the [one-click depl
 **Other parameters**
 * **DeployAnalyticsPipeline**: If set to true, deploys a metadata streaming pipeline that can be consumed by downstream analytics plaforms. Defaults to `true`.
 
-### Example use cases for Media Insights Engine
- 
-MIE is a reusable architecture that can support many different applications.  Examples:
- 
-* **Content analysis analysis and search** - Detect objects, people, celebrities and sensitive content, transcribe audio and detect entities, relationships and sentiment.  Explore and analyze media using full featured search and advanced data visualization.  This use case is implemented in the included sample application.
-* **Automatic Transcribe and Translate** - Generate captions for Video On Demand content using speech recognition.  
-* **Content Moderation** - Detect and edit moderated content from videos.
-
 # Developers
 
 Join our Gitter chat at [https://gitter.im/awslabs/aws-media-insights-engine](https://gitter.im/awslabs/aws-media-insights-engine). This public chat forum was created to foster communication between MIE developers worldwide.
 
 [![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/awslabs/aws-media-insights-engine)
 
-MIE is built to be extended in the following ways:
+MIE is extendable in the following ways:
 
 * Run existing workflows with custom  configurations.
 * Create new operators for new types of media analysis or transformation

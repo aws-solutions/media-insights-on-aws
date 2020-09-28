@@ -8,10 +8,6 @@
       "Type": "String",
       "Description": "Bucket used to store asset media"
     },
-    "UserPoolArn": {
-      "Type": "String",
-      "Description": "Arn of the Mie Cognito user pool"
-    },
     "DeploymentPackageBucket": {
       "Type": "String",
       "Description": "Bucket that contains the dataplane deployment package"
@@ -82,26 +78,10 @@
             },
             "DATAPLANE_BUCKET": {
                 "Ref": "DataplaneBucketName"
-            },
-            "USER_POOL_ARN": {
-                "Ref": "UserPoolArn"
             }
           }
         },
         "CodeUri": {"Bucket":  {"Ref": "DeploymentPackageBucket"}, "Key":  {"Ref": "DeploymentPackageKey"}}
-      }
-    },
-    "RestAPI": {
-      "Properties": {
-        "DefinitionBody": {
-          "securityDefinitions": {
-            "MieUserPool": {
-              "x-amazon-apigateway-authorizer": {
-              "providerARNs": [{"Ref":  "UserPoolArn"}]
-            }
-          }
-        }
-        }
       }
     }
   }

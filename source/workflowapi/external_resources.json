@@ -16,10 +16,6 @@
       "Type": "String",
       "Description": "Table used to store workflow definitions"
     },
-    "UserPoolArn": {
-      "Type": "String",
-      "Description": "Arn of the Mie Cognito user pool"
-    },
     "StageTableName": {
       "Type": "String",
       "Description": "Table used to store stage definitions"
@@ -211,9 +207,6 @@
                 },
                 "OPERATOR_FAILED_LAMBDA_ARN": {
                     "Ref": "OperatorFailedHandlerLambdaArn"
-                },
-                "USER_POOL_ARN": {
-                    "Ref": "UserPoolArn"
                 }
             }
         },
@@ -265,26 +258,10 @@
                 },
                 "OPERATOR_FAILED_LAMBDA_ARN": {
                     "Ref": "OperatorFailedHandlerLambdaArn"
-                },
-                "USER_POOL_ARN": {
-                    "Ref": "UserPoolArn"
                 }
             }
         },
         "CodeUri": {"Bucket":  {"Ref": "DeploymentPackageBucket"}, "Key":  {"Ref": "DeploymentPackageKey"}}
-      }
-    },
-    "RestAPI": {
-      "Properties": {
-        "DefinitionBody": {
-          "securityDefinitions": {
-            "MieUserPool": {
-              "x-amazon-apigateway-authorizer": {
-              "providerARNs": [{"Ref":  "UserPoolArn"}]
-            }
-          }
-        }
-        }
       }
     }
   },

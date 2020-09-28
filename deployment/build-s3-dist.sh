@@ -29,6 +29,7 @@ bucket=$1
 version=$2
 region=$3
 if [ -n "$4" ]; then profile=$4; fi
+s3domain="s3.$region.amazonaws.com"
 
 # Check if region is supported:
 if [ "$region" != "us-east-1" ] &&
@@ -66,8 +67,6 @@ fi
 template_dir="$PWD"
 dist_dir="$template_dir/dist"
 source_dir="$template_dir/../source"
-workflows_dir="$template_dir/../source/workflows"
-webapp_dir="$template_dir/../source/webapp"
 echo "template_dir: ${template_dir}"
 
 # Create and activate a temporary Python environment for this script.
@@ -160,10 +159,6 @@ if [ $? -eq 0 ]; then
   echo "Lambda layer build script completed.";
 else
   echo "WARNING: Lambda layer build script failed. We'll use a pre-built Lambda layers instead.";
-  s3domain="s3-$region.amazonaws.com"
-  if [ "$region" = "us-east-1" ]; then
-    s3domain="s3.amazonaws.com"
-  fi
   echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.6.zip"
   wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.6.zip
   echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.7.zip"
@@ -183,21 +178,11 @@ echo "CloudFormation Templates"
 echo "------------------------------------------------------------------------------"
 
 echo "Preparing template files:"
-cp "$workflows_dir/instant_translate.yaml" "$dist_dir/instant_translate.template"
-cp "$workflows_dir/transcribe.yaml" "$dist_dir/transcribe.template"
-cp "$workflows_dir/rekognition.yaml" "$dist_dir/rekognition.template"
-cp "$workflows_dir/comprehend.yaml" "$dist_dir/comprehend.template"
-cp "$workflows_dir/MieCompleteWorkflow.yaml" "$dist_dir/MieCompleteWorkflow.template"
 cp "$source_dir/operators/operator-library.yaml" "$dist_dir/media-insights-operator-library.template"
 cp "$template_dir/media-insights-stack.yaml" "$dist_dir/media-insights-stack.template"
 cp "$template_dir/string.yaml" "$dist_dir/string.template"
 cp "$template_dir/media-insights-test-operations-stack.yaml" "$dist_dir/media-insights-test-operations-stack.template"
 cp "$template_dir/media-insights-dataplane-streaming-stack.template" "$dist_dir/media-insights-dataplane-streaming-stack.template"
-cp "$workflows_dir/rekognition.yaml" "$dist_dir/rekognition.template"
-cp "$workflows_dir/MieCompleteWorkflow.yaml" "$dist_dir/MieCompleteWorkflow.template"
-cp "$source_dir/consumers/elastic/media-insights-elasticsearch.yaml" "$dist_dir/media-insights-elasticsearch.template"
-cp "$source_dir/consumers/elastic/media-insights-elasticsearch.yaml" "$dist_dir/media-insights-s3.template"
-cp "$webapp_dir/media-insights-webapp.yaml" "$dist_dir/media-insights-webapp.template"
 find "$dist_dir"
 echo "Updating code source bucket in template files with '$bucket'"
 echo "Updating solution version in template files with '$version'"
@@ -212,12 +197,6 @@ sed -i.orig -e "$new_bucket" "$dist_dir/media-insights-test-operations-stack.tem
 sed -i.orig -e "$new_version" "$dist_dir/media-insights-test-operations-stack.template"
 sed -i.orig -e "$new_bucket" "$dist_dir/media-insights-dataplane-streaming-stack.template"
 sed -i.orig -e "$new_version" "$dist_dir/media-insights-dataplane-streaming-stack.template"
-sed -i.orig -e "$new_bucket" "$dist_dir/media-insights-elasticsearch.template"
-sed -i.orig -e "$new_version" "$dist_dir/media-insights-elasticsearch.template"
-sed -i.orig -e "$new_bucket" "$dist_dir/media-insights-s3.template"
-sed -i.orig -e "$new_version" "$dist_dir/media-insights-s3.template"
-sed -i.orig -e "$new_bucket" "$dist_dir/media-insights-webapp.template"
-sed -i.orig -e "$new_version" "$dist_dir/media-insights-webapp.template"
 
 echo "------------------------------------------------------------------------------"
 echo "Operators"
@@ -565,40 +544,6 @@ zip -q -g dist/ddbstream.zip ./*.py
 cp "./dist/ddbstream.zip" "$dist_dir/ddbstream.zip"
 rm -rf ./dist ./package
 
-echo "------------------------------------------------------------------------------"
-echo "Elasticsearch consumer Function"
-echo "------------------------------------------------------------------------------"
-
-echo "Building Elasticsearch Consumer function"
-cd "$source_dir/consumers/elastic" || exit 1
-
-[ -e dist ] && rm -r dist
-mkdir -p dist
-[ -e package ] && rm -r package
-mkdir -p package
-echo "preparing packages from requirements.txt"
-# Package dependencies listed in requirements.txt
-pushd package || exit 1
-# Handle distutils install errors with setup.cfg
-touch ./setup.cfg
-echo "[install]" > ./setup.cfg
-echo "prefix= " >> ./setup.cfg
-# Try and handle failure if pip version mismatch
-if [ -x "$(command -v pip)" ]; then
-  pip install --quiet -r ../requirements.txt --target .
-elif [ -x "$(command -v pip3)" ]; then
-  echo "pip not found, trying with pip3"
-  pip3 install --quiet -r ../requirements.txt --target .
-elif ! [ -x "$(command -v pip)" ] && ! [ -x "$(command -v pip3)" ]; then
-  echo "No version of pip installed. This script requires pip. Cleaning up and exiting."
-  exit 1
-fi
-zip -q -r9 ../dist/esconsumer.zip .
-popd || exit 1
-
-zip -q -g dist/esconsumer.zip ./*.py
-cp "./dist/esconsumer.zip" "$dist_dir/esconsumer.zip"
-rm -f ./dist ./package
 
 echo "------------------------------------------------------------------------------"
 echo "Workflow Scheduler"
@@ -691,24 +636,6 @@ if [ $? -ne 0 ]; then
 fi
 rm -f ./dist
 
-echo "------------------------------------------------------------------------------"
-echo "Demo website stack"
-echo "------------------------------------------------------------------------------"
-
-echo "Building website helper function"
-cd "$webapp_dir/helper" || exit 1
-[ -e dist ] && rm -r dist
-mkdir -p dist
-zip -q -g ./dist/websitehelper.zip ./website_helper.py
-cp "./dist/websitehelper.zip" "$dist_dir/websitehelper.zip"
-
-echo "Building Vue.js website"
-cd "$webapp_dir/" || exit 1
-echo "Installing node dependencies"
-npm install
-echo "Compiling the vue app"
-npm run build
-echo "Built demo webapp"
 
 echo "------------------------------------------------------------------------------"
 echo "Copy dist to S3"
@@ -731,12 +658,6 @@ do
     aws s3 cp "$file" s3://"$bucket"/media-insights-solution/"$version"/cf/
   fi
 done
-echo "Uploading the MIE web app..."
-if [ -n "$profile" ]; then
-  aws s3 cp "$webapp_dir"/dist s3://"$bucket"/media-insights-solution/"$version"/code/website --recursive --profile "$profile"
-else
-  aws s3 cp "$webapp_dir"/dist s3://"$bucket"/media-insights-solution/"$version"/code/website --recursive
-fi
 
 echo "------------------------------------------------------------------------------"
 echo "S3 packaging complete"
@@ -752,11 +673,7 @@ echo "--------------------------------------------------------------------------
 
 echo ""
 echo "Template to deploy:"
-if [ "$region" == "us-east-1" ]; then
-  echo https://"$bucket".s3.amazonaws.com/media-insights-solution/"$version"/cf/media-insights-stack.template
-else
-  echo https://"$bucket".s3."$region".amazonaws.com/media-insights-solution/"$version"/cf/media-insights-stack.template
-fi
+echo https://"$bucket"."$s3domain"/media-insights-solution/"$version"/cf/media-insights-stack.template
 
 echo "------------------------------------------------------------------------------"
 echo "Done"

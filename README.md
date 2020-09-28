@@ -81,7 +81,7 @@ MIE provides the following three fundamental constructs for building multimedia 
 
 * ***Data plane API:*** this is used to create, update, delete and retrieve  media assets and metadata.
 
-* ***Data plane pipeline:*** this stores metadata for an asset that can be retrieved as a single block or pages of data using the objects AssetId and Metadata type.  Writing data to the pipeline triggers a copy of the data to be stored in a **Kinesis Stream**.
+* ***Data plane pipeline:*** this stores metadata for an asset that can be retrieved using an object's AssetId and Metadata type.  Writing data to the pipeline triggers a copy of the data to be stored in a **Kinesis Stream**, which is developers can hook up their front-end applications.
 
 # Installation Parameters
 

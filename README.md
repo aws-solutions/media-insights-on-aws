@@ -1,6 +1,6 @@
 ![MIE logo](doc/images/MIE_logo.png)
 
-Media Insights Engine (MIE) is a development framework for building serverless applications that process video, images, audio, and text  on AWS. This repository contains just MIE framework, not any particular implementation of the framework. You will not find a graphical user interface (GUI) in this repository, but a reference application that includes MIE and a GUI is in the [media insights](https://github.com/awslabs/aws-media-insights) repository. Users interact with MIE through REST APIs or by invoking MIE Lambda functions directly.
+Media Insights Engine (MIE) is a development framework for building serverless applications that process video, images, audio, and text  on AWS. This repository contains the MIE back-end framework. Users interact with MIE through REST APIs or by invoking MIE Lambda functions directly. You will not find a graphical user interface (GUI) in this repository, but a reference application for MIE that includes a GUI is in the [Media Insights](https://github.com/awslabs/aws-media-insights) repository. 
 
 For a high level summary of MIE and its use cases, please read, [How to Rapidly Prototype Multimedia Applications on AWS with the Media Insights Engine](https://aws.amazon.com/blogs/media/how-to-rapidly-prototype-multimedia-applications-on-aws-with-the-media-insights-engine/) on the AWS Media blog.
 
@@ -13,28 +13,11 @@ Region| Launch
 US East (N. Virginia) | [![Launch in us-east-1](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-east-1.s3.amazonaws.com/media-insights-solution/beta01/cf/media-insights-stack.template)
 US West (Oregon) | [![Launch in us-west-2](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-west-2.s3.us-west-2.amazonaws.com/media-insights-solution/beta01/cf/media-insights-stack.template)
 
-1. Sign in to the AWS Management Console in either the US-East-1 or US-West-2 regions.
-2. Select a template to launch from the table above based on the region you are signed into. This will take you to the 
-Cloudformation deployment menu. 
-3. On the Create stack page, verify that the correct template URL shows in the Amazon
-S3 URL text box and choose Next.
-4. On the "Specify stack details" page, assign a name to your MIE stack.
-5. Under Parameters, review the parameters for the template and modify them as
-necessary. The default settings for the template will deploy MIE and the demo GUI. You must set the parameters for `Stack name` and `AdminEmail`.
-6. Choose Next.
-7. On the Configure stack options page, choose Next.
-8. On the Review page, review and confirm the settings. Check the box acknowledging that
-the template will create AWS Identity and Access Management (IAM) resources.
-9. Choose Create stack to deploy the stack
-
-You can view the status of the stack in the AWS CloudFormation Console in the Status
-column. You should see a status of CREATE_COMPLETE in approximately 15-30 minutes. 
-
-For more information about stack deployment, see the section on [installation parameters](#installation-parameters).
+The Cloud Formation options for these one-click deploys are described in the [installation parameters](#installation-parameters) section.
 
 After the stack finished deploying then you should see the following 6 nested stacks (with slightly different names than shown below):
 
-![](doc/images/stack_resources.png)
+<img src="doc/images/stack_resources.png" width=200>
 
 ## Build from scratch:
 

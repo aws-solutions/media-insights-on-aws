@@ -17,38 +17,35 @@ The Cloud Formation options for these one-click deploys are described in the [in
 
 After the stack finished deploying then you should see the following nested stacks (with slightly different names than shown below):
 
-<img src="doc/images/stack_resources.png" width=200>
+<img src="doc/images/stack_resources.png" width=300>
 
 ## Build from scratch:
 
-Run the following commands to build and deploy MIE from scratch. Be sure to define values for `MIE_STACK_NAME`, and `REGION` first.
+Run the following commands to build and deploy MIE from scratch. Be sure to define values for `MIE_STACK_NAME` and `REGION` first.
 
 ```
+REGION=[specify a region]
+MIE_STACK_NAME=[specify a stack name]
 git clone https://github.com/awslabs/aws-media-insights-engine
 cd aws-media-insights-engine
 cd deployment
-REGION=[specify a region]
 VERSION=1.0.0
 DATETIME=$(date '+%s')
 DIST_OUTPUT_BUCKET=media-insights-engine-$DATETIME
 aws s3 mb s3://$DIST_OUTPUT_BUCKET-$REGION --region $REGION
 ./build-s3-dist.sh $DIST_OUTPUT_BUCKET-$REGION $VERSION $REGION
-MIE_STACK_NAME=[specify a stack name]
 TEMPLATE={copy "Template to deploy" link from output of build script}
 aws cloudformation create-stack --stack-name $MIE_STACK_NAME --template-url $TEMPLATE --region $REGION --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --disable-rollback
 ```
 
 ## Outputs
 
-After the stack successfully deploys, you can find important interface resources in the **Outputs** tab of the MIE CloudFormation stack.
+If you're building applications on MIE then you will need to understand the following resources in the **Outputs** tab of the Cloud Formation stack:
 
-**DataplaneApiEndpoint** is the endpoint for accessing dataplane APIs to create, update, delete and retrieve media assets
-
-**DataplaneBucket** is the S3 bucket used to store derived media (_derived assets_) and raw analysis metadata created by MIE workflows.
-
-**WorkflowApiEndpoint** is the endpoint for accessing the Workflow APIs to create, update, delete and execute MIE workflows.
-
-**WorkflowCustomResourceArn** is the custom resource that can be used to create MIE workflows in CloudFormation scripts
+* **DataplaneApiEndpoint** is the endpoint for accessing dataplane APIs to create, update, delete and retrieve media assets
+* **DataplaneBucket** is the S3 bucket used to store derived media (_derived assets_) and raw analysis metadata created by MIE workflows.
+* **WorkflowApiEndpoint** is the endpoint for accessing the Workflow APIs to create, update, delete and execute MIE workflows.
+* **WorkflowCustomResourceArn** is the custom resource that can be used to create MIE workflows in CloudFormation scripts
 
 # Cost
 

@@ -5,9 +5,8 @@ Media Insights Engine (MIE) is a development framework for building serverless a
 For a high level summary of MIE and its use cases, please read, [How to Rapidly Prototype Multimedia Applications on AWS with the Media Insights Engine](https://aws.amazon.com/blogs/media/how-to-rapidly-prototype-multimedia-applications-on-aws-with-the-media-insights-engine/) on the AWS Media blog.
 
 # Installation
-You can deploy MIE in your AWS account with the following instructions:
 
-#### *Option 1. One-click Deploy*
+You can deploy MIE in your AWS account with the following Cloud Formation templates:
 
 Region| Launch
 ------|-----
@@ -19,7 +18,7 @@ US West (Oregon) | [![Launch in us-west-2](doc/images/launch-stack.png)](https:/
 Cloudformation deployment menu. 
 3. On the Create stack page, verify that the correct template URL shows in the Amazon
 S3 URL text box and choose Next.
-4. On the Specify stack details page, assign a name to your MIE stack.
+4. On the "Specify stack details" page, assign a name to your MIE stack.
 5. Under Parameters, review the parameters for the template and modify them as
 necessary. The default settings for the template will deploy MIE and the demo GUI. You must set the parameters for `Stack name` and `AdminEmail`.
 6. Choose Next.
@@ -33,48 +32,36 @@ column. You should see a status of CREATE_COMPLETE in approximately 15-30 minute
 
 For more information about stack deployment, see the section on [installation parameters](#installation-parameters).
 
-#### *Option 2. Build From Scratch*
-
-Run the following commands to build and deploy MIE cloud formation templates from scratch. Be sure to define values for `MIE_STACK_NAME` and `REGION` first.
-
-```
-git clone https://github.com/awslabs/aws-media-insights-engine
-cd aws-media-insights-engine (https://github.com/awslabs/aws-media-insights-engine)
-git checkout development_merge_isolated (https://github.com/awslabs/aws-media-insights-engine/tree/development_merge_isolated) 
-cd deployment
-MIE_STACK_NAME=[YOUR STACK NAME]
-REGION=[YOUR REGION]
-VERSION=1.0.0
-DATETIME=$(date '+%s')
-DIST_OUTPUT_BUCKET=media-insights-engine-$DATETIME
-aws s3 mb s3://$DIST_OUTPUT_BUCKET-$REGION --region $REGION
-./build-s3-dist.sh $DIST_OUTPUT_BUCKET-$REGION $VERSION $REGION 
-aws cloudformation create-stack --stack-name $MIE_STACK_NAME --template-url https://$DIST_OUTPUT_BUCKET-$REGION.s3.$REGION.amazonaws.com/media-insights-solution/$VERSION/cf/media-insights-stack.template --region $REGION --parameters ParameterKey=DeployOperatorLibrary,ParameterValue=true ParameterKey=DeployTestWorkflow,ParameterValue=true ParameterKey=MaxConcurrentWorkflows,ParameterValue=10 ParameterKey=DeployAnalyticsPipeline,ParameterValue=true --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --profile default --disable-rollback
-```
-
 After the stack finished deploying then you should see the following 6 nested stacks (with slightly different names than shown below):
 
 ![](doc/images/stack_resources.png)
 
-After the stack finishes deploying then remove the temporary build bucket like this:
+## Build from scratch:
+
+Run the following commands to build and deploy MIE from scratch. Be sure to define values for `MIE_STACK_NAME`, and `REGION` first.
 
 ```
-aws s3 rb s3://$DIST_OUTPUT_BUCKET-$REGION --region $REGION --profile default --force
+git clone https://github.com/awslabs/aws-media-insights-engine
+cd aws-media-insights-engine
+cd deployment
+REGION=[specify a region]
+VERSION=1.0.0
+DATETIME=$(date '+%s')
+DIST_OUTPUT_BUCKET=media-insights-engine-$DATETIME
+aws s3 mb s3://$DIST_OUTPUT_BUCKET-$REGION --region $REGION
+./build-s3-dist.sh $DIST_OUTPUT_BUCKET-$REGION $VERSION $REGION
+MIE_STACK_NAME=[specify a stack name]
+TEMPLATE={copy "Template to deploy" link from output of build script}
+aws cloudformation create-stack --stack-name $MIE_STACK_NAME --template-url $TEMPLATE --region $REGION --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --disable-rollback
 ```
 
 ## Outputs
 
 After the stack successfully deploys, you can find important interface resources in the **Outputs** tab of the MIE CloudFormation stack.
 
-**MediaInsightsWebAppUrl** is the Url to access sample Media Insights web application
-
 **DataplaneApiEndpoint** is the endpoint for accessing dataplane APIs to create, update, delete and retrieve media assets
 
 **DataplaneBucket** is the S3 bucket used to store derived media (_derived assets_) and raw analysis metadata created by MIE workflows.
-
-**ElasticsearchEndpoint** is the endpoint of the Elasticsearch cluster used to store analysis metadata for search
-
-**MediaInsightsEnginePython37Layer** is a lambda layer required to build new operator lambdas
 
 **WorkflowApiEndpoint** is the endpoint for accessing the Workflow APIs to create, update, delete and execute MIE workflows.
 
@@ -134,26 +121,12 @@ You can deploy MIE and the demo GUI in your AWS account with the [one-click depl
 
 ## Required parameters
 
-**Stack Name**: Name of stack. Defaults to `mie`.
-
+**Stack Name**: Name of stack.
 **System Configuration**
 * **MaxConcurrentWorkflows**: Maximum number of workflows to run concurrently. When the maximum is reached, additional workflows are added to a wait queue. Defaults to `10`.
-
-**Operators** 
-* **Enable Operator Library Deployment**: If set to true, deploys the operator library. Defaults to `true`.
-
-**Workflows**
+* **DeployAnalyticsPipeline**: If set to true, deploys a Kinesis data stream that can be used by front-end applications to obtain the data generated by workflows. Defaults to `true`.
+* **DeployOperatorLibrary**: If set to true, deploys operators for MediaConvert, Rekognition, Transcribe, Translate, et al. Defaults to `true`.
 * **DeployTestWorkflow**: If set to true, deploys test workflow which contains operator, stage and workflow stubs for integration testing. Defaults to `false`.
-* **DeployInstantTranslateWorkflow**: If set to true, deploys Instant Translate Workflow which takes a video as input and transcribes, translates and creates an audio file in the new language. Defaults to `false`.
-* **DeployRekognitionWorkflow**: If set to true, deploys Rekognition Workflows which process videos and images through Rekognition, Transcribe, Translate, etc. Defaults to `true`.
-* **DeployComprehendWorkflow**: If set to true, deploys a Comprehend Workflow which takes text as input and identifies key entities and phrases. Defaults to `false`.
-* **DeployKitchenSinkWorkflow**: If set to true, deploys the Kitchen Sink Workflow which contains all MIE operators. Defaults to `true`.
-
-**Sample Applications**
-* **DeployDemoSite**: If set to true, deploys a front end application to explore extracted metadata. Defaults to `true`.
-
-**Other parameters**
-* **DeployAnalyticsPipeline**: If set to true, deploys a metadata streaming pipeline that can be consumed by downstream analytics plaforms. Defaults to `true`.
 
 # Developers
 
@@ -168,7 +141,7 @@ MIE is extendable in the following ways:
 * Create new workflows using the existing or new operators.
 * Stream data to new data storage services, such as Elasticsearch or Amazon Redshift.
 
-See the [Implementation Guide](https://github.com/awslabs/aws-media-insights-engine/blob/master/IMPLEMENTATION_GUIDE.md) for the MIE API reference and builder's guide.
+See the [Implementation Guide](https://github.com/awslabs/aws-media-insights/blob/master/IMPLEMENTATION_GUIDE.md) for the MIE API reference and builder's guide.
 
 # Known Issues
 

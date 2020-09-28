@@ -15,7 +15,7 @@ US West (Oregon) | [![Launch in us-west-2](doc/images/launch-stack.png)](https:/
 
 The Cloud Formation options for these one-click deploys are described in the [installation parameters](#installation-parameters) section.
 
-After the stack finished deploying then you should see the following 6 nested stacks (with slightly different names than shown below):
+After the stack finished deploying then you should see the following nested stacks (with slightly different names than shown below):
 
 <img src="doc/images/stack_resources.png" width=200>
 

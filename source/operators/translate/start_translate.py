@@ -102,8 +102,11 @@ def lambda_handler(event, context):
     translated_text = ''
     transcript_chunk = ''
     for sentence in sentences:
-        # Translate can handle 5000 unicode characters but we'll process no more than 4000
-        # just to be on the safe side.
+        # Translate can handle 5000 unicode characters but we'll process no
+        # more than 1000 just to be on the safe side.
+        # Even by limiting input text to 3000 characters, we've still seen
+        # translate throttling with a RateExceeded exception.
+        # Reducing input text to 1000 characters seemed to fix this.
         if (len(sentence) + len(transcript_chunk) < 1000):
             transcript_chunk = transcript_chunk + ' ' + sentence
         else:

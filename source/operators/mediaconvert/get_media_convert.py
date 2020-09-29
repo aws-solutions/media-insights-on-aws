@@ -14,7 +14,7 @@ mediaconvert = boto3.client("mediaconvert", region_name=region)
 
 def lambda_handler(event, context):
     print("We got the following event:\n", event)
-    
+
     operator_object = MediaInsightsOperationHelper(event)
 
     try:
@@ -69,7 +69,7 @@ def lambda_handler(event, context):
             bucket = output_uri.split("/")[2]
             folder = "/".join(output_uri.split("/")[3:-1])
 
-            file_name = operator_object.metadata["MediaconvertInputFile"].split("/")[-1].split(".")[0]
+            file_name = os.path.splitext(operator_object.metadata["MediaconvertInputFile"])[0].split("/")[-1]
 
             key = folder + "/" + file_name + modifier + "." + extension
 

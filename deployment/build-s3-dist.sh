@@ -208,7 +208,7 @@ echo "--------------------------------------------------------------------------
 
 echo "Building 'operator failed' function"
 cd "$source_dir/operators/operator_failed" || exit 1
-[ -e dist ] && rm -r dist
+[ -e dist ] && rm -rf dist
 mkdir -p dist
 zip -q dist/operator_failed.zip operator_failed.py
 cp "./dist/operator_failed.zip" "$dist_dir/operator_failed.zip"
@@ -221,7 +221,7 @@ rm -rf ./dist
 echo "Building Mediainfo function"
 cd "$source_dir/operators/mediainfo" || exit 1
 # Make lambda package
-[ -e dist ] && rm -r dist
+[ -e dist ] && rm -rf dist
 mkdir -p dist
 # Add the app code to the dist zip.
 zip -q dist/mediainfo.zip mediainfo.py
@@ -235,7 +235,7 @@ rm -rf ./dist
 
 echo "Building Media Convert function"
 cd "$source_dir/operators/mediaconvert" || exit 1
-[ -e dist ] && rm -r dist
+[ -e dist ] && rm -rf dist
 mkdir -p dist
 zip -q dist/start_media_convert.zip start_media_convert.py
 zip -q dist/get_media_convert.zip get_media_convert.py
@@ -250,7 +250,7 @@ rm -rf ./dist
 echo "Building Thumbnail function"
 cd "$source_dir/operators/thumbnail" || exit 1
 # Make lambda package
-[ -e dist ] && rm -r dist
+[ -e dist ] && rm -rf dist
 mkdir -p dist
 if ! [ -d ./dist/start_thumbnail.zip ]; then
   zip -q -r9 ./dist/start_thumbnail.zip .
@@ -275,7 +275,7 @@ rm -rf ./dist
 
 echo "Building Transcribe functions"
 cd "$source_dir/operators/transcribe" || exit 1
-[ -e dist ] && rm -r dist
+[ -e dist ] && rm -rf dist
 mkdir -p dist
 zip -q -g ./dist/start_transcribe.zip ./start_transcribe.py
 zip -q -g ./dist/get_transcribe.zip ./get_transcribe.py
@@ -289,7 +289,7 @@ rm -rf ./dist
 
 echo "Building Stage completion function"
 cd "$source_dir/operators/captions" || exit
-[ -e dist ] && rm -r dist
+[ -e dist ] && rm -rf dist
 mkdir -p dist
 zip -g ./dist/get_captions.zip ./get_captions.py
 cp "./dist/get_captions.zip" "$dist_dir/get_captions.zip"
@@ -301,9 +301,9 @@ rm -rf ./dist
 
 echo "Building Translate function"
 cd "$source_dir/operators/translate" || exit 1
-[ -e dist ] && rm -r dist
+[ -e dist ] && rm -rf dist
 mkdir -p dist
-[ -e package ] && rm -r package
+[ -e package ] && rm -rf package
 mkdir -p package
 echo "create requirements for lambda"
 # Make lambda package
@@ -340,7 +340,7 @@ rm -rf ./dist ./package
 
 echo "Building Polly function"
 cd "$source_dir/operators/polly" || exit 1
-[ -e dist ] && rm -r dist
+[ -e dist ] && rm -rf dist
 mkdir -p dist
 zip -q -g ./dist/start_polly.zip ./start_polly.py
 zip -q -g ./dist/get_polly.zip ./get_polly.py
@@ -355,8 +355,8 @@ rm -rf ./dist
 echo "Building Comprehend function"
 cd "$source_dir/operators/comprehend" || exit 1
 
-[ -e dist ] && rm -r dist
-[ -e package ] && rm -r package
+[ -e dist ] && rm -rf dist
+[ -e package ] && rm -rf package
 for dir in ./*;
   do
     echo "$dir"
@@ -439,7 +439,7 @@ zip -q -r9 check_text_detection_status.zip check_text_detection_status.py
 
 # remove this when service is GA
 
-[ -e dist ] && rm -r dist
+[ -e dist ] && rm -rf dist
 mkdir -p dist
 cd dist
 cp ../start_technical_cue_detection.py .
@@ -453,7 +453,7 @@ zip -q -r9 ../start_technical_cue_detection.zip *
 cd ../
 
 
-[ -e dist ] && rm -r dist
+[ -e dist ] && rm -rf dist
 mkdir -p dist
 cd dist
 cp ../check_technical_cue_status.py .
@@ -469,7 +469,7 @@ cd ../
 mv -f ./*.zip "$dist_dir"
 
 
-[ -e dist ] && rm -r dist
+[ -e dist ] && rm -rf dist
 mkdir -p dist
 cd dist
 cp ../start_shot_detection.py .
@@ -482,7 +482,7 @@ cd ../../
 zip -q -r9 ../start_shot_detection.zip *
 cd ../
 
-[ -e dist ] && rm -r dist
+[ -e dist ] && rm -rf dist
 mkdir -p dist
 cd dist
 cp ../check_shot_detection_status.py .
@@ -504,7 +504,7 @@ mv -f ./*.zip "$dist_dir"
 
 echo "Building test operators"
 cd "$source_dir/operators/test" || exit
-[ -e dist ] && rm -r dist
+[ -e dist ] && rm -rf dist
 mkdir -p dist
 zip -q -g ./dist/test_operations.zip ./test.py
 cp "./dist/test_operations.zip" "$dist_dir/test_operations.zip"
@@ -516,9 +516,9 @@ echo "--------------------------------------------------------------------------
 
 echo "Building DDB Stream function"
 cd "$source_dir/dataplanestream" || exit 1
-[ -e dist ] && rm -r dist
+[ -e dist ] && rm -rf dist
 mkdir -p dist
-[ -e package ] && rm -r package
+[ -e package ] && rm -rf package
 mkdir -p package
 echo "preparing packages from requirements.txt"
 # Package dependencies listed in requirements.txt
@@ -551,9 +551,9 @@ echo "--------------------------------------------------------------------------
 
 echo "Building Workflow scheduler"
 cd "$source_dir/workflow" || exit 1
-[ -e dist ] && rm -r dist
+[ -e dist ] && rm -rf dist
 mkdir -p dist
-[ -e package ] && rm -r package
+[ -e package ] && rm -rf package
 mkdir -p package
 echo "preparing packages from requirements.txt"
 # Package dependencies listed in requirements.txt
@@ -586,7 +586,7 @@ echo "--------------------------------------------------------------------------
 
 echo "Building Workflow Lambda function"
 cd "$source_dir/workflowapi" || exit 1
-[ -e dist ] && rm -r dist
+[ -e dist ] && rm -rf dist
 mkdir -p dist
 if ! [ -x "$(command -v chalice)" ]; then
   echo 'Chalice is not installed. It is required for this solution. Exiting.'
@@ -615,7 +615,7 @@ echo "--------------------------------------------------------------------------
 
 echo "Building Dataplane Stack"
 cd "$source_dir/dataplaneapi" || exit 1
-[ -e dist ] && rm -r dist
+[ -e dist ] && rm -rf dist
 mkdir -p dist
 if ! [ -x "$(command -v chalice)" ]; then
   echo 'Chalice is not installed. It is required for this solution. Exiting.'

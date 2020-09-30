@@ -645,17 +645,17 @@ echo "Copying the prepared distribution to S3..."
 for file in "$dist_dir"/*.zip
 do
   if [ -n "$profile" ]; then
-    aws s3 cp "$file" s3://"$bucket"/media-insights-solution/"$version"/code/ --profile "$profile"
+    aws s3 cp "$file" s3://"$bucket"/media_insights_engine/"$version"/code/ --profile "$profile"
   else
-    aws s3 cp "$file" s3://"$bucket"/media-insights-solution/"$version"/code/
+    aws s3 cp "$file" s3://"$bucket"/media_insights_engine/"$version"/code/
   fi
 done
 for file in "$dist_dir"/*.template
 do
   if [ -n "$profile" ]; then
-    aws s3 cp "$file" s3://"$bucket"/media-insights-solution/"$version"/cf/ --profile "$profile"
+    aws s3 cp "$file" s3://"$bucket"/media_insights_engine/"$version"/cf/ --profile "$profile"
   else
-    aws s3 cp "$file" s3://"$bucket"/media-insights-solution/"$version"/cf/
+    aws s3 cp "$file" s3://"$bucket"/media_insights_engine/"$version"/cf/
   fi
 done
 
@@ -673,7 +673,7 @@ echo "--------------------------------------------------------------------------
 
 echo ""
 echo "Template to deploy:"
-echo https://"$bucket"."$s3domain"/media-insights-solution/"$version"/cf/media-insights-stack.template
+echo https://"$bucket"."$s3domain"/media_insights_engine/"$version"/cf/media-insights-stack.template
 
 echo "------------------------------------------------------------------------------"
 echo "Done"

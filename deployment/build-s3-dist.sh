@@ -578,7 +578,7 @@ zip -q -r9 ../dist/workflow.zip .
 cd ..
 zip -q -g dist/workflow.zip ./*.py
 cp "./dist/workflow.zip" "$dist_dir/workflow.zip"
-rm -f ./dist ./package/
+rm -rf ./dist ./package/
 
 echo "------------------------------------------------------------------------------"
 echo "Workflow API Stack"
@@ -607,7 +607,7 @@ if [ $? -ne 0 ]; then
   echo "ERROR: Failed to build workflow api template"
   exit 1
 fi
-rm -f ./dist
+rm -rf ./dist
 
 echo "------------------------------------------------------------------------------"
 echo "Dataplane API Stack"
@@ -634,7 +634,7 @@ if [ $? -ne 0 ]; then
   echo "ERROR: Failed to build dataplane api template"
   exit 1
 fi
-rm -f ./dist
+rm -rf ./dist
 
 
 echo "------------------------------------------------------------------------------"

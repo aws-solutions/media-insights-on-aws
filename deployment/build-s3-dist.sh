@@ -45,7 +45,7 @@ if [ "$region" != "us-east-1" ] &&
    [ "$region" != "ap-southeast-2" ] &&
    [ "$region" != "ap-northeast-1" ] &&
    [ "$region" != "ap-northeast-2" ]; then
-   echo "ERROR. Rekognition operatorions are not supported in region $region"
+   echo "ERROR. Rekognition operations are not supported in region $region"
    exit 1
 fi
 

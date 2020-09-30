@@ -102,14 +102,22 @@ Join our Gitter chat at [https://gitter.im/awslabs/aws-media-insights-engine](ht
 
 [![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/awslabs/aws-media-insights-engine)
 
-MIE is extendable in the following ways:
+MIE can be extended in the following ways:
 
-* Run existing workflows with custom  configurations.
+* Run existing workflows with custom configurations.
 * Create new operators for new types of media analysis or transformation
 * Create new workflows using the existing or new operators.
 * Stream data to new data storage services, such as Elasticsearch or Amazon Redshift.
 
-See the [Implementation Guide](https://github.com/awslabs/aws-media-insights/blob/master/IMPLEMENTATION_GUIDE.md) for the MIE API reference and builder's guide.
+For instructions on how to extend MIE, read the API reference and builder's guide in the [Implementation Guide](https://github.com/awslabs/aws-media-insights/blob/master/IMPLEMENTATION_GUIDE.md).
+
+## Security
+
+MIE uses AWS_IAM to authorize REST API requests. The following screenshot shows how to test authentication to the MIE API using Postman. Be sure to specify the AccessKey and SecretKey for your own AWS environment.
+
+<img src="doc/images/sample_postman.png" width=600>
+
+For more information, see the [Implementation Guide](https://github.com/awslabs/aws-media-insights/blob/master/IMPLEMENTATION_GUIDE.md).
 
 # Known Issues
 

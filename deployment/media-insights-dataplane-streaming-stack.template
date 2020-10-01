@@ -12,12 +12,12 @@ Parameters:
     Type: String
     Description: "Arn of the Dataplane Dynamo DB table"
 
-Mappings: 
+Mappings:
   SourceCode:
         General:
             S3Bucket: '%%BUCKET_NAME%%'
-            KeyPrefix: "media-insights-solution/%%VERSION%%/code"
-            TemplateKeyPrefix: "media-insights-solution/%%VERSION%%/cf"
+            KeyPrefix: "media_insights_engine/%%VERSION%%/code"
+            TemplateKeyPrefix: "media_insights_engine/%%VERSION%%/cf"
 
 Resources:
 # kinesis data stream

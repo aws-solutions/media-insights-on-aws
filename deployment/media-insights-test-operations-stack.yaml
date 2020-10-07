@@ -22,7 +22,7 @@ Mappings:
     SourceCode:
         General:
             S3Bucket: '%%BUCKET_NAME%%'
-            KeyPrefix: "media-insights-solution/%%VERSION%%/code"
+            KeyPrefix: "media_insights_engine/%%VERSION%%/code"
 
 Resources:
 

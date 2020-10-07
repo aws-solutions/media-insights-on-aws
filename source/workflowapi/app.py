@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from chalice import Chalice
+from chalice import IAMAuthorizer
 from chalice import NotFoundError, BadRequestError, ChaliceViewError, Response, ConflictError, CognitoUserPoolAuthorizer
 import boto3
 from boto3 import resource
@@ -81,13 +82,7 @@ IAM_RESOURCE = boto3.resource('iam')
 LAMBDA_CLIENT = boto3.client("lambda")
 # Helper class to convert a DynamoDB item to JSON.
 
-# cognito
-cognito_user_pool_arn = os.environ['USER_POOL_ARN']
-
-authorizer = CognitoUserPoolAuthorizer(
-    'MieUserPool', header='Authorization',
-    provider_arns=[cognito_user_pool_arn])
-
+authorizer = IAMAuthorizer()
 
 
 class DecimalEncoder(json.JSONEncoder):

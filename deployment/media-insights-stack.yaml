@@ -2,15 +2,6 @@ AWSTemplateFormatVersion: "2010-09-09"
 Description: Media Insights Engine - Base AWS CloudFormation template that provisions the core Media Insights Engine services and provides parameters for enabling additional functionality.
 
 Parameters:
-  AdminEmail:
-    Description: Email address for the MIE Administrator
-    Type: String
-
-  DevGroupName:
-    Type: String
-    Description: Name of the developer group
-    Default: MieDevelopersGroup
-
   DeployOperatorLibrary:
     Description: Deploy operator library
     Type: String
@@ -18,6 +9,7 @@ Parameters:
     AllowedValues:
       - Yes
       - No
+
   DeployTestWorkflow:
     Description: Deploy test workflow which contains operator, stage and workflow stubs for integration testing
     Type: String
@@ -25,20 +17,7 @@ Parameters:
     AllowedValues:
       - Yes
       - No
-  DeployInstantTranslateWorkflow:
-    Description: Deploy Instant Translate Workflow which takes a video as input and transcribes, translates and creates an audio file in the new language
-    Type: String
-    Default: No
-    AllowedValues:
-      - Yes
-      - No
-  #  DeployTranscribeWorkflow:
-  #    Description: Deploy Transcribe Workflow which takes a video as input and transcribes
-  #    Type: String
-  #    Default: No
-  #    AllowedValues:
-  #      - Yes
-  #      - No
+
   DeployAnalyticsPipeline:
     Type: String
     Description: Deploy a metadata streaming pipeline that can be consumed by downstream analytics plaforms
@@ -46,46 +25,12 @@ Parameters:
     AllowedValues:
       - Yes
       - No
-  DeployDemoSite:
-    Type: String
-    Description: Deploy a front end application to explore extracted metadata
-    Default: Yes
-    AllowedValues:
-      - Yes
-      - No
-  DeployRekognitionWorkflow:
-    Description: Deploy Rekognition Workflows which takes a video as input and transcribes, translates and creates an audio file in the new language
-    Type: String
-    Default: Yes
-    AllowedValues:
-      - Yes
-      - No
-  DeployComprehendWorkflow:
-    Description: Deploy a Comprehend Workflow which takes text as input and identifies key entities and phrases
-    Type: String
-    Default: No
-    AllowedValues:
-      - Yes
-      - No
-  DeployKitchenSinkWorkflow:
-    Description: Deploy the Kitchen Sink Workflow which contains all MIE operators.
-    Type: String
-    Default: Yes
-    AllowedValues:
-      - Yes
-      - No
+
   MaxConcurrentWorkflows:
     Type: Number
     Description: Maximum number of workflows to run concurrently.  When the maximum is reached, additional workflows are added to a wait queue.
     Default: 10
     MinValue: 1
-  #  TranscriberApp:
-  #    Type: String
-  #    Description: Deploy a front end transcriber application that takes custom inputs from the user
-  #    Default: No
-  #    AllowedValues:
-  #      - Yes
-  #      - No
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -101,64 +46,19 @@ Metadata:
       - Label:
           default: System Configuration
         Parameters:
-          - AdminEmail
           - MaxConcurrentWorkflows
-      - Label:
-          default: Operators
-        Parameters:
-          - DeployOperatorLibrary
-      - Label:
-          default: Workflows
-        Parameters:
-          - DeployTestWorkflow
-          - DeployInstantTranslateWorkflow
-          - DeployRekognitionWorkflow
-          #          - DeployTranscribeWorkflow
-          - DeployComprehendWorkflow
-          - DeployKitchenSinkWorkflow
-          - Label:
-              default: Analytics
-            Parameters:
-              - DeployAnalyticsPipeline
-      - Label:
-          default: Sample Applications
-        Parameters:
-          - DeployDemoSite
-    ParameterLabels:
-      DeployOperatorLibrary:
-        default: Enable Operator Library Deployment
-      TestWorflow:
-        default: Enable Test Workflow Deployment
-      InstantTranslateWorkflow:
-        default: Enable Instant Translate Workflow Deployment
-      #      TranscribeWorkflow:
-      #        default: Enable Transcribe Workflow Deployment
-      RekognitionWorkflow:
-        default: Enable Rekognition Workflow Deployment
 
 Conditions:
   DeployOperatorLibraryCondition: !Equals [!Ref DeployOperatorLibrary, Yes]
   DeployTestWorkflowCondition: !Equals [!Ref DeployTestWorkflow, Yes]
-  DeployInstantTranslateWorkflowCondition:
-    !Equals [!Ref DeployInstantTranslateWorkflow, Yes]
-  #  DeployTranscribeWorkflowCondition:
-  #  !Equals [!Ref DeployTranscribeWorkflow, Yes]
-  DeployRekognitionWorkflowCondition:
-    !Equals [!Ref DeployRekognitionWorkflow, Yes]
-  DeployComprehendWorkflowCondition:
-    !Equals [!Ref DeployComprehendWorkflow, Yes]
-  DeployKitchenSinkWorkflowCondition:
-    !Equals [!Ref DeployKitchenSinkWorkflow, Yes]
-  DeployAnalyticsPipelineCondition: !Or [!Equals [!Ref DeployAnalyticsPipeline, Yes], !Equals [!Ref DeployDemoSite, Yes]]
-  DeployDemoSiteCondition: !Equals [!Ref DeployDemoSite, Yes]
-  #DeployTranscriberApp: !Equals [!Ref TranscriberApp, Yes]
+  DeployAnalyticsPipelineCondition: !Equals [!Ref DeployAnalyticsPipeline, Yes]
 
 Mappings:
   SourceCode:
     General:
       S3Bucket: "%%BUCKET_NAME%%"
-      CodeKeyPrefix: "media-insights-solution/%%VERSION%%/code"
-      TemplateKeyPrefix: "media-insights-solution/%%VERSION%%/cf"
+      CodeKeyPrefix: "media_insights_engine/%%VERSION%%/code"
+      TemplateKeyPrefix: "media_insights_engine/%%VERSION%%/cf"
 
 Resources:
   # Custom log group
@@ -624,6 +524,7 @@ Resources:
 
   # Services - S3
   # TODO: Best Practice - S3 Bucket should have access logging configured, S3 Bucket should have encryption option set
+  # TODO: Update cors config per: https://docs.amplify.aws/lib/storage/getting-started/q/platform/js#using-amazon-s3
   Dataplane:
     Type: "AWS::S3::Bucket"
     DeletionPolicy: Retain
@@ -631,8 +532,14 @@ Resources:
       CorsConfiguration:
         CorsRules:
           - AllowedHeaders: ["*"]
-            AllowedMethods: ["GET", "POST"]
+            AllowedMethods: ["HEAD", "GET", "POST", "DELETE", "PUT"]
             AllowedOrigins: ["*"]
+            MaxAge: 3000
+            ExposedHeaders:
+              - x-amz-server-side-encryption
+              - x-amz-request-id
+              - x-amz-id-2
+              - ETag
             Id: AllowUploadsFromWebApp
 
   DataplaneBucketPolicy:
@@ -650,246 +557,6 @@ Resources:
               Bool:
                 aws:SecureTransport: false
 
-  # Service - cognito / security infrastructure
-
-  # Super hacky lambda for formatting cognito role mapping since cognito is severely lacking in CF support
-  # https://forums.aws.amazon.com/message.jspa?messageID=790437#790437
-  # https://stackoverflow.com/questions/53131052/aws-cloudformation-can-not-create-stack-when-awscognitoidentitypoolroleattac
-
-  CognitoRoleMappingTransformer:
-    Type: AWS::Lambda::Function
-    Properties:
-      Code:
-        ZipFile: |
-          import json
-          import cfnresponse
-
-
-          def handler(event, context):
-              print("Event: %s" % json.dumps(event))
-              resourceProperties = event["ResourceProperties"]
-              responseData = {
-                  "RoleMapping": {
-                      resourceProperties["IdentityProvider"]: {
-                          "Type": resourceProperties["Type"]
-                      }
-                  }
-              }
-              if resourceProperties["AmbiguousRoleResolution"]:
-                  responseData["RoleMapping"][resourceProperties["IdentityProvider"]]["AmbiguousRoleResolution"] = \
-                  resourceProperties["AmbiguousRoleResolution"]
-
-              print(responseData)
-              cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)
-      Handler: !Join
-        - ''
-        - - index
-          - .handler
-      Role: !GetAtt CognitoRoleMapperLambdaExecutionRole.Arn
-      Runtime: python3.7
-      Timeout: 30
-
-  CognitoRoleMapperLambdaExecutionRole:
-    Type: 'AWS::IAM::Role'
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - 'sts:AssumeRole'
-      Path: /
-      Policies:
-        - PolicyName: root
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Effect: Allow
-                Action:
-                  - 'logs:CreateLogGroup'
-                  - 'logs:CreateLogStream'
-                  - 'logs:PutLogEvents'
-                Resource: 'arn:aws:logs:*:*:*'
-  MieUserPool:
-    Type: AWS::Cognito::UserPool
-    Properties:
-      AdminCreateUserConfig:
-          AllowAdminCreateUserOnly: True
-          InviteMessageTemplate:
-            EmailMessage: !Join ["", [
-              "Your username is {username} and temporary password is {####}<br>Stack Name: ",
-              Ref: "AWS::StackName",
-              "<br>Stack Overview:<br>",
-              "https://",
-              Ref: "AWS::Region",
-              ".console.aws.amazon.com/cloudformation/home?region=",
-              Ref: "AWS::Region",
-              "#/stacks/stackinfo?stackId=",
-              Ref: "AWS::StackId"
-            ]]
-            EmailSubject: "Welcome to the AWS Media Insights Engine"
-      EmailConfiguration:
-        EmailSendingAccount: 'COGNITO_DEFAULT'
-      AutoVerifiedAttributes: ['email']
-
-  MieCognitoDomain:
-    Type: AWS::Cognito::UserPoolDomain
-    Properties:
-      Domain: !Ref Dataplane
-      UserPoolId: !Ref MieUserPool
-
-  MieAdminClient:
-    Type: AWS::Cognito::UserPoolClient
-    Properties:
-      UserPoolId: !Ref MieUserPool
-      ExplicitAuthFlows: ['ADMIN_NO_SRP_AUTH']
-
-  MieWebAppClient:
-    Type: AWS::Cognito::UserPoolClient
-    Properties:
-      UserPoolId: !Ref MieUserPool
-
-  MieIdentityPool:
-    Type: AWS::Cognito::IdentityPool
-    Properties:
-      AllowUnauthenticatedIdentities: False
-      CognitoIdentityProviders:
-        - ClientId: !Ref MieWebAppClient
-          ProviderName: !GetAtt MieUserPool.ProviderName
-
-  # More hacky cfn for getting the role mapping
-  TransformedRoleMapping:
-    Type: Custom::TransformedRoleMapping
-    Properties:
-      ServiceToken: !GetAtt CognitoRoleMappingTransformer.Arn
-      Type: Token
-      AmbiguousRoleResolution: Deny
-      IdentityProvider:
-        'Fn::Join':
-          - ':'
-          - - 'Fn::GetAtt':
-                - MieUserPool
-                - ProviderName
-            - Ref: MieWebAppClient
-
-  CognitStandardAuthDefaultRole:
-    Type: "AWS::IAM::Role"
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: "Allow"
-            Principal:
-              Federated: "cognito-identity.amazonaws.com"
-            Action:
-              - "sts:AssumeRoleWithWebIdentity"
-            Condition:
-              StringEquals:
-                "cognito-identity.amazonaws.com:aud": !Ref MieIdentityPool
-              "ForAnyValue:StringEquals":
-                "cognito-identity.amazonaws.com:amr": authenticated
-      Policies:
-        - PolicyName: "MieCognitoAuthNoGroup"
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Action: "*"
-                Resource: "*"
-                Effect: "Deny"
-
-  CognitStandardUnauthDefaultRole:
-    Type: "AWS::IAM::Role"
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: "Allow"
-            Principal:
-              Federated: "cognito-identity.amazonaws.com"
-            Action:
-              - "sts:AssumeRoleWithWebIdentity"
-            Condition:
-              StringEquals:
-                "cognito-identity.amazonaws.com:aud": !Ref MieIdentityPool
-              "ForAnyValue:StringEquals":
-                "cognito-identity.amazonaws.com:amr": unauthenticated
-
-  MieIdentityPoolRoleMapping:
-    Type: AWS::Cognito::IdentityPoolRoleAttachment
-    Properties:
-      IdentityPoolId: !Ref MieIdentityPool
-      RoleMappings: !GetAtt TransformedRoleMapping.RoleMapping
-      Roles:
-        authenticated: !GetAtt CognitStandardAuthDefaultRole.Arn
-        unauthenticated: !GetAtt CognitStandardUnauthDefaultRole.Arn
-
-  MieDeveloperGroup:
-    Type: AWS::Cognito::UserPoolGroup
-    Properties:
-      Description: 'User group for developers'
-      RoleArn: !GetAtt MieDeveloperRole.Arn
-      UserPoolId: !Ref MieUserPool
-      GroupName: !Ref DevGroupName
-
-  MieDefaultDeveloperAccount:
-    Type: AWS::Cognito::UserPoolUser
-    Properties:
-      DesiredDeliveryMediums:
-        - EMAIL
-      UserAttributes: [{"Name": "email", "Value": !Ref AdminEmail}]
-      Username: !Ref AdminEmail
-      UserPoolId: !Ref MieUserPool
-
-  MieDeveloperRole:
-    DependsOn: [MediaInsightsWorkflowApi, MediaInsightsDataplaneApiStack]
-    Type: "AWS::IAM::Role"
-    Properties:
-        AssumeRolePolicyDocument:
-          Version: "2012-10-17"
-          Statement:
-            - Effect: "Allow"
-              Principal:
-                Federated: "cognito-identity.amazonaws.com"
-              Action:
-                - "sts:AssumeRoleWithWebIdentity"
-              Condition:
-                StringEquals:
-                  "cognito-identity.amazonaws.com:aud": !Ref MieIdentityPool
-                "ForAnyValue:StringEquals":
-                  "cognito-identity.amazonaws.com:amr": authenticated
-        Policies:
-          - PolicyName: "MieDeveloperCognitoPolicy"
-            PolicyDocument: !Sub
-              - |-
-                {
-                  "Version": "2012-10-17",
-                  "Statement": [
-                    {
-                      "Action": [
-                        "execute-api:Invoke"
-                      ],
-                      "Effect": "Allow",
-                      "Resource": ["arn:aws:execute-api:${region}:${account}:${wfapi}/*/", "arn:aws:execute-api:${region}:${account}:${dataapi}/*/"]
-                    }
-                  ]
-                }
-              - {
-                region: !Ref "AWS::Region",
-                account: !Ref "AWS::AccountId",
-                wfapi: !GetAtt MediaInsightsWorkflowApi.Outputs.RestAPIId,
-                dataapi: !GetAtt MediaInsightsDataplaneApiStack.Outputs.RestAPIId
-              }
-
-  MieAddDevUserToGroup:
-    DependsOn: MieDefaultDeveloperAccount
-    Type: AWS::Cognito::UserPoolUserToGroupAttachment
-    Properties:
-      GroupName: !Ref MieDeveloperGroup
-      Username: !Ref AdminEmail
-      UserPoolId: !Ref MieUserPool
 
   # Services - SQS
 
@@ -992,7 +659,6 @@ Resources:
 
   WorkflowSchedulerLambda:
     Properties:
-      FunctionName: !Sub "${AWS::StackName}-workflow-scheduler"
       Environment:
         Variables:
           STAGE_EXECUTION_QUEUE_URL: !Ref StageExecutionQueue
@@ -1032,7 +698,6 @@ Resources:
     DependsOn:
       - WorkflowSchedulerLambda
     Properties:
-      FunctionName: !Sub "${AWS::StackName}-complete-workflow"
       Environment:
         Variables:
           STAGE_EXECUTION_QUEUE_URL: !Ref StageExecutionQueue
@@ -1067,7 +732,6 @@ Resources:
 
   FilterOperationLambda:
     Properties:
-      FunctionName: !Sub "${AWS::StackName}-filter-operation"
       Environment:
         Variables:
           STAGE_EXECUTION_QUEUE_URL: !Ref StageExecutionQueue
@@ -1116,23 +780,24 @@ Resources:
 
   # DataPlane API Stack
   MediaInsightsDataplaneApiStack:
-    DependsOn: MieUserPool
     Type: "AWS::CloudFormation::Stack"
     Properties:
       TemplateURL:
         !Join [
-          "/",
+          "",
           [
-            "https://s3.amazonaws.com",
+            "https://",
             !FindInMap ["SourceCode", "General", "S3Bucket"],
+            ".s3.",
+            Ref: "AWS::Region",
+            ".amazonaws.com/",
             !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
-            "media-insights-dataplane-api-stack.template",
+            "/media-insights-dataplane-api-stack.template",
           ],
         ]
       Parameters:
         DataplaneTableName: !Ref DataplaneTable
         DataplaneBucketName: !Ref Dataplane
-        UserPoolArn: !GetAtt MieUserPool.Arn
         DeploymentPackageBucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         DeploymentPackageKey:
           !Join [
@@ -1152,12 +817,15 @@ Resources:
     Properties:
       TemplateURL:
         !Join [
-          "/",
+          "",
           [
-            "https://s3.amazonaws.com",
+            "https://",
             !FindInMap ["SourceCode", "General", "S3Bucket"],
+            ".s3.",
+            Ref: "AWS::Region",
+            ".amazonaws.com/",
             !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
-            "media-insights-dataplane-streaming-stack.template",
+            "/media-insights-dataplane-streaming-stack.template",
           ],
         ]
       Parameters:
@@ -1166,9 +834,6 @@ Resources:
             - DataplaneTable
             - StreamArn
         DynamoTableArn: !GetAtt DataplaneTable.Arn
-        DeployElasticConsumer: Yes
-        DataplaneBucket: !Ref Dataplane
-        MieAdminRole: !GetAtt MieDeveloperRole.Arn
 
   # Workflow creation and execution API
   MediaInsightsWorkflowApi:
@@ -1176,16 +841,18 @@ Resources:
     Properties:
       TemplateURL:
         !Join [
-          "/",
+          "",
           [
-            "https://s3.amazonaws.com",
+            "https://",
             !FindInMap ["SourceCode", "General", "S3Bucket"],
+            ".s3.",
+            Ref: "AWS::Region",
+            ".amazonaws.com/",
             !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
-            "media-insights-workflowapi-stack.template",
+            "/media-insights-workflowapi-stack.template",
           ],
         ]
       Parameters:
-        UserPoolArn: !GetAtt MieUserPool.Arn
         StageExecutionQueueUrl: !Ref StageExecutionQueue
         StageExecutionRole: !GetAtt StepFunctionRole.Arn
         OperationTableName: !Ref OperationTable
@@ -1227,14 +894,6 @@ Resources:
             ],
           ]
 
-  # LambdaFunctionEventSourceMapping:
-  #   Type: AWS::Lambda::EventSourceMapping
-  #   Properties:
-  #     BatchSize: 1
-  #     Enabled: true
-  #     EventSourceArn: !GetAtt StageExecutionQueue.Arn
-  #     FunctionName: !GetAtt MediaInsightsWorkflowApi.Outputs.ExecuteStageLambdaArn
-
   OperatorLibrary:
     Condition: DeployOperatorLibraryCondition
     DependsOn:
@@ -1244,12 +903,15 @@ Resources:
     Properties:
       TemplateURL:
         !Join [
-          "/",
+          "",
           [
-            "https://s3.amazonaws.com",
+            "https://",
             !FindInMap ["SourceCode", "General", "S3Bucket"],
+            ".s3.",
+            Ref: "AWS::Region",
+            ".amazonaws.com/",
             !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
-            "media-insights-operator-library.template",
+            "/media-insights-operator-library.template",
           ],
         ]
       Parameters:
@@ -1273,12 +935,15 @@ Resources:
     Properties:
       TemplateURL:
         !Join [
-          "/",
+          "",
           [
-            "https://s3.amazonaws.com",
+            "https://",
             !FindInMap ["SourceCode", "General", "S3Bucket"],
+            ".s3.",
+            Ref: "AWS::Region",
+            ".amazonaws.com/",
             !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
-            "media-insights-test-operations-stack.template",
+            "/media-insights-test-operations-stack.template",
           ],
         ]
       Parameters:
@@ -1294,204 +959,13 @@ Resources:
         MediaInsightsEnginePython37Layer: !Ref MediaInsightsEnginePython37Layer
         StepfunctionRole: !GetAtt StepFunctionRole.Arn
 
-  InstantTranslateWorkflow:
-    Condition: DeployInstantTranslateWorkflowCondition
-    DependsOn:
-      - MediaInsightsWorkflowApi
-      - MediaInsightsDataplaneApiStack
-      - OperatorLibrary
-    Type: "AWS::CloudFormation::Stack"
-    Properties:
-      TemplateURL:
-        !Join [
-          "/",
-          [
-            "https://s3.amazonaws.com",
-            !FindInMap ["SourceCode", "General", "S3Bucket"],
-            !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
-            "instant_translate.template",
-          ],
-        ]
-      Parameters:
-        WorkflowCustomResourceArn:
-          Fn::GetAtt:
-            - MediaInsightsWorkflowApi
-            - Outputs.WorkflowCustomResourceArn
-        OperatorLibraryStack: !GetAtt OperatorLibrary.Outputs.StackName
-
-  #  TranscribeWorkflow:
-  #    Condition: DeployTranscribeWorkflowCondition
-  #    DependsOn:
-  #      - MediaInsightsWorkflowApi
-  #      - MediaInsightsDataplaneApiStack
-  #    Type: "AWS::CloudFormation::Stack"
-  #    Properties:
-  #      TemplateURL:
-  #        !Join [
-  #          "/",
-  #          [
-  #            "https://s3.amazonaws.com",
-  #            !FindInMap ["SourceCode", "General", "S3Bucket"],
-  #            !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
-  #            "transcribe.template",
-  #          ],
-  #        ]
-  #      Parameters:
-  #        WorkflowCustomResourceArn:
-  #          Fn::GetAtt:
-  #            - MediaInsightsWorkflowApi
-  #            - Outputs.WorkflowCustomResourceArn
-  #        OperatorLibraryStack: !GetAtt OperatorLibrary.Outputs.StackName
-
-  RekognitionWorkflow:
-    Condition: DeployRekognitionWorkflowCondition
-    DependsOn:
-      - MediaInsightsWorkflowApi
-      - MediaInsightsDataplaneApiStack
-      - OperatorLibrary
-    Type: "AWS::CloudFormation::Stack"
-    Properties:
-      TemplateURL:
-        !Join [
-          "/",
-          [
-            "https://s3.amazonaws.com",
-            !FindInMap ["SourceCode", "General", "S3Bucket"],
-            !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
-            "rekognition.template",
-          ],
-        ]
-      Parameters:
-        WorkflowCustomResourceArn:
-          Fn::GetAtt:
-            - MediaInsightsWorkflowApi
-            - Outputs.WorkflowCustomResourceArn
-        OperatorLibraryStack: !GetAtt OperatorLibrary.Outputs.StackName
-
-  ComprehendWorkflow:
-    Condition: DeployComprehendWorkflowCondition
-    DependsOn:
-      - MediaInsightsWorkflowApi
-      - MediaInsightsDataplaneApiStack
-      - OperatorLibrary
-    Type: "AWS::CloudFormation::Stack"
-    Properties:
-      TemplateURL:
-        !Join [
-          "/",
-          [
-            "https://s3.amazonaws.com",
-            !FindInMap ["SourceCode", "General", "S3Bucket"],
-            !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
-            "comprehend.template",
-          ],
-        ]
-      Parameters:
-        WorkflowCustomResourceArn:
-          Fn::GetAtt:
-            - MediaInsightsWorkflowApi
-            - Outputs.WorkflowCustomResourceArn
-        OperatorLibraryStack: !GetAtt OperatorLibrary.Outputs.StackName
-
-  KitchenSinkWorkflow:
-    Condition: DeployKitchenSinkWorkflowCondition
-    DependsOn:
-      - MediaInsightsWorkflowApi
-      - MediaInsightsDataplaneApiStack
-      - OperatorLibrary
-    Type: "AWS::CloudFormation::Stack"
-    Properties:
-      TemplateURL:
-        !Join [
-          "/",
-          [
-            "https://s3.amazonaws.com",
-            !FindInMap ["SourceCode", "General", "S3Bucket"],
-            !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
-            "MieCompleteWorkflow.template",
-          ],
-        ]
-      Parameters:
-        WorkflowCustomResourceArn:
-          Fn::GetAtt:
-            - MediaInsightsWorkflowApi
-            - Outputs.WorkflowCustomResourceArn
-        OperatorLibraryStack: !GetAtt OperatorLibrary.Outputs.StackName
-
-  # Auto build/deploy webapp
-
-  StringFunctions:
-    Condition: DeployDemoSiteCondition
-    Type: "AWS::CloudFormation::Stack"
-    Properties:
-      TemplateURL:
-        !Join [
-          "/",
-          [
-            "https://s3.amazonaws.com",
-            !FindInMap ["SourceCode", "General", "S3Bucket"],
-            !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
-            "string.template",
-          ],
-        ]
-
-  MediaInsightsWebApp:
-    Condition: DeployDemoSiteCondition
-    DependsOn:
-      - StringFunctions
-      - Analytics
-      - MediaInsightsWorkflowApi
-      - MediaInsightsDataplaneApiStack
-    Type: "AWS::CloudFormation::Stack"
-    Properties:
-      TemplateURL:
-        !Join [
-          "/",
-          [
-            "https://s3.amazonaws.com",
-            !FindInMap ["SourceCode", "General", "S3Bucket"],
-            !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
-            "media-insights-webapp.template",
-          ],
-        ]
-      Parameters:
-        DataplaneEndpoint: !GetAtt MediaInsightsDataplaneApiStack.Outputs.EndpointURL
-        WorkflowEndpoint: !GetAtt MediaInsightsWorkflowApi.Outputs.EndpointURL
-        ElasticEndpoint: !GetAtt Analytics.Outputs.ElasticUrl
-        DataplaneBucket: !Ref Dataplane
-        UserPoolId: !Ref MieUserPool
-        IdentityPoolId: !Ref MieIdentityPool
-        AwsRegion: !Ref "AWS::Region"
-        PoolClientId: !Ref MieWebAppClient
-
-#  TranscriberWebApp:
-#    Condition: DeployTranscriberApp
-#    DependsOn:
-#      - TranscribeWorkflow
-#    Type: "AWS::CloudFormation::Stack"
-#    Properties:
-#      TemplateURL:
-#        !Join [
-#          "/",
-#          [
-#            "https://s3.amazonaws.com",
-#            !FindInMap ["SourceCode", "General", "S3Bucket"],
-#            !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
-#            "transcriber-webapp.template",
-#          ],
-#        ]
-#      Parameters:
-#        ControlPlaneApiEndpoint:
-#          Fn::GetAtt:
-#            - MediaInsightsWorkflowApi
-#            - Outputs.EndpointURL
-#        DataPlaneApiEndpoint:
-#          Fn::GetAtt:
-#            - MediaInsightsDataplaneApiStack
-#            - Outputs.EndpointURL
-#        DataPlaneBucket: !Ref DataplaneBucket
-
 Outputs:
+  # TODO: Add outputs for rest api IDs of workflow/dataplane apis
+  OperatorLibraryStack:
+    Description: Nested cloudformation stack that contains the MIE operator library
+    Value: !GetAtt OperatorLibrary.Outputs.StackName
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", OperatorLibraryStack]]
   DataplaneBucket:
     Description: Bucket used to store transfomred media object from workflow execution
     Value: !Ref Dataplane
@@ -1502,6 +976,11 @@ Outputs:
     Value: !GetAtt MediaInsightsDataplaneApiStack.Outputs.EndpointURL
     Export:
       Name: !Join [":", [!Ref "AWS::StackName", DataplaneApiEndpoint]]
+  DataplaneApiRestID:
+    Description: REST API ID for dataplane API
+    Value: !GetAtt MediaInsightsDataplaneApiStack.Outputs.RestAPIId
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", DataplaneApiId]]
   WorkflowCustomResourceArn:
     Description: Custom resource for creating operations, stages and workflows using CloudFormation
     Value: !GetAtt MediaInsightsWorkflowApi.Outputs.WorkflowCustomResourceArn
@@ -1512,35 +991,23 @@ Outputs:
     Value: !GetAtt MediaInsightsWorkflowApi.Outputs.EndpointURL
     Export:
       Name: !Join [":", [!Ref "AWS::StackName", WorkflowApiEndpoint]]
-  MediaInsightsWebAppUrl:
-    Condition: DeployDemoSiteCondition
-    Description: Url of the Media Insights Engine sample web application
-    Value: !GetAtt MediaInsightsWebApp.Outputs.CloudfrontUrl
-  ElasticsearchEndpoint:
-    Condition: DeployAnalyticsPipelineCondition
-    Description: Endpoint for elasticsearch cluster
-    Value: !GetAtt Analytics.Outputs.ElasticUrl
+  WorkflowApiRestID:
+    Description: REST API ID for workflow API
+    Value: !GetAtt MediaInsightsWorkflowApi.Outputs.RestAPIId
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", WorkflowApiId]]
   MediaInsightsEnginePython37Layer:
     Description: Lambda layer for Python libraries
     Value: !Ref MediaInsightsEnginePython37Layer
     Export:
       Name:
         !Join [":", [!Ref "AWS::StackName", MediaInsightsEnginePython37Layer]]
+  AnalyticsStreamArn:
+    Description: Arn of the dataplane pipeline
+    Value: !GetAtt Analytics.Outputs.analyticsStreamArn
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", AnalyticsStreamArn]]
   TestStack:
     Condition: DeployTestWorkflowCondition
     Value: !Ref TestWorkflow
-  UserPoolId:
-    Description: ID of the MIE Cognito User Pool
-    Value: !Ref MieUserPool
-  IdentityPoolId:
-    Description: ID of the MIE Cognito Identity Pool
-    Value: !Ref MieIdentityPool
-  AdminClientId:
-    Description: ID of the Admin Cognito Client. This can be used to authenticate command-line apps using boto3.
-    Value: !Ref MieAdminClient
-  WebAppClientId:
-    Description: ID of the Webapp Cognito Client. This can be used to authenticate web apps using Amplify.
-    Value: !Ref MieWebAppClient
-  AdminUsername:
-    Description: Username of the default MIE admin
-    Value: !Ref AdminEmail
+

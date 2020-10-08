@@ -518,21 +518,31 @@ export default {
       this.webCaptions[index].end = new_time
     },
     changeCaption(new_caption, index) {
+      // We're using the diff package to determine what words were added or removed from the subtitles
       const Diff = require('diff');
       const diff = Diff.diffWords(this.webCaptions[index].caption, new_caption);
-      // if no words were removed (i.e. only new words were added)...
+      // Diff returns a dictionary that contains "added" or "removed" keys for words
+      // which were added or removed. So, we'll look for those keys now:
       console.log("Caption edit:")
       console.log(diff)
       let old_phrase = ''
       let new_phrase = ''
+      let next_word = ''
       for (let i=0; i<=(diff.length-1); i++) {
-        // if element contains key removed
+        // If element contains key removed
         if ("removed" in diff[i] && diff[i].removed !== undefined) {
           old_phrase += diff[i].value+' '
         }
-        // if element contains key added
+        // If element contains key added
         else if ("added" in diff[i] && diff[i].added !== undefined) {
           new_phrase += diff[i].value+' '
+        }
+        // If the element is the last element and
+        // does not contain "removed" or "added" keys, then it
+        // contains the text that follows the edited phrase.
+        else if (i === diff.length - 1) {
+          next_word = diff[i].value.trim().split(" ")[0]
+          console.log("next word: " + next_word)
         }
         // otherwise if element is just words, or if it's the last element,
         // then save word change to custom vocabulary
@@ -550,6 +560,14 @@ export default {
               // and remove spaces at beginning or end of word
               old_phrase = old_phrase.replace(/ +(?= )/g, '').trim();
               new_phrase = new_phrase.replace(/ +(?= )/g, '').trim();
+              // If the edited phrase ends with a apostrophe or a hyphen,
+              // then we'll concatenate that phrase with the first word in
+              // the text that follows the edited phrase. We need to do this
+              // because the custom vocabulary will fail to save if it
+              // contains any phrases that end with an apostrophe or a hyphen.
+              if (new_phrase.slice(-1).match(/[',-]/i)) {
+                new_phrase = new_phrase + next_word
+              }
               // Transcribe requires numbers to be spelled out in the phrase field.
               // Transcribe also requires spaces to be dashes in the phrase field.
               // So we make those changes here:

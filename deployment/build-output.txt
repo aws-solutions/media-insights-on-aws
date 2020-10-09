@@ -1,0 +1,25 @@
+template_dir: /Users/ianwow/development/aws-media-insights-engine/deployment
+------------------------------------------------------------------------------
+Creating a temporary Python virtualenv for this script
+------------------------------------------------------------------------------
+/usr/local/bin/python3
+PYTHONPATH=:/Users/ianwow/development/aws-media-insights-engine/deployment/../source/lib/MediaInsightsEngineLambdaHelper/
+------------------------------------------------------------------------------
+Create distribution directory
+------------------------------------------------------------------------------
+rm -rf /Users/ianwow/development/aws-media-insights-engine/deployment/dist
+mkdir -p /Users/ianwow/development/aws-media-insights-engine/deployment/dist
+------------------------------------------------------------------------------
+Building MIEHelper package
+------------------------------------------------------------------------------
+Created: /Users/ianwow/development/aws-media-insights-engine/deployment/../source/lib/MediaInsightsEngineLambdaHelper/dist/
+/Users/ianwow/development/aws-media-insights-engine/deployment/../source/lib/MediaInsightsEngineLambdaHelper/dist//Media_Insights_Engine_Lambda_Helper-0.0.3-py3-none-any.whl
+------------------------------------------------------------------------------
+Building Lambda Layers
+------------------------------------------------------------------------------
+Building MIE Lambda Helper python library
+MIE Lambda Helper python library is at /Users/ianwow/development/aws-media-insights-engine/deployment/../source/lib/MediaInsightsEngineLambdaHelper/dist/
+/Users/ianwow/development/aws-media-insights-engine/source/lib/MediaInsightsEngineLambdaHelper/dist/Media_Insights_Engine_Lambda_Helper-0.0.3-py3-none-any.whl
+Running build-lambda-layer.sh
+WARNING: Lambda layer build script failed. We'll use a pre-built Lambda layers instead.
+Downloading https://rodeolabz-us-west-2.s3.us-west-2.amazonaws.com/media_insights_engine/media_insights_engine_lambda_layer_python3.6.zip

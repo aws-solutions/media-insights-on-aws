@@ -433,7 +433,7 @@ export default {
         }
       )
     },
-    ...mapState(['player', 'waveform_seek_position']),
+    ...mapState(['player', 'waveform_seek_position', 'unsaved_custom_vocabularies']),
     isProfane() {
       const Filter = require('bad-words');
       const profanityFilter = new Filter({ placeHolder: '_' });
@@ -757,11 +757,23 @@ export default {
         },
       }).then(response =>
         response.json().then(data => ({
-            data: data,
+          data: data,
+          status: response.status
           })
         ).then(res => {
-          // save phrases from the currently selected vocabulary
-          this.customVocabularySaved = res.data.vocabulary.map(({Phrase, SoundsLike, IPA, DisplayAs}) => ({original_phrase: "", new_phrase: Phrase, sounds_like: SoundsLike, IPA: IPA, display_as: DisplayAs}));
+          if(res.status == 200) {
+            // save phrases from the currently selected vocabulary
+            this.customVocabularySaved = res.data.vocabulary.map(({Phrase, SoundsLike, IPA, DisplayAs}) => ({
+              original_phrase: "",
+              new_phrase: Phrase,
+              sounds_like: SoundsLike,
+              IPA: IPA,
+              display_as: DisplayAs
+            }));
+          } else {
+            console.log("WARNING: Could not download vocabulary. Loading vocab from vuex state...")
+            this.customVocabularySaved = this.unsaved_custom_vocabularies.filter(item => (item.Name === this.customVocabularySelected))[0].vocabulary
+          }
         })
       )
     },
@@ -990,8 +1002,8 @@ export default {
             })
         ).then(res => {
           if (res.status === 200) {
-            console.log("Success! Custom vocabulary saved.")
-            this.vocabularyNotificationMessage = "Saved vocabulary: " + customVocabularyName
+            console.log("Saving custom vocabulary...")
+            this.vocabularyNotificationMessage = "Saving custom vocabulary " + customVocabularyName + "..."
             this.vocabularyNotificationStatus = "success"
             this.showVocabularyNotification = 5
             this.customVocabularyUnsaved = []
@@ -1053,6 +1065,15 @@ export default {
               } else {
                 this.saveVocabularyRequest(token, customVocabularyName)
               }
+              // Save custom vocabulary to vuex state so we can reload it
+              // if Transcribe failed to save it.
+              let unsavedCustomVocabularies = this.unsaved_custom_vocabularies
+              // Delete any vocabs in vuex state with the same name
+              // as the current one being saved.
+              unsavedCustomVocabularies = this.unsaved_custom_vocabularies.filter(item => (item.Name !== customVocabularyName))
+              // Save the unsaved vocab in vuex state.
+              unsavedCustomVocabularies = unsavedCustomVocabularies.concat({"Name":customVocabularyName, "vocabulary":this.customVocabularyUnion})
+              this.$store.commit('updateUnsavedCustomVocabularies', unsavedCustomVocabularies);
             })
           }
         })

@@ -20,4 +20,7 @@ export default {
   updateOperatorInfo (state, value){
     state.operator_info = value
   },
+  updateUnsavedCustomVocabularies (state, value){
+    state.unsaved_custom_vocabularies = value
+  },
 }

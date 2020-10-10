@@ -164,8 +164,12 @@ to highlight the fields in the custom vocab schema. -->
           </b-row>
         </template>
       </b-table>
-      <div v-if="customVocabularyUnion.length === 0 && customVocabularyList.length !== 0" style="color:red">
+      <div v-if="customVocabularyUnion.length === 0 && customVocabularyList.length !== 0 && customVocabularySelected === ''" style="color:red">
         Select an existing vocabulary.<br>
+      </div>
+      <div v-if="customVocabularySelected !== '' && customVocabularyFailedReason !== ''" style="color:red">
+        Vocabulary <b>{{ customVocabularySelected }}</b> failed because:<br>
+        {{ customVocabularyFailedReason }}
       </div>
       <div v-if="customVocabularyUnion.length === 0 && customVocabularyList.length === 0" style="color:red">
         Make changes to the subtitles in order to build a custom vocabulary.<br>
@@ -320,6 +324,7 @@ export default {
       customVocabularyFields: ["original_phrase","new_phrase","sounds_like","IPA","display_as"],
       customVocabularyList: [],
       customVocabularySelected: "",
+      customVocabularyFailedReason: "",
       customVocabularyCreateNew: "",
       transcribe_language_code: "",
       vocabulary_language_code: "",
@@ -458,6 +463,7 @@ export default {
         this.vocabulary_language_code = this.customVocabularyList.filter(item => (item.name === this.customVocabularySelected))[0].language_code
         // add phrases from the selected vocabulary
         await this.downloadVocabulary()
+        await this.getCustomVocabularyFailedReason()
       }
 
     }
@@ -479,6 +485,47 @@ export default {
     clearInterval(this.vocab_status_polling)
   },
   methods: {
+    getCustomVocabularyFailedReason: async function() {
+      if (this.customVocabularySelected !== "") {
+        const token = await this.$Amplify.Auth.currentSession().then(data =>{
+          return data.getIdToken().getJwtToken();
+        });
+        console.log("Getting failed vocabulary details for " + this.customVocabularySelected)
+        console.log("Get vocabulary request:")
+        console.log('curl -L -k -X POST -H \'Content-Type: application/json\' -H \'Authorization: \'' + token + '\' --data \'{"vocabulary_name":"' + this.customVocabularySelected + '}\' ' + this.DATAPLANE_API_ENDPOINT + '/transcribe/get_vocabulary')
+        fetch(this.DATAPLANE_API_ENDPOINT + '/transcribe/get_vocabulary', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json', 'Authorization': token},
+          body: JSON.stringify({"vocabulary_name": this.customVocabularySelected})
+        }).then(response =>
+            response.json()
+                .then(data => ({
+                  data: data,
+                  status: response.status
+                })).then(res => {
+                  if (res.status === 200) {
+                    console.log("Failed vocabulary details:")
+                    console.log(res.data)
+                    console.log(res.data.FailureReason)
+                    if ("FailureReason" in res.data) {
+                      // Transcribe's failure reason will reference a line number that
+                      // is 1 too high. We decrement that line number by 1 here so it
+                      // lines up with the custom vocabulary table.
+                      let failure_reason = res.data["FailureReason"].split("error: ")[1]
+                      let error_text_part_1 = failure_reason.split("Error at line")[0]
+                      let error_text_part_2 = "Error at line " + failure_reason.split("Error at line")[1].replace(/[0-9]+(?!.*[0-9])/, function(line_number) { return line_number-1 })
+                      this.customVocabularyFailedReason = error_text_part_1 + error_text_part_2
+                    } else {
+                      this.customVocabularyFailedReason = ''
+                    }
+                  }
+                }
+            )
+        )
+      } else {
+        this.customVocabularyFailedReason = ""
+      }
+    },
     toHHMMSS(secs) {
       var sec_num = parseInt(secs, 10)
       var hours   = Math.floor(sec_num / 3600)
@@ -745,6 +792,8 @@ export default {
       const token = await this.$Amplify.Auth.currentSession().then(data =>{
         return data.getIdToken().getJwtToken();
       });
+      this.customVocabularySaved = []
+      this.customVocabularyFailedReason = ""
       console.log("Get vocabulary request:")
       console.log('curl -L -k -X POST -H \'Content-Type: application/json\' -H \'Authorization: \''+token+' --data \'{"vocabulary_name":"'+this.customVocabularySelected+'"}\' '+this.DATAPLANE_API_ENDPOINT+'/transcribe/download_vocabulary')
       fetch(this.DATAPLANE_API_ENDPOINT + '/transcribe/download_vocabulary', {

@@ -21,6 +21,11 @@
   "stages": {
     "dev": {
       "api_gateway_stage": "api",
+      "lambda_functions": {
+        "WorkflowCustomResource": {
+          "lambda_timeout": 180
+        }
+      },
       "autogen_policy": false,
       "iam_policy_file": "dev-app-policy.json",
       "api_gateway_endpoint_type": "EDGE"

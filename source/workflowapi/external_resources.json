@@ -71,6 +71,10 @@
     "SqsQueueArn": {
       "Type": "String",
       "Description": "Arn of the MIE workflow queue"
+    },
+    "MediaInsightsEnginePython37Layer": {
+      "Type": "String",
+      "Description": "Arn of the MIE Python 3.7 lambda layer"
     }
   },
   "Resources": {
@@ -146,6 +150,16 @@
                   ]
                 },
                 {
+                  "Effect": "Allow",
+                  "Action": [
+                      "xray:PutTraceSegments",
+                      "xray:PutTelemetryRecords"
+                  ],
+                  "Resource": [
+                      "*"
+                  ]
+                },
+                {
                   "Action": [
                     "logs:CreateLogGroup",
                     "logs:CreateLogStream",
@@ -210,6 +224,11 @@
                 }
             }
         },
+        "Layers": [
+          {
+            "Ref": "MediaInsightsEnginePython37Layer"
+            }
+          ],
         "CodeUri": {"Bucket":  {"Ref": "DeploymentPackageBucket"}, "Key":  {"Ref": "DeploymentPackageKey"}}
       }
     },
@@ -261,6 +280,11 @@
                 }
             }
         },
+        "Layers": [
+          {
+            "Ref": "MediaInsightsEnginePython37Layer"
+            }
+          ],
         "CodeUri": {"Bucket":  {"Ref": "DeploymentPackageBucket"}, "Key":  {"Ref": "DeploymentPackageKey"}}
       }
     }

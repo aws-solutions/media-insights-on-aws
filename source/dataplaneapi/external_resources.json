@@ -15,6 +15,10 @@
     "DeploymentPackageKey": {
       "Type": "String",
       "Description": "S3 Key of the dataplane deployment package"
+    },
+    "MediaInsightsEnginePython37Layer": {
+      "Type": "String",
+      "Description": "Arn of the MIE Python 3.7 lambda layer"
     }
   },
   "Resources": {
@@ -53,6 +57,16 @@
                   "Resource": {"Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${DataplaneTableName}"}
                 },
                 {
+                  "Effect": "Allow",
+                  "Action": [
+                      "xray:PutTraceSegments",
+                      "xray:PutTelemetryRecords"
+                  ],
+                  "Resource": [
+                      "*"
+                  ]
+                },
+                {
                   "Action": [
                     "logs:CreateLogGroup",
                     "logs:CreateLogStream",
@@ -81,6 +95,11 @@
             }
           }
         },
+        "Layers": [
+          {
+            "Ref": "MediaInsightsEnginePython37Layer"
+            }
+          ],
         "CodeUri": {"Bucket":  {"Ref": "DeploymentPackageBucket"}, "Key":  {"Ref": "DeploymentPackageKey"}}
       }
     }

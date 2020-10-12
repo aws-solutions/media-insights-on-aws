@@ -6,8 +6,12 @@ import boto3
 # need to use simplejson as the std lib json package cannot handle float values
 import simplejson as json
 from boto3.dynamodb.types import TypeDeserializer
+from aws_xray_sdk.core import xray_recorder
+from aws_xray_sdk.core import patch_all
 
 # TODO: Move away from simplejson and to my custom decimal encoder class in the dataplane api
+
+patch_all()
 
 ks = boto3.client('kinesis')
 stream_name = os.environ['StreamName']

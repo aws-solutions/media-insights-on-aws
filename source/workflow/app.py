@@ -4,6 +4,8 @@
 import boto3
 from boto3 import resource
 from botocore.client import ClientError
+from aws_xray_sdk.core import xray_recorder
+from aws_xray_sdk.core import patch_all
 
 import uuid
 import logging
@@ -17,6 +19,8 @@ import decimal
 from MediaInsightsEngineLambdaHelper import Status as awsmie
 from MediaInsightsEngineLambdaHelper import MediaInsightsOperationHelper
 from MediaInsightsEngineLambdaHelper import MasExecutionError
+
+patch_all()
 
 # Setup logging
 # Logging Configuration

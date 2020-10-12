@@ -3,9 +3,13 @@
 
 import os
 import boto3
+from aws_xray_sdk.core import xray_recorder
+from aws_xray_sdk.core import patch_all
 
 from MediaInsightsEngineLambdaHelper import MediaInsightsOperationHelper
 from MediaInsightsEngineLambdaHelper import MasExecutionError
+
+patch_all()
 
 region = os.environ["AWS_REGION"]
 

@@ -86,7 +86,7 @@ fi
 VENV=$(mktemp -d)
 python3 -m venv "$VENV"
 source "$VENV"/bin/activate
-pip install --quiet boto3 chalice docopt pyyaml jsonschema
+pip install --quiet boto3 chalice docopt pyyaml jsonschema aws_xray_sdk
 export PYTHONPATH="$PYTHONPATH:$source_dir/lib/MediaInsightsEngineLambdaHelper/"
 echo "PYTHONPATH=$PYTHONPATH"
 if [ $? -ne 0 ]; then

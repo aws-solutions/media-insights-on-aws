@@ -59,7 +59,7 @@ Mappings:
       S3Bucket: "%%BUCKET_NAME%%"
       CodeKeyPrefix: "media_insights_engine/%%VERSION%%/code"
       TemplateKeyPrefix: "media_insights_engine/%%VERSION%%/cf"
-
+  
 Resources:
   # Custom log group
   MieLogGroup:
@@ -225,6 +225,11 @@ Resources:
                   - "Fn::GetAtt":
                       - WorkflowExecutionLambdaDeadLetterQueue
                       - Arn
+              - Effect: Allow
+                Action:
+                  - "xray:PutTraceSegments"
+                  - "xray:PutTelemetryRecords"
+                Resource: "*"
 
   OperationLambdaExecutionRole:
     Type: AWS::IAM::Role
@@ -357,6 +362,12 @@ Resources:
                   - "Fn::GetAtt":
                       - WorkflowSchedulerLambda
                       - Arn
+              - Effect: Allow
+                Action:
+                  - "xray:PutTraceSegments"
+                  - "xray:PutTelemetryRecords"
+                Resource: "*"
+
 
   StepFunctionRole:
     Type: "AWS::IAM::Role"
@@ -376,6 +387,13 @@ Resources:
               - Action: "lambda:InvokeFunction"
                 Resource: "arn:aws:lambda:*:*:function:*"
                 Effect: "Allow"
+              - Effect: "Allow"
+                Action: 
+                  - "xray:PutTraceSegments"
+                  - "xray:PutTelemetryRecords"
+                  - "xray:GetSamplingRules"
+                  - "xray:GetSamplingTargets"
+                Resource: "*"
 
   operatorFailedRole:
     Type: "AWS::IAM::Role"
@@ -398,6 +416,12 @@ Resources:
                   - "logs:PutLogEvents"
                 Resource: "arn:aws:logs:*:*:*:*"
                 Effect: Allow
+              - Effect: Allow
+                Action:
+                  - "xray:PutTraceSegments"
+                  - "xray:PutTelemetryRecords"
+                Resource: "*"
+
 
   # Services - Dynamodb
 
@@ -669,6 +693,8 @@ Resources:
           SYSTEM_TABLE_NAME: !Ref SystemTable
           DEFAULT_MAX_CONCURRENT_WORKFLOWS: !Ref MaxConcurrentWorkflows
       Handler: app.workflow_scheduler_lambda
+      TracingConfig: 
+          Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -679,12 +705,14 @@ Resources:
             "workflow.zip",
             ],
           ]
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
           - StageExecutionRole
           - Arn
-      Runtime: python3.6
+      Runtime: python3.7
       Timeout: 900
       ReservedConcurrentExecutions: 1
       DeadLetterConfig:
@@ -711,6 +739,8 @@ Resources:
               - WorkflowSchedulerLambda
               - Arn
       Handler: app.complete_stage_execution_lambda
+      TracingConfig: 
+          Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -721,12 +751,14 @@ Resources:
             "workflow.zip",
             ],
           ]
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
           - OperationLambdaExecutionRole
           - Arn
-      Runtime: python3.6
+      Runtime: python3.7
       Timeout: 900
     Type: AWS::Lambda::Function
 
@@ -740,6 +772,8 @@ Resources:
           WORKFLOW_EXECUTION_TABLE_NAME: !Ref WorkflowExecutionTable
           WORKFLOW_TABLE_NAME: !Ref WorkflowTable
       Handler: app.filter_operation_lambda
+      TracingConfig: 
+          Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -750,12 +784,14 @@ Resources:
             "workflow.zip",
             ],
           ]
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
           - OperationLambdaExecutionRole
           - Arn
-      Runtime: python3.6
+      Runtime: python3.7
       Timeout: 900
     Type: AWS::Lambda::Function
 
@@ -766,6 +802,8 @@ Resources:
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "operatorFailedRole.Arn"
+      TracingConfig: 
+          Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -776,6 +814,8 @@ Resources:
               "operator_failed.zip",
             ],
           ]
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
       Runtime: "python3.7"
 
   # DataPlane API Stack
@@ -807,6 +847,7 @@ Resources:
               "dataplaneapi.zip",
             ],
           ]
+        MediaInsightsEnginePython37Layer: !Ref MediaInsightsEnginePython37Layer
 
   Analytics:
     Type: "AWS::CloudFormation::Stack"
@@ -862,6 +903,7 @@ Resources:
         HistoryTableName: !Ref HistoryTable
         SystemTableName: !Ref SystemTable
         SqsQueueArn: !GetAtt StageExecutionQueue.Arn
+        MediaInsightsEnginePython37Layer: !Ref MediaInsightsEnginePython37Layer
         CompleteStageLambdaArn:
           Fn::GetAtt:
             - CompleteStageLambda

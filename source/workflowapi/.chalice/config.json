@@ -23,7 +23,7 @@
       "api_gateway_stage": "api",
       "autogen_policy": false,
       "iam_policy_file": "dev-app-policy.json",
-      "xray": true,
+      "xray": false,
       "api_gateway_endpoint_type": "EDGE"
     }
   }

@@ -754,9 +754,9 @@ def delete_operation(Name, Force):
             if len(workflows) != 0 and Force == False:
                 Message = """Dependent workflows were found for operation {}.
                     Either delete the dependent workflows or set the query parameter
-                    force=true to delete the stage anyhow.  Undeleted dependent workflows 
-                    will be kept but will contain the deleted definition of the stage.  To 
-                    find the workflow that depend on a stage use the following endpoint: 
+                    force=true to delete the stage anyhow.  Undeleted dependent workflows
+                    will be kept but will contain the deleted definition of the stage.  To
+                    find the workflow that depend on a stage use the following endpoint:
                     GET /workflow/list/operation/""".format(Name)
 
                 raise BadRequestError(Message)
@@ -1108,9 +1108,9 @@ def delete_stage(Name, Force):
             if len(workflows) != 0 and Force == False:
                 Message = """Dependent workflows were found for stage {}.
                     Either delete the dependent workflows or set the query parameter
-                    force=true to delete the stage anyhow.  Undeleted dependent workflows 
-                    will be kept but will contain the deleted definition of the stage.  To 
-                    find the workflow that depend on a stage use the following endpoint: 
+                    force=true to delete the stage anyhow.  Undeleted dependent workflows
+                    will be kept but will contain the deleted definition of the stage.  To
+                    find the workflow that depend on a stage use the following endpoint:
                     GET /workflow/list/stage/""".format(Name)
 
                 raise BadRequestError(Message)
@@ -1868,11 +1868,11 @@ def create_workflow_execution(trigger, workflow_execution):
                 raise ChaliceViewError("Exception '%s'" % e)
             else:
                 retrieve_asset = dataplane.retrieve_asset_metadata(asset_id)
-                
+
                 if "results" in retrieve_asset:
                     s3key = retrieve_asset["results"]["S3Key"]
                     s3bucket = retrieve_asset["results"]["S3Bucket"]
-                    
+
                     asset_input = {
                         "Media": {
                             media_type: {
@@ -1881,7 +1881,7 @@ def create_workflow_execution(trigger, workflow_execution):
                             }
                         }
                     }
-                
+
                 else:
                     raise ChaliceViewError("Unable to retrieve asset: {e}".format(e=asset_id))
 
@@ -2238,7 +2238,7 @@ def update_workflow_execution_status(id, status, message):
 # ================================================================================================
 
 
-@app.lambda_function()
+@app.lambda_function(name="WorkflowCustomResource")
 def workflow_custom_resource(event, context):
     '''Handle Lambda event from AWS CloudFormation'''
     # Setup alarm for remaining runtime minus a second

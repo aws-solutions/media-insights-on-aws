@@ -683,7 +683,7 @@ echo "--------------------------------------------------------------------------
 
 echo ""
 echo "Template to deploy:"
-echo https://"$bucket"."$s3domain"/media_insights_engine/"$version"/cf/media-insights-stack.template
+echo "TEMPLATE='"https://"$bucket"."$s3domain"/media_insights_engine/"$version"/cf/media-insights-stack.template"'"
 
 echo "------------------------------------------------------------------------------"
 echo "Done"

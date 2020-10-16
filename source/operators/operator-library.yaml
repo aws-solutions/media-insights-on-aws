@@ -40,6 +40,11 @@ Resources:
 
   genericDataLookupLambdaRole:
     Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
     Properties:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
@@ -73,6 +78,11 @@ Resources:
 
   mediainfoLambdaRole:
     Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
     Properties:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
@@ -131,6 +141,11 @@ Resources:
 
   mediaConvertLambdaRole:
     Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -179,6 +194,11 @@ Resources:
 
   transcribeRole:
     Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -227,6 +247,11 @@ Resources:
 
   captionsRole:
     Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -262,6 +287,11 @@ Resources:
 
   translateRole:
     Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -305,6 +335,11 @@ Resources:
 
   pollyRole:
     Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -361,6 +396,11 @@ Resources:
 
   comprehendS3Role:
     Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -393,6 +433,11 @@ Resources:
 
   comprehendRole:
     Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -479,6 +524,11 @@ Resources:
 
   rekognitionRole:
     Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
     Properties:
       ManagedPolicyArns:
         # TODO: Security - Scope this down
@@ -524,6 +574,11 @@ Resources:
 
   StepFunctionRole:
     Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"

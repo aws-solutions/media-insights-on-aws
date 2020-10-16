@@ -67,6 +67,11 @@ Resources:
 # iam stuff
   LambdaStreamRole:
     Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "The policy applies to all resources - can't be scoped to a specific resource"
     Properties:
       AssumeRolePolicyDocument:
         Version: 2012-10-17

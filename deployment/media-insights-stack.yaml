@@ -113,6 +113,11 @@ Resources:
 
   StageExecutionRole:
     Type: AWS::IAM::Role
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
     Properties:
       AssumeRolePolicyDocument:
         Version: 2012-10-17
@@ -243,6 +248,11 @@ Resources:
 
   OperationLambdaExecutionRole:
     Type: AWS::IAM::Role
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
     Properties:
       AssumeRolePolicyDocument:
         Version: 2012-10-17
@@ -381,6 +391,11 @@ Resources:
 
   StepFunctionRole:
     Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -407,6 +422,11 @@ Resources:
 
   operatorFailedRole:
     Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"

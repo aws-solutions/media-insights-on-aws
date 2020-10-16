@@ -32,6 +32,14 @@ Parameters:
     Default: 10
     MinValue: 1
 
+  EnableXrayTrace:
+    Description: Enable Active Xray tracing on all entry points to the stack 
+    Type: String
+    Default: No
+    AllowedValues:
+      - Yes
+      - No
+
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -52,7 +60,9 @@ Conditions:
   DeployOperatorLibraryCondition: !Equals [!Ref DeployOperatorLibrary, Yes]
   DeployTestWorkflowCondition: !Equals [!Ref DeployTestWorkflow, Yes]
   DeployAnalyticsPipelineCondition: !Equals [!Ref DeployAnalyticsPipeline, Yes]
+  EnableTraceOnEntryPoints: !Equals [!Ref EnableXrayTrace, Yes]
 
+  
 Mappings:
   SourceCode:
     General:
@@ -694,7 +704,7 @@ Resources:
           DEFAULT_MAX_CONCURRENT_WORKFLOWS: !Ref MaxConcurrentWorkflows
       Handler: app.workflow_scheduler_lambda
       TracingConfig: 
-          Mode: "PassThrough"
+          Mode: !If [EnableTraceOnEntryPoints, "Active", "PassThrough"]
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -839,6 +849,7 @@ Resources:
         DataplaneTableName: !Ref DataplaneTable
         DataplaneBucketName: !Ref Dataplane
         DeploymentPackageBucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        TracingConfigMode: !If [EnableTraceOnEntryPoints, "Active", "PassThrough"]
         DeploymentPackageKey:
           !Join [
             "/",
@@ -904,6 +915,7 @@ Resources:
         SystemTableName: !Ref SystemTable
         SqsQueueArn: !GetAtt StageExecutionQueue.Arn
         MediaInsightsEnginePython37Layer: !Ref MediaInsightsEnginePython37Layer
+        TracingConfigMode: !If [EnableTraceOnEntryPoints, "Active", "PassThrough"]
         CompleteStageLambdaArn:
           Fn::GetAtt:
             - CompleteStageLambda

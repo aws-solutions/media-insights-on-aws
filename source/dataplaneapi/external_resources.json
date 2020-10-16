@@ -19,6 +19,10 @@
     "MediaInsightsEnginePython37Layer": {
       "Type": "String",
       "Description": "Arn of the MIE Python 3.7 lambda layer"
+    },
+    "TracingConfigMode": {
+      "Type": "String",
+      "Description": "Sets tracing mode for stack entry points.  Allowed values: Active, PassThrough"
     }
   },
   "Resources": {
@@ -100,6 +104,7 @@
             "Ref": "MediaInsightsEnginePython37Layer"
             }
           ],
+        "Tracing": {"Ref": "TracingConfigMode"},
         "CodeUri": {"Bucket":  {"Ref": "DeploymentPackageBucket"}, "Key":  {"Ref": "DeploymentPackageKey"}}
       }
     }

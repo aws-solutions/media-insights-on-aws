@@ -28,9 +28,13 @@
 
 import json
 import boto3
+from aws_xray_sdk.core import xray_recorder
+from aws_xray_sdk.core import patch_all
 from MediaInsightsEngineLambdaHelper import MediaInsightsOperationHelper
 from MediaInsightsEngineLambdaHelper import MasExecutionError
 from MediaInsightsEngineLambdaHelper import DataPlane
+
+patch_all()
 
 # Lambda function entrypoint:
 def lambda_handler(event, context):

@@ -14,10 +14,10 @@ Parameters:
 
 Mappings:
   SourceCode:
-        General:
-            S3Bucket: '%%BUCKET_NAME%%'
-            KeyPrefix: "media_insights_engine/%%VERSION%%/code"
-            TemplateKeyPrefix: "media_insights_engine/%%VERSION%%/cf"
+    General:
+        S3Bucket: '%%BUCKET_NAME%%'
+        KeyPrefix: "media_insights_engine/%%VERSION%%/code"
+        TemplateKeyPrefix: "media_insights_engine/%%VERSION%%/cf"
 
 Resources:
 # kinesis data stream
@@ -37,6 +37,8 @@ Resources:
     Properties:
       Handler: "stream.lambda_handler"
       Role: !GetAtt LambdaStreamRole.Arn
+      TracingConfig: 
+          Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -65,6 +67,11 @@ Resources:
 # iam stuff
   LambdaStreamRole:
     Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "The policy applies to all resources - can't be scoped to a specific resource"
     Properties:
       AssumeRolePolicyDocument:
         Version: 2012-10-17
@@ -97,6 +104,11 @@ Resources:
                   - "dynamodb:GetShardIterator"
                   - "dynamodb:ListStreams"
                 Resource: !Ref DynamoStreamArn
+              - Effect: Allow
+                Action:
+                  - "xray:PutTraceSegments"
+                  - "xray:PutTelemetryRecords"
+                Resource: "*"
               # TODO: Security - Scope this down
               - Effect: Allow
                 Action:

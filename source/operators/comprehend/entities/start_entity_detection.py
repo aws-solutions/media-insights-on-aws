@@ -5,9 +5,13 @@ import os
 import boto3
 from botocore import config
 import json
+from aws_xray_sdk.core import xray_recorder
+from aws_xray_sdk.core import patch_all
 from MediaInsightsEngineLambdaHelper import MediaInsightsOperationHelper
 from MediaInsightsEngineLambdaHelper import MasExecutionError
 from MediaInsightsEngineLambdaHelper import DataPlane
+
+patch_all()
 
 mie_config = json.loads(os.environ['botoConfig'])
 config = config.Config(**mie_config)

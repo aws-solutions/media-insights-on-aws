@@ -28,6 +28,7 @@
       },
       "autogen_policy": false,
       "iam_policy_file": "dev-app-policy.json",
+      "xray": false,
       "api_gateway_endpoint_type": "EDGE"
     }
   }

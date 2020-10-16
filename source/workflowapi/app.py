@@ -8,6 +8,8 @@ import boto3
 from boto3 import resource
 from botocore.client import ClientError
 from boto3.dynamodb.conditions import Key, Attr
+from aws_xray_sdk.core import xray_recorder
+from aws_xray_sdk.core import patch_all
 
 import uuid
 import logging
@@ -33,7 +35,7 @@ app = Chalice(app_name=APP_NAME)
 app.debug = True
 API_VERSION = "1.0.0"
 
-
+patch_all()
 
 # Setup logging
 # Logging Configuration

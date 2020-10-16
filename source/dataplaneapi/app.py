@@ -7,6 +7,8 @@ from chalice import NotFoundError, BadRequestError, ChaliceViewError, CognitoUse
 from botocore.client import ClientError
 from decimal import Decimal
 from botocore.config import Config
+from aws_xray_sdk.core import xray_recorder
+from aws_xray_sdk.core import patch_all
 
 import boto3
 import os
@@ -15,6 +17,8 @@ import json
 import logging
 import datetime
 import base64
+
+patch_all()
 
 # TODO: Add additional exception and response codes
 # TODO: Narrow exception scopes

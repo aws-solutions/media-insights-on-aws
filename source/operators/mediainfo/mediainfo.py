@@ -29,12 +29,16 @@
 import os
 import json
 import boto3
+from aws_xray_sdk.core import xray_recorder
+from aws_xray_sdk.core import patch_all
 from pymediainfo import MediaInfo
 
 from MediaInsightsEngineLambdaHelper import MediaInsightsOperationHelper
 from MediaInsightsEngineLambdaHelper import MasExecutionError
 from MediaInsightsEngineLambdaHelper import DataPlane
 from botocore.config import Config
+
+patch_all()
 
 region = os.environ['AWS_REGION']
 

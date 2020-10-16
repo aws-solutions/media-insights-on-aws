@@ -86,7 +86,7 @@ fi
 VENV=$(mktemp -d)
 python3 -m venv "$VENV"
 source "$VENV"/bin/activate
-pip install --quiet boto3 chalice docopt pyyaml jsonschema
+pip install --quiet boto3 chalice docopt pyyaml jsonschema aws_xray_sdk
 export PYTHONPATH="$PYTHONPATH:$source_dir/lib/MediaInsightsEngineLambdaHelper/"
 echo "PYTHONPATH=$PYTHONPATH"
 if [ $? -ne 0 ]; then
@@ -592,6 +592,11 @@ if ! [ -x "$(command -v chalice)" ]; then
   echo 'Chalice is not installed. It is required for this solution. Exiting.'
   exit 1
 fi
+
+# Remove chalice deployments to force redeploy when there are changes to configuration only
+# Otherwise, chalice will use the existing deployment package 
+[ -e .chalice/deployments ] && rm -rf .chalice/deployments
+
 echo "running chalice..."
 chalice package --merge-template external_resources.json dist
 echo "...chalice done"
@@ -621,6 +626,11 @@ if ! [ -x "$(command -v chalice)" ]; then
   echo 'Chalice is not installed. It is required for this solution. Exiting.'
   exit 1
 fi
+
+# Remove chalice deployments to force redeploy when there are changes to configuration only
+# Otherwise, chalice will use the existing deployment package 
+[ -e .chalice/deployments ] && rm -rf .chalice/deployments
+
 chalice package --merge-template external_resources.json dist
 echo "cp ./dist/sam.json $dist_dir/media-insights-dataplane-api-stack.template"
 cp dist/sam.json "$dist_dir"/media-insights-dataplane-api-stack.template

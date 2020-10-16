@@ -40,6 +40,11 @@ Resources:
 
   genericDataLookupLambdaRole:
     Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
     Properties:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
@@ -65,9 +70,19 @@ Resources:
               - Action: "lambda:InvokeFunction"
                 Resource: !Ref DataPlaneHandlerArn
                 Effect: "Allow"
+              - Effect: "Allow"
+                Action:
+                  - "xray:PutTraceSegments"
+                  - "xray:PutTelemetryRecords"
+                Resource: "*"
 
   mediainfoLambdaRole:
     Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
     Properties:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
@@ -94,6 +109,11 @@ Resources:
               - Action: "lambda:InvokeFunction"
                 Resource: !Ref DataPlaneHandlerArn
                 Effect: "Allow"
+              - Effect: "Allow"
+                Action:
+                  - "xray:PutTraceSegments"
+                  - "xray:PutTelemetryRecords"
+                Resource: "*"
 
   mediaConvertS3Role:
     Type: "AWS::IAM::Role"
@@ -117,9 +137,15 @@ Resources:
                   - "s3:PutObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
                 Effect: "Allow"
+              
 
   mediaConvertLambdaRole:
     Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -160,9 +186,19 @@ Resources:
               - Action: "lambda:InvokeFunction"
                 Resource: !Ref DataPlaneHandlerArn
                 Effect: "Allow"
+              - Effect: "Allow"
+                Action:
+                  - "xray:PutTraceSegments"
+                  - "xray:PutTelemetryRecords"
+                Resource: "*"
 
   transcribeRole:
     Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -203,9 +239,19 @@ Resources:
               - Action: "lambda:InvokeFunction"
                 Resource: !Ref DataPlaneHandlerArn
                 Effect: "Allow"
+              - Effect: "Allow"
+                Action:
+                  - "xray:PutTraceSegments"
+                  - "xray:PutTelemetryRecords"
+                Resource: "*"
 
   captionsRole:
     Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -233,9 +279,19 @@ Resources:
               - Action: "lambda:InvokeFunction"
                 Resource: !Ref DataPlaneHandlerArn
                 Effect: "Allow"
+              - Effect: "Allow"
+                Action:
+                  - "xray:PutTraceSegments"
+                  - "xray:PutTelemetryRecords"
+                Resource: "*"
 
   translateRole:
     Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -271,9 +327,19 @@ Resources:
               - Action: "lambda:InvokeFunction"
                 Resource: !Ref DataPlaneHandlerArn
                 Effect: "Allow"
+              - Effect: "Allow"
+                Action:
+                  - "xray:PutTraceSegments"
+                  - "xray:PutTelemetryRecords"
+                Resource: "*"
 
   pollyRole:
     Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -322,9 +388,19 @@ Resources:
               - Action: "lambda:InvokeFunction"
                 Resource: !Ref DataPlaneHandlerArn
                 Effect: "Allow"
+              - Effect: "Allow"
+                Action:
+                  - "xray:PutTraceSegments"
+                  - "xray:PutTelemetryRecords"
+                Resource: "*"
 
   comprehendS3Role:
     Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -349,9 +425,19 @@ Resources:
                   - "s3:ListBucket"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}"
                 Effect: "Allow"
+              - Effect: "Allow"
+                Action:
+                  - "xray:PutTraceSegments"
+                  - "xray:PutTelemetryRecords"
+                Resource: "*"
 
   comprehendRole:
     Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -430,9 +516,19 @@ Resources:
               - Action: "lambda:InvokeFunction"
                 Resource: !Ref DataPlaneHandlerArn
                 Effect: "Allow"
+              - Effect: "Allow"
+                Action:
+                  - "xray:PutTraceSegments"
+                  - "xray:PutTelemetryRecords"
+                Resource: "*"
 
   rekognitionRole:
     Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
     Properties:
       ManagedPolicyArns:
         # TODO: Security - Scope this down
@@ -470,9 +566,19 @@ Resources:
                   - sns:Publish
                 Resource: !Ref "snsRekognitionTopic"
                 Effect: "Allow"
+              - Effect: "Allow"
+                Action:
+                  - "xray:PutTraceSegments"
+                  - "xray:PutTelemetryRecords"
+                Resource: "*"
 
   StepFunctionRole:
     Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -521,6 +627,13 @@ Resources:
                   - !GetAtt StartPollyFunction.Arn
                   - !GetAtt CheckPollyFunction.Arn
                 Effect: "Allow"
+              - Effect: "Allow"
+                Action: 
+                  - "xray:PutTraceSegments"
+                  - "xray:PutTelemetryRecords"
+                  - "xray:GetSamplingRules"
+                  - "xray:GetSamplingTargets"
+                Resource: "*"
 
   # Lambda functions
 
@@ -532,6 +645,8 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt genericDataLookupLambdaRole.Arn
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -559,6 +674,8 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt mediainfoLambdaRole.Arn
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -587,6 +704,8 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt comprehendRole.Arn
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -613,6 +732,8 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt comprehendRole.Arn
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -639,6 +760,8 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt comprehendRole.Arn
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -665,6 +788,8 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt comprehendRole.Arn
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -694,6 +819,8 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt "rekognitionRole.Arn"
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -724,6 +851,8 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt "rekognitionRole.Arn"
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -755,6 +884,8 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt "rekognitionRole.Arn"
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -785,6 +916,8 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt "rekognitionRole.Arn"
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -815,6 +948,8 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt "rekognitionRole.Arn"
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -843,6 +978,8 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt "rekognitionRole.Arn"
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -870,6 +1007,8 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt "rekognitionRole.Arn"
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -898,6 +1037,8 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt "rekognitionRole.Arn"
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -925,6 +1066,8 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt "rekognitionRole.Arn"
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -954,6 +1097,8 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt "rekognitionRole.Arn"
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -982,6 +1127,8 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt "rekognitionRole.Arn"
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -1011,6 +1158,8 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt "rekognitionRole.Arn"
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -1040,6 +1189,8 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt "rekognitionRole.Arn"
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -1067,6 +1218,8 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt "rekognitionRole.Arn"
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -1096,6 +1249,8 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt "rekognitionRole.Arn"
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -1123,6 +1278,8 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt "rekognitionRole.Arn"
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -1151,6 +1308,8 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt "rekognitionRole.Arn"
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -1176,6 +1335,8 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt "rekognitionRole.Arn"
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -1206,6 +1367,8 @@ Resources:
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "mediaConvertLambdaRole.Arn"
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -1231,6 +1394,8 @@ Resources:
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "mediaConvertLambdaRole.Arn"
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -1256,6 +1421,8 @@ Resources:
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "mediaConvertLambdaRole.Arn"
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -1281,6 +1448,8 @@ Resources:
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "mediaConvertLambdaRole.Arn"
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -1307,6 +1476,8 @@ Resources:
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "transcribeRole.Arn"
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -1331,6 +1502,8 @@ Resources:
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "transcribeRole.Arn"
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -1359,6 +1532,8 @@ Resources:
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "captionsRole.Arn"
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -1385,6 +1560,8 @@ Resources:
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "captionsRole.Arn"
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -1409,6 +1586,8 @@ Resources:
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "captionsRole.Arn"
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -1433,6 +1612,8 @@ Resources:
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "captionsRole.Arn"
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -1457,6 +1638,8 @@ Resources:
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "captionsRole.Arn"
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -1483,6 +1666,8 @@ Resources:
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "translateRole.Arn"
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -1511,6 +1696,8 @@ Resources:
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "pollyRole.Arn"
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -1535,6 +1722,8 @@ Resources:
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "pollyRole.Arn"
+      TracingConfig: 
+        Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:

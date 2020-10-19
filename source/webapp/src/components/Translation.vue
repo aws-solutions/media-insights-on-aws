@@ -222,7 +222,7 @@
           <template v-slot:table-caption>
             <span style="position:absolute; right: 10px">
               <b-button v-b-tooltip.hover.top title="Add a new language" variant="outline-secondary" class="btn-xs" @click="add_language()">Add Language</b-button>&nbsp;
-              <b-button v-b-tooltip.hover.top title="Add a new language" variant="outline-secondary" class="btn-xs" @click="remove_language()">Remove Language</b-button>
+              <b-button v-b-tooltip.hover.top title="Remove a language" variant="outline-secondary" class="btn-xs" @click="remove_language()">Remove Language</b-button>
             </span>
           </template>
         </b-table>
@@ -240,15 +240,20 @@
         <p>Saving will overwrite the existing {{ selected_lang }} translation. Are you sure?</p>
       </b-modal>
       <b-modal ref="add-language-modal" title="Add Language" ok-title="Save" :ok-disabled="newLanguageCode === ''" @ok="add_language_request()">
-        <p>Enter language code:</p>
-        <b-form-input v-model="newLanguageCode" size="sm" placeholder="language code"></b-form-input>
+        <p>Select language to add:</p>
+        <b-form-select
+            v-model="newLanguageCode"
+            placeholder="language code"
+            :options="translateLanguages"
+            size="sm"
+        />
       </b-modal>
-      <b-modal ref="remove-language-modal" title="Remove Language?" ok-title="Confirm" :ok-disabled="removeLanguageCode === ''" @ok="remove_language_request()">
+      <b-modal ref="remove-language-modal" title="Remove Language" ok-title="Remove" :ok-disabled="removeLanguageCode === ''" @ok="remove_language_request()">
         <p>Select language to remove:</p>
         <b-form-group>
           <b-form-radio-group
             v-model="removeLanguageCode"
-            :options="translationsCollection.map(x => x.value)"
+            :options="translateLanguages.filter(langItem => translationsCollection.map(x => x.value).includes(langItem.value))"
           ></b-form-radio-group>
         </b-form-group>
       </b-modal>
@@ -1334,10 +1339,6 @@ export default {
     },
     remove_language_request() {
       console.log("removing language " + this.removeLanguageCode)
-      // add the new language as a new column in the terminology table
-      // this.translationsCollection = this.translationsCollection.concat({"text":"", "value": this.newLanguageCode})
-      // // add the new language as a column in the terminology table data
-      // const newLanguageCode = this.newLanguageCode
       for (let i=0; i<this.customTerminologyUnsaved.length; i++) {
         delete this.customTerminologyUnsaved[i][this.removeLanguageCode]
       }

@@ -75,42 +75,9 @@ Resources:
   MieLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: MediaInsightsLogs
       RetentionInDays: 14
 
   # IAM Roles
-  StepFunctionsServiceRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - !Join ["", ["states.", Ref: "AWS::Region", ".amazonaws.com"]]
-            Action:
-              - sts:AssumeRole
-      Policies:
-        - PolicyName: !Sub "${AWS::StackName}-stepfunctions-service-role"
-          PolicyDocument:
-            Statement:
-              - Effect: Allow
-                Action:
-                  - lambda:InvokeFunction
-                Resource:
-                  - !Join [
-                    "",
-                    [
-                      "arn:aws:lambda:",
-                      Ref: "AWS::Region",
-                      ":",
-                      Ref: "AWS::AccountId",
-                      ":",
-                      "function:*",
-                    ],
-                  ]
-
   StageExecutionRole:
     Type: AWS::IAM::Role
     Metadata:
@@ -129,7 +96,7 @@ Resources:
             Action:
               - sts:AssumeRole
       Policies:
-        - PolicyName: !Sub "${AWS::StackName}-stage-execution-lambda-role"
+        - PolicyName: !Sub "${AWS::StackName}-stage-execution-lambda"
           PolicyDocument:
             Statement:
               - Effect: Allow
@@ -264,7 +231,7 @@ Resources:
             Action:
               - sts:AssumeRole
       Policies:
-        - PolicyName: !Sub "${AWS::StackName}-operation-lambda-role"
+        - PolicyName: !Sub "${AWS::StackName}-operation-lambda"
           PolicyDocument:
             Statement:
               - Effect: Allow
@@ -405,7 +372,7 @@ Resources:
             Principal:
               Service: "states.amazonaws.com"
       Policies:
-        - PolicyName: "TestSFNLambdaAccess"
+        - PolicyName: !Sub "${AWS::StackName}-sfn-lambda-exec"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -436,7 +403,7 @@ Resources:
             Principal:
               Service: "lambda.amazonaws.com"
       Policies:
-        - PolicyName: "OperatorFailedAccess"
+        - PolicyName: !Sub "${AWS::StackName}-operator-failed"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -617,19 +584,19 @@ Resources:
   WorkflowExecutionLambdaDeadLetterQueue:
     Type: "AWS::SQS::Queue"
     Properties:
-      QueueName: "WorkflowExecutionLambdaDLQ"
+      QueueName: !Sub "${AWS::StackName}-WorkflowExecLambdaDLQ"
       MessageRetentionPeriod: 43200 # #Maximum, 12 hours in seconds.
 
   StageExecutionDeadLetterQueue:
     Type: "AWS::SQS::Queue"
     Properties:
-      QueueName: "StageExecutionDLQ"
+      QueueName: !Sub "${AWS::StackName}-StageExecDLQ"
       MessageRetentionPeriod: 43200 # #Maximum, 12 hours in seconds.
 
   StageExecutionQueue:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: StageExecution
+      QueueName: !Sub "${AWS::StackName}-StageExec"
       VisibilityTimeout: 43200 #Maximum, 12 hours in seconds.  Stages are long running
       ReceiveMessageWaitTimeSeconds: 20 #Maximum, long poll on this queue, it has one reader that is single threaded
       RedrivePolicy:

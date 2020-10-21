@@ -260,8 +260,7 @@ def create_operation_api():
                     ...
                 }
             "StartLambdaArn":arn,
-            "MonitorLambdaArn":arn,
-            "SfnExecutionRole": arn
+            "MonitorLambdaArn":arn
             }
 
     Returns:
@@ -281,7 +280,6 @@ def create_operation_api():
                 }
                 "StartLambdaArn":arn,
                 "MonitorLambdaArn":arn,
-                "StateMachineExecutionRoleArn": arn,
                 "StateMachineAsl": ASL-string
                 "StageName": string
             }

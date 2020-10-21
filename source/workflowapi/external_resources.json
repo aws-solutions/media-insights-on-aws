@@ -276,6 +276,7 @@
     },
     "WorkflowCustomResource": {
       "Properties": {
+        "Runtime": "python3.7",
         "Environment": {
           "Variables": {
                 "SYSTEM_TABLE_NAME": {
@@ -333,6 +334,7 @@
     },
     "APIHandler": {
       "Properties": {
+        "Runtime": "python3.7",
         "Environment": {
           "Variables": {
                 "SYSTEM_TABLE_NAME": {

@@ -572,69 +572,6 @@ Resources:
                   - "xray:PutTelemetryRecords"
                 Resource: "*"
 
-  StepFunctionRole:
-    Type: "AWS::IAM::Role"
-    Metadata:
-      cfn_nag:
-        rules_to_suppress:
-          - id: W11
-            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Action: "sts:AssumeRole"
-            Effect: "Allow"
-            Principal:
-              Service: "states.amazonaws.com"
-      Policies:
-        - PolicyName: "MieSfnLambdaAccess"
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              # TODO: Security - Need to scope this down (no good answer for this yet)
-              - Action: "lambda:InvokeFunction"
-                Resource:
-                  - !GetAtt startGenericDataLookup.Arn
-                  - !GetAtt startKeyPhrases.Arn
-                  - !GetAtt getKeyPhrases.Arn
-                  - !GetAtt startEntityDetection.Arn
-                  - !GetAtt getEntityDetection.Arn
-                  - !GetAtt startCelebrityRecognition.Arn
-                  - !GetAtt checkCelebrityRecognition.Arn
-                  - !GetAtt startContentModeration.Arn
-                  - !GetAtt checkContentModeration.Arn
-                  - !GetAtt startFaceDetection.Arn
-                  - !GetAtt checkFaceDetection.Arn
-                  - !GetAtt startFaceSearch.Arn
-                  - !GetAtt checkFaceSearch.Arn
-                  - !GetAtt startLabelDetection.Arn
-                  - !GetAtt checkLabelDetection.Arn
-                  - !GetAtt startPersonTracking.Arn
-                  - !GetAtt checkPersonTracking.Arn
-                  - !GetAtt StartMediaConvertFunction.Arn
-                  - !GetAtt StartThumbnailFunction.Arn
-                  - !GetAtt CheckThumbnailFunction.Arn
-                  - !GetAtt CheckMediaConvertFunction.Arn
-                  - !GetAtt StartTranscribeFunction.Arn
-                  - !GetAtt CheckTranscribeFunction.Arn
-                  - !GetAtt WebCaptionsFunction.Arn
-                  - !GetAtt CreateSRTCaptionsFunction.Arn
-                  - !GetAtt CreateVTTCaptionsFunction.Arn
-                  - !GetAtt WebToSRTCaptionsFunction.Arn
-                  - !GetAtt WebToVTTCaptionsFunction.Arn
-                  - !GetAtt TranslateFunction.Arn
-                  - !GetAtt StartPollyFunction.Arn
-                  - !GetAtt CheckPollyFunction.Arn
-                Effect: "Allow"
-              - Effect: "Allow"
-                Action: 
-                  - "xray:PutTraceSegments"
-                  - "xray:PutTelemetryRecords"
-                  - "xray:GetSamplingRules"
-                  - "xray:GetSamplingTargets"
-                Resource: "*"
-
   # Lambda functions
 
   # This is a generic Lambda function for getting metadata from JSON file in S3:
@@ -1752,7 +1689,6 @@ Resources:
       Type: "Sync"
       Configuration: { "MediaType": "Video", "Enabled": true }
       StartLambdaArn: !GetAtt startGenericDataLookup.Arn
-      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
   MediainfoOperation:
     Type: Custom::CustomResource
@@ -1763,7 +1699,6 @@ Resources:
       Type: "Sync"
       Configuration: { "MediaType": "Video", "Enabled": true }
       StartLambdaArn: !GetAtt Mediainfo.Arn
-      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
   MediainfoOperationImage:
     Type: Custom::CustomResource
@@ -1774,7 +1709,6 @@ Resources:
       Type: "Sync"
       Configuration: { "MediaType": "Image", "Enabled": true }
       StartLambdaArn: !GetAtt Mediainfo.Arn
-      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
   MediaconvertOperation:
     Type: Custom::CustomResource
@@ -1786,7 +1720,6 @@ Resources:
       Configuration: { "MediaType": "Video", "Enabled": false }
       StartLambdaArn: !GetAtt StartMediaConvertFunction.Arn
       MonitorLambdaArn: !GetAtt CheckMediaConvertFunction.Arn
-      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
   ThumbnailOperation:
     Type: Custom::CustomResource
@@ -1798,7 +1731,6 @@ Resources:
       Configuration: { "MediaType": "Video", "Enabled": true }
       StartLambdaArn: !GetAtt StartThumbnailFunction.Arn
       MonitorLambdaArn: !GetAtt CheckThumbnailFunction.Arn
-      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
   TranscribeOperation:
     Type: Custom::CustomResource
@@ -1811,7 +1743,6 @@ Resources:
         { "TranscribeLanguage": "en-US", "MediaType": "Audio", "Enabled": true }
       StartLambdaArn: !GetAtt StartTranscribeFunction.Arn
       MonitorLambdaArn: !GetAtt CheckTranscribeFunction.Arn
-      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
   WebCaptionsOperation:
     Type: Custom::CustomResource
@@ -1822,7 +1753,6 @@ Resources:
       Type: "Sync"
       Configuration: { "MediaType": "Text", "Enabled": true }
       StartLambdaArn: !GetAtt WebCaptionsFunction.Arn
-      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
   CreateSRTCaptionsOperation:
     Type: Custom::CustomResource
@@ -1833,7 +1763,6 @@ Resources:
       Type: "Sync"
       Configuration: { "MediaType": "Text", "Enabled": true }
       StartLambdaArn: !GetAtt CreateSRTCaptionsFunction.Arn
-      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
   CreateVTTCaptionsOperation:
     Type: Custom::CustomResource
@@ -1844,7 +1773,6 @@ Resources:
       Type: "Sync"
       Configuration: { "MediaType": "Text", "Enabled": true }
       StartLambdaArn: !GetAtt CreateVTTCaptionsFunction.Arn
-      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
   WebToSRTCaptionsOperation:
     Type: Custom::CustomResource
@@ -1855,7 +1783,6 @@ Resources:
       Type: "Sync"
       Configuration: { "MediaType": "MetadataOnly", "Enabled": true }
       StartLambdaArn: !GetAtt WebToSRTCaptionsFunction.Arn
-      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
   WebToVTTCaptionsOperation:
     Type: Custom::CustomResource
@@ -1866,7 +1793,6 @@ Resources:
       Type: "Sync"
       Configuration: { "MediaType": "MetadataOnly", "Enabled": true }
       StartLambdaArn: !GetAtt WebToVTTCaptionsFunction.Arn
-      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
   TranslateOperation:
     Type: Custom::CustomResource
@@ -1883,7 +1809,6 @@ Resources:
           "SourceLanguageCode": "en",
         }
       StartLambdaArn: !GetAtt TranslateFunction.Arn
-      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
   PollyOperation:
     Type: Custom::CustomResource
@@ -1895,7 +1820,6 @@ Resources:
       Configuration: { "MediaType": "Text", "Enabled": false }
       StartLambdaArn: !GetAtt StartPollyFunction.Arn
       MonitorLambdaArn: !GetAtt CheckPollyFunction.Arn
-      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
   comprehendPhrasesOperation:
     Type: Custom::CustomResource
@@ -1907,7 +1831,6 @@ Resources:
       Configuration: { "MediaType": "Text", "Enabled": true }
       StartLambdaArn: !GetAtt startKeyPhrases.Arn
       MonitorLambdaArn: !GetAtt getKeyPhrases.Arn
-      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
   comprehendEntitiesOperation:
     Type: Custom::CustomResource
@@ -1919,7 +1842,6 @@ Resources:
       Configuration: { "MediaType": "Text", "Enabled": true }
       StartLambdaArn: !GetAtt startEntityDetection.Arn
       MonitorLambdaArn: !GetAtt getEntityDetection.Arn
-      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
   celebrityRecognitionOperation:
     Type: Custom::CustomResource
@@ -1931,7 +1853,6 @@ Resources:
       Configuration: { "MediaType": "Video", "Enabled": true }
       StartLambdaArn: !GetAtt startCelebrityRecognition.Arn
       MonitorLambdaArn: !GetAtt checkCelebrityRecognition.Arn
-      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
   celebrityRecognitionOperationImage:
     Type: Custom::CustomResource
@@ -1942,7 +1863,6 @@ Resources:
       Type: "Sync"
       Configuration: { "MediaType": "Image", "Enabled": true }
       StartLambdaArn: !GetAtt startCelebrityRecognition.Arn
-      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
   contentModerationOperation:
     Type: Custom::CustomResource
@@ -1954,7 +1874,6 @@ Resources:
       Configuration: { "MediaType": "Video", "Enabled": true }
       StartLambdaArn: !GetAtt startContentModeration.Arn
       MonitorLambdaArn: !GetAtt checkContentModeration.Arn
-      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
   contentModerationOperationImage:
     Type: Custom::CustomResource
@@ -1965,7 +1884,6 @@ Resources:
       Type: "Sync"
       Configuration: { "MediaType": "Image", "Enabled": true }
       StartLambdaArn: !GetAtt startContentModeration.Arn
-      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
   faceDetectionOperation:
     Type: Custom::CustomResource
@@ -1977,7 +1895,6 @@ Resources:
       Configuration: { "MediaType": "Video", "Enabled": true }
       StartLambdaArn: !GetAtt startFaceDetection.Arn
       MonitorLambdaArn: !GetAtt checkFaceDetection.Arn
-      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
   faceDetectionOperationImage:
     Type: Custom::CustomResource
@@ -1988,7 +1905,6 @@ Resources:
       Type: "Sync"
       Configuration: { "MediaType": "Image", "Enabled": true }
       StartLambdaArn: !GetAtt startFaceDetection.Arn
-      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
   faceSearchOperation:
     Type: Custom::CustomResource
@@ -2000,7 +1916,6 @@ Resources:
       Configuration: { "MediaType": "Video", "Enabled": true }
       StartLambdaArn: !GetAtt startFaceSearch.Arn
       MonitorLambdaArn: !GetAtt checkFaceSearch.Arn
-      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
   faceSearchOperationImage:
     Type: Custom::CustomResource
@@ -2011,7 +1926,6 @@ Resources:
       Type: "Sync"
       Configuration: { "MediaType": "Image", "Enabled": true }
       StartLambdaArn: !GetAtt startFaceSearch.Arn
-      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
   labelDetectionOperation:
     Type: Custom::CustomResource
@@ -2023,7 +1937,6 @@ Resources:
       Configuration: { "MediaType": "Video", "Enabled": true }
       StartLambdaArn: !GetAtt startLabelDetection.Arn
       MonitorLambdaArn: !GetAtt checkLabelDetection.Arn
-      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
   technicalCueDetectionOperation:
     Type: Custom::CustomResource
@@ -2035,7 +1948,6 @@ Resources:
       Configuration: { "MediaType": "Video", "Enabled": true }
       StartLambdaArn: !GetAtt startTechnicalCueDetection.Arn
       MonitorLambdaArn: !GetAtt checkTechnicalCueDetection.Arn
-      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
   shotDetectionOperation:
     Type: Custom::CustomResource
@@ -2047,7 +1959,6 @@ Resources:
       Configuration: { "MediaType": "Video", "Enabled": true }
       StartLambdaArn: !GetAtt startShotDetection.Arn
       MonitorLambdaArn: !GetAtt checkShotDetection.Arn
-      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
   textDetectionOperation:
     Type: Custom::CustomResource
@@ -2059,7 +1970,6 @@ Resources:
       Configuration: { "MediaType": "Video", "Enabled": true }
       StartLambdaArn: !GetAtt startTextDetection.Arn
       MonitorLambdaArn: !GetAtt checkTextDetection.Arn
-      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
   textDetectionOperationImage:
     Type: Custom::CustomResource
@@ -2070,7 +1980,6 @@ Resources:
       Type: "Sync"
       Configuration: { "MediaType": "Image", "Enabled": true }
       StartLambdaArn: !GetAtt startTextDetection.Arn
-      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
   labelDetectionOperationImage:
     Type: Custom::CustomResource
@@ -2081,7 +1990,6 @@ Resources:
       Type: "Sync"
       Configuration: { "MediaType": "Image", "Enabled": true }
       StartLambdaArn: !GetAtt startLabelDetection.Arn
-      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
   personTrackingOperation:
     Type: Custom::CustomResource
@@ -2093,7 +2001,6 @@ Resources:
       Configuration: { "MediaType": "Video", "Enabled": false }
       StartLambdaArn: !GetAtt startPersonTracking.Arn
       MonitorLambdaArn: !GetAtt checkPersonTracking.Arn
-      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
   # Export operator names as outputs
 

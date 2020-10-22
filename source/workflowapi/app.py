@@ -33,7 +33,7 @@ APP_NAME = "workflowapi"
 API_STAGE = "dev"
 app = Chalice(app_name=APP_NAME)
 app.debug = True
-API_VERSION = "1.0.0"
+API_VERSION = "2.0.0"
 
 patch_all()
 

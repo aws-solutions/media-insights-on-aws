@@ -136,7 +136,7 @@
       <b-modal ref="delete-terminology-modal" ok-title="Confirm" ok-variant="danger" title="Delete Terminology?" @ok="deleteTerminologyRequest(customTerminologyName=customTerminologySelected)">
         <p>Are you sure you want to permanently delete the custom terminology <b>{{ customTerminologySelected }}</b>?</p>
       </b-modal>
-      <b-modal ref="terminology-modal" size="lg" title="Save Terminology?" :ok-disabled="validTerminologyName === false || (customTerminologySelected === '' && customTerminologyCreateNew === '') || customTerminologyUnion.length === 0 || validCSV === false" ok-title="Save" @ok="saveTerminology()">
+      <b-modal ref="terminology-modal" size="lg" title="Save Terminology?" :ok-disabled="validTerminologyName === false || (customTerminologySelected === '' && customTerminologyCreateNew === '') || customTerminologyUnion.length === 0 || validCSV === false" ok-title="Save" @ok="saveTerminology()" @cancel="customTerminologySelected=''; customTerminologySaved=[]">
         <b-form-group v-if="customTerminologyList.length > 0" label="Select a terminology:">
           <b-form-radio-group
             id="custom-terminology-selection"
@@ -251,9 +251,13 @@
       <b-modal ref="remove-language-modal" title="Remove Language" ok-title="Remove" :ok-disabled="removeLanguageCode === ''" @ok="remove_language_request()">
         <p>Select language to remove:</p>
         <b-form-group>
-          <b-form-radio-group
+          <b-form-radio-group v-if="customTerminologySelected === ''"
             v-model="removeLanguageCode"
             :options="translateLanguages.filter(langItem => translationsCollection.map(x => x.value).includes(langItem.value))"
+          ></b-form-radio-group>
+          <b-form-radio-group v-else
+            v-model="removeLanguageCode"
+            :options="alphabetized_language_collection.map(x => x.value)"
           ></b-form-radio-group>
         </b-form-group>
       </b-modal>
@@ -395,12 +399,6 @@ export default {
       return this.alphabetized_language_collection[this.alphabetized_language_collection.length-1].value
     },
     customTerminologyUnion: function() {
-      console.log("Union this.customTerminologyUnsaved")
-      console.log(this.customTerminologyUnsaved)
-      console.log("Unioned:")
-      console.log(this.customTerminologyUnsaved.concat(this.customTerminologySaved))
-      console.log("this.alphabetized_language_collection")
-      console.log(this.alphabetized_language_collection)
       return this.customTerminologyUnsaved.concat(this.customTerminologySaved)
     },
     validCSV: function() {
@@ -447,13 +445,32 @@ export default {
     },
     ...mapState(['player', 'waveform_seek_position']),
     alphabetized_language_collection: function() {
-      let translationsCollection = this.translationsCollection
-      return translationsCollection.filter(x => x.text.length > 0)
+      // This function sorts the columns in the terminology table by alphabetical order.
+      let translations_collection = []
+      // If the user has not yet selected an existing terminology then
+      // order the columns by the translation languages specified
+      // in the workflow, which is in this.translationsCollection.
+      console.log("translations_collection")
+      console.log(translations_collection)
+      if (this.customTerminologySelected === '')
+        translations_collection = this.translationsCollection
+      // If the user has selected an existing terminology then sort the columns
+      // by the languages in that terminology.
+      if (this.customTerminologySelected !== '') {
+        const custom_terminology_union = this.customTerminologySaved
+        custom_terminology_union.forEach(terminology_row => {
+          for (const language_code in terminology_row) {
+            const language_label = this.translateLanguages.filter(x => (x.value === language_code))[0].text;
+            translations_collection.push({"text": language_label, "value": language_code})
+          }
+        })
+      }
+      return translations_collection.filter(x => x.text.length > 0)
           .sort(function(a, b) {
-        const textA = a.text.toUpperCase();
-        const textB = b.text.toUpperCase();
-        return (textA < textB) ? -1 : (textA > textB) ? 1 : 0;
-      });
+            const textA = a.text.toUpperCase();
+            const textB = b.text.toUpperCase();
+            return (textA < textB) ? -1 : (textA > textB) ? 1 : 0;
+          });
     },
     vtt_url: function() {
       if (this.selected_lang_code !== '') {
@@ -565,7 +582,9 @@ export default {
       )
     },
     getLanguageList: async function () {
-      // This function gets the list of languages that the user can choose from
+      // This function gets the list of languages that we'll show as columns
+      // in the terminology table before the user selects an existing custom
+      // terminology.
       const token = await this.$Amplify.Auth.currentSession().then(data =>{
         return data.getIdToken().getJwtToken();
       });
@@ -1000,7 +1019,6 @@ export default {
             const sourceLanguage = this.translateLanguages.filter(x => (x.value === this.sourceLanguageCode))[0].text;
             operator_info.push({"name": "Source Language", "value": sourceLanguage})
             if (this.terminology_used) {
-              // TODO TerminologyNames should not be an array since it will only ever be one value
               operator_info.push({"name": "Custom Terminology", "value": this.terminology_used[0]})
             }
             this.$store.commit('updateOperatorInfo', operator_info)
@@ -1330,7 +1348,9 @@ export default {
       // add the new language as a new column in the terminology table
       this.translationsCollection = this.translationsCollection.concat({"text":this.newLanguageCode, "value": this.newLanguageCode})
       // add the new language as a column in the terminology table data
-      this.customTerminologyUnsaved[0][this.newLanguageCode] = ""
+      const terminology_row = this.customTerminologySaved.pop()
+      terminology_row[this.newLanguageCode] = ""
+      this.customTerminologySaved.push(terminology_row)
       // reset the language code used in the add-language-modal form
       this.newLanguageCode=""
     },
@@ -1339,9 +1359,13 @@ export default {
     },
     remove_language_request() {
       console.log("removing language " + this.removeLanguageCode)
-      for (let i=0; i<this.customTerminologyUnsaved.length; i++) {
-        delete this.customTerminologyUnsaved[i][this.removeLanguageCode]
+      for (let i=0; i<this.customTerminologySaved.length; i++) {
+        delete this.customTerminologySaved[i][this.removeLanguageCode]
       }
+      // This pop and push seems to be necessary in order to force the terminology table to refresh
+      const terminology_row = this.customTerminologySaved.pop()
+      this.customTerminologySaved.push(terminology_row)
+
       this.translationsCollection = this.translationsCollection.filter(x => x.value !== this.removeLanguageCode)
       // reset the language code used in the form on remove-language-modal
       this.removeLanguageCode=""

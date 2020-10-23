@@ -130,18 +130,22 @@
                   :options="textOperators"
                   name="flavour-3"
                 ></b-form-checkbox-group>
-                <div v-if="enabledOperators.includes('Translate')">
-                  Custom Terminology
+                <div v-if="enabledOperators.includes('Translate') && customTerminologyList.length > 0">
+                  Custom Terminologies (optional):
                   <b-form-select
                     v-model="customTerminology"
-                    :options="customTerminologyList"
+                    :options="customTerminologyList.map( x => { return {'text': x.Name + ' (' + x.TargetLanguageCodes + ')'  , 'value': {'Name': x.Name, 'TargetLanguageCodes': x.TargetLanguageCodes}}})"
+                    multiple
                   >
-                    <template v-slot:first>
-                      <b-form-select-option :value="null" disabled>
-                        (optional)
-                      </b-form-select-option>
-                    </template>
                   </b-form-select>
+                  <div v-if="overlappingTerminologies.length > 0" style="color:red">
+                    You cannot select terminologies that define translations for the same language. Please select only one of:
+                    <ul id="overlapping_terminologies">
+                      <li v-for="terminology in overlappingTerminologies">
+                        {{ terminology }}
+                      </li>
+                    </ul>
+                  </div>
                   <b-form-group>
                     Target Languages
                     <div v-if="textFormError" style="color:red">
@@ -219,6 +223,7 @@
     },
     data() {
       return {
+        iantest: "",
         customVocabularyList: [],
         selectedTags: [
         ],
@@ -269,7 +274,7 @@
         faceCollectionId: "",
         genericDataFilename: "",
         customVocab: null,
-        customTerminology: null,
+        customTerminology: [],
         customTerminologyList: [],
         existingSubtitlesFilename: "",
         transcribeLanguage: "en-US",
@@ -402,6 +407,28 @@
       }
     },
     computed: {
+      overlappingTerminologies() {
+        // This function returns a list of terminologies that contain the translations for the same language.
+        // flatten the array of TargetLanguageCodes arrays
+        const language_codes = [].concat.apply([], this.customTerminology.map(x => x.TargetLanguageCodes))
+        // get duplicate language codes in list
+        let duplicate_language_codes = language_codes.sort().filter(function(item, pos, ary) {
+          return item == ary[pos - 1];
+        }).filter(function(item, pos, ary) {
+          return !pos || item != ary[pos - 1];
+        })
+        // get the terminologies which contain duplicate language codes
+        let overlapping_terminologies = []
+        for (const i in duplicate_language_codes) {
+          overlapping_terminologies = overlapping_terminologies.concat(this.customTerminology.filter(x => x.TargetLanguageCodes.includes(duplicate_language_codes[i])).map(x => x.Name))
+        }
+        // remove duplicate terminologies from the overlapping_terminologies list
+        overlapping_terminologies = overlapping_terminologies.sort().filter(function(item, pos, ary) {
+          return !pos || item != ary[pos - 1];
+        })
+        return overlapping_terminologies
+      },
+
       // translateLanguageTags is the same as translateLanguages except
       // with keys and values flipped around. We need this field ordering
       // for the voerro-tags-input. The flipping is done in here as a computed property.
@@ -586,12 +613,17 @@
             'Authorization': token
           },
         }).then(response =>
-            response.json().then(data => ({
-                  data: data,
-                })
-            ).then(res => {
-              this.customTerminologyList = res.data['TerminologyPropertiesList'].map(terminology => terminology.Name)
+          response.json().then(data => ({
+                data: data,
+              })
+          ).then(res => {
+            this.customTerminologyList = res.data['TerminologyPropertiesList'].map( terminology => {
+              return {
+                'Name': terminology.Name,
+                'TargetLanguageCodes': terminology.TargetLanguageCodes
+              }
             })
+          })
         )
       },
 
@@ -622,7 +654,6 @@
                   VocabularyName + " [" + VocabularyState + "]",
               notEnabled: (VocabularyState === "PENDING" || LanguageCode !== this.transcribeLanguage)
             }))
-            console.log(this.customVocabularyList)
             // if any vocab is PENDING, then poll status until it is not PENDING. This is necessary so custom vocabs become selectable in the GUI as soon as they become ready.
             if (this.customVocabularyList.filter(item => item.status === "PENDING").length > 0) {
               if (this.vocab_status_polling == null) {
@@ -756,8 +787,7 @@
           data = vm.kitchenSinkWorkflowConfig;
           // Add optional parameters to workflow config:
           if (this.customTerminology !== null) {
-            // TODO TerminologyNames should not be an array since it will only ever be one value
-            data.Configuration.TranslateStage2.TranslateWebCaptions.TerminologyNames = [this.customTerminology]
+            data.Configuration.TranslateStage2.TranslateWebCaptions.TerminologyNames = JSON.stringify({"JsonList":this.customTerminology})
           }
           if (this.customVocab !== null) {
             data.Configuration.defaultAudioStage2.Transcribe.VocabularyName=this.customVocab

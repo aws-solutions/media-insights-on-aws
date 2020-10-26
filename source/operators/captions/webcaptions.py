@@ -443,11 +443,13 @@ class WebCaptions:
                     # that defines translations for targetLanguageCode.
                     # If there happens to be more than one terminology matching targetLanguageCode
                     # then just use the first one in the list.
-                    terminology_name = [[item for item in terminology_names if targetLanguageCode in item['TargetLanguageCodes']][0]['Name']]
-                    print("Using custom terminology {}".format(terminology_name))
-                else:
-                    print("No custom terminology specified.")
-
+                    for item in terminology_names:
+                        if targetLanguageCode in item['TargetLanguageCodes']:
+                            terminology_name = item['Name']
+                            print("Using custom terminology {}".format(terminology_name))
+                        else:
+                            terminology_name = []
+                            print("No custom terminology specified.")
                 # Save the delimited transcript text to S3
                 response = translate_client.start_text_translation_job(
                     JobName=job_name,
@@ -586,7 +588,7 @@ def start_translate_webcaptions(event, context):
         operator_object.add_workflow_metadata(TranslateError="Language codes are not defined")
         raise MasExecutionError(operator_object.return_output_object())
     try:
-        terminology_names = json.loads(operator_object.configuration["TerminologyNames"].replace("'",'"'))['JsonList']
+        terminology_names = json.loads(operator_object.configuration["TerminologyNames"].replace("'", '"'))['JsonList']
     except KeyError:
         terminology_names = []
 

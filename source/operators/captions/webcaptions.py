@@ -445,7 +445,7 @@ class WebCaptions:
                     # then just use the first one in the list.
                     for item in terminology_names:
                         if targetLanguageCode in item['TargetLanguageCodes']:
-                            terminology_name = item['Name']
+                            terminology_name.append(item['Name'])
                             print("Using custom terminology {}".format(terminology_name))
                         else:
                             terminology_name = []

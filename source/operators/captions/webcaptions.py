@@ -437,7 +437,7 @@ class WebCaptions:
                 job_name = "MIE_"+asset_id+"_"+workflow_id+"_"+targetLanguageCode
                 print("JobName: {}".format(job_name))
 
-                terminology_name = ''
+                terminology_name = []
                 if len(terminology_names) > 0:
                     # Find a terminology in the list of custom terminologies
                     # that defines translations for targetLanguageCode.

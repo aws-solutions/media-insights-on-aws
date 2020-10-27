@@ -490,7 +490,7 @@
       },
       validForm() {
         let validStatus = true;
-        if (this.invalid_file_types || this.textFormError || this.audioFormError || this.videoFormError) validStatus = false;
+        if (this.invalid_file_types || this.textFormError || this.audioFormError || this.videoFormError || this.overlappingTerminologies.length > 0) validStatus = false;
         return validStatus;
       },
       kitchenSinkWorkflowConfig() {

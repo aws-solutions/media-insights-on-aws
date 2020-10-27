@@ -99,6 +99,7 @@
     },
     "APIHandler": {
       "Properties": {
+        "Runtime": "python3.7",
         "Environment": {
           "Variables": {
             "DATAPLANE_TABLE_NAME": {

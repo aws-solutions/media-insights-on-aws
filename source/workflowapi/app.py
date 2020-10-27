@@ -33,7 +33,7 @@ APP_NAME = "workflowapi"
 API_STAGE = "dev"
 app = Chalice(app_name=APP_NAME)
 app.debug = True
-API_VERSION = "1.0.0"
+API_VERSION = "2.0.0"
 
 patch_all()
 
@@ -260,8 +260,7 @@ def create_operation_api():
                     ...
                 }
             "StartLambdaArn":arn,
-            "MonitorLambdaArn":arn,
-            "SfnExecutionRole": arn
+            "MonitorLambdaArn":arn
             }
 
     Returns:
@@ -281,7 +280,6 @@ def create_operation_api():
                 }
                 "StartLambdaArn":arn,
                 "MonitorLambdaArn":arn,
-                "StateMachineExecutionRoleArn": arn,
                 "StateMachineAsl": ASL-string
                 "StageName": string
             }
@@ -377,7 +375,6 @@ def create_operation(operation):
         operation["ApiVersion"] = API_VERSION
 
         operation_table.put_item(Item=operation)
-
         # build a singleton stage for this operation
         try:
             stage = {}
@@ -863,8 +860,7 @@ def create_stage_api():
                 "operation-name2": operation-configuration-object1,
                 ...
             }
-            "StateMachineArn": ARN-string
-        }
+        },
         {
             "Name": "TestStage",
             "Operations": [
@@ -875,8 +871,7 @@ def create_stage_api():
                     "MediaType": "Video",
                     "Enabled": true
                 }
-            },
-            "StateMachineArn": "arn:aws:states:us-west-2:123456789123:stateMachine:TestStage"
+            }
         }
 
     Raises:
@@ -958,8 +953,6 @@ def create_stage(stage):
                 json.loads(operation["StateMachineAsl"]))
             Configuration[op] = operation["Configuration"]
 
-            stageStateMachineExecutionRoleArn = operation["StateMachineExecutionRoleArn"]
-
         stageAslString = json.dumps(stageAsl)
         stageAslString = stageAslString.replace("%%STAGE_NAME%%", stage["Name"])
         stageAsl = json.loads(stageAslString)
@@ -968,19 +961,8 @@ def create_stage(stage):
         stage["Configuration"] = Configuration
 
         # Build stage
-        response = SFN_CLIENT.create_state_machine(
-            name=Name,
-            definition=json.dumps(stageAsl),
-            roleArn=stageStateMachineExecutionRoleArn,
-            tags=[
-                {
-                    'key': 'environment',
-                    'value': 'mie'
-                },
-            ]
-        )
-        stage["StateMachineArn"] = response["stateMachineArn"]
 
+        stage["Definition"] = json.dumps(stageAsl)
         stage["Version"] = "v0"
         stage["Id"] = str(uuid.uuid4())
         stage["Created"] = str(datetime.now().timestamp())
@@ -1115,12 +1097,6 @@ def delete_stage(Name, Force):
 
                 raise BadRequestError(Message)
 
-
-
-            # Delete the stage state machine
-            response = SFN_CLIENT.delete_state_machine(
-                stateMachineArn=stage["StateMachineArn"]
-            )
 
             response = table.delete_item(
                 Key={
@@ -1332,17 +1308,14 @@ def build_workflow(workflow):
         raise BadRequestError("Workflow %s must have exactly 1 'End' key within its stages" % (
             workflow["Name"]))
 
-    logger.info("Get stage state machines")
+    logger.info("Get stage definitions")
+
     for Name, stage in workflow["Stages"].items():
         s = get_stage_by_name(Name)
 
         logger.info(json.dumps(s))
 
-        response = SFN_CLIENT.describe_state_machine(
-            stateMachineArn=s["StateMachineArn"]
-        )
-
-        s["stateMachineAsl"] = json.loads(response["definition"])
+        s["stateMachineAsl"] = json.loads(s["Definition"])
         stage.update(s)
 
         # save the operators for this stage to the list of operators in the
@@ -2317,8 +2290,7 @@ def stage_resource(event, context):
         create_stage(stage)
 
         send_response(event, context, "SUCCESS",
-                      {"Message": "Resource creation successful!", "Name": event["ResourceProperties"]["Name"],
-                       "StateMachineArn": event["ResourceProperties"]["StateMachineArn"]})
+                      {"Message": "Resource creation successful!", "Name": event["ResourceProperties"]["Name"]})
 
     elif event['RequestType'] == 'Update':
         logger.info('UPDATE!')

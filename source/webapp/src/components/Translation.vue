@@ -154,18 +154,15 @@
           </b-form-radio-group>
         </b-form-group>
         <div v-if="customTerminologyList.length > 0">
-          Create a new terminology:
-        </div>
-        <div v-else>
-          Create a new terminology:
+          Save as:
         </div>
         <!-- The state on this text area will show a red alert icon if
         the user enters an invalid custom terminology name. Otherwise we
         set the state to null so no validity indicator is shown. -->
-        <b-form-input v-if="customTerminologyList.length>0" v-model="customTerminologyCreateNew" size="sm" placeholder="Enter new terminology name" :state="validTerminologyName ? null : false" @focus="customTerminologySelected=''"></b-form-input>
-        <b-form-input v-else v-model="customTerminologyCreateNew" size="sm" placeholder="Enter new terminology name" :state="validTerminologyName ? null : false"></b-form-input>
+        <b-form-input v-if="customTerminologyList.length>0" v-model="customTerminologyCreateNew" size="sm" placeholder="Enter new terminology name" :state="validTerminologyName ? null : false"></b-form-input>
+
         <div v-if="customTerminologyList.length > 0 && customTerminologySelected !== ''">
-          Delete the selected terminology (optional):
+          Delete terminology: <b>{{ customTerminologySelected }}</b>&nbsp;
           <b-button v-b-tooltip.hover.right size="sm" title="Delete selected terminology" variant="danger" @click="deleteTerminology">
             Delete
           </b-button>
@@ -412,7 +409,8 @@ export default {
       if (this.customTerminologySelected === '') {
         return this.selected_lang_code
       } else {
-        return this.alphabetized_language_collection[this.alphabetized_language_collection.length-1].value
+        if (this.alphabetized_language_collection.length > 0)
+          return this.alphabetized_language_collection[this.alphabetized_language_collection.length-1].value
       }
     },
     customTerminologyUnion: function() {
@@ -529,11 +527,10 @@ export default {
     waveform_seek_position: function () {
       this.handleWaveformSeek();
     },
-    // when user begins typing new terminology name, then deselect the radio buttons
-    customTerminologyCreateNew: function() {
-      this.customVocabularySelected = ""
-    },
     customTerminologySelected: async function() {
+      // Set the default value for the Save As custom terminology name
+      if (this.customTerminologySelected !== '')
+        this.customTerminologyCreateNew = "Copy_of_" + this.customTerminologySelected
       // Clear the terminology table before adding phrases from the selected terminology:
       this.customTerminologyUnsaved = []
       if (this.customTerminologySelected!=="") {
@@ -1228,6 +1225,7 @@ export default {
         return data.getIdToken().getJwtToken();
       });
       this.$refs['delete-terminology-modal'].hide()
+      this.$refs['terminology-modal'].hide()
       console.log("Delete terminology request:")
       console.log('curl -L -k -X POST -H \'Content-Type: application/json\' -H \'Authorization: \''+token+'\' --data \'{"terminology_name":"'+customTerminologyName+'}\' '+this.DATAPLANE_API_ENDPOINT+'translate/delete_terminology')
       await fetch(this.DATAPLANE_API_ENDPOINT+'translate/delete_terminology',{
@@ -1255,6 +1253,10 @@ export default {
             this.terminologyNotificationStatus = "danger"
             this.showTerminologyNotification = 5
           }
+          // clear the custom terminology name used in the save terminology modal form
+          this.customTerminologyCreateNew = ""
+          this.customTerminologySelected = ""
+          this.customTerminologySaved = []
         })
       )
     },
@@ -1277,8 +1279,6 @@ export default {
             })
         ).then(res => {
           const csv = res.data.terminology.replace(/"/g, '')
-          console.log("csv")
-          console.log(csv)
           const json = this.csvJSON(csv)
           this.customTerminologySaved = json
         })

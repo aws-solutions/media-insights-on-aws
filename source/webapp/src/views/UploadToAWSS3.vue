@@ -130,11 +130,11 @@
                   :options="textOperators"
                   name="flavour-3"
                 ></b-form-checkbox-group>
-                <div v-if="enabledOperators.includes('Translate') && customTerminologyList.length > 0">
+                <div v-if="enabledOperators.includes('Translate') && customTerminologyList.length > 0 && customTerminologyList.filter(x => x.SourceLanguageCode === sourceLanguageCode).length > 0">
                   Custom Terminologies (optional):
                   <b-form-select
                     v-model="customTerminology"
-                    :options="customTerminologyList.map( x => { return {'text': x.Name + ' (' + x.TargetLanguageCodes + ')'  , 'value': {'Name': x.Name, 'TargetLanguageCodes': x.TargetLanguageCodes}}})"
+                    :options="customTerminologyList.filter(x => x.SourceLanguageCode === sourceLanguageCode).map( x => { return {'text': x.Name + ' (' + x.TargetLanguageCodes + ')'  , 'value': {'Name': x.Name, 'TargetLanguageCodes': x.TargetLanguageCodes}}})"
                     multiple
                   >
                   </b-form-select>
@@ -371,14 +371,6 @@
           {text: 'Vietnamese', value: 'vi'},
         ],
         selectedTranslateLanguages: [],
-        selectedTranslateLanguagesDefault: [
-          {value: 'French', text: 'fr'},
-          {value: 'Spanish', text: 'es'},
-          {value: 'Arabic', text: 'ar'},
-          {value: 'Portuguese', text: 'pt'},
-          {value: 'Russian', text: 'ru'},
-          {value: 'Chinese (Simplified)', text: 'zh'}
-        ],
         uploadErrorMessage: "",
         invalidFileMessage: "",
         invalidFileMessages: [],
@@ -620,6 +612,7 @@
             this.customTerminologyList = res.data['TerminologyPropertiesList'].map( terminology => {
               return {
                 'Name': terminology.Name,
+                'SourceLanguageCode': terminology.SourceLanguageCode,
                 'TargetLanguageCodes': terminology.TargetLanguageCodes
               }
             })

@@ -446,10 +446,12 @@ class WebCaptions:
                     for item in terminology_names:
                         if targetLanguageCode in item['TargetLanguageCodes']:
                             terminology_name.append(item['Name'])
-                            print("Using custom terminology {}".format(terminology_name))
-                        else:
-                            terminology_name = []
-                            print("No custom terminology specified.")
+                            break
+                    if len(terminology_name) == 0:
+                        print("No custom terminology specified.")
+                    else:
+                        print("Using custom terminology {}".format(terminology_name))
+
                 # Save the delimited transcript text to S3
                 response = translate_client.start_text_translation_job(
                     JobName=job_name,

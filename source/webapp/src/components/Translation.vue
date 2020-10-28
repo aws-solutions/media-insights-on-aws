@@ -33,7 +33,7 @@
       <b-form-group>
         <b-form-radio-group
           v-model="selected_lang_code"
-          :options="alphabetized_language_collection"
+          :options="translationsCollection"
           @change="getWebCaptions"
         ></b-form-radio-group>
       </b-form-group>
@@ -153,13 +153,13 @@
           >
           </b-form-radio-group>
         </b-form-group>
-        <div v-if="customTerminologyList.length > 0">
+        <div>
           Save as:
         </div>
         <!-- The state on this text area will show a red alert icon if
         the user enters an invalid custom terminology name. Otherwise we
         set the state to null so no validity indicator is shown. -->
-        <b-form-input v-if="customTerminologyList.length>0" v-model="customTerminologyCreateNew" size="sm" placeholder="Enter new terminology name" :state="validTerminologyName ? null : false"></b-form-input>
+        <b-form-input v-model="customTerminologyCreateNew" size="sm" placeholder="Enter new terminology name" :state="validTerminologyName ? null : false"></b-form-input>
 
         <div v-if="customTerminologyList.length > 0 && customTerminologySelected !== ''">
           Delete terminology: <b>{{ customTerminologySelected }}</b>&nbsp;
@@ -474,7 +474,9 @@ export default {
         custom_terminology_union.forEach(terminology_row => {
           for (const language_code in terminology_row) {
             const language_label = this.translateLanguages.filter(x => (x.value === language_code))[0].text;
-            translations_collection.push({"text": language_label, "value": language_code})
+            // avoid adding duplicates
+            if (translations_collection.filter(x => x["text"] === language_label).length === 0)
+              translations_collection.push({"text": language_label, "value": language_code})
           }
         })
       }

@@ -136,8 +136,11 @@
       <b-modal ref="delete-terminology-modal" ok-title="Confirm" ok-variant="danger" title="Delete Terminology?" @ok="deleteTerminologyRequest(customTerminologyName=customTerminologySelected)">
         <p>Are you sure you want to permanently delete the custom terminology <b>{{ customTerminologySelected }}</b>?</p>
       </b-modal>
-      <b-modal ref="terminology-modal" size="lg" title="Save Terminology?" :ok-disabled="validTerminologyName === false || (customTerminologySelected === '' && customTerminologyCreateNew === '') || customTerminologyUnion.length === 0 || validCSV === false" ok-title="Save" @ok="saveTerminology()" @cancel="customTerminologySelected=''; customTerminologySaved=[]">
-        <b-form-group v-if="customTerminologyList.length > 0" label="Select a terminology:">
+      <b-modal ref="terminology-modal" size="lg" title="Save Terminology?" :ok-disabled="validTerminologyName === false || (customTerminologySelected === '' && customTerminologyCreateNew === '') || customTerminologyUnion.length === 0 || validCSV === false" ok-title="Save" @ok="saveTerminology()" @cancel="customTerminologySelected=''; customTerminologySaved=[]; customTerminologyUnsaved=[]">
+        <div v-if="customTerminologyList.length > 0">
+          Existing terminologies for {{ selected_lang }}:
+        </div>
+        <b-form-group v-if="customTerminologyList.length > 0">
           <b-form-radio-group
             id="custom-terminology-selection"
             v-model="customTerminologySelected"
@@ -151,7 +154,7 @@
           </b-form-radio-group>
         </b-form-group>
         <div v-if="customTerminologyList.length > 0">
-          Or create a new terminology:
+          Create a new terminology:
         </div>
         <div v-else>
           Create a new terminology:
@@ -159,7 +162,7 @@
         <!-- The state on this text area will show a red alert icon if
         the user enters an invalid custom terminology name. Otherwise we
         set the state to null so no validity indicator is shown. -->
-        <b-form-input v-if="customTerminologyList.length>0" v-model="customTerminologyCreateNew" size="sm" placeholder="Enter new terminology name (optional)" :state="validTerminologyName ? null : false" @focus="customTerminologySelected=''"></b-form-input>
+        <b-form-input v-if="customTerminologyList.length>0" v-model="customTerminologyCreateNew" size="sm" placeholder="Enter new terminology name" :state="validTerminologyName ? null : false" @focus="customTerminologySelected=''"></b-form-input>
         <b-form-input v-else v-model="customTerminologyCreateNew" size="sm" placeholder="Enter new terminology name" :state="validTerminologyName ? null : false"></b-form-input>
         <div v-if="customTerminologyList.length > 0 && customTerminologySelected !== ''">
           Delete the selected terminology (optional):
@@ -176,20 +179,23 @@
         </div>
         <b-table
           :items="customTerminologyUnion"
-          :fields="[sourceLanguageCode].concat(alphabetized_language_collection.map(x => x.value))"
+          :fields="customTerminologyFields"
           selectable
           select-mode="single"
           fixed responsive="sm"
           bordered
           small
         >
+          <!-- Here we define the cell contents for the terminology table: -->
           <template v-slot:cell()="{ item, index, field: { key } }">
+            <!-- The v-if/else here is used to show the add / delete row buttons
+            only in the right-most column. -->
             <div v-if="key === customTerminologyLastTableField">
               <b-row no-gutters>
                 <b-col cols="9">
                   <div v-if="index < customTerminologyUnsaved.length">
                     <!-- We use null in state to avoid showing a green check mark when field is valid -->
-                    <b-form-input v-model="item[key]" class="custom-text-field" placeholder="(required)" :state="item[key] !== '' ? null : false" />
+                    <b-form-input v-model="item[key]" class="custom-text-field" placeholder="(required)" :state="item[key] !== '' && item[key] !== undefined ? null : false" />
                   </div>
                   <div v-else>
                     <b-form-input v-model="item[key]" class="custom-text-field text-info" />
@@ -212,17 +218,21 @@
             <div v-else>
               <div v-if="index < customTerminologyUnsaved.length">
                 <!-- We use null in state to avoid showing a green check mark when field is valid -->
-                <b-form-input v-model="item[key]" class="custom-text-field" placeholder="(required)" :state="item[key] !== '' ? null : false" />
+                <b-form-input v-model="item[key]" class="custom-text-field" placeholder="(required)" :state="item[key] !== '' && item[key] !== undefined ? null : false" />
               </div>
               <div v-else>
                 <b-form-input v-model="item[key]" class="custom-text-field text-info" />
               </div>
             </div>
           </template>
+          <!-- Here we show buttons to add / remove languages from custom terminology: -->
           <template v-slot:table-caption>
             <span style="position:absolute; right: 10px">
-              <b-button v-b-tooltip.hover.top title="Add a new language" variant="outline-secondary" class="btn-xs" @click="add_language()">Add Language</b-button>&nbsp;
-              <b-button v-b-tooltip.hover.top title="Remove a language" variant="outline-secondary" class="btn-xs" @click="remove_language()">Remove Language</b-button>
+<!--
+Uncomment the following buttons to get options for adding or removing languages to the terminology table:
+-->
+<!--              <b-button v-if="customTerminologySelected !== ''" v-b-tooltip.hover.top title="Add a new language" variant="outline-secondary" class="btn-xs" @click="add_language()">Add Language</b-button>&nbsp;-->
+<!--              <b-button v-if="customTerminologySelected !== ''" v-b-tooltip.hover.top title="Remove a language" variant="outline-secondary" class="btn-xs" @click="remove_language()">Remove Language</b-button>-->
             </span>
           </template>
         </b-table>
@@ -374,7 +384,6 @@ export default {
       customTerminologyCSV: "",
       customTerminologyUnsaved: [],
       customTerminologySaved: [],
-      customTerminologyFields: [],
       customTerminologyList: [],
       customTerminologySelected: "",
       customTerminologyCreateNew: "",
@@ -395,8 +404,16 @@ export default {
     }
   },
   computed: {
+    customTerminologyFields: function () {
+      [this.sourceLanguageCode].concat(this.alphabetized_language_collection.map(x => x.value))
+    },
     customTerminologyLastTableField: function() {
-      return this.alphabetized_language_collection[this.alphabetized_language_collection.length-1].value
+      // if there's no custom terminology selected, then the terminology table only include 2 columns, the source language and the language selected in the web captions table, so we can just return selected_lang_code as the name of the last column.
+      if (this.customTerminologySelected === '') {
+        return this.selected_lang_code
+      } else {
+        return this.alphabetized_language_collection[this.alphabetized_language_collection.length-1].value
+      }
     },
     customTerminologyUnion: function() {
       return this.customTerminologyUnsaved.concat(this.customTerminologySaved)
@@ -450,8 +467,6 @@ export default {
       // If the user has not yet selected an existing terminology then
       // order the columns by the translation languages specified
       // in the workflow, which is in this.translationsCollection.
-      console.log("translations_collection")
-      console.log(translations_collection)
       if (this.customTerminologySelected === '')
         translations_collection = this.translationsCollection
       // If the user has selected an existing terminology then sort the columns
@@ -519,13 +534,13 @@ export default {
       this.customVocabularySelected = ""
     },
     customTerminologySelected: async function() {
-      // remove phrases from the previously selected terminology
-      // before we add phrases from the newly selected terminology
-      if (this.customTerminologySelected!=="")
-          // add phrases from the selected terminology
+      // Clear the terminology table before adding phrases from the selected terminology:
+      this.customTerminologyUnsaved = []
+      if (this.customTerminologySelected!=="") {
+       // Now add phrases from the selected terminology:
         await this.downloadTerminology()
+      }
     }
-
   },
   deactivated: function () {
     console.log('deactivated component:', this.operator)
@@ -548,15 +563,13 @@ export default {
   },
   methods: {
     getEmptyTerminologyRecord: function() {
-      // Initialize an empty terminology record which will be used when
-      // we add terminology rows in the terminology editor.
-      // add a column for the source language
+      /* This function creates an empty terminology record.
+         This is used when the user adds terminology rows in the terminology editor
+         and when the user initially opens the custom terminology editor.
+      */
       const emptyTerminologyRecord = {}
       emptyTerminologyRecord[this.sourceLanguageCode] = ""
-      // add a column for every target translate language
-      for (const lang of this.translationsCollection) {
-        emptyTerminologyRecord[lang.value]=""
-      }
+      emptyTerminologyRecord[this.selected_lang_code] = ""
       return emptyTerminologyRecord
     },
     listTerminologiesRequest: async function () {
@@ -577,7 +590,10 @@ export default {
               data: data,
             })
         ).then(res => {
-          this.customTerminologyList = res.data['TerminologyPropertiesList'].map(terminology => terminology.Name)
+          // Only show the terminologies defined for a single target language
+          // and that target language is the one the user selected in the webcaptions
+          // table:
+          this.customTerminologyList = res.data['TerminologyPropertiesList'].filter(x => x['TargetLanguageCodes'].length === 1).filter(x => x['TargetLanguageCodes'][0] === this.selected_lang_code).map(x => x.Name)
         })
       )
     },
@@ -1013,13 +1029,17 @@ export default {
           ).then(res => {
             this.workflow_config = res.data.Configuration
             this.sourceLanguageCode = res.data.Configuration.WebCaptionsStage2.WebCaptions.SourceLanguageCode
-            this.terminology_used = res.data.Configuration.TranslateStage2.TranslateWebCaptions.TerminologyNames
+            this.terminology_used = JSON.parse(res.data.Configuration.TranslateStage2.TranslateWebCaptions.TerminologyNames).JsonList.map(x => x.Name)
             this.workflow_definition = res.data.Workflow
             const operator_info = []
             const sourceLanguage = this.translateLanguages.filter(x => (x.value === this.sourceLanguageCode))[0].text;
             operator_info.push({"name": "Source Language", "value": sourceLanguage})
             if (this.terminology_used) {
-              operator_info.push({"name": "Custom Terminology", "value": this.terminology_used[0]})
+              if (this.terminology_used.length === 1)
+                operator_info.push({"name": "Custom Terminology", "value": this.terminology_used[0]})
+              else
+                operator_info.push({"name": "Custom Terminologies", "value": this.terminology_used.join().replace(/,/g, ', ')})
+
             }
             this.$store.commit('updateOperatorInfo', operator_info)
           })
@@ -1161,7 +1181,8 @@ export default {
     saveTerminology: async function () {
       const csv_header = Object.keys(this.customTerminologyUnion[0]).toString()
       this.customTerminologyCSV = csv_header+'\n'+this.convertToCSV(this.customTerminologyUnion)
-      console.log(this.customTerminologyCSV)
+      this.customTerminologyUnsaved = []
+      this.customTerminologySaved = []
       await this.saveTerminologyRequest()
     },
     saveTerminologyRequest: async function () {
@@ -1186,7 +1207,6 @@ export default {
             this.terminologyNotificationMessage = "Saved terminology: " + this.customTerminologyName
             this.terminologyNotificationStatus = "success"
             this.showTerminologyNotification = 5
-            this.customTerminologyUnsaved = [this.getEmptyTerminologyRecord()]
           } else {
             console.log("Failed to save vocabulary")
             this.vocabularyNotificationMessage = "Failed to save vocabulary: " + this.customTerminologyName
@@ -1196,7 +1216,6 @@ export default {
           // clear the custom terminology name used in the save terminology modal form
           this.customTerminologyCreateNew = ""
           this.customTerminologySelected = ""
-          this.customTerminologyUnsaved = [this.getEmptyTerminologyRecord()]
           this.customTerminologySaved = []
         })
       )
@@ -1262,8 +1281,6 @@ export default {
           console.log(csv)
           const json = this.csvJSON(csv)
           this.customTerminologySaved = json
-          // save phrases from the currently selected terminology
-          // this.customTerminologySaved = res.data.vocabulary.map(({Phrase, SoundsLike, IPA, DisplayAs}) => ({original_phrase: "", new_phrase: Phrase, sounds_like: SoundsLike, IPA: IPA, display_as: DisplayAs}));
         })
       )
     },
@@ -1346,11 +1363,14 @@ export default {
     add_language_request() {
       console.log("adding language " + this.newLanguageCode)
       // add the new language as a new column in the terminology table
-      this.translationsCollection = this.translationsCollection.concat({"text":this.newLanguageCode, "value": this.newLanguageCode})
+      const language_label = this.translateLanguages.filter(x => (x.value === this.newLanguageCode))[0].text;
+      this.translationsCollection = this.translationsCollection.concat({"text":language_label, "value": this.newLanguageCode})
       // add the new language as a column in the terminology table data
-      const terminology_row = this.customTerminologySaved.pop()
-      terminology_row[this.newLanguageCode] = ""
-      this.customTerminologySaved.push(terminology_row)
+      if (this.customTerminologySaved.length > 0) {
+        const terminology_row = this.customTerminologySaved.pop()
+        terminology_row[this.newLanguageCode] = ""
+        this.customTerminologySaved.push(terminology_row)
+      }
       // reset the language code used in the add-language-modal form
       this.newLanguageCode=""
     },
@@ -1359,20 +1379,27 @@ export default {
     },
     remove_language_request() {
       console.log("removing language " + this.removeLanguageCode)
-      for (let i=0; i<this.customTerminologySaved.length; i++) {
-        delete this.customTerminologySaved[i][this.removeLanguageCode]
+      if (this.customTerminologySelected === '') {
+        // add the new language as a new column in the terminology table
+        for (let i = 0; i < this.translationsCollection.length; i++) {
+          delete this.translationsCollection[i][this.removeLanguageCode]
+        }
       }
-      // This pop and push seems to be necessary in order to force the terminology table to refresh
-      const terminology_row = this.customTerminologySaved.pop()
-      this.customTerminologySaved.push(terminology_row)
-
+      else if (this.customTerminologySelected !== '') {
+        for (let i = 0; i < this.customTerminologySaved.length; i++) {
+          delete this.customTerminologySaved[i][this.removeLanguageCode]
+        }
+        // This pop and push seems to be necessary in order to force the terminology table to refresh
+        const terminology_row = this.customTerminologySaved.pop()
+        this.customTerminologySaved.push(terminology_row)
+      }
       this.translationsCollection = this.translationsCollection.filter(x => x.value !== this.removeLanguageCode)
       // reset the language code used in the form on remove-language-modal
       this.removeLanguageCode=""
     },
     add_terminology_row(index) {
-      // The index provided is the index into the concatenated unsaved and saved terminologies
-      // Unsaved vocab will always be listed first, so we convert the index as follows so that
+      // The index provided is the index into the concatenated unsaved and saved terminologies.
+      // Unsaved vocab will always be listed first, so we're converting the index here so that
       // we can splice appropriately in the unsaved or saved terminology.
       if (index < this.customTerminologyUnsaved.length) {
         this.customTerminologyUnsaved.splice(index+1, 0, this.getEmptyTerminologyRecord())

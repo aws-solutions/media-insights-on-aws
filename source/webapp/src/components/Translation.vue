@@ -138,7 +138,7 @@
       </b-modal>
       <b-modal ref="terminology-modal" size="lg" title="Save Terminology?" :ok-disabled="validTerminologyName === false || (customTerminologySelected === '' && customTerminologyCreateNew === '') || customTerminologyUnion.length === 0 || validCSV === false" ok-title="Save" @ok="saveTerminology()" @cancel="customTerminologySelected=''; customTerminologySaved=[]; customTerminologyUnsaved=[]">
         <div v-if="customTerminologyList.length > 0">
-          Existing terminologies for {{ selected_lang }}:
+          Existing terminologies for {{ translateLanguages.filter(x => x.value === selected_lang_code).map(x => x.text)[0] }}:
         </div>
         <b-form-group v-if="customTerminologyList.length > 0">
           <b-form-radio-group

@@ -131,7 +131,8 @@
                   name="flavour-3"
                 ></b-form-checkbox-group>
                 <div v-if="enabledOperators.includes('Translate') && customTerminologyList.length > 0 && customTerminologyList.filter(x => x.SourceLanguageCode === sourceLanguageCode).length > 0">
-                  Custom Terminologies (optional):
+                  <div v-if="customTerminology.length > 0"><b>Custom Terminologies:</b> ({{ customTerminology.length }} selected)</div>
+                  <div v-else><b>Custom Terminologies:</b></div>
                   <b-form-select
                     v-model="customTerminology"
                     :options="customTerminologyList.filter(x => x.SourceLanguageCode === sourceLanguageCode).map( x => { return {'text': x.Name + ' (' + x.TargetLanguageCodes + ')'  , 'value': {'Name': x.Name, 'TargetLanguageCodes': x.TargetLanguageCodes}}})"
@@ -139,15 +140,17 @@
                   >
                   </b-form-select>
                   <div v-if="overlappingTerminologies.length > 0" style="color:red">
-                    You cannot select terminologies that define translations for the same language. Please select only one of:
+                    You must not select terminologies that define translations for the same language. The following terminologies overlap:
                     <ul id="overlapping_terminologies">
                       <li v-for="terminology in overlappingTerminologies">
                         {{ terminology }}
                       </li>
                     </ul>
                   </div>
+                </div>
+                <div v-if="enabledOperators.includes('Translate')" >
                   <b-form-group>
-                    Target Languages
+                    <b>Target Languages:</b>
                     <div v-if="textFormError" style="color:red">
                       {{ textFormError }}
                     </div>

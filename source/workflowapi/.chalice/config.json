@@ -2,6 +2,7 @@
   "version": "2.0",
   "app_name": "workflowapi",
   "environment_variables": {
+    "STACK_SHORT_UUID": "",
     "SYSTEM_TABLE_NAME":"",
     "WORKFLOW_TABLE_NAME":"",
     "STAGE_TABLE_NAME":"",

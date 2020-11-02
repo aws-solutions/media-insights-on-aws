@@ -51,6 +51,7 @@ patch_all()
 logger = logging.getLogger('boto3')
 logger.setLevel(logging.INFO)
 
+STACK_SHORT_UUID = os.environ["STACK_SHORT_UUID"]
 SYSTEM_TABLE_NAME = os.environ["SYSTEM_TABLE_NAME"]
 WORKFLOW_TABLE_NAME = os.environ["WORKFLOW_TABLE_NAME"]
 STAGE_TABLE_NAME = os.environ["STAGE_TABLE_NAME"]
@@ -1247,7 +1248,7 @@ def create_workflow(trigger, workflow):
 
         # Build state machine
         response = SFN_CLIENT.create_state_machine(
-            name=workflow["Name"],
+            name=workflow["Name"] + "-" + STACK_SHORT_UUID,
             definition=json.dumps(workflow["WorkflowAsl"]),
             roleArn=STAGE_EXECUTION_ROLE,
             tags=[

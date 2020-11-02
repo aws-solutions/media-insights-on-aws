@@ -8,6 +8,10 @@
       "Type": "String",
       "Description": "S3 Key of the dataplane deployment package"
     },
+    "ShortUUID": {
+      "Type": "String",
+      "Description": "A short UUID that is going to be appended to resource names"
+    },
     "SystemTableName": {
       "Type": "String",
       "Description": "Table used to store system configuration"
@@ -279,6 +283,9 @@
         "Runtime": "python3.7",
         "Environment": {
           "Variables": {
+                "STACK_SHORT_UUID": {
+                  "Ref": "ShortUUID"
+                },
                 "SYSTEM_TABLE_NAME": {
                         "Ref":"SystemTableName"
                 },
@@ -337,6 +344,9 @@
         "Runtime": "python3.7",
         "Environment": {
           "Variables": {
+                "STACK_SHORT_UUID": {
+                  "Ref": "ShortUUID"
+                },
                 "SYSTEM_TABLE_NAME": {
                         "Ref":"SystemTableName"
                 },

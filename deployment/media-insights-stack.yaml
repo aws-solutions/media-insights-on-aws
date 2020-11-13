@@ -1049,7 +1049,7 @@ Resources:
             - Outputs.APIHandlerName
         DataPlaneBucket: !Ref Dataplane
         MediaInsightsEnginePython37Layer: !Ref MediaInsightsEnginePython37Layer
-        StepfunctionRole: !GetAtt StepFunctionRole.Arn
+
 
 Outputs:
   # TODO: Add outputs for rest api IDs of workflow/dataplane apis

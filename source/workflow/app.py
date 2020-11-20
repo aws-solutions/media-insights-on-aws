@@ -564,7 +564,7 @@ def get_execution_errors(arn):
         for page in page_iterator:
             for event in page["events"]:
               if (any(sub in event["type"] for sub in ['Failed', 'Aborted', 'TimedOut'])):
-                  logger.info("Found error event: {}".format(json.dumps(event)))
+                  logger.info("Found error event: {}".format(event))
                   executions.append(event)
 
         return executions

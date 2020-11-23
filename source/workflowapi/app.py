@@ -35,7 +35,16 @@ app = Chalice(app_name=APP_NAME)
 app.debug = True
 API_VERSION = "2.0.0"
 
-patch_all()
+
+def is_aws():
+    if os.getenv('AWS_LAMBDA_FUNCTION_NAME') is None:
+        return False
+    else:
+        return True
+
+
+if is_aws():
+    patch_all()
 
 # Setup logging
 # Logging Configuration
@@ -2065,7 +2074,6 @@ def list_workflow_executions_by_assetid(AssetId):
         KeyConditionExpression='AssetId = :assetid',
         ProjectionExpression = projection_expression
         )
-
     workflow_executions = response['Items']
     while 'LastEvaluatedKey' in response:
         response = table.query(

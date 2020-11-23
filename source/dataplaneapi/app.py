@@ -18,7 +18,15 @@ import logging
 import datetime
 import base64
 
-patch_all()
+def is_aws():
+    if os.getenv('AWS_LAMBDA_FUNCTION_NAME') is None:
+        return False
+    else:
+        return True
+
+
+if is_aws():
+    patch_all()
 
 # TODO: Add additional exception and response codes
 # TODO: Narrow exception scopes

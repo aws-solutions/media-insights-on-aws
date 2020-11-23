@@ -71,6 +71,17 @@ positional argument for what component to run the tests on:
 * `./run_e2e.sh dataplaneapi`
 
 
+### Coverage
+
+#### Workflow API
+
+| API Method | Unit | Integ | e2e |
+| ------------- | ------------- | ---------- | -------- |
+| `POST /workflow/execution`  | ✅ | ❌ | ✅
 
 
+#### Dataplane API
 
+| API Method | Unit | Integ | e2e |
+| ------------- | ------------- | ---------- | -------- |
+| `POST /create`  | ✅ | ✅ | ✅

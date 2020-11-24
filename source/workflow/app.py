@@ -54,8 +54,6 @@ else:
 
 if "ShortUUID" in os.environ:
     ShortUUID = os.environ["ShortUUID"]
-else:
-    ""
 
 if "DEFAULT_MAX_CONCURRENT_WORKFLOWS" in os.environ:
     DEFAULT_MAX_CONCURRENT_WORKFLOWS = int(os.environ["DEFAULT_MAX_CONCURRENT_WORKFLOWS"])
@@ -607,11 +605,10 @@ def workflow_error_handler_lambda (event, context):
     
     logger.info("workflow_error_handler_lambda: {}".format(json.dumps(event))) 
     
-    if ShortUUID == "":
+    if not ShortUUID:
         raise Exception('ShortUUID is not set in lambda environment.') 
-    else:
-        logger.info("Process step function error event for stack with ShortUUID {}".format(ShortUUID))
-    
+        
+    logger.info("Process step function error event for stack with ShortUUID {}".format(ShortUUID))
     
     if not ("detail" in event): 
         raise Exception('event.detail is missing.') 

@@ -29,12 +29,14 @@ def gen_s3_streaming_object(content):
 
 
 def test_index(test_client):
+    print('GET /')
     response = test_client.http.get('/')
     assert response.body == b'{"hello":"world"}'
     print("Pass")
 
 
 def test_create_asset(test_client, s3_client_stub, ddb_resource_stub):
+    print('POST /create')
     s3_client_stub.add_response(
         'put_object',
         expected_params={'Bucket': 'testDataplaneBucketName', 'Key': botocore.stub.ANY},
@@ -82,6 +84,7 @@ def test_create_asset(test_client, s3_client_stub, ddb_resource_stub):
 
 
 def test_put_asset_metadata_non_paginated(test_client, s3_client_stub, ddb_resource_stub):
+    print('POST /metadata/{asset_id}')
     test_asset_id = str(uuid.uuid4())
     test_method_input = {"OperatorName": "testOperator",
                     "Results": {"serviceName": "testService", "someValue": {"nextValue": "testValue"}},
@@ -130,6 +133,7 @@ def test_put_asset_metadata_non_paginated(test_client, s3_client_stub, ddb_resou
 
 
 def test_put_asset_metadata_paginated(test_client, s3_client_stub, ddb_resource_stub):
+    print('POST /metadata/{asset_id}?paginated=true')
     test_asset_id = str(uuid.uuid4())
     test_method_input = {"OperatorName": "testOperator",
                     "Results": {"serviceName": "testService", "someValue": {"nextValue": "testValue"}},
@@ -167,6 +171,7 @@ def test_put_asset_metadata_paginated(test_client, s3_client_stub, ddb_resource_
 
 
 def test_put_asset_metadata_paginated_end(test_client, s3_client_stub, ddb_resource_stub):
+    print('POST /metadata/{asset_id}?paginated=true&end=true')
     test_s3_get_object_response = {'ResponseMetadata': {'RequestId': 'C6B8150894ABC0CE',
                                                         'HostId': 'AF2tM9QcyL4DJlvHpccJBKOgOQbydnQLjfplgHGT8Fo+BNWrzjCeRcNyBkzKoTru1pG5nFWfPfM=',
                                                         'HTTPStatusCode': 200, 'HTTPHeaders': {

@@ -2,16 +2,8 @@ AWSTemplateFormatVersion: "2010-09-09"
 Description: Media Insights Engine - Base AWS CloudFormation template that provisions the core Media Insights Engine services and provides parameters for enabling additional functionality.
 
 Parameters:
-  DeployOperatorLibrary:
-    Description: Deploy operator library
-    Type: String
-    Default: Yes
-    AllowedValues:
-      - Yes
-      - No
-
-  DeployTestWorkflow:
-    Description: Deploy test workflow which contains operator, stage and workflow stubs for integration testing
+  DeployTestResources:
+    Description: Deploy test resources which contains lambdas required for integration and e2e testing
     Type: String
     Default: No
     AllowedValues:
@@ -57,8 +49,7 @@ Metadata:
           - MaxConcurrentWorkflows
 
 Conditions:
-  DeployOperatorLibraryCondition: !Equals [!Ref DeployOperatorLibrary, Yes]
-  DeployTestWorkflowCondition: !Equals [!Ref DeployTestWorkflow, Yes]
+  DeployTestResourcesCondition: !Equals [!Ref DeployTestResources, Yes]
   DeployAnalyticsPipelineCondition: !Equals [!Ref DeployAnalyticsPipeline, Yes]
   EnableTraceOnEntryPoints: !Equals [!Ref EnableXrayTrace, Yes]
 
@@ -987,7 +978,6 @@ Resources:
           ]
 
   OperatorLibrary:
-    Condition: DeployOperatorLibraryCondition
     DependsOn:
       - MediaInsightsWorkflowApi
       - MediaInsightsDataplaneApiStack
@@ -1017,8 +1007,8 @@ Resources:
         MediaInsightsEnginePython37Layer: !Ref MediaInsightsEnginePython37Layer
         MediaInsightsEnginePython36Layer: !Ref MediaInsightsEnginePython36Layer
 
-  TestWorkflow:
-    Condition: DeployTestWorkflowCondition
+  TestResources:
+    Condition: DeployTestResourcesCondition
     DependsOn:
       - MediaInsightsWorkflowApi
       - MediaInsightsDataplaneApiStack
@@ -1100,6 +1090,6 @@ Outputs:
     Export:
       Name: !Join [":", [!Ref "AWS::StackName", AnalyticsStreamArn]]
   TestStack:
-    Condition: DeployTestWorkflowCondition
-    Value: !Ref TestWorkflow
+    Condition: DeployTestResourcesCondition
+    Value: !Ref TestResources
 

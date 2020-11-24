@@ -52,6 +52,9 @@ if "SYSTEM_TABLE_NAME" in os.environ:
 else:
     ""
 
+if "ShortUUID" in os.environ:
+    ShortUUID = os.environ["ShortUUID"]
+
 if "DEFAULT_MAX_CONCURRENT_WORKFLOWS" in os.environ:
     DEFAULT_MAX_CONCURRENT_WORKFLOWS = int(os.environ["DEFAULT_MAX_CONCURRENT_WORKFLOWS"])
 else:
@@ -105,7 +108,7 @@ def workflow_scheduler_lambda(event, context):
     empty = False
 
     try:
-        print(json.dumps(event))
+        logger.info(json.dumps(event))
 
         # Get the MaxConcurrent configruation parameter, if it is not set, use the default
         system_table = DYNAMO_RESOURCE.Table(SYSTEM_TABLE_NAME)
@@ -301,7 +304,7 @@ def complete_stage_execution(trigger, stage_name, status, outputs, workflow_exec
                 if "Media" in operation:
                     for mediaType in operation["Media"].keys():
                         # replace media with trasformed or created media from this stage
-                        print(mediaType)
+                        logger.info(mediaType)
                         if mediaType in stageOutputMediaTypeKeys:
 
                             raise ValueError(
@@ -314,7 +317,7 @@ def complete_stage_execution(trigger, stage_name, status, outputs, workflow_exec
                 stageOutputMetadataKeys = []
                 if "MetaData" in operation:
                     for key in operation["MetaData"].keys():
-                        print(key)
+                        logger.info(key)
                         if key in stageOutputMetadataKeys:
                             raise ValueError(
                                 "Duplicate key '%s' found in operation ouput metadata.  Metadata keys must be unique within a stage." % key)
@@ -383,7 +386,7 @@ def complete_stage_execution(trigger, stage_name, status, outputs, workflow_exec
 def start_next_stage_execution(trigger, stage_name, workflow_execution):
 
     try:
-        print("START NEXT STAGE: stage_name {}".format(stage_name))
+        logger.info("START NEXT STAGE: stage_name {}".format(stage_name))
 
         execution_table = DYNAMO_RESOURCE.Table(WORKFLOW_EXECUTION_TABLE_NAME)
 
@@ -467,7 +470,7 @@ def start_next_stage_execution(trigger, stage_name, workflow_execution):
                 )
                 
                 update_workflow_execution_status(workflow_execution["Id"], workflow_execution["Status"], message)
-                print(json.dumps(workitem))
+                logger.info(json.dumps(workitem))
 
             except Exception as e:
                 message = "Exception queuing work item: {} ".format(e)
@@ -503,7 +506,7 @@ def update_workflow_execution_status(id, status, message):
     :param status: The new status of the workflow execution
 
     """
-    print("Update workflow execution {} set status = {}".format(id, status))
+    logger.info("Update workflow execution {} set status = {}".format(id, status))
     execution_table = DYNAMO_RESOURCE.Table(WORKFLOW_EXECUTION_TABLE_NAME)
     
     if status == awsmie.WORKFLOW_STATUS_ERROR:
@@ -542,4 +545,108 @@ def update_workflow_execution_status(id, status, message):
             InvocationType='Event'
         )
 
+# Find all of the execution error events for a state machine execution
+def get_execution_errors(arn):
+    
+    try:
+        
+        executions = []
+        paginator = SFN_CLIENT.get_paginator('get_execution_history')
 
+        # return all the history
+        page_iterator = paginator.paginate(executionArn=arn, 
+                maxResults= 20, 
+                reverseOrder=True)
+
+        # return only the history with exceptions
+        for page in page_iterator:
+            for event in page["events"]:
+              if (any(sub in event["type"] for sub in ['Failed', 'Aborted', 'TimedOut'])):
+                  logger.info("Found error event: {}".format(event))
+                  executions.append(event)
+
+        return executions
+    
+    except:
+        logger.error("Unable to retrieve execution history for state machine termination")
+        raise
+
+# Find the earliest error message in the executions and retrieve additonal info if available
+def parse_execution_error(arn, executions, status): 
+
+    message = "Caught Step Function Execution Status Change event for execution: "+ arn +", status:"+ status
+
+    # return the cause info from the most recent failure, if any
+    for execution in executions:
+      for key, value in execution.items():
+        if (any(sub in key for sub in ['Failed', 'Aborted', 'TimedOut'])):
+          if "cause" in value:
+              message = message+", cause: "+value["cause"] 
+              break
+
+    return message
+
+# This lambda is invoked for Step Functions Execution Status Change events 
+# that contain the status [ERROR, ABORTED, TIME_OUT].  Failures that occur
+# within the steps of a workflow state machine are handled by the 
+# OperotorFailed lambda function, but if the state machine service throws 
+# an exception that causes the state machine to terminate immediately, 
+# it can't be handled within the state machine because the execution
+# is haulted.
+# 
+# Info on events handled here: 
+#     https://docs.aws.amazon.com/step-functions/latest/dg/cw-events.html 
+#
+# Propagate the error and cause to the workflow control plane to close off
+# the workflow execution
+def workflow_error_handler_lambda (event, context): 
+ 
+  try: 
+    
+    logger.info("workflow_error_handler_lambda: {}".format(json.dumps(event))) 
+    
+    if not ShortUUID:
+        raise Exception('ShortUUID is not set in lambda environment.') 
+        
+    logger.info("Process step function error event for stack with ShortUUID {}".format(ShortUUID))
+    
+    if not ("detail" in event): 
+        raise Exception('event.detail is missing.') 
+    if not "name" in event["detail"]:
+        raise Exception('name is missing in event.detail.')
+    if not "status" in event["detail"]:
+        raise Exception('status is missing in event.detail.')
+    if not "executionArn" in event["detail"]:
+        raise Exception('status is missing in event.detail.')
+
+    # only process events for state machines that are part of this stack
+    if not event["detail"]["stateMachineArn"].find(ShortUUID):
+        logger.info("Event not processed: This event is not from the stack with ShortUUID {}".format(ShortUUID))
+        return {}
+
+    executions = get_execution_errors(event["detail"]["executionArn"])
+
+    message = parse_execution_error(event["detail"]["executionArn"], executions, event["detail"]["status"]) 
+ 
+    #input = event.detail.input 
+    stateMachineExecution = event["detail"]["executionArn"]
+
+    # Check the currently active workflows for this execution arn and set the 
+    # status to error if found.  
+    started_workflows = list_workflow_executions_by_status(awsmie.WORKFLOW_STATUS_STARTED) 
+    for workflow in started_workflows:
+        if workflow["StateMachineExecutionArn"] == event["detail"]["executionArn"]:
+            update_workflow_execution_status(workflow["Id"], awsmie.WORKFLOW_STATUS_ERROR, message)
+ 
+    response = {  
+      "stateMachineExecution": stateMachineExecution, 
+      "errorMessage": message 
+    } 
+
+    logger.info("workflow_error_handler_lambda caught error: {}".format(json.dumps(response)))
+ 
+    return response
+  except Exception as e:
+    logger.error("Unable to handle workflow step function error: {}".format(e))
+    raise(e)
+ 

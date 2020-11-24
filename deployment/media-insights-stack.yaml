@@ -284,6 +284,13 @@ Resources:
         - PolicyName: !Sub "${AWS::StackName}-operation-lambda"
           PolicyDocument:
             Statement:
+              - Effect: "Allow"
+                Action:
+                  - "states:DescribeExecution"
+                  - "states:GetExecutionHistory"
+                  - "states:StopExecution"
+                Resource:
+                  - !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:execution:*:*"
               - Effect: Allow
                 Action:
                   - states:StartExecution
@@ -769,6 +776,83 @@ Resources:
             - Arn
     Type: AWS::Lambda::Function
 
+  # Workflow state machine error handler
+  WorkflowErrorHandlerLambda:
+    Properties:
+      Environment:
+        Variables:
+          STAGE_EXECUTION_QUEUE_URL: !Ref StageExecutionQueue
+          STAGE_TABLE_NAME: !Ref StageTable
+          OPERATION_TABLE_NAME: !Ref OperationTable
+          WORKFLOW_EXECUTION_TABLE_NAME: !Ref WorkflowExecutionTable
+          WORKFLOW_TABLE_NAME: !Ref WorkflowTable
+          SYSTEM_TABLE_NAME: !Ref SystemTable
+          DEFAULT_MAX_CONCURRENT_WORKFLOWS: !Ref MaxConcurrentWorkflows
+          ShortUUID: !GetAtt GetShortUUID.Data
+          WORKFLOW_SCHEDULER_LAMBDA_ARN:
+            Fn::GetAtt:
+              - WorkflowSchedulerLambda
+              - Arn
+      Handler: app.workflow_error_handler_lambda
+      TracingConfig: 
+          Mode: !If [EnableTraceOnEntryPoints, "Active", "PassThrough"]
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+            "workflow.zip",
+            ],
+          ]
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
+      MemorySize: 256
+      Role:
+        Fn::GetAtt:
+          - OperationLambdaExecutionRole
+          - Arn
+      Runtime: python3.7
+      Timeout: 900
+      ReservedConcurrentExecutions: 1
+      DeadLetterConfig:
+        TargetArn:
+          Fn::GetAtt:
+            - WorkflowExecutionLambdaDeadLetterQueue
+            - Arn
+    Type: AWS::Lambda::Function
+
+  StateMachineErrorCloudWatchEvent:
+    Type: AWS::Events::Rule
+    Properties:
+        Name: !Sub "${AWS::StackName}-state-machine-error-handler"
+        Description: "state machine error handler"  
+        EventPattern:
+            source:
+                - "aws.states"
+            detail-type:
+                - "Step Functions Execution Status Change"
+            detail:
+                status:
+                    - FAILED
+                    - ABORTED
+                    - TIMED_OUT
+        State: ENABLED
+        Targets:
+            -
+                Id: !Ref WorkflowErrorHandlerLambda
+                Arn: !GetAtt WorkflowErrorHandlerLambda.Arn
+
+  PermissionToInvokeLambda:
+      Type: AWS::Lambda::Permission
+      Properties:
+          FunctionName: !Ref WorkflowErrorHandlerLambda
+          Action: lambda:InvokeFunction
+          Principal: events.amazonaws.com
+          SourceArn: !GetAtt StateMachineErrorCloudWatchEvent.Arn
+  
+
   CompleteStageLambda:
     DependsOn:
       - WorkflowSchedulerLambda
@@ -864,7 +948,7 @@ Resources:
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Runtime: "python3.7"
-
+  
   # DataPlane API Stack
   MediaInsightsDataplaneApiStack:
     Type: "AWS::CloudFormation::Stack"

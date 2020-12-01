@@ -78,7 +78,7 @@ positional argument for what component to run the tests on:
 | API Method | Unit | Integ | e2e |
 | ------------- | ------------- | ---------- | -------- |
 | `POST /workflow/execution`  | ✅ | ❌ | ✅
-| `POST /workflow/execution/{AssetId}`  | ✅ | ❌ | ❌
+| `GET /workflow/execution/{AssetId}`  | ✅ | ❌ | ❌
 | `GET /workflow/execution/{Id}`  | ✅ | ❌ | ✅
 | `POST /system/configuration`  | ❌ | ❌ | ❌
 | `GET /system/configuration`  | ❌ | ❌ | ❌

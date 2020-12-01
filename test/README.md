@@ -78,6 +78,22 @@ positional argument for what component to run the tests on:
 | API Method | Unit | Integ | e2e |
 | ------------- | ------------- | ---------- | -------- |
 | `POST /workflow/execution`  | ✅ | ❌ | ✅
+| `POST /workflow/execution/{AssetId}`  | ✅ | ❌ | ❌
+| `GET /workflow/execution/{Id}`  | ✅ | ❌ | ✅
+| `POST /system/configuration`  | ❌ | ❌ | ❌
+| `GET /system/configuration`  | ❌ | ❌ | ❌
+| `GET /workflow/operation/`  | ❌ | ✅ | ✅
+| `POST /workflow/operation/`  | ❌ | ✅ | ❌
+| `DELETE /workflow/operation/`  | ❌ | ✅ | ❌
+| `GET /workflow/`  | ❌ | ❌ | ✅
+| `POST /workflow/`  | ❌ | ✅ | ✅
+| `DELETE /workflow/`  | ❌ | ✅ | ✅
+| `GET /workflow/stage`  | ❌ | ✅ | ✅
+| `POST /workflow/stage`  | ❌ | ✅ | ✅
+| `DELETE /workflow/stage`  | ❌ | ✅ | ✅
+| `GET /workflow/configuruation`  | ❌ | ❌ | ✅
+
+
 
 
 #### Dataplane API
@@ -85,3 +101,8 @@ positional argument for what component to run the tests on:
 | API Method | Unit | Integ | e2e |
 | ------------- | ------------- | ---------- | -------- |
 | `POST /create`  | ✅ | ✅ | ✅
+| `POST /metadata/{asset_id}`  | ✅ | ✅ | ✅
+| `GET /metadata/{asset}/{operator}`  | ❌ | ✅ | ✅
+| `GET /metadata/{asset}`  | ❌ | ❌ | ❌
+| `DELETE /metadata/{asset}/{operator}`  | ❌ | ✅ | ✅
+| `DELETE /metadata/{asset}`  | ❌ | ✅ | ✅

@@ -1,13 +1,11 @@
 import pytest
-import sys
 from chalice.test import Client
 from botocore.stub import Stubber
-
-sys.path.append('source/dataplaneapi/')
 
 
 @pytest.fixture(autouse=True)
 def mock_env_variables(monkeypatch):
+    monkeypatch.syspath_prepend('../../source/dataplaneapi/')
     monkeypatch.setenv("DATAPLANE_TABLE_NAME", "testDataplaneTableName")
     monkeypatch.setenv("DATAPLANE_BUCKET", "testDataplaneBucketName")
 
@@ -19,7 +17,7 @@ def test_client(mock_env_variables):
         yield client
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def s3_client_stub(mock_env_variables):
     from app import s3_client
     with Stubber(s3_client) as stubber:
@@ -27,7 +25,7 @@ def s3_client_stub(mock_env_variables):
         stubber.assert_no_pending_responses()
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def ddb_resource_stub(mock_env_variables):
     from app import dynamo_resource
     with Stubber(dynamo_resource.meta.client) as stubber:

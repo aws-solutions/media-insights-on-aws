@@ -14,9 +14,7 @@ Parameters:
   DataPlaneBucket:
     Type: "String"
     Description: "Bucket for the dataplane"
-  StepfunctionRole:
-    Type: String
-    Description: "Arn of the MIE stepfunction execution role"
+
 
 Mappings:
     SourceCode:
@@ -372,145 +370,142 @@ Resources:
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
     Type: AWS::Lambda::Function
 
-# Build Operations
-
-  VideoSyncOperationCustomResource:
-    Type: Custom::CustomResource
-    Properties:
-      ServiceToken: !Ref WorkflowCustomResourceArn
-      ResourceType: "Operation"
-      Name: "video-sync-ok"
-      Type: "Sync"
-      Configuration:
-          {
-            "MediaType": "Video",
-            "Enabled": true
-          }
-      StartLambdaArn: !GetAtt VideoSyncOKLambda.Arn
-      StateMachineExecutionRoleArn: !Ref StepfunctionRole
-
-  VideoAsyncOperationCustomResource:
-    Type: Custom::CustomResource
-    Properties:
-      ServiceToken: !Ref WorkflowCustomResourceArn
-      ResourceType: "Operation"
-      Name: "video-async-ok"
-      Type: "Async"
-      Configuration:
-          {
-            "MediaType": "Video",
-            "Enabled": true
-          }
-      StartLambdaArn: !GetAtt VideoAsyncOKLambda.Arn
-      MonitorLambdaArn: !GetAtt VideoAsyncOKMonitorLambda.Arn
-      StateMachineExecutionRoleArn: !Ref StepfunctionRole
-
-  AudioAsyncOperationCustomResource:
-    Type: Custom::CustomResource
-    Properties:
-      ServiceToken: !Ref WorkflowCustomResourceArn
-      ResourceType: "Operation"
-      Name: "audio-async-ok"
-      Type: "Async"
-      Configuration:
-          {
-            "MediaType": "Audio",
-            "Enabled": true
-          }
-      StartLambdaArn: !GetAtt AudioAsyncOKLambda.Arn
-      MonitorLambdaArn: !GetAtt AudioAsyncOKMonitorLambda.Arn
-      StateMachineExecutionRoleArn: !Ref StepfunctionRole
-
-  # Build stages
-
-  AudioVideoAsyncStageCustomResource:
-    DependsOn:
-      - AudioAsyncOperationCustomResource
-      - VideoAsyncOperationCustomResource
-    Type: Custom::CustomResource
-    Properties:
-      ServiceToken: !Ref WorkflowCustomResourceArn
-      ResourceType: "Stage"
-      Name: "audio-video-async-ok-stage"
-      Operations:
-        - !GetAtt AudioAsyncOperationCustomResource.Name
-        - !GetAtt VideoAsyncOperationCustomResource.Name
-
-  # Build workflows
-
-
-  TestWorkflowSingleStageCustomResource:
-    DependsOn:
-      - VideoAsyncOperationCustomResource
-    Type: Custom::CustomResource
-    Properties:
-      ServiceToken: !Ref WorkflowCustomResourceArn
-      ResourceType: "Workflow"
-      Name: "TestWorkflowSingleStage"
-      Stages: !Sub
-        - |-
-          {
-            "${stagename}":
-              {
-                "End": true
-            }
-          }
-        - {stagename: !GetAtt VideoAsyncOperationCustomResource.StageName}
-      StartAt: !GetAtt VideoAsyncOperationCustomResource.StageName
-
-
-  TestWorkflowMultiStageCustomResource:
-    DependsOn:
-      - AudioVideoAsyncStageCustomResource
-      - VideoAsyncOperationCustomResource
-    Type: Custom::CustomResource
-    Properties:
-      ServiceToken: !Ref WorkflowCustomResourceArn
-      ResourceType: "Workflow"
-      Name: "TestWorkflowMultiStage"
-      Stages: !Sub
-        - |-
-          {
-            "${video_sync}":
-              {
-                "Next":"${audio_video_async}"
-              },
-            "${audio_video_async}":
-              {
-                "Next":"${video_async}"
-              },
-            "${video_async}":
-              {
-                "End": true
-            }
-          }
-        - {video_async: !GetAtt VideoAsyncOperationCustomResource.StageName, audio_video_async: !GetAtt AudioVideoAsyncStageCustomResource.Name, video_sync: !GetAtt VideoSyncOperationCustomResource.StageName}
-      StartAt: !GetAtt VideoSyncOperationCustomResource.StageName
-
-
-  TestWorkflowMultiStage2CustomResource:
-    DependsOn:
-      - AudioVideoAsyncStageCustomResource
-      - VideoAsyncOperationCustomResource
-    Type: Custom::CustomResource
-    Properties:
-      ServiceToken: !Ref WorkflowCustomResourceArn
-      ResourceType: "Workflow"
-      Name: "TestWorkflowMultiStage2"
-      Stages: !Sub
-        - |-
-          {
-            "${audio_video_async}":
-              {
-                "Next":"${video_async}"
-              },
-            "${video_async}":
-              {
-                "End": true
-            }
-          }
-        - {video_async: !GetAtt VideoAsyncOperationCustomResource.StageName, audio_video_async: !GetAtt AudioVideoAsyncStageCustomResource.Name}
-      StartAt: !GetAtt AudioVideoAsyncStageCustomResource.Name
+## Build Operations
+#
+#  VideoSyncOperationCustomResource:
+#    Type: Custom::CustomResource
+#    Properties:
+#      ServiceToken: !Ref WorkflowCustomResourceArn
+#      ResourceType: "Operation"
+#      Name: "video-sync-ok"
+#      Type: "Sync"
+#      Configuration:
+#          {
+#            "MediaType": "Video",
+#            "Enabled": true
+#          }
+#      StartLambdaArn: !GetAtt VideoSyncOKLambda.Arn
+#
+#  VideoAsyncOperationCustomResource:
+#    Type: Custom::CustomResource
+#    Properties:
+#      ServiceToken: !Ref WorkflowCustomResourceArn
+#      ResourceType: "Operation"
+#      Name: "video-async-ok"
+#      Type: "Async"
+#      Configuration:
+#          {
+#            "MediaType": "Video",
+#            "Enabled": true
+#          }
+#      StartLambdaArn: !GetAtt VideoAsyncOKLambda.Arn
+#      MonitorLambdaArn: !GetAtt VideoAsyncOKMonitorLambda.Arn
+#
+#  AudioAsyncOperationCustomResource:
+#    Type: Custom::CustomResource
+#    Properties:
+#      ServiceToken: !Ref WorkflowCustomResourceArn
+#      ResourceType: "Operation"
+#      Name: "audio-async-ok"
+#      Type: "Async"
+#      Configuration:
+#          {
+#            "MediaType": "Audio",
+#            "Enabled": true
+#          }
+#      StartLambdaArn: !GetAtt AudioAsyncOKLambda.Arn
+#      MonitorLambdaArn: !GetAtt AudioAsyncOKMonitorLambda.Arn
+#
+#  # Build stages
+#
+#  AudioVideoAsyncStageCustomResource:
+#    DependsOn:
+#      - AudioAsyncOperationCustomResource
+#      - VideoAsyncOperationCustomResource
+#    Type: Custom::CustomResource
+#    Properties:
+#      ServiceToken: !Ref WorkflowCustomResourceArn
+#      ResourceType: "Stage"
+#      Name: "audio-video-async-ok-stage"
+#      Operations:
+#        - !GetAtt AudioAsyncOperationCustomResource.Name
+#        - !GetAtt VideoAsyncOperationCustomResource.Name
+#
+#  # Build workflows
+#
+#
+#  TestWorkflowSingleStageCustomResource:
+#    DependsOn:
+#      - VideoAsyncOperationCustomResource
+#    Type: Custom::CustomResource
+#    Properties:
+#      ServiceToken: !Ref WorkflowCustomResourceArn
+#      ResourceType: "Workflow"
+#      Name: "TestWorkflowSingleStage"
+#      Stages: !Sub
+#        - |-
+#          {
+#            "${stagename}":
+#              {
+#                "End": true
+#            }
+#          }
+#        - {stagename: !GetAtt VideoAsyncOperationCustomResource.StageName}
+#      StartAt: !GetAtt VideoAsyncOperationCustomResource.StageName
+#
+#
+#  TestWorkflowMultiStageCustomResource:
+#    DependsOn:
+#      - AudioVideoAsyncStageCustomResource
+#      - VideoAsyncOperationCustomResource
+#    Type: Custom::CustomResource
+#    Properties:
+#      ServiceToken: !Ref WorkflowCustomResourceArn
+#      ResourceType: "Workflow"
+#      Name: "TestWorkflowMultiStage"
+#      Stages: !Sub
+#        - |-
+#          {
+#            "${video_sync}":
+#              {
+#                "Next":"${audio_video_async}"
+#              },
+#            "${audio_video_async}":
+#              {
+#                "Next":"${video_async}"
+#              },
+#            "${video_async}":
+#              {
+#                "End": true
+#            }
+#          }
+#        - {video_async: !GetAtt VideoAsyncOperationCustomResource.StageName, audio_video_async: !GetAtt AudioVideoAsyncStageCustomResource.Name, video_sync: !GetAtt VideoSyncOperationCustomResource.StageName}
+#      StartAt: !GetAtt VideoSyncOperationCustomResource.StageName
+#
+#
+#  TestWorkflowMultiStage2CustomResource:
+#    DependsOn:
+#      - AudioVideoAsyncStageCustomResource
+#      - VideoAsyncOperationCustomResource
+#    Type: Custom::CustomResource
+#    Properties:
+#      ServiceToken: !Ref WorkflowCustomResourceArn
+#      ResourceType: "Workflow"
+#      Name: "TestWorkflowMultiStage2"
+#      Stages: !Sub
+#        - |-
+#          {
+#            "${audio_video_async}":
+#              {
+#                "Next":"${video_async}"
+#              },
+#            "${video_async}":
+#              {
+#                "End": true
+#            }
+#          }
+#        - {video_async: !GetAtt VideoAsyncOperationCustomResource.StageName, audio_video_async: !GetAtt AudioVideoAsyncStageCustomResource.Name}
+#      StartAt: !GetAtt AudioVideoAsyncStageCustomResource.Name
 
 Outputs:
 
@@ -542,19 +537,3 @@ Outputs:
     Value: !GetAtt TextAsyncOKLambda.Arn
   TextAsyncOKMonitorLambda:
     Value: !GetAtt TextAsyncOKMonitorLambda.Arn
-  StepFunctionRole:
-     Value: !Ref StepfunctionRole
-  VideoSyncOperation:
-    Value: !GetAtt VideoSyncOperationCustomResource.Name
-  VideoAsyncOperation:
-    Value: !GetAtt VideoAsyncOperationCustomResource.Name
-  AudioAsyncOperation:
-    Value: !GetAtt AudioAsyncOperationCustomResource.Name
-  AudioVideoAsyncStage:
-    Value: !GetAtt AudioVideoAsyncStageCustomResource.Name
-  TestWorkflowSingleStage:
-    Value: !GetAtt TestWorkflowSingleStageCustomResource.Name
-  TestWorkflowMultiStage:
-    Value: !GetAtt TestWorkflowMultiStageCustomResource.Name
-  TestWorkflowMultiStage2:
-    Value: !GetAtt TestWorkflowMultiStage2CustomResource.Name

@@ -115,24 +115,13 @@
                   "Action": [
                     "states:ListStateMachines",
                     "states:TagResource",
-                    "states:CreateStateMachine"
-                  ],
-                  "Resource": "*"
-                },
-                {
-                  "Effect": "Allow",
-                  "Action": [
+                    "states:CreateStateMachine",
                     "states:DescribeStateMachine",
                     "states:UpdateStateMachine",
                     "states:DeleteStateMachine",
                     "states:UntagResource"
                   ],
-                  "Resource": "*",
-                  "Condition": {
-                    "StringEquals": {
-                        "aws:ResourceTag/environment": "mie"
-                    }
-                  }
+                  "Resource": "*"
                 },
                 {
                   "Effect": "Allow",

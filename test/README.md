@@ -5,15 +5,15 @@
 MIE Framework has 3 types of tests:
 
 
-*Unit:* Tests of each functional component of the framework at the code level, e.g. scope is the code itself, checks for introduction of bugs by syntax errors, whitespace issues, correct flow control and order of execution, etc
+*Unit:* Tests of each functional component of the framework at the code level. Scope is the code itself, checks for introduction of bugs by syntax errors, whitespace issues, correct flow control and order of execution, etc
 
 *These tests can be run locally without an MIE deployment. 
 
-*Integration:* Tests of each functional component of the framework with the dependent cloud resources, e.g. scope is the ensure no bugs introduced by dependencies and that a change did not introduce a feature that is incompatible with dependencies
+*Integration:* Tests of each functional component of the framework with the dependent cloud resources. Scope is the ensure no bugs introduced by dependencies and that a change did not introduce a feature that is incompatible with dependencies, e.g. ensure the workflowapi is able to create statemachines and perform crud operations on dynamodb.   
 
 *These tests require MIE to be deployed.  
 
-*End to End:* Tests of each functional component of the framework with each other and all dependencies, e.g. scope is the ensure all components work successfully to perform the expected function
+*End to End:* Tests of each functional component of the framework with each other and all dependencies. Scope is the ensure all components work successfully to perform the expected function, e.g. ensure the workflowapi can successfully communicate with the dataplaneapi and successfully complete a workflow
 
 *These tests require MIE to be deployed. 
 

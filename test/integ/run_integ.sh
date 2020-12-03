@@ -11,7 +11,7 @@
 #  details.
 #
 # USAGE:
-#  ./run_integ_tests.sh $component
+#  ./run_integ.sh $component
 #
 ###############################################################################
 # User-defined environment variables

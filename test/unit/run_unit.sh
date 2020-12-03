@@ -4,14 +4,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 ###############################################################################
-# PURPOSE: This script runs our pytest integration test suite.
+# PURPOSE: This script runs our pytest unit test suite.
 #
 # PRELIMINARY:
 #  You must have a functioning MIE deployment. Set the required environment variables; see the testing readme for more
 #  details.
 #
 # USAGE:
-#  ./run_integ_tests.sh $component
+#  ./run_unit.sh $component
 #
 ###############################################################################
 

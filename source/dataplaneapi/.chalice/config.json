@@ -12,6 +12,7 @@
       "autogen_policy": false,
       "iam_policy_file": "policy-dev.json",
       "lambda_timeout": 120,
+      "xray": false,
       "lambda_memory_size": 2048
     }
   }

@@ -7,7 +7,6 @@
     "required": [
       "StartLambdaArn",
       "Configuration",
-      "StateMachineExecutionRoleArn",
       "Type",
       "Name"
     ],
@@ -69,16 +68,6 @@
         "default": "",
         "examples": [
           "Operation"
-        ],
-        "pattern": "^(.*)$"
-      },
-      "StateMachineExecutionRoleArn": {
-        "$id": "#/properties/StateMachineExecutionRoleArn",
-        "type": "string",
-        "title": "The Statemachineexecutionrolearn Schema",
-        "default": "",
-        "examples": [
-          "arn:aws:iam::999999999999:role/mieop-TestWorkflow-9NNV0CFGPK0-StepFunctionRole-G0DD6BL45WDG"
         ],
         "pattern": "^(.*)$"
       },

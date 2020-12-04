@@ -7,6 +7,8 @@ from chalice import NotFoundError, BadRequestError, ChaliceViewError, CognitoUse
 from botocore.client import ClientError
 from decimal import Decimal
 from botocore.config import Config
+from aws_xray_sdk.core import xray_recorder
+from aws_xray_sdk.core import patch_all
 
 import boto3
 import os
@@ -15,6 +17,16 @@ import json
 import logging
 import datetime
 import base64
+
+def is_aws():
+    if os.getenv('AWS_LAMBDA_FUNCTION_NAME') is None:
+        return False
+    else:
+        return True
+
+
+if is_aws():
+    patch_all()
 
 # TODO: Add additional exception and response codes
 # TODO: Narrow exception scopes
@@ -220,7 +232,8 @@ def download():
         ChaliceViewError - 500
     """
     print('/download request: '+app.current_request.raw_body.decode())
-    s3 = boto3.client('s3')
+    region = os.environ['AWS_REGION']
+    s3 = boto3.client('s3', region_name=region, config = Config(signature_version = 's3v4', s3={'addressing_style': 'virtual'}))
     # expire the URL in
     try:
         response = s3.generate_presigned_url('get_object',

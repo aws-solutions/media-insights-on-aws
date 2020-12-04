@@ -5,10 +5,14 @@ import json
 import boto3
 import urllib3
 import math
+from aws_xray_sdk.core import xray_recorder
+from aws_xray_sdk.core import patch_all
 
 from MediaInsightsEngineLambdaHelper import MediaInsightsOperationHelper
 from MediaInsightsEngineLambdaHelper import MasExecutionError
 from MediaInsightsEngineLambdaHelper import DataPlane
+
+patch_all()
 
 s3 = boto3.client('s3')
 s3_resource = boto3.resource('s3')

@@ -6,10 +6,13 @@ import boto3
 import urllib3
 import json
 from botocore import config
+from aws_xray_sdk.core import xray_recorder
+from aws_xray_sdk.core import patch_all
 from MediaInsightsEngineLambdaHelper import MediaInsightsOperationHelper
 from MediaInsightsEngineLambdaHelper import MasExecutionError
 from MediaInsightsEngineLambdaHelper import DataPlane
 
+patch_all()
 
 region = os.environ['AWS_REGION']
 

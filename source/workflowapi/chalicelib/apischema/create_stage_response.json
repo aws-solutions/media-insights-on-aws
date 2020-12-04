@@ -7,8 +7,7 @@
     "required": [
       "Name",
       "Operations",
-      "Configuration",
-      "StateMachineArn"
+      "Configuration"
     ],
     "properties": {
       "Name": {
@@ -73,16 +72,6 @@
             }
           }
         }
-      },
-      "StateMachineArn": {
-        "$id": "#/properties/StateMachineArn",
-        "type": "string",
-        "title": "The Statemachinearn Schema",
-        "default": "",
-        "examples": [
-          "arn:aws:states:us-east-1:123456789123:stateMachine:v-sync-api-stage"
-        ],
-        "pattern": "^(.*)$"
       }
     }
   }

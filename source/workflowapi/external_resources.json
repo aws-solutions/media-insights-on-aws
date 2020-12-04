@@ -8,6 +8,10 @@
       "Type": "String",
       "Description": "S3 Key of the dataplane deployment package"
     },
+    "ShortUUID": {
+      "Type": "String",
+      "Description": "A short UUID that is going to be appended to resource names"
+    },
     "SystemTableName": {
       "Type": "String",
       "Description": "Table used to store system configuration"
@@ -71,10 +75,28 @@
     "SqsQueueArn": {
       "Type": "String",
       "Description": "Arn of the MIE workflow queue"
+    },
+    "MediaInsightsEnginePython37Layer": {
+      "Type": "String",
+      "Description": "Arn of the MIE Python 3.7 lambda layer"
+    },
+    "TracingConfigMode": {
+      "Type": "String",
+      "Description": "Sets tracing mode for stack entry points.  Allowed values: Active, PassThrough"
     }
   },
   "Resources": {
     "ApiHandlerRole": {
+      "Metadata": {
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W11",
+              "reason": "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
+            }
+          ]
+        }
+      },
       "Properties": {
         "Policies": [
           {
@@ -93,24 +115,13 @@
                   "Action": [
                     "states:ListStateMachines",
                     "states:TagResource",
-                    "states:CreateStateMachine"
-                  ],
-                  "Resource": "*"
-                },
-                {
-                  "Effect": "Allow",
-                  "Action": [
+                    "states:CreateStateMachine",
                     "states:DescribeStateMachine",
                     "states:UpdateStateMachine",
                     "states:DeleteStateMachine",
                     "states:UntagResource"
                   ],
-                  "Resource": "*",
-                  "Condition": {
-                    "StringEquals": {
-                        "aws:ResourceTag/environment": "mie"
-                    }
-                  }
+                  "Resource": "*"
                 },
                 {
                   "Effect": "Allow",
@@ -146,6 +157,16 @@
                   ]
                 },
                 {
+                  "Effect": "Allow",
+                  "Action": [
+                      "xray:PutTraceSegments",
+                      "xray:PutTelemetryRecords"
+                  ],
+                  "Resource": [
+                      "*"
+                  ]
+                },
+                {
                   "Action": [
                     "logs:CreateLogGroup",
                     "logs:CreateLogStream",
@@ -162,10 +183,98 @@
         ]
       }
     },
+    "WorkflowCustomResourceRole": {
+      "Metadata": {
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W11",
+              "reason": "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
+            }
+          ]
+        }
+      },
+      "Properties": {
+        "Policies": [
+          {
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                  {
+                      "Action": [
+                          "logs:CreateLogGroup",
+                          "logs:CreateLogStream",
+                          "logs:PutLogEvents"
+                      ],
+                      "Resource": "*",
+                      "Effect": "Allow",
+                      "Sid": "Logging"
+                  },
+                  {
+                      "Action": [
+                          "dynamodb:*"
+                      ],
+                      "Resource": [
+                          "*"
+                      ],
+                      "Effect": "Allow",
+                      "Sid": "DynamoTables"
+                  },
+                  {
+                      "Effect": "Allow",
+                      "Action": "states:*",
+                      "Resource": "*"
+                  },
+                  {
+                      "Effect": "Allow",
+                      "Action": "lambda:InvokeFunction",
+                      "Resource": "*"
+                  },
+                  {
+                      "Action": [
+                          "sqs:*"
+                      ],
+                      "Resource": [
+                          "*"
+                      ],
+                      "Effect": "Allow",
+                      "Sid": "SQS"
+                  },
+                  {
+                      "Effect": "Allow",
+                      "Action": [
+                          "xray:PutTraceSegments",
+                          "xray:PutTelemetryRecords"
+                      ],
+                      "Resource": [
+                          "*"
+                      ]
+                  },
+                  {
+                      "Effect": "Allow",
+                      "Action": [ 
+                        "iam:PassRole"
+                      ],
+                      "Resource": [
+                        "*"
+                      ]
+                    }
+          
+              ]
+            },
+            "PolicyName": "MieWorkflowCustomResourceRolePolicy"
+          }
+        ]
+      }
+    },
     "WorkflowCustomResource": {
       "Properties": {
+        "Runtime": "python3.7",
         "Environment": {
           "Variables": {
+                "STACK_SHORT_UUID": {
+                  "Ref": "ShortUUID"
+                },
                 "SYSTEM_TABLE_NAME": {
                         "Ref":"SystemTableName"
                 },
@@ -210,13 +319,23 @@
                 }
             }
         },
+        "Layers": [
+          {
+            "Ref": "MediaInsightsEnginePython37Layer"
+            }
+          ],
+        "Tracing": {"Ref": "TracingConfigMode"},
         "CodeUri": {"Bucket":  {"Ref": "DeploymentPackageBucket"}, "Key":  {"Ref": "DeploymentPackageKey"}}
       }
     },
     "APIHandler": {
       "Properties": {
+        "Runtime": "python3.7",
         "Environment": {
           "Variables": {
+                "STACK_SHORT_UUID": {
+                  "Ref": "ShortUUID"
+                },
                 "SYSTEM_TABLE_NAME": {
                         "Ref":"SystemTableName"
                 },
@@ -261,6 +380,12 @@
                 }
             }
         },
+        "Tracing": {"Ref": "TracingConfigMode"},
+        "Layers": [
+          {
+            "Ref": "MediaInsightsEnginePython37Layer"
+            }
+          ],
         "CodeUri": {"Bucket":  {"Ref": "DeploymentPackageBucket"}, "Key":  {"Ref": "DeploymentPackageKey"}}
       }
     }

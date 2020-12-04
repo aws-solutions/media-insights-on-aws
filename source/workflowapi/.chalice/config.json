@@ -2,6 +2,7 @@
   "version": "2.0",
   "app_name": "workflowapi",
   "environment_variables": {
+    "STACK_SHORT_UUID": "",
     "SYSTEM_TABLE_NAME":"",
     "WORKFLOW_TABLE_NAME":"",
     "STAGE_TABLE_NAME":"",
@@ -21,8 +22,14 @@
   "stages": {
     "dev": {
       "api_gateway_stage": "api",
+      "lambda_functions": {
+        "WorkflowCustomResource": {
+          "lambda_timeout": 180
+        }
+      },
       "autogen_policy": false,
       "iam_policy_file": "dev-app-policy.json",
+      "xray": false,
       "api_gateway_endpoint_type": "EDGE"
     }
   }

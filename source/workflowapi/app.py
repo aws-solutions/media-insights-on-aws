@@ -8,6 +8,8 @@ import boto3
 from boto3 import resource
 from botocore.client import ClientError
 from boto3.dynamodb.conditions import Key, Attr
+from aws_xray_sdk.core import xray_recorder
+from aws_xray_sdk.core import patch_all
 
 import uuid
 import logging
@@ -31,9 +33,18 @@ APP_NAME = "workflowapi"
 API_STAGE = "dev"
 app = Chalice(app_name=APP_NAME)
 app.debug = True
-API_VERSION = "1.0.0"
+API_VERSION = "2.0.0"
 
 
+def is_aws():
+    if os.getenv('AWS_LAMBDA_FUNCTION_NAME') is None:
+        return False
+    else:
+        return True
+
+
+if is_aws():
+    patch_all()
 
 # Setup logging
 # Logging Configuration
@@ -49,6 +60,7 @@ API_VERSION = "1.0.0"
 logger = logging.getLogger('boto3')
 logger.setLevel(logging.INFO)
 
+STACK_SHORT_UUID = os.environ["STACK_SHORT_UUID"]
 SYSTEM_TABLE_NAME = os.environ["SYSTEM_TABLE_NAME"]
 WORKFLOW_TABLE_NAME = os.environ["WORKFLOW_TABLE_NAME"]
 STAGE_TABLE_NAME = os.environ["STAGE_TABLE_NAME"]
@@ -258,8 +270,7 @@ def create_operation_api():
                     ...
                 }
             "StartLambdaArn":arn,
-            "MonitorLambdaArn":arn,
-            "SfnExecutionRole": arn
+            "MonitorLambdaArn":arn
             }
 
     Returns:
@@ -279,7 +290,6 @@ def create_operation_api():
                 }
                 "StartLambdaArn":arn,
                 "MonitorLambdaArn":arn,
-                "StateMachineExecutionRoleArn": arn,
                 "StateMachineAsl": ASL-string
                 "StageName": string
             }
@@ -375,7 +385,6 @@ def create_operation(operation):
         operation["ApiVersion"] = API_VERSION
 
         operation_table.put_item(Item=operation)
-
         # build a singleton stage for this operation
         try:
             stage = {}
@@ -752,9 +761,9 @@ def delete_operation(Name, Force):
             if len(workflows) != 0 and Force == False:
                 Message = """Dependent workflows were found for operation {}.
                     Either delete the dependent workflows or set the query parameter
-                    force=true to delete the stage anyhow.  Undeleted dependent workflows 
-                    will be kept but will contain the deleted definition of the stage.  To 
-                    find the workflow that depend on a stage use the following endpoint: 
+                    force=true to delete the stage anyhow.  Undeleted dependent workflows
+                    will be kept but will contain the deleted definition of the stage.  To
+                    find the workflow that depend on a stage use the following endpoint:
                     GET /workflow/list/operation/""".format(Name)
 
                 raise BadRequestError(Message)
@@ -861,8 +870,7 @@ def create_stage_api():
                 "operation-name2": operation-configuration-object1,
                 ...
             }
-            "StateMachineArn": ARN-string
-        }
+        },
         {
             "Name": "TestStage",
             "Operations": [
@@ -873,8 +881,7 @@ def create_stage_api():
                     "MediaType": "Video",
                     "Enabled": true
                 }
-            },
-            "StateMachineArn": "arn:aws:states:us-west-2:123456789123:stateMachine:TestStage"
+            }
         }
 
     Raises:
@@ -956,8 +963,6 @@ def create_stage(stage):
                 json.loads(operation["StateMachineAsl"]))
             Configuration[op] = operation["Configuration"]
 
-            stageStateMachineExecutionRoleArn = operation["StateMachineExecutionRoleArn"]
-
         stageAslString = json.dumps(stageAsl)
         stageAslString = stageAslString.replace("%%STAGE_NAME%%", stage["Name"])
         stageAsl = json.loads(stageAslString)
@@ -966,19 +971,8 @@ def create_stage(stage):
         stage["Configuration"] = Configuration
 
         # Build stage
-        response = SFN_CLIENT.create_state_machine(
-            name=Name,
-            definition=json.dumps(stageAsl),
-            roleArn=stageStateMachineExecutionRoleArn,
-            tags=[
-                {
-                    'key': 'environment',
-                    'value': 'mie'
-                },
-            ]
-        )
-        stage["StateMachineArn"] = response["stateMachineArn"]
 
+        stage["Definition"] = json.dumps(stageAsl)
         stage["Version"] = "v0"
         stage["Id"] = str(uuid.uuid4())
         stage["Created"] = str(datetime.now().timestamp())
@@ -1106,19 +1100,13 @@ def delete_stage(Name, Force):
             if len(workflows) != 0 and Force == False:
                 Message = """Dependent workflows were found for stage {}.
                     Either delete the dependent workflows or set the query parameter
-                    force=true to delete the stage anyhow.  Undeleted dependent workflows 
-                    will be kept but will contain the deleted definition of the stage.  To 
-                    find the workflow that depend on a stage use the following endpoint: 
+                    force=true to delete the stage anyhow.  Undeleted dependent workflows
+                    will be kept but will contain the deleted definition of the stage.  To
+                    find the workflow that depend on a stage use the following endpoint:
                     GET /workflow/list/stage/""".format(Name)
 
                 raise BadRequestError(Message)
 
-
-
-            # Delete the stage state machine
-            response = SFN_CLIENT.delete_state_machine(
-                stateMachineArn=stage["StateMachineArn"]
-            )
 
             response = table.delete_item(
                 Key={
@@ -1269,7 +1257,7 @@ def create_workflow(trigger, workflow):
 
         # Build state machine
         response = SFN_CLIENT.create_state_machine(
-            name=workflow["Name"],
+            name=workflow["Name"] + "-" + STACK_SHORT_UUID,
             definition=json.dumps(workflow["WorkflowAsl"]),
             roleArn=STAGE_EXECUTION_ROLE,
             tags=[
@@ -1330,17 +1318,14 @@ def build_workflow(workflow):
         raise BadRequestError("Workflow %s must have exactly 1 'End' key within its stages" % (
             workflow["Name"]))
 
-    logger.info("Get stage state machines")
+    logger.info("Get stage definitions")
+
     for Name, stage in workflow["Stages"].items():
         s = get_stage_by_name(Name)
 
         logger.info(json.dumps(s))
 
-        response = SFN_CLIENT.describe_state_machine(
-            stateMachineArn=s["StateMachineArn"]
-        )
-
-        s["stateMachineAsl"] = json.loads(response["definition"])
+        s["stateMachineAsl"] = json.loads(s["Definition"])
         stage.update(s)
 
         # save the operators for this stage to the list of operators in the
@@ -1866,11 +1851,11 @@ def create_workflow_execution(trigger, workflow_execution):
                 raise ChaliceViewError("Exception '%s'" % e)
             else:
                 retrieve_asset = dataplane.retrieve_asset_metadata(asset_id)
-                
+
                 if "results" in retrieve_asset:
                     s3key = retrieve_asset["results"]["S3Key"]
                     s3bucket = retrieve_asset["results"]["S3Bucket"]
-                    
+
                     asset_input = {
                         "Media": {
                             media_type: {
@@ -1879,7 +1864,7 @@ def create_workflow_execution(trigger, workflow_execution):
                             }
                         }
                     }
-                
+
                 else:
                     raise ChaliceViewError("Unable to retrieve asset: {e}".format(e=asset_id))
 
@@ -2089,7 +2074,6 @@ def list_workflow_executions_by_assetid(AssetId):
         KeyConditionExpression='AssetId = :assetid',
         ProjectionExpression = projection_expression
         )
-
     workflow_executions = response['Items']
     while 'LastEvaluatedKey' in response:
         response = table.query(
@@ -2236,7 +2220,7 @@ def update_workflow_execution_status(id, status, message):
 # ================================================================================================
 
 
-@app.lambda_function()
+@app.lambda_function(name="WorkflowCustomResource")
 def workflow_custom_resource(event, context):
     '''Handle Lambda event from AWS CloudFormation'''
     # Setup alarm for remaining runtime minus a second
@@ -2315,8 +2299,7 @@ def stage_resource(event, context):
         create_stage(stage)
 
         send_response(event, context, "SUCCESS",
-                      {"Message": "Resource creation successful!", "Name": event["ResourceProperties"]["Name"],
-                       "StateMachineArn": event["ResourceProperties"]["StateMachineArn"]})
+                      {"Message": "Resource creation successful!", "Name": event["ResourceProperties"]["Name"]})
 
     elif event['RequestType'] == 'Update':
         logger.info('UPDATE!')

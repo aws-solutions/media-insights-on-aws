@@ -12,9 +12,13 @@ import json
 from botocore import config
 import urllib
 import boto3
+from aws_xray_sdk.core import xray_recorder
+from aws_xray_sdk.core import patch_all
 from MediaInsightsEngineLambdaHelper import OutputHelper
 from MediaInsightsEngineLambdaHelper import MasExecutionError
 from MediaInsightsEngineLambdaHelper import DataPlane
+
+patch_all()
 
 operator_name = os.environ['OPERATOR_NAME']
 output_object = OutputHelper(operator_name)

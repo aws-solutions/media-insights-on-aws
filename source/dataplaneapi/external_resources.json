@@ -15,10 +15,28 @@
     "DeploymentPackageKey": {
       "Type": "String",
       "Description": "S3 Key of the dataplane deployment package"
+    },
+    "MediaInsightsEnginePython37Layer": {
+      "Type": "String",
+      "Description": "Arn of the MIE Python 3.7 lambda layer"
+    },
+    "TracingConfigMode": {
+      "Type": "String",
+      "Description": "Sets tracing mode for stack entry points.  Allowed values: Active, PassThrough"
     }
   },
   "Resources": {
     "ApiHandlerRole": {
+      "Metadata": {
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W11",
+              "reason": "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
+            }
+          ]
+        }
+      },
       "Properties": {
         "Policies": [
           {
@@ -53,6 +71,16 @@
                   "Resource": {"Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${DataplaneTableName}"}
                 },
                 {
+                  "Effect": "Allow",
+                  "Action": [
+                      "xray:PutTraceSegments",
+                      "xray:PutTelemetryRecords"
+                  ],
+                  "Resource": [
+                      "*"
+                  ]
+                },
+                {
                   "Action": [
                     "logs:CreateLogGroup",
                     "logs:CreateLogStream",
@@ -71,6 +99,7 @@
     },
     "APIHandler": {
       "Properties": {
+        "Runtime": "python3.7",
         "Environment": {
           "Variables": {
             "DATAPLANE_TABLE_NAME": {
@@ -81,6 +110,12 @@
             }
           }
         },
+        "Layers": [
+          {
+            "Ref": "MediaInsightsEnginePython37Layer"
+            }
+          ],
+        "Tracing": {"Ref": "TracingConfigMode"},
         "CodeUri": {"Bucket":  {"Ref": "DeploymentPackageBucket"}, "Key":  {"Ref": "DeploymentPackageKey"}}
       }
     }

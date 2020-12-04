@@ -2,16 +2,8 @@ AWSTemplateFormatVersion: "2010-09-09"
 Description: Media Insights Engine - Base AWS CloudFormation template that provisions the core Media Insights Engine services and provides parameters for enabling additional functionality.
 
 Parameters:
-  DeployOperatorLibrary:
-    Description: Deploy operator library
-    Type: String
-    Default: Yes
-    AllowedValues:
-      - Yes
-      - No
-
-  DeployTestWorkflow:
-    Description: Deploy test workflow which contains operator, stage and workflow stubs for integration testing
+  DeployTestResources:
+    Description: Deploy test resources which contains lambdas required for integration and e2e testing
     Type: String
     Default: No
     AllowedValues:
@@ -32,6 +24,14 @@ Parameters:
     Default: 10
     MinValue: 1
 
+  EnableXrayTrace:
+    Description: Enable Active Xray tracing on all entry points to the stack 
+    Type: String
+    Default: No
+    AllowedValues:
+      - Yes
+      - No
+
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -49,59 +49,55 @@ Metadata:
           - MaxConcurrentWorkflows
 
 Conditions:
-  DeployOperatorLibraryCondition: !Equals [!Ref DeployOperatorLibrary, Yes]
-  DeployTestWorkflowCondition: !Equals [!Ref DeployTestWorkflow, Yes]
+  DeployTestResourcesCondition: !Equals [!Ref DeployTestResources, Yes]
   DeployAnalyticsPipelineCondition: !Equals [!Ref DeployAnalyticsPipeline, Yes]
+  EnableTraceOnEntryPoints: !Equals [!Ref EnableXrayTrace, Yes]
 
+  
 Mappings:
   SourceCode:
     General:
       S3Bucket: "%%BUCKET_NAME%%"
       CodeKeyPrefix: "media_insights_engine/%%VERSION%%/code"
       TemplateKeyPrefix: "media_insights_engine/%%VERSION%%/cf"
-
+  
 Resources:
+  # Helper function - create a short UUID to avoid name conflicts
+  MieHelperFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        ZipFile: |
+          import string
+          import random
+          import cfnresponse
+          def id_generator(size=6, chars=string.ascii_lowercase + string.digits):
+              return "".join(random.choices(chars, k=size))
+          def handler(event, context):
+              response_data = {'Data': id_generator()}
+              cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data, "CustomResourcePhysicalID")
+      Handler: index.handler
+      Runtime: python3.6
+      Role: !GetAtt MieHelperExecutionRole.Arn
+  MieHelperFunctionPermissions:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !GetAtt MieHelperFunction.Arn
+      Principal: 'cloudformation.amazonaws.com'
+  GetShortUUID:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !GetAtt MieHelperFunction.Arn
+
   # Custom log group
   MieLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: MediaInsightsLogs
       RetentionInDays: 14
 
   # IAM Roles
-  StepFunctionsServiceRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - !Join ["", ["states.", Ref: "AWS::Region", ".amazonaws.com"]]
-            Action:
-              - sts:AssumeRole
-      Policies:
-        - PolicyName: !Sub "${AWS::StackName}-stepfunctions-service-role"
-          PolicyDocument:
-            Statement:
-              - Effect: Allow
-                Action:
-                  - lambda:InvokeFunction
-                Resource:
-                  - !Join [
-                    "",
-                    [
-                      "arn:aws:lambda:",
-                      Ref: "AWS::Region",
-                      ":",
-                      Ref: "AWS::AccountId",
-                      ":",
-                      "function:*",
-                    ],
-                  ]
-
-  StageExecutionRole:
+  MieHelperExecutionRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -113,8 +109,35 @@ Resources:
                 - lambda.amazonaws.com
             Action:
               - sts:AssumeRole
+      Path: /
       Policies:
-        - PolicyName: !Sub "${AWS::StackName}-stage-execution-lambda-role"
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: ['logs:*']
+                Resource: 'arn:aws:logs:*:*:*'
+
+  StageExecutionRole:
+    Type: AWS::IAM::Role
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: !Sub "${AWS::StackName}-stage-execution-lambda"
           PolicyDocument:
             Statement:
               - Effect: Allow
@@ -225,9 +248,19 @@ Resources:
                   - "Fn::GetAtt":
                       - WorkflowExecutionLambdaDeadLetterQueue
                       - Arn
+              - Effect: Allow
+                Action:
+                  - "xray:PutTraceSegments"
+                  - "xray:PutTelemetryRecords"
+                Resource: "*"
 
   OperationLambdaExecutionRole:
     Type: AWS::IAM::Role
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
     Properties:
       AssumeRolePolicyDocument:
         Version: 2012-10-17
@@ -239,9 +272,16 @@ Resources:
             Action:
               - sts:AssumeRole
       Policies:
-        - PolicyName: !Sub "${AWS::StackName}-operation-lambda-role"
+        - PolicyName: !Sub "${AWS::StackName}-operation-lambda"
           PolicyDocument:
             Statement:
+              - Effect: "Allow"
+                Action:
+                  - "states:DescribeExecution"
+                  - "states:GetExecutionHistory"
+                  - "states:StopExecution"
+                Resource:
+                  - !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:execution:*:*"
               - Effect: Allow
                 Action:
                   - states:StartExecution
@@ -357,9 +397,20 @@ Resources:
                   - "Fn::GetAtt":
                       - WorkflowSchedulerLambda
                       - Arn
+              - Effect: Allow
+                Action:
+                  - "xray:PutTraceSegments"
+                  - "xray:PutTelemetryRecords"
+                Resource: "*"
+
 
   StepFunctionRole:
     Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -369,16 +420,28 @@ Resources:
             Principal:
               Service: "states.amazonaws.com"
       Policies:
-        - PolicyName: "TestSFNLambdaAccess"
+        - PolicyName: !Sub "${AWS::StackName}-sfn-lambda-exec"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
               - Action: "lambda:InvokeFunction"
                 Resource: "arn:aws:lambda:*:*:function:*"
                 Effect: "Allow"
+              - Effect: "Allow"
+                Action: 
+                  - "xray:PutTraceSegments"
+                  - "xray:PutTelemetryRecords"
+                  - "xray:GetSamplingRules"
+                  - "xray:GetSamplingTargets"
+                Resource: "*"
 
   operatorFailedRole:
     Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -388,7 +451,7 @@ Resources:
             Principal:
               Service: "lambda.amazonaws.com"
       Policies:
-        - PolicyName: "OperatorFailedAccess"
+        - PolicyName: !Sub "${AWS::StackName}-operator-failed"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -398,6 +461,12 @@ Resources:
                   - "logs:PutLogEvents"
                 Resource: "arn:aws:logs:*:*:*:*"
                 Effect: Allow
+              - Effect: Allow
+                Action:
+                  - "xray:PutTraceSegments"
+                  - "xray:PutTelemetryRecords"
+                Resource: "*"
+
 
   # Services - Dynamodb
 
@@ -563,19 +632,19 @@ Resources:
   WorkflowExecutionLambdaDeadLetterQueue:
     Type: "AWS::SQS::Queue"
     Properties:
-      QueueName: "WorkflowExecutionLambdaDLQ"
+      QueueName: !Sub "${AWS::StackName}-WorkflowExecLambdaDLQ"
       MessageRetentionPeriod: 43200 # #Maximum, 12 hours in seconds.
 
   StageExecutionDeadLetterQueue:
     Type: "AWS::SQS::Queue"
     Properties:
-      QueueName: "StageExecutionDLQ"
+      QueueName: !Sub "${AWS::StackName}-StageExecDLQ"
       MessageRetentionPeriod: 43200 # #Maximum, 12 hours in seconds.
 
   StageExecutionQueue:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: StageExecution
+      QueueName: !Sub "${AWS::StackName}-StageExec"
       VisibilityTimeout: 43200 #Maximum, 12 hours in seconds.  Stages are long running
       ReceiveMessageWaitTimeSeconds: 20 #Maximum, long poll on this queue, it has one reader that is single threaded
       RedrivePolicy:
@@ -669,6 +738,8 @@ Resources:
           SYSTEM_TABLE_NAME: !Ref SystemTable
           DEFAULT_MAX_CONCURRENT_WORKFLOWS: !Ref MaxConcurrentWorkflows
       Handler: app.workflow_scheduler_lambda
+      TracingConfig: 
+          Mode: !If [EnableTraceOnEntryPoints, "Active", "PassThrough"]
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -679,12 +750,14 @@ Resources:
             "workflow.zip",
             ],
           ]
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
           - StageExecutionRole
           - Arn
-      Runtime: python3.6
+      Runtime: python3.7
       Timeout: 900
       ReservedConcurrentExecutions: 1
       DeadLetterConfig:
@@ -693,6 +766,83 @@ Resources:
             - WorkflowExecutionLambdaDeadLetterQueue
             - Arn
     Type: AWS::Lambda::Function
+
+  # Workflow state machine error handler
+  WorkflowErrorHandlerLambda:
+    Properties:
+      Environment:
+        Variables:
+          STAGE_EXECUTION_QUEUE_URL: !Ref StageExecutionQueue
+          STAGE_TABLE_NAME: !Ref StageTable
+          OPERATION_TABLE_NAME: !Ref OperationTable
+          WORKFLOW_EXECUTION_TABLE_NAME: !Ref WorkflowExecutionTable
+          WORKFLOW_TABLE_NAME: !Ref WorkflowTable
+          SYSTEM_TABLE_NAME: !Ref SystemTable
+          DEFAULT_MAX_CONCURRENT_WORKFLOWS: !Ref MaxConcurrentWorkflows
+          ShortUUID: !GetAtt GetShortUUID.Data
+          WORKFLOW_SCHEDULER_LAMBDA_ARN:
+            Fn::GetAtt:
+              - WorkflowSchedulerLambda
+              - Arn
+      Handler: app.workflow_error_handler_lambda
+      TracingConfig: 
+          Mode: !If [EnableTraceOnEntryPoints, "Active", "PassThrough"]
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+            "workflow.zip",
+            ],
+          ]
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
+      MemorySize: 256
+      Role:
+        Fn::GetAtt:
+          - OperationLambdaExecutionRole
+          - Arn
+      Runtime: python3.7
+      Timeout: 900
+      ReservedConcurrentExecutions: 1
+      DeadLetterConfig:
+        TargetArn:
+          Fn::GetAtt:
+            - WorkflowExecutionLambdaDeadLetterQueue
+            - Arn
+    Type: AWS::Lambda::Function
+
+  StateMachineErrorCloudWatchEvent:
+    Type: AWS::Events::Rule
+    Properties:
+        Name: !Sub "${AWS::StackName}-state-machine-error-handler"
+        Description: "state machine error handler"  
+        EventPattern:
+            source:
+                - "aws.states"
+            detail-type:
+                - "Step Functions Execution Status Change"
+            detail:
+                status:
+                    - FAILED
+                    - ABORTED
+                    - TIMED_OUT
+        State: ENABLED
+        Targets:
+            -
+                Id: !Ref WorkflowErrorHandlerLambda
+                Arn: !GetAtt WorkflowErrorHandlerLambda.Arn
+
+  PermissionToInvokeLambda:
+      Type: AWS::Lambda::Permission
+      Properties:
+          FunctionName: !Ref WorkflowErrorHandlerLambda
+          Action: lambda:InvokeFunction
+          Principal: events.amazonaws.com
+          SourceArn: !GetAtt StateMachineErrorCloudWatchEvent.Arn
+  
 
   CompleteStageLambda:
     DependsOn:
@@ -711,6 +861,8 @@ Resources:
               - WorkflowSchedulerLambda
               - Arn
       Handler: app.complete_stage_execution_lambda
+      TracingConfig: 
+          Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -721,12 +873,14 @@ Resources:
             "workflow.zip",
             ],
           ]
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
           - OperationLambdaExecutionRole
           - Arn
-      Runtime: python3.6
+      Runtime: python3.7
       Timeout: 900
     Type: AWS::Lambda::Function
 
@@ -740,6 +894,8 @@ Resources:
           WORKFLOW_EXECUTION_TABLE_NAME: !Ref WorkflowExecutionTable
           WORKFLOW_TABLE_NAME: !Ref WorkflowTable
       Handler: app.filter_operation_lambda
+      TracingConfig: 
+          Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -750,12 +906,14 @@ Resources:
             "workflow.zip",
             ],
           ]
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
           - OperationLambdaExecutionRole
           - Arn
-      Runtime: python3.6
+      Runtime: python3.7
       Timeout: 900
     Type: AWS::Lambda::Function
 
@@ -766,6 +924,8 @@ Resources:
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "operatorFailedRole.Arn"
+      TracingConfig: 
+          Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -776,8 +936,10 @@ Resources:
               "operator_failed.zip",
             ],
           ]
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
       Runtime: "python3.7"
-
+  
   # DataPlane API Stack
   MediaInsightsDataplaneApiStack:
     Type: "AWS::CloudFormation::Stack"
@@ -799,6 +961,7 @@ Resources:
         DataplaneTableName: !Ref DataplaneTable
         DataplaneBucketName: !Ref Dataplane
         DeploymentPackageBucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        TracingConfigMode: !If [EnableTraceOnEntryPoints, "Active", "PassThrough"]
         DeploymentPackageKey:
           !Join [
             "/",
@@ -807,6 +970,7 @@ Resources:
               "dataplaneapi.zip",
             ],
           ]
+        MediaInsightsEnginePython37Layer: !Ref MediaInsightsEnginePython37Layer
 
   Analytics:
     Type: "AWS::CloudFormation::Stack"
@@ -853,6 +1017,7 @@ Resources:
           ],
         ]
       Parameters:
+        ShortUUID: !GetAtt GetShortUUID.Data
         StageExecutionQueueUrl: !Ref StageExecutionQueue
         StageExecutionRole: !GetAtt StepFunctionRole.Arn
         OperationTableName: !Ref OperationTable
@@ -862,6 +1027,8 @@ Resources:
         HistoryTableName: !Ref HistoryTable
         SystemTableName: !Ref SystemTable
         SqsQueueArn: !GetAtt StageExecutionQueue.Arn
+        MediaInsightsEnginePython37Layer: !Ref MediaInsightsEnginePython37Layer
+        TracingConfigMode: !If [EnableTraceOnEntryPoints, "Active", "PassThrough"]
         CompleteStageLambdaArn:
           Fn::GetAtt:
             - CompleteStageLambda
@@ -895,7 +1062,6 @@ Resources:
           ]
 
   OperatorLibrary:
-    Condition: DeployOperatorLibraryCondition
     DependsOn:
       - MediaInsightsWorkflowApi
       - MediaInsightsDataplaneApiStack
@@ -925,8 +1091,8 @@ Resources:
         MediaInsightsEnginePython37Layer: !Ref MediaInsightsEnginePython37Layer
         MediaInsightsEnginePython36Layer: !Ref MediaInsightsEnginePython36Layer
 
-  TestWorkflow:
-    Condition: DeployTestWorkflowCondition
+  TestResources:
+    Condition: DeployTestResourcesCondition
     DependsOn:
       - MediaInsightsWorkflowApi
       - MediaInsightsDataplaneApiStack
@@ -957,7 +1123,7 @@ Resources:
             - Outputs.APIHandlerName
         DataPlaneBucket: !Ref Dataplane
         MediaInsightsEnginePython37Layer: !Ref MediaInsightsEnginePython37Layer
-        StepfunctionRole: !GetAtt StepFunctionRole.Arn
+
 
 Outputs:
   # TODO: Add outputs for rest api IDs of workflow/dataplane apis
@@ -1008,6 +1174,6 @@ Outputs:
     Export:
       Name: !Join [":", [!Ref "AWS::StackName", AnalyticsStreamArn]]
   TestStack:
-    Condition: DeployTestWorkflowCondition
-    Value: !Ref TestWorkflow
+    Condition: DeployTestResourcesCondition
+    Value: !Ref TestResources
 

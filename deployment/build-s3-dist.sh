@@ -148,9 +148,10 @@ cat requirements.txt.old | grep -v "Media_Insights_Engine_Lambda_Helper" > requi
 echo "/packages/$file" >> requirements.txt;
 # Build Lambda layer zip files and rename them to the filenames expected by media-insights-stack.yaml. The Lambda layer build script runs in Docker.
 # If Docker is not installed, then we'll use prebuilt Lambda layer zip files.
-echo "Running build-lambda-layer.sh"
+echo "Running build-lambda-layer.sh:"
+echo ""
 rm -rf lambda_layer-python-* lambda_layer-python*.zip
-./build-lambda-layer.sh requirements.txt > /dev/null
+./build-lambda-layer.sh requirements.txt
 if [ $? -eq 0 ]; then
   mv lambda_layer-python3.6.zip media_insights_engine_lambda_layer_python3.6.zip
   mv lambda_layer-python3.7.zip media_insights_engine_lambda_layer_python3.7.zip
@@ -287,13 +288,35 @@ rm -rf ./dist
 # Create Captions Operations
 # ------------------------------------------------------------------------------"
 
-echo "Building Stage completion function"
+echo "Building Webcaptions function"
 cd "$source_dir/operators/captions" || exit
 [ -e dist ] && rm -rf dist
 mkdir -p dist
-zip -g ./dist/get_captions.zip ./get_captions.py
-cp "./dist/get_captions.zip" "$dist_dir/get_captions.zip"
-rm -rf ./dist
+
+[ -e package ] && rm -r package
+mkdir -p package
+echo "preparing packages from requirements.txt"
+# Package dependencies listed in requirements.txt
+pushd package || exit 1
+# Handle distutils install errors with setup.cfg
+touch ./setup.cfg
+echo "[install]" > ./setup.cfg
+echo "prefix= " >> ./setup.cfg
+# Try and handle failure if pip version mismatch
+if [ -x "$(command -v pip)" ]; then
+  pip install --quiet -r ../requirements.txt --target .
+elif [ -x "$(command -v pip3)" ]; then
+  echo "pip not found, trying with pip3"
+  pip3 install --quiet -r ../requirements.txt --target .
+elif ! [ -x "$(command -v pip)" ] && ! [ -x "$(command -v pip3)" ]; then
+  echo "No version of pip installed. This script requires pip. Cleaning up and exiting."
+  exit 1
+fi
+zip -q -r9 ../dist/webcaptions.zip .
+popd || exit 1
+
+zip -g ./dist/webcaptions.zip ./webcaptions.py
+cp "./dist/webcaptions.zip" "$dist_dir/webcaptions.zip"
 
 # ------------------------------------------------------------------------------"
 # Translate Operations
@@ -613,6 +636,39 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 rm -rf ./dist
+
+echo "------------------------------------------------------------------------------"
+echo "Workflow Execution DynamoDB Stream Function"
+echo "------------------------------------------------------------------------------"
+
+echo "Building Workflow Execution DDB Stream function"
+cd "$source_dir/workflowstream" || exit 1
+[ -e dist ] && rm -r dist
+mkdir -p dist
+[ -e package ] && rm -r package
+mkdir -p package
+echo "preparing packages from requirements.txt"
+# Package dependencies listed in requirements.txt
+pushd package || exit 1
+# Handle distutils install errors with setup.cfg
+touch ./setup.cfg
+echo "[install]" > ./setup.cfg
+echo "prefix= " >> ./setup.cfg
+# Try and handle failure if pip version mismatch
+if [ -x "$(command -v pip)" ]; then
+  pip install --quiet -r ../requirements.txt --target .
+elif [ -x "$(command -v pip3)" ]; then
+  echo "pip not found, trying with pip3"
+  pip3 install --quiet -r ../requirements.txt --target .
+elif ! [ -x "$(command -v pip)" ] && ! [ -x "$(command -v pip3)" ]; then
+  echo "No version of pip installed. This script requires pip. Cleaning up and exiting."
+  exit 1
+fi
+zip -q -r9 ../dist/workflowstream.zip .
+popd || exit 1
+
+zip -q -g dist/workflowstream.zip ./*.py
+cp "./dist/workflowstream.zip" "$dist_dir/workflowstream.zip"
 
 echo "------------------------------------------------------------------------------"
 echo "Dataplane API Stack"

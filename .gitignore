@@ -34,6 +34,7 @@ doc/sphinx/output/
 
 # explicitly named "private" files
 **/private*webapp/README.md
+private/
 
 # LambdaHelper builds
 lib/MediaInsightsEngineLambdaHelper/Media_Insights_Engine_Lambda_Helper.egg-info

@@ -1918,7 +1918,6 @@ Resources:
         { "MediaType": "MetadataOnly", "SourceLanguageCode": "en", "Enabled": true }
       StartLambdaArn: !GetAtt StartPollyWebCaptionsFunction.Arn
       MonitorLambdaArn: !GetAtt CheckPollyWebCaptionsFunction.Arn
-      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
 
   CreateSRTCaptionsOperation:
     Type: Custom::CustomResource
@@ -2205,7 +2204,7 @@ Resources:
       Configuration: { "MediaType": "MetadataOnly", "Enabled": false }
       StartLambdaArn: !Ref StartWaitOperationLambda
       MonitorLambdaArn: !Ref CheckWaitOperationLambda
-      StateMachineExecutionRoleArn: !GetAtt StepFunctionRole.Arn
+      
   # Export operator names as outputs
 
 Outputs:

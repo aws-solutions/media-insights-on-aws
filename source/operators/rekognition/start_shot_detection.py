@@ -27,7 +27,7 @@ output_object = OutputHelper(operator_name)
 
 mie_config = json.loads(os.environ['botoConfig'])
 config = config.Config(**mie_config)
-rek = boto3.client('rekognition-segment-detection')
+rek = boto3.client('rekognition')
 
 
 # Recognizes labels in an image

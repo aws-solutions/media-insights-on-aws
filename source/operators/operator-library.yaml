@@ -778,8 +778,7 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
-          # TODO: Remove this when service is GA
-          AWS_DATA_PATH: '.'
+
 
   checkTechnicalCueDetection:
     Type: "AWS::Lambda::Function"
@@ -810,8 +809,7 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
-          # TODO: Remove this when service is GA
-          AWS_DATA_PATH: '.'
+
 
 
   startShotDetection:
@@ -843,8 +841,7 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
-          # TODO: Remove this when service is GA
-          AWS_DATA_PATH: '.'
+
 
   checkShotDetection:
     Type: "AWS::Lambda::Function"
@@ -875,8 +872,7 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
-          # TODO: Remove this when service is GA
-          AWS_DATA_PATH: '.'
+
 
   startCelebrityRecognition:
     Type: "AWS::Lambda::Function"

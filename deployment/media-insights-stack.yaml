@@ -592,10 +592,32 @@ Resources:
         StreamViewType: "NEW_AND_OLD_IMAGES"
 
   # Services - S3
-  # TODO: Best Practice - S3 Bucket should have access logging configured, S3 Bucket should have encryption option set
+  DataplaneLogsBucket:
+    DeletionPolicy: Retain
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: LogDeliveryWrite
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W35
+            reason: "Used to store access logs for other buckets"
+          - id: W51
+            reason: "Bucket is private and does not need a bucket policy"
+
   # TODO: Update cors config per: https://docs.amplify.aws/lib/storage/getting-started/q/platform/js#using-amazon-s3
   Dataplane:
     Type: "AWS::S3::Bucket"
+    DependsOn: DataplaneLogsBucket
     DeletionPolicy: Retain
     Properties:
       CorsConfiguration:
@@ -610,6 +632,27 @@ Resources:
               - x-amz-id-2
               - ETag
             Id: AllowUploadsFromWebApp
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      LoggingConfiguration:
+        DestinationBucketName: !Ref DataplaneLogsBucket
+        LogFilePrefix: "access_logs/"
+      LifecycleConfiguration:
+        Rules:
+          - Id: "Keep access log for 10 days"
+            Status: Enabled
+            Prefix: "access_logs/"
+            ExpirationInDays: 10
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 1
+          - Id: "Keep cloudfront log for 10 days"
+            Status: Enabled
+            Prefix: "cf_logs/"
+            ExpirationInDays: 10
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 1
 
   DataplaneBucketPolicy:
     Type: "AWS::S3::BucketPolicy"

@@ -24,7 +24,7 @@ output_object = OutputHelper(operator_name)
 
 mie_config = json.loads(os.environ['botoConfig'])
 config = config.Config(**mie_config)
-rek = boto3.client('rekognition-segment-detection')
+rek = boto3.client('rekognition')
 
 def lambda_handler(event, context):
     print("We got the following event:\n", event)

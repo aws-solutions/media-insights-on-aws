@@ -93,6 +93,14 @@
             {
               "id": "W11",
               "reason": "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
+            },
+            {
+              "id": "W11",
+              "reason": "The Transcribe Vocabularies policy applies to all resources  - can't be scoped to a specific resource"
+            },
+            {
+              "id": "W11",
+              "reason": "The Translate Terminologies policy applies to all resources  - can't be scoped to a specific resource"
             }
           ]
         }
@@ -172,7 +180,13 @@
                     "transcribe:CreateVocabulary",
                     "transcribe:DeleteVocabulary",
                     "transcribe:GetVocabulary",
-                    "transcribe:ListVocabularies",
+                    "transcribe:ListVocabularies"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
                     "translate:DeleteTerminology",
                     "translate:GetTerminology",
                     "translate:ImportTerminology",

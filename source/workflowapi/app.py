@@ -231,23 +231,6 @@ def get_system_configuration_api():
 
 @app.route('/transcribe/get_vocabulary', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
 def get_vocabulary():
-    """ Get the named Amazon Transcribe vocabulary contents
-
-    Returns:
-        The output of Amazon Transcribe GetVocabulary API
-
-        .. code-block:: python
-
-            [
-                {
-                "Name": "Value"
-                },
-            ...]
-
-    Raises:
-        200: The system configuration was returned successfully.
-        500: Internal server error
-    """
     print('get_vocabulary request: '+app.current_request.raw_body.decode())
     transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
     vocabulary_name = json.loads(app.current_request.raw_body.decode())['vocabulary_name']
@@ -259,6 +242,21 @@ def get_vocabulary():
 
 @app.route('/transcribe/download_vocabulary', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
 def download_vocabulary():
+    """ Download the contents of a Transcibe Custom Vocabulary
+
+    Returns:
+        
+        .. code-block:: python
+
+            [
+                {
+                "Name": "Value"
+                },
+            ...]  
+
+    Raises:
+        
+    """
     print('download_vocabulary request: '+app.current_request.raw_body.decode())
     transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
     vocabulary_name = json.loads(app.current_request.raw_body.decode())['vocabulary_name']

@@ -89,20 +89,6 @@
                   "Resource": "*",
                   "Effect": "Allow",
                   "Sid": "Logging"
-                },
-                {
-                  "Effect": "Allow",
-                  "Action": [
-                    "transcribe:CreateVocabulary",
-                    "transcribe:DeleteVocabulary",
-                    "transcribe:GetVocabulary",
-                    "transcribe:ListVocabularies",
-                    "translate:DeleteTerminology",
-                    "translate:GetTerminology",
-                    "translate:ImportTerminology",
-                    "translate:ListTerminologies"
-                  ],
-                  "Resource": "*"
                 }
               ]
             },

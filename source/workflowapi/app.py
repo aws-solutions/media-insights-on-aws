@@ -416,12 +416,13 @@ def create_operation(operation):
                     "Effect": "Allow",
                     "Action": "lambda:InvokeFunction",
                     "Resource": [
-                        operation["StartLambdaArn"],
-                        operation["MonitorLambdaArn"]
+                        operation["StartLambdaArn"]
                     ]
                 }
             ]
         }
+        if operation["Type"] == "Async":
+            policy['Statement'][0]['Resource'].append(operation["MonitorLambdaArn"])
         response = IAM_CLIENT.create_policy(
             PolicyName=operation["Name"],
             PolicyDocument=json.dumps(policy)

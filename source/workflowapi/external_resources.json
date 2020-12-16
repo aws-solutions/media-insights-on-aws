@@ -252,14 +252,17 @@
                   },
                   {
                       "Effect": "Allow",
-                      "Action": [ 
-                        "iam:PassRole"
+                      "Action": [
+                        "iam:PassRole",
+                        "iam:CreatePolicy",
+                        "iam:AttachRolePolicy",
+                        "iam:DetachRolePolicy"
                       ],
                       "Resource": [
                         "*"
                       ]
                     }
-          
+
               ]
             },
             "PolicyName": "MieWorkflowCustomResourceRolePolicy"

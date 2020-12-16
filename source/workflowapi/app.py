@@ -424,14 +424,14 @@ def create_operation(operation):
         if operation["Type"] == "Async":
             policy['Statement'][0]['Resource'].append(operation["MonitorLambdaArn"])
         response = IAM_CLIENT.create_policy(
-            PolicyName=operation["Name"],
+            PolicyName=operation["Name"]+STACK_SHORT_UUID,
             PolicyDocument=json.dumps(policy)
         )
         policy_arn = response['Policy']['Arn']
         # Attach that policy to the stage execution role
         IAM_CLIENT.attach_role_policy(
             PolicyArn=policy_arn,
-            RoleName=STAGE_EXECUTION_ROLE
+            RoleName=STAGE_EXECUTION_ROLE.split('/')[1]
         )
 
     except ConflictError as e:
@@ -822,7 +822,7 @@ def delete_operation(Name, Force):
             # If the policy was found, then delete it.
             if policy_arn != '':
                 IAM_CLIENT.detach_role_policy(
-                    RoleName=STAGE_EXECUTION_ROLE,
+                    RoleName=STAGE_EXECUTION_ROLE.split('/')[1],
                     PolicyArn=policy_arn
                 )
 

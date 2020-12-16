@@ -1,0 +1,101 @@
+name: pr-workflow
+
+# Controls when the action will run.
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  pull_request:
+    types: [opened, synchronize]
+    branches:
+      - development
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  build-us-west-2:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out pr branch
+        uses: actions/checkout@v2.3.4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Initialize AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.BUILD_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.BUILD_AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+
+      - name: Generate short sha
+        run: |
+          echo "SHORT_SHA=`git rev-parse --short HEAD`" >> $GITHUB_ENV
+
+      - name: Run build script
+        run: |
+          cd deployment
+          MIE_STACK_NAME="pr${SHORT_SHA}"
+          REGION=us-west-2
+          VERSION="pr${SHORT_SHA}"
+          DIST_OUTPUT_BUCKET=mie-dev
+          ./build-s3-dist-no-layer-build.sh $DIST_OUTPUT_BUCKET-$REGION $VERSION $REGION
+          read -r TEMPLATE < dist/templateUrl.txt
+          aws cloudformation create-stack --stack-name $MIE_STACK_NAME --template-url $TEMPLATE --region $REGION --parameters ParameterKey=DeployTestResources,ParameterValue=true ParameterKey=MaxConcurrentWorkflows,ParameterValue=10 ParameterKey=DeployAnalyticsPipeline,ParameterValue=true ParameterKey=EnableXrayTrace,ParameterValue=true --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --disable-rollback
+
+      - name: Wait for deploy to complete before progressing
+        uses: jakejarvis/wait-action@master
+        with:
+          time: '10m'
+
+  test-us-west-2:
+    needs: build-us-west-2
+    runs-on: ubuntu-latest
+    env:
+      MIE_REGION: 'us-west-2'
+    steps:
+      - name: Check out pr branch
+        uses: actions/checkout@v2.3.4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Initialize test AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+            aws-access-key-id: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
+            aws-secret-access-key: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
+            aws-region: us-west-2
+
+      - name: Generate short sha
+        run: |
+          echo "MIE_STACK_NAME=pr`git rev-parse --short HEAD`" >> $GITHUB_ENV
+
+      - name: Run cfn_nag
+        uses: stelligent/cfn_nag@master
+        continue-on-error: true
+        with:
+            input_path: deployment
+
+      - name: Run unit tests
+        run: |
+          cd $GITHUB_WORKSPACE
+          cd test/unit
+          ./run_unit.sh workflowapi
+          ./run_unit.sh dataplaneapi
+
+      - name: Run integ tests
+        run: |
+          cd $GITHUB_WORKSPACE
+          cd test/integ
+          ./run_integ.sh
+
+      - name: Initialize build AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.BUILD_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.BUILD_AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+
+      - name: Delete stack
+        run: |
+          aws cloudformation delete-stack --stack-name $MIE_STACK_NAME
+
+
+

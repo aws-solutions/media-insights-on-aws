@@ -1,0 +1,365 @@
+name: release-workflow
+
+# Controls when the action will run.
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+    inputs:
+        version:
+          description: 'Version number of release (e.g. 2.1.0)'
+          required: true
+        releaseName:
+          description: 'Name of the release (e.g. Nautilus)'
+          required: true
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  create-release-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out development branch
+        uses: actions/checkout@v2.3.4
+        with:
+          ref: development
+
+      - name: Create release branch
+        run: git checkout -b release/v${{ github.event.inputs.version }}
+
+      - name: Initialize mandatory git config
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email noreply@github.com
+      - name: Push new branch
+        run: git push origin release/v${{ github.event.inputs.version }}
+
+
+  build-us-west-2:
+    needs: create-release-branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out release branch
+        uses: actions/checkout@v2.3.4
+        with:
+          ref: release/v${{ github.event.inputs.version }}
+
+      - name: Initialize AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+            aws-access-key-id: ${{ secrets.BUILD_AWS_ACCESS_KEY_ID }}
+            aws-secret-access-key: ${{ secrets.BUILD_AWS_SECRET_ACCESS_KEY }}
+            aws-region: us-west-2
+
+      - name: Run build script
+        run: |
+          cd deployment
+          MIE_STACK_NAME=${{ github.event.inputs.releaseName }}
+          REGION=us-west-2
+          VERSION=v${{ github.event.inputs.version }}
+          DIST_OUTPUT_BUCKET=mie-dev
+          ./build-s3-dist-no-layer-build.sh $DIST_OUTPUT_BUCKET-$REGION $VERSION $REGION
+          read -r TEMPLATE < dist/templateUrl.txt
+          aws cloudformation create-stack --stack-name $MIE_STACK_NAME --template-url $TEMPLATE --region $REGION --parameters ParameterKey=DeployTestResources,ParameterValue=true ParameterKey=MaxConcurrentWorkflows,ParameterValue=10 ParameterKey=DeployAnalyticsPipeline,ParameterValue=true ParameterKey=EnableXrayTrace,ParameterValue=true --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --disable-rollback
+      - name: Wait for deploy to complete before progressing
+        uses: jakejarvis/wait-action@master
+        with:
+          time: '10m'
+
+  build-us-east-1:
+    needs: create-release-branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out release branch
+        uses: actions/checkout@v2.3.4
+        with:
+          ref: release/v${{ github.event.inputs.version }}
+
+      - name: Initialize AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.BUILD_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.BUILD_AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Run build script
+        run: |
+          cd deployment
+          MIE_STACK_NAME=${{ github.event.inputs.releaseName }}
+          REGION=us-east-1
+          VERSION=v${{ github.event.inputs.version }}
+          DIST_OUTPUT_BUCKET=mie-dev
+          ./build-s3-dist-no-layer-build.sh $DIST_OUTPUT_BUCKET-$REGION $VERSION $REGION
+          read -r TEMPLATE < dist/templateUrl.txt
+          aws cloudformation create-stack --stack-name $MIE_STACK_NAME --template-url $TEMPLATE --region $REGION --parameters ParameterKey=DeployTestResources,ParameterValue=true ParameterKey=MaxConcurrentWorkflows,ParameterValue=10 ParameterKey=DeployAnalyticsPipeline,ParameterValue=true ParameterKey=EnableXrayTrace,ParameterValue=true --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --disable-rollback
+      - name: Wait for deploy to complete before progressing
+        uses: jakejarvis/wait-action@master
+        with:
+          time: '10m'
+
+  test-us-west-2:
+    needs: build-us-west-2
+    runs-on: ubuntu-latest
+    env:
+      MIE_REGION: 'us-west-2'
+      MIE_STACK_NAME: ${{ github.event.inputs.releaseName }}
+    steps:
+      - name: Check out release branch
+        uses: actions/checkout@v2.3.4
+        with:
+          ref: release/v${{ github.event.inputs.version }}
+
+      - name: Initialize AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+            aws-access-key-id: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
+            aws-secret-access-key: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
+            aws-region: us-west-2
+
+      - name: Run cfn_nag
+        uses: stelligent/cfn_nag@master
+        continue-on-error: true
+        with:
+            input_path: deployment
+
+      - name: Run unit tests
+        run: |
+          cd $GITHUB_WORKSPACE
+          cd test/unit
+          ./run_unit.sh workflowapi
+          ./run_unit.sh dataplaneapi
+
+      - name: Run integ tests
+        run: |
+          cd $GITHUB_WORKSPACE
+          cd test/integ
+          ./run_integ.sh
+      - name: Run E2E tests
+        run: |
+          cd $GITHUB_WORKSPACE
+          cd test/e2e
+          ./run_e2e.sh
+
+  test-us-east-1:
+    needs: build-us-east-1
+    runs-on: ubuntu-latest
+    env:
+      MIE_REGION: 'us-east-1'
+      MIE_STACK_NAME: ${{ github.event.inputs.releaseName }}
+    steps:
+      - name: Check out release branch
+        uses: actions/checkout@v2.3.4
+        with:
+          ref: release/v${{ github.event.inputs.version }}
+
+      - name: Initialize AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+            aws-access-key-id: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
+            aws-secret-access-key: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
+            aws-region: us-east-1
+
+      - name: Run cfn_nag
+        uses: stelligent/cfn_nag@master
+        continue-on-error: true
+        with:
+            input_path: deployment
+
+      - name: Run unit tests
+        run: |
+          cd $GITHUB_WORKSPACE
+          cd test/unit
+          ./run_unit.sh workflowapi
+          ./run_unit.sh dataplaneapi
+
+      - name: Run integ tests
+        run: |
+          cd $GITHUB_WORKSPACE
+          cd test/integ
+          ./run_integ.sh
+      - name: Run E2E tests
+        run: |
+          cd $GITHUB_WORKSPACE
+          cd test/e2e
+          ./run_e2e.sh
+
+  update-version-in-docs:
+    needs:
+      - test-us-west-2
+      - test-us-east-1
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out release branch
+        uses: actions/checkout@v2.3.4
+        with:
+          ref: release/v${{ github.event.inputs.version }}
+
+      - name: Initialize mandatory git config
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email noreply@github.com
+
+      - name: Update one click links
+        run: |
+          sed -i -e "s/v[0-9]\.[0-9]\.[0-9]/v${{ github.event.inputs.version }}/g" README.md
+          git add README.md
+          git commit -m "Update one-click links with new version"
+          git push origin release/v${{ github.event.inputs.version }}
+
+
+  deploy-us-west-2:
+    needs: update-version-in-docs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out release branch
+        uses: actions/checkout@v2.3.4
+        with:
+          ref: release/v${{ github.event.inputs.version }}
+
+      - name: Initialize AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.DEPLOY_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.DEPLOY_AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+
+      - name: Run build script
+        run: |
+          cd deployment
+          REGION=us-west-2
+          VERSION=v${{ github.event.inputs.version }}
+          DIST_OUTPUT_BUCKET=rodeolabz
+          ./build-s3-dist-no-layer-build.sh $DIST_OUTPUT_BUCKET-$REGION $VERSION $REGION
+
+  deploy-us-east-1:
+    needs: update-version-in-docs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out release branch
+        uses: actions/checkout@v2.3.4
+        with:
+          ref: release/v${{ github.event.inputs.version }}
+
+      - name: Initialize AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.DEPLOY_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.DEPLOY_AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Run build script
+        run: |
+          cd deployment
+          REGION=us-east-1
+          VERSION=v${{ github.event.inputs.version }}
+          DIST_OUTPUT_BUCKET=rodeolabz
+          ./build-s3-dist-no-layer-build.sh $DIST_OUTPUT_BUCKET-$REGION $VERSION $REGION
+
+
+  create-git-staging-branch:
+    needs:
+      - deploy-us-west-2
+      - deploy-us-east-1
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout release branch
+        uses: actions/checkout@v2.3.4
+        with:
+          ref: master
+
+      - name: Create staging branch
+        run: git checkout -b staging/v${{ github.event.inputs.version }}
+
+      - name: Initialize mandatory git config
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email noreply@github.com
+
+      - name: Push new branch
+        run: git push origin staging/v${{ github.event.inputs.version }}
+
+  perform-staging-rebase:
+    needs: create-git-staging-branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout release branch
+        uses: actions/checkout@v2.3.4
+        with:
+          ref: release/v${{ github.event.inputs.version }}
+
+      - name: Initialize mandatory git config
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email noreply@github.com
+
+      - name: Fetch staging branch
+        run: |
+          git fetch origin
+          git checkout staging/v${{ github.event.inputs.version }}
+
+      - name: Merge staging
+        continue-on-error: true
+        run: |
+          git merge -Xtheirs release/v${{ github.event.inputs.version }} --squash --allow-unrelated-histories
+
+      - name: Resolve conflicts
+        run: |
+          git add -A
+
+      - name: Commit
+        run: |
+          git commit -m "v${{ github.event.inputs.version }} release"
+
+      - name: Push
+        run: |
+          git push origin staging/v${{ github.event.inputs.version }}
+
+  create-release-pr-master:
+    needs: perform-staging-rebase
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout master branch
+        uses: actions/checkout@v2.3.4
+        with:
+          ref: master
+      - name: Reset master branch
+        run: |
+          git fetch origin staging/v${{ github.event.inputs.version }}:staging/v${{ github.event.inputs.version }}
+          git reset --hard staging/v${{ github.event.inputs.version }}
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v3
+        with:
+          branch: staging/v${{ github.event.inputs.version }}
+          title: Version ${{ github.event.inputs.version }} Automated Release PR
+          reviewers: brandold
+          delete-branch: true
+          body: |
+            PR Auto-generated from Github Actions release workflow.
+            Review test results here:
+            [1]: https://github.com/brandold/aws-media-insights-engine/actions/runs/${{ github.run_id }}
+
+
+
+  pull-release-into-development-pr:
+    needs: create-release-pr-master
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout development branch
+        uses: actions/checkout@v2.3.4
+        with:
+          ref: development
+
+      - name: Reset development branch
+        run: |
+          git fetch origin release/v${{ github.event.inputs.version }}:release/v${{ github.event.inputs.version }}
+          git reset --hard release/v${{ github.event.inputs.version }}
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v3
+        with:
+          branch: release/v${{ github.event.inputs.version }}
+          base: development
+          title: Merge automated release v${{ github.event.inputs.version }} changes into development
+          reviewers: brandold
+
+
+
+

@@ -25,10 +25,13 @@ Resources:
   AnalyticsStream:
     Type: "AWS::Kinesis::Stream"
     Properties:
-        ShardCount: !Ref KinesisShardCount
-        StreamEncryption:
-          EncryptionType: "KMS"
-          KeyId: "alias/aws/kinesis"
+      ShardCount: !Ref KinesisShardCount
+      StreamEncryption:
+        EncryptionType: "KMS"
+        KeyId: "alias/aws/kinesis"
+      Tags:
+        - Key: "ResourceTag/environment"
+          Value: "mie"
 
 # ddb stream lambda
 
@@ -37,7 +40,7 @@ Resources:
     Properties:
       Handler: "stream.lambda_handler"
       Role: !GetAtt LambdaStreamRole.Arn
-      TracingConfig: 
+      TracingConfig:
           Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -53,6 +56,9 @@ Resources:
       Environment:
         Variables:
           StreamName: !Ref AnalyticsStream
+      Tags:
+        - Key: "ResourceTag/environment"
+          Value: "mie"
 
 # stream event mapping for lambda
 
@@ -116,6 +122,9 @@ Resources:
                   - "logs:CreateLogStream"
                   - "logs:PutLogEvents"
                 Resource: "*"
+      Tags:
+        - Key: "ResourceTag/environment"
+          Value: "mie"
 
 Outputs:
   analyticsStreamArn:

@@ -166,7 +166,7 @@ Resources:
                   ]
                 Condition:
                   StringEquals:
-                    ResourceTag/environment: mie
+                    aws:ResourceTag/environment: "mie"
               - Effect: Allow
                 Action:
                   - "dynamodb:GetItem"
@@ -311,7 +311,7 @@ Resources:
                   ]
                 Condition:
                   StringEquals:
-                    ResourceTag/environment: mie
+                    aws:ResourceTag/environment: "mie"
               - Effect: Allow
                 Action:
                   - "dynamodb:GetItem"

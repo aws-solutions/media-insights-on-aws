@@ -728,15 +728,11 @@ Resources:
             reason: "The topic permissions are scoped to the account using the condition"
     Properties:
       PolicyDocument:
-        # Id: Id1
         Version: '2012-10-17'
         Statement:
-        # - Sid: AccountSubscribeTopicPolicy
         - Effect: Allow
           Principal:
             AWS: !Ref 'AWS::AccountId'
-          # Principal:
-          #   Service: sqs.amazonaws.com
           Action:
           - SNS:Subscribe
           - SNS:Receive
@@ -751,14 +747,18 @@ Resources:
     Type: AWS::SQS::Queue
   SqsQueuePolicy:
     Type: AWS::SQS::QueuePolicy
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "The queue permissions are scoped to the SNS topic using the condition"
     Properties:
       PolicyDocument:
         Version: '2012-10-17'
-        Id: MyQueuePolicy
         Statement:
-        - Sid: Allow-SNS-SendMessage
-          Effect: Allow
-          Principal: "*"
+        - Effect: Allow
+          Principal: 
+            AWS: !Ref 'AWS::AccountId'
           Action:
           - sqs:SendMessage
           Resource: !GetAtt WorkflowExecutionEventQueue.Arn

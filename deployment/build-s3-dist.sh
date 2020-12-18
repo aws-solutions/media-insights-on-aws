@@ -151,7 +151,7 @@ echo "/packages/$file" >> requirements.txt;
 echo "Running build-lambda-layer.sh:"
 echo ""
 rm -rf lambda_layer-python-* lambda_layer-python*.zip
-./build-lambda-layer.sh requirements.txt
+./build-lambda-layer.sh requirements.txt > /dev/null
 if [ $? -eq 0 ]; then
   mv lambda_layer-python3.6.zip media_insights_engine_lambda_layer_python3.6.zip
   mv lambda_layer-python3.7.zip media_insights_engine_lambda_layer_python3.7.zip

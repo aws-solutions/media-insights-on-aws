@@ -469,6 +469,11 @@ Resources:
 
   WorkflowExecutionStreamLambdaRole:
     Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "Lambda requires ability to write to cloudwatch *, as configured in the default AWS lambda execution role."
     Properties:
       AssumeRolePolicyDocument:
         Version: 2012-10-17
@@ -716,24 +721,24 @@ Resources:
     Properties: {}
   WorkflowExecutionEventTopicPolicy:
     Type: 'AWS::SNS::TopicPolicy'
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "The topic permissions are scoped to the account using the condition"
     Properties:
       PolicyDocument:
-        Id: Id1
+        # Id: Id1
         Version: '2012-10-17'
         Statement:
-        - Sid: AccountTopicPolicy
-          Effect: Allow
+        # - Sid: AccountSubscribeTopicPolicy
+        - Effect: Allow
           Principal:
-            AWS: "*"
+            AWS: !Ref 'AWS::AccountId'
+          # Principal:
+          #   Service: sqs.amazonaws.com
           Action:
-          - SNS:GetTopicAttributes
-          - SNS:SetTopicAttributes
-          - SNS:AddPermission
-          - SNS:RemovePermission
-          - SNS:DeleteTopic
           - SNS:Subscribe
-          - SNS:ListSubscriptionsByTopic
-          - SNS:Publish
           - SNS:Receive
           Resource: !Ref WorkflowExecutionEventTopic
           Condition:

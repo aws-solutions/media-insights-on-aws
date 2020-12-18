@@ -79,7 +79,7 @@ Resources:
       Runtime: python3.6
       Role: !GetAtt MieHelperExecutionRole.Arn
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
 
   MieHelperFunctionPermissions:
@@ -122,7 +122,7 @@ Resources:
                 Action: ['logs:*']
                 Resource: 'arn:aws:logs:*:*:*'
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
 
   StageExecutionRole:
@@ -143,7 +143,7 @@ Resources:
             Action:
               - sts:AssumeRole
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
       Policies:
         - PolicyName: !Sub "${AWS::StackName}-stage-execution-lambda"
@@ -281,7 +281,7 @@ Resources:
             Action:
               - sts:AssumeRole
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
       Policies:
         - PolicyName: !Sub "${AWS::StackName}-operation-lambda"
@@ -431,7 +431,7 @@ Resources:
             Principal:
               Service: "states.amazonaws.com"
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
       Policies:
         - PolicyName: !Sub "${AWS::StackName}-sfn-lambda-exec"
@@ -465,7 +465,7 @@ Resources:
             Principal:
               Service: "lambda.amazonaws.com"
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
       Policies:
         - PolicyName: !Sub "${AWS::StackName}-operator-failed"
@@ -501,7 +501,7 @@ Resources:
           KeyType: HASH
       TableName: !Join ["", [Ref: "AWS::StackName", "System"]]
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
 
   WorkflowTable:
@@ -518,7 +518,7 @@ Resources:
           KeyType: HASH
       TableName: !Join ["", [Ref: "AWS::StackName", "Workflow"]]
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
 
   StageTable:
@@ -535,7 +535,7 @@ Resources:
           KeyType: HASH
       TableName: !Join ["", [Ref: "AWS::StackName", "Stage"]]
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
 
   OperationTable:
@@ -552,7 +552,7 @@ Resources:
           KeyType: HASH
       TableName: !Join ["", [Ref: "AWS::StackName", "Operation"]]
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
 
   HistoryTable:
@@ -573,7 +573,7 @@ Resources:
           KeyType: RANGE
       TableName: !Join ["", [Ref: "AWS::StackName", "History"]]
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
 
   WorkflowExecutionTable:
@@ -607,7 +607,7 @@ Resources:
             ProjectionType: ALL
       TableName: !Join ["", [Ref: "AWS::StackName", "WorkflowExecution"]]
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
 
   DataplaneTable:
@@ -626,7 +626,7 @@ Resources:
       StreamSpecification:
         StreamViewType: "NEW_AND_OLD_IMAGES"
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
 
   # Services - S3
@@ -645,7 +645,7 @@ Resources:
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
     Metadata:
       cfn_nag:
@@ -695,7 +695,7 @@ Resources:
             AbortIncompleteMultipartUpload:
               DaysAfterInitiation: 1
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
 
   DataplaneBucketPolicy:
@@ -722,7 +722,7 @@ Resources:
       QueueName: !Sub "${AWS::StackName}-WorkflowExecLambdaDLQ"
       MessageRetentionPeriod: 43200 # #Maximum, 12 hours in seconds.
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
 
   StageExecutionDeadLetterQueue:
@@ -731,7 +731,7 @@ Resources:
       QueueName: !Sub "${AWS::StackName}-StageExecDLQ"
       MessageRetentionPeriod: 43200 # #Maximum, 12 hours in seconds.
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
 
   StageExecutionQueue:
@@ -747,7 +747,7 @@ Resources:
             - Arn
         maxReceiveCount: 1 # Don't retry if stage times out
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
 
   # Lambda Layers:
@@ -863,7 +863,7 @@ Resources:
             - WorkflowExecutionLambdaDeadLetterQueue
             - Arn
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
 
   # Workflow state machine error handler
@@ -913,7 +913,7 @@ Resources:
             - WorkflowExecutionLambdaDeadLetterQueue
             - Arn
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
 
   StateMachineErrorCloudWatchEvent:
@@ -985,7 +985,7 @@ Resources:
       Runtime: python3.7
       Timeout: 900
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
 
   FilterOperationLambda:
@@ -1021,7 +1021,7 @@ Resources:
       Runtime: python3.7
       Timeout: 900
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
 
   OperatorFailedLambda:
@@ -1045,7 +1045,7 @@ Resources:
           ]
       Runtime: "python3.7"
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
 
   # DataPlane API Stack

@@ -61,7 +61,7 @@ Resources:
                 Resource:
                   - !Join ["", ["arn:aws:logs:", Ref: "AWS::Region", ":", Ref: "AWS::AccountId", ":log-group:/aws/lambda/*"]]
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
 
 
@@ -89,7 +89,7 @@ Resources:
           DataplaneEndpoint: !Ref "DataplaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
 
   VideoSyncFailLambda:
@@ -114,7 +114,7 @@ Resources:
           DataplaneEndpoint: !Ref "DataplaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
 
   VideoAsyncOKLambda:
@@ -139,7 +139,7 @@ Resources:
           DataplaneEndpoint: !Ref "DataplaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
 
   VideoAsyncOKMonitorLambda:
@@ -164,7 +164,7 @@ Resources:
           DataplaneEndpoint: !Ref "DataplaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
 
   VideoAsyncFailMonitorLambda:
@@ -189,7 +189,7 @@ Resources:
           DataplaneEndpoint: !Ref "DataplaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
 
   AudioSyncOKLambda:
@@ -214,7 +214,7 @@ Resources:
           DataplaneEndpoint: !Ref "DataplaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
 
   AudioAsyncOKLambda:
@@ -239,7 +239,7 @@ Resources:
           DataplaneEndpoint: !Ref "DataplaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
 
   AudioAsyncOKMonitorLambda:
@@ -264,7 +264,7 @@ Resources:
           DataplaneEndpoint: !Ref "DataplaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
 
   ImageSyncOKLambda:
@@ -289,7 +289,7 @@ Resources:
           DataplaneEndpoint: !Ref "DataplaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
 
   ImageAsyncOKLambda:
@@ -314,7 +314,7 @@ Resources:
           DataplaneEndpoint: !Ref "DataplaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
 
   ImageAsyncOKMonitorLambda:
@@ -339,7 +339,7 @@ Resources:
           DataplaneEndpoint: !Ref "DataplaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
 
   TextSyncOKLambda:
@@ -364,7 +364,7 @@ Resources:
           DataplaneEndpoint: !Ref "DataplaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
 
   TextAsyncOKLambda:
@@ -389,7 +389,7 @@ Resources:
           DataplaneEndpoint: !Ref "DataplaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
 
   TextAsyncOKMonitorLambda:
@@ -414,7 +414,7 @@ Resources:
           DataplaneEndpoint: !Ref "DataplaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
 
 ## Build Operations

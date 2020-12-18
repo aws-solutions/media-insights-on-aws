@@ -30,7 +30,7 @@ Resources:
         EncryptionType: "KMS"
         KeyId: "alias/aws/kinesis"
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
 
 # ddb stream lambda
@@ -57,7 +57,7 @@ Resources:
         Variables:
           StreamName: !Ref AnalyticsStream
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
 
 # stream event mapping for lambda
@@ -123,7 +123,7 @@ Resources:
                   - "logs:PutLogEvents"
                 Resource: "*"
       Tags:
-        - Key: "ResourceTag/environment"
+        - Key: "environment"
           Value: "mie"
 
 Outputs:

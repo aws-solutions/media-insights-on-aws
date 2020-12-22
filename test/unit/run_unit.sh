@@ -44,17 +44,28 @@ echo "Setup test environment variables"
 echo "------------------------------------------------------------------------------"
 
 if [ "$1" = "" ]; then
-    echo "Running all unit tests"
-    pytest -s -W ignore::DeprecationWarning -p no:cacheproviders
+    echo "Invalid positional parameter. Must select dataplaneapi or workflowapi. Quitting."
+    exit 1
+
 elif [ "$1" = "dataplaneapi" ]; then
     echo "Running dataplane unit tests"
-    pytest dataplaneapi/ -s -W ignore::DeprecationWarning -p no:cacheprovider
+    pytest dataplaneapi/ -s -W ignore::DeprecationWarning -p no:cacheprovider --cov=../../source/dataplaneapi
+    if [ $? -eq 0 ]; then
+	    exit 0
+    else
+	    exit 1
+    fi
 elif [ "$1" = "workflowapi" ]; then
     echo "Running workflow unit tests"
-    pytest workflowapi/ -s -W ignore::DeprecationWarning -p no:cacheprovider
+    pytest workflowapi/ -s -W ignore::DeprecationWarning -p no:cacheprovider --cov=../../source/workflowapi
+    if [ $? -eq 0 ]; then
+	    exit 0
+    else
+	    exit 1
+    fi
 else
     echo "Invalid positional parameter. Quitting."
-    exit
+    exit 1
 fi
 
 

@@ -9,7 +9,6 @@ Parameters:
     AllowedValues:
       - Yes
       - No
-
   DeployAnalyticsPipeline:
     Type: String
     Description: Deploy a metadata streaming pipeline that can be consumed by downstream analytics plaforms
@@ -21,7 +20,7 @@ Parameters:
   MaxConcurrentWorkflows:
     Type: Number
     Description: Maximum number of workflows to run concurrently.  When the maximum is reached, additional workflows are added to a wait queue.
-    Default: 10
+    Default: 5
     MinValue: 1
 
   EnableXrayTrace:
@@ -468,6 +467,49 @@ Resources:
                 Resource: "*"
 
 
+  WorkflowExecutionStreamLambdaRole:
+    Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "Lambda requires ability to write to cloudwatch *, as configured in the default AWS lambda execution role."
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: !Sub "${AWS::StackName}-WorkflowExecutionLambdaStreamAccessPolicy"
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "dynamodb:DescribeStream"
+                  - "dynamodb:GetRecords"
+                  - "dynamodb:GetShardIterator"
+                  - "dynamodb:ListStreams"
+                Resource: 
+                  Fn::GetAtt:
+                    - WorkflowExecutionTable
+                    - StreamArn
+              - Effect: Allow
+                Action:
+                  - "sns:Publish"
+                Resource: 
+                  !Ref WorkflowExecutionEventTopic
+              # TODO: Security - Scope this down
+              - Effect: Allow
+                Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: "*"
   # Services - Dynamodb
 
   SystemTable:
@@ -574,6 +616,8 @@ Resources:
           Projection:
             ProjectionType: ALL
       TableName: !Join ["", [Ref: "AWS::StackName", "WorkflowExecution"]]
+      StreamSpecification:
+        StreamViewType: "NEW_AND_OLD_IMAGES"
 
   DataplaneTable:
     Type: AWS::DynamoDB::Table
@@ -592,10 +636,32 @@ Resources:
         StreamViewType: "NEW_AND_OLD_IMAGES"
 
   # Services - S3
-  # TODO: Best Practice - S3 Bucket should have access logging configured, S3 Bucket should have encryption option set
+  DataplaneLogsBucket:
+    DeletionPolicy: Retain
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: LogDeliveryWrite
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W35
+            reason: "Used to store access logs for other buckets"
+          - id: W51
+            reason: "Bucket is private and does not need a bucket policy"
+
   # TODO: Update cors config per: https://docs.amplify.aws/lib/storage/getting-started/q/platform/js#using-amazon-s3
   Dataplane:
     Type: "AWS::S3::Bucket"
+    DependsOn: DataplaneLogsBucket
     DeletionPolicy: Retain
     Properties:
       CorsConfiguration:
@@ -610,6 +676,27 @@ Resources:
               - x-amz-id-2
               - ETag
             Id: AllowUploadsFromWebApp
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      LoggingConfiguration:
+        DestinationBucketName: !Ref DataplaneLogsBucket
+        LogFilePrefix: "access_logs/"
+      LifecycleConfiguration:
+        Rules:
+          - Id: "Keep access log for 10 days"
+            Status: Enabled
+            Prefix: "access_logs/"
+            ExpirationInDays: 10
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 1
+          - Id: "Keep cloudfront log for 10 days"
+            Status: Enabled
+            Prefix: "cf_logs/"
+            ExpirationInDays: 10
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 1
 
   DataplaneBucketPolicy:
     Type: "AWS::S3::BucketPolicy"
@@ -627,6 +714,68 @@ Resources:
                 aws:SecureTransport: false
 
 
+  # Service -SNS
+
+  WorkflowExecutionEventTopic:
+    Type: 'AWS::SNS::Topic'
+    Properties: {}
+  WorkflowExecutionEventTopicPolicy:
+    Type: 'AWS::SNS::TopicPolicy'
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "The topic permissions are scoped to the account using the condition"
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            AWS: !Ref 'AWS::AccountId'
+          Action:
+          - SNS:Subscribe
+          - SNS:Receive
+          Resource: !Ref WorkflowExecutionEventTopic
+          Condition:
+            StringEquals:
+              AWS:SourceOwner: !Ref 'AWS::AccountId'
+      Topics:
+        - !Ref WorkflowExecutionEventTopic
+
+  WorkflowExecutionEventQueue:
+    Type: AWS::SQS::Queue
+  SqsQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "The queue permissions are scoped to the SNS topic using the condition"
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal: 
+            AWS: !Ref 'AWS::AccountId'
+          Action:
+          - sqs:SendMessage
+          Resource: !GetAtt WorkflowExecutionEventQueue.Arn
+          Condition:
+            ArnEquals:
+              aws:SourceArn: !Ref WorkflowExecutionEventTopic
+      Queues:
+        - !Ref WorkflowExecutionEventQueue
+
+  WorkflowExecutionEventSnsSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: sqs
+      Endpoint: !GetAtt WorkflowExecutionEventQueue.Arn
+      TopicArn: !Ref WorkflowExecutionEventTopic
+
+  
   # Services - SQS
 
   WorkflowExecutionLambdaDeadLetterQueue:
@@ -681,7 +830,7 @@ Resources:
     DeletionPolicy: Retain
     Properties:
       CompatibleRuntimes:
-        - python3.7
+        - python3.6
       Content:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -939,7 +1088,104 @@ Resources:
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Runtime: "python3.7"
-  
+
+  StartWaitOperationLambda:
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-start-wait-operation"
+      Environment:
+        Variables:
+          STAGE_EXECUTION_QUEUE_URL: !Ref StageExecutionQueue
+          STAGE_TABLE_NAME: !Ref StageTable
+          OPERATION_TABLE_NAME: !Ref OperationTable
+          WORKFLOW_EXECUTION_TABLE_NAME: !Ref WorkflowExecutionTable
+          WORKFLOW_TABLE_NAME: !Ref WorkflowTable
+      Handler: app.start_wait_operation_lambda
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+            "workflow.zip",
+            ],
+          ]
+      MemorySize: 256
+      Role:
+        Fn::GetAtt:
+          - OperationLambdaExecutionRole
+          - Arn
+      Runtime: python3.7
+      Timeout: 900
+    Type: AWS::Lambda::Function
+
+  CheckWaitOperationLambda:
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-check-wait-operation"
+      Environment:
+        Variables:
+          STAGE_EXECUTION_QUEUE_URL: !Ref StageExecutionQueue
+          STAGE_TABLE_NAME: !Ref StageTable
+          OPERATION_TABLE_NAME: !Ref OperationTable
+          WORKFLOW_EXECUTION_TABLE_NAME: !Ref WorkflowExecutionTable
+          WORKFLOW_TABLE_NAME: !Ref WorkflowTable
+      Handler: app.check_wait_operation_lambda
+      Layers:
+        - !Ref "MediaInsightsEnginePython37Layer"
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+            "workflow.zip",
+            ],
+          ]
+      MemorySize: 256
+      Role:
+        Fn::GetAtt:
+          - OperationLambdaExecutionRole
+          - Arn
+      Runtime: python3.7
+      Timeout: 900
+    Type: AWS::Lambda::Function
+
+  WorkflowExecutionStreamingFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "workflowstream.lambda_handler"
+      Role: !GetAtt WorkflowExecutionStreamLambdaRole.Arn
+      Environment:
+        Variables:
+          TOPIC_ARN: !Ref WorkflowExecutionEventTopic
+      Code:
+        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Key:
+          !Join [
+            "/",
+            [
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "workflowstream.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+
+# stream event mapping for lambda
+
+  StreamingFunctionEventMapping:
+    Type: "AWS::Lambda::EventSourceMapping"
+    Properties:
+      Enabled: true
+      EventSourceArn: 
+        Fn::GetAtt:
+          - WorkflowExecutionTable
+          - StreamArn
+      FunctionName: !GetAtt WorkflowExecutionStreamingFunction.Arn
+      StartingPosition: "LATEST"
+
   # DataPlane API Stack
   MediaInsightsDataplaneApiStack:
     Type: "AWS::CloudFormation::Stack"
@@ -1090,6 +1336,8 @@ Resources:
         DataPlaneBucket: !Ref Dataplane
         MediaInsightsEnginePython37Layer: !Ref MediaInsightsEnginePython37Layer
         MediaInsightsEnginePython36Layer: !Ref MediaInsightsEnginePython36Layer
+        StartWaitOperationLambda: !GetAtt StartWaitOperationLambda.Arn
+        CheckWaitOperationLambda: !GetAtt CheckWaitOperationLambda.Arn
 
   TestResources:
     Condition: DeployTestResourcesCondition
@@ -1123,7 +1371,6 @@ Resources:
             - Outputs.APIHandlerName
         DataPlaneBucket: !Ref Dataplane
         MediaInsightsEnginePython37Layer: !Ref MediaInsightsEnginePython37Layer
-
 
 Outputs:
   # TODO: Add outputs for rest api IDs of workflow/dataplane apis

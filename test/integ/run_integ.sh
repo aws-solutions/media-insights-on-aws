@@ -82,12 +82,27 @@ echo "--------------------------------------------------------------------------
 if [ "$1" = "" ]; then
     echo "Running all integ tests"
     pytest -s -W ignore::DeprecationWarning -p no:cacheproviders
+    if [ $? -eq 0 ]; then
+	exit 0
+    else
+	exit 1
+    fi
 elif [ "$1" = "dataplaneapi" ]; then
     echo "Running dataplane integ tests"
     pytest dataplaneapi/ -s -W ignore::DeprecationWarning -p no:cacheprovider
+    if [ $? -eq 0 ]; then
+	exit 0
+    else
+	exit 1
+    fi
 elif [ "$1" = "workflowapi" ]; then
     echo "Running workflow integ tests"
     pytest workflowapi/ -s -W ignore::DeprecationWarning -p no:cacheprovider
+    if [ $? -eq 0 ]; then
+	exit 0
+    else
+	exit 1
+    fi
 else
     echo "Invalid positional parameter. Quitting."
     exit

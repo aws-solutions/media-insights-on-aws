@@ -22,6 +22,7 @@ import json
 import time
 import decimal
 import signal
+from operator import itemgetter
 from jsonschema import validate, ValidationError
 # from urllib2 import build_opener, HTTPHandler, Request
 from urllib.request import build_opener, HTTPHandler, Request
@@ -226,6 +227,166 @@ def get_system_configuration_api():
         operation = None
         raise ChaliceViewError("Exception '%s'" % e)
     return response["Items"]
+
+
+@app.route('/transcribe/get_vocabulary', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
+def get_vocabulary():
+    print('get_vocabulary request: '+app.current_request.raw_body.decode())
+    transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
+    vocabulary_name = json.loads(app.current_request.raw_body.decode())['vocabulary_name']
+    response = transcribe_client.get_vocabulary(VocabularyName=vocabulary_name)
+    # Convert time field to a format that is JSON serializable
+    response['LastModifiedTime'] = response['LastModifiedTime'].isoformat()
+    return response
+
+
+@app.route('/transcribe/download_vocabulary', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
+def download_vocabulary():
+    """ Download the contents of a Transcibe Custom Vocabulary
+
+    Returns:
+        
+        .. code-block:: python
+
+            [
+                {
+                "Name": "Value"
+                },
+            ...]  
+
+    Raises:
+        
+    """
+    print('download_vocabulary request: '+app.current_request.raw_body.decode())
+    transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
+    vocabulary_name = json.loads(app.current_request.raw_body.decode())['vocabulary_name']
+    url = transcribe_client.get_vocabulary(VocabularyName=vocabulary_name)['DownloadUri']
+    import urllib.request
+    vocabulary_file = urllib.request.urlopen(url).read().decode("utf-8")
+    vocabulary_json = []
+    vocabulary_fields = vocabulary_file.split('\n')[0].split('\t')
+    for line in vocabulary_file.split('\n')[1:]:
+        vocabulary_item_array = line.split('\t')
+        vocabulary_item_json = {}
+        # if vocab item is missing any fields, then skip it
+        if len(vocabulary_item_array) == len(vocabulary_fields):
+            i = 0
+            for field in vocabulary_fields:
+                vocabulary_item_json[field] = vocabulary_item_array[i]
+                i = i + 1
+        vocabulary_json.append(vocabulary_item_json)
+    return {"vocabulary": vocabulary_json}
+
+
+@app.route('/transcribe/list_vocabularies', cors=True, methods=['GET'], authorizer=authorizer)
+def list_vocabularies():
+    # List all custom vocabularies
+    print('list_vocabularies request: '+app.current_request.raw_body.decode())
+    transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
+    response = transcribe_client.list_vocabularies(MaxResults=100)
+    vocabularies = response['Vocabularies']
+    while ('NextToken' in response):
+        response = transcribe_client.list_vocabularies(MaxResults=100, NextToken=response['NextToken'])
+        vocabularies = vocabularies + response['Vocabularies']
+    # Convert time field to a format that is JSON serializable
+    for item in vocabularies:
+        item['LastModifiedTime'] = item['LastModifiedTime'].isoformat()
+    return response
+
+
+@app.route('/transcribe/delete_vocabulary', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
+def delete_vocabulary():
+    # Delete the specified vocabulary if it exists
+    print('delete_vocabulary request: '+app.current_request.raw_body.decode())
+    transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
+    vocabulary_name = json.loads(app.current_request.raw_body.decode())['vocabulary_name']
+    response = transcribe_client.delete_vocabulary(VocabularyName=vocabulary_name)
+    return response
+
+
+@app.route('/transcribe/create_vocabulary', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
+def create_vocabulary():
+    # Save the input vocab to a new vocabulary
+    print('create_vocabulary request: '+app.current_request.raw_body.decode())
+    transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
+    vocabulary_name = json.loads(app.current_request.raw_body.decode())['vocabulary_name']
+    language_code = json.loads(app.current_request.raw_body.decode())['language_code']
+    response = transcribe_client.create_vocabulary(
+        VocabularyName=vocabulary_name,
+        LanguageCode=language_code,
+        VocabularyFileUri=json.loads(app.current_request.raw_body.decode())['s3uri']
+    )
+    return response
+
+
+@app.route('/translate/get_terminology', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
+def get_terminology():
+    print('get_terminology request: '+app.current_request.raw_body.decode())
+    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
+    terminology_name = json.loads(app.current_request.raw_body.decode())['terminology_name']
+    response = translate_client.get_terminology(Name=terminology_name, TerminologyDataFormat='CSV')
+    # Remove response metadata since we don't need it
+    del response['ResponseMetadata']
+    # Convert time field to a format that is JSON serializable
+    response['TerminologyProperties']['CreatedAt'] = response['TerminologyProperties']['CreatedAt'].isoformat()
+    response['TerminologyProperties']['LastUpdatedAt'] = response['TerminologyProperties']['LastUpdatedAt'].isoformat()
+    return response
+
+
+@app.route('/translate/download_terminology', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
+def download_terminology():
+    # This function returns the specified terminology in CSV format, wrapped in a JSON formatted response.
+    print('download_terminology request: '+app.current_request.raw_body.decode())
+    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
+    terminology_name = json.loads(app.current_request.raw_body.decode())['terminology_name']
+    url = translate_client.get_terminology(Name=terminology_name, TerminologyDataFormat='CSV')['TerminologyDataLocation']['Location']
+    import urllib.request
+    terminology_csv = urllib.request.urlopen(url).read().decode("utf-8")
+    return {"terminology": terminology_csv}
+
+
+@app.route('/translate/list_terminologies', cors=True, methods=['GET'], authorizer=authorizer)
+def list_terminologies():
+    # This function returns a list of saved terminologies
+    print('list_terminologies request: '+app.current_request.raw_body.decode())
+    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
+    response = translate_client.list_terminologies(MaxResults=100)
+    terminologies = response['TerminologyPropertiesList']
+    while ('NextToken' in response):
+        response = translate_client.list_terminologies(MaxResults=100, NextToken=response['NextToken'])
+        terminologies = terminologies + response['TerminologyPropertiesList']
+    # Convert time field to a format that is JSON serializable
+    for item in terminologies:
+        item['CreatedAt'] = item['CreatedAt'].isoformat()
+        item['LastUpdatedAt'] = item['LastUpdatedAt'].isoformat()
+    return response
+
+
+@app.route('/translate/delete_terminology', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
+def delete_terminology():
+    # Delete the specified terminology if it exists
+    print('delete_terminology request: '+app.current_request.raw_body.decode())
+    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
+    terminology_name = json.loads(app.current_request.raw_body.decode())['terminology_name']
+    response = translate_client.delete_terminology(Name=terminology_name)
+    return response
+
+
+@app.route('/translate/create_terminology', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
+def create_terminology():
+    # Save the input terminology to a new terminology
+    print('create_terminology request: '+app.current_request.raw_body.decode())
+    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
+    terminology_name = json.loads(app.current_request.raw_body.decode())['terminology_name']
+    terminology_csv = json.loads(app.current_request.raw_body.decode())['terminology_csv']
+    response = translate_client.import_terminology(
+        Name=terminology_name,
+        MergeStrategy='OVERWRITE',
+        TerminologyData={'File': terminology_csv, 'Format':'CSV'}
+    )
+    response['TerminologyProperties']['CreatedAt'] = response['TerminologyProperties']['CreatedAt'].isoformat()
+    response['TerminologyProperties']['LastUpdatedAt'] = response['TerminologyProperties']['LastUpdatedAt'].isoformat()
+    return response
 
 ##############################################################################
 #    ___                       _
@@ -940,6 +1101,7 @@ def create_stage(stage):
                     "Resource": COMPLETE_STAGE_LAMBDA_ARN,
                     "End": True
                 }
+
             }
         }
         stageAsl["StartAt"] = Name
@@ -948,6 +1110,13 @@ def create_stage(stage):
             "Next": "Complete Stage {}".format(Name),
             "ResultPath": "$.Outputs",
             "Branches": [
+            ],
+            "Catch": [
+                {
+                    "ErrorEquals": ["States.ALL"],
+                    "Next": "Complete Stage {}".format(Name),
+                    "ResultPath": "$.Outputs"
+                }
             ]
         }
 
@@ -1850,6 +2019,14 @@ def create_workflow_execution(trigger, workflow_execution):
                 logger.info("Exception {}".format(e))
                 raise ChaliceViewError("Exception '%s'" % e)
             else:
+                asset_id = input
+
+                workflow_execution_list = list_workflow_executions_by_assetid(asset_id)
+                for workflow_execution in workflow_execution_list:
+                    if workflow_execution["Status"] not in [awsmie.WORKFLOW_STATUS_COMPLETE, awsmie.WORKFLOW_STATUS_ERROR]:
+                        raise ConflictError("There is currently another workflow execution(Id = {}) active on AssetId {}.".format(
+                            workflow_execution["Id"], asset_id))
+
                 retrieve_asset = dataplane.retrieve_asset_metadata(asset_id)
 
                 if "results" in retrieve_asset:
@@ -1966,15 +2143,99 @@ def initialize_workflow_execution(trigger, Name, input, Configuration, asset_id)
     return workflow_execution
 
 
-@app.route('/workflow/execution', cors=True, methods=['PUT'], authorizer=authorizer)
-def update_workflow_execution():
-    """ Update a workflow execution NOT IMPLEMENTED
+@app.route('/workflow/execution/{Id}', cors=True, methods=['PUT'], authorizer=authorizer)
+def update_workflow_execution(Id):
+    """ Update a workflow execution
 
-    XXX
+       Options:
+
+           Resume a workflow that is in a Waiting Status in a specific stage.
+
+    Body:
+
+    .. code-block:: python
+
+        {
+        "WaitingStageName":"<stage-name>"
+        }
+
+
+    Returns:
+        A dict mapping keys to the corresponding workflow execution with its current status
+
+        .. code-block:: python
+
+            {
+                "Id: string,
+                "Status": "Resumed"
+            }
+
+    Raises:
+        200: The workflow execution was updated successfully.
+        400: Bad Request - the input stage was not found, the current stage did not match the WaitingStageName, 
+             or the Workflow Status was not "Waiting"
+        500: Internal server error
+    """
+    response = {}
+    params = json.loads(app.current_request.raw_body.decode())
+    logger.info(json.dumps(params))
+
+    if "WaitingStageName" in params:
+        response = resume_workflow_execution("api", Id, params["WaitingStageName"])
+
+    return response
+
+def resume_workflow_execution(trigger, id, waiting_stage_name):
+    """
+    Get the workflow execution by id from dyanamo and assign to this object
+    :param id: The id of the workflow execution
+    :param status: The new status of the workflow execution
 
     """
-    stage = {"Message": "UPDATE WORKFLOW EXECUTION NOT IMPLEMENTED"}
-    return stage
+    print("Resume workflow execution {} waiting stage = {}".format(id, waiting_stage_name))
+    execution_table = DYNAMO_RESOURCE.Table(WORKFLOW_EXECUTION_TABLE_NAME)
+
+    workflow_execution = {}
+    workflow_execution["Id"] = id
+    workflow_execution["Status"] = awsmie.WORKFLOW_STATUS_RESUMED
+ 
+    try:
+        response = execution_table.update_item(
+            Key={
+                'Id': id
+            },
+            UpdateExpression='SET #workflow_status = :workflow_status',
+            ExpressionAttributeNames={
+                '#workflow_status': "Status"
+            },
+            ConditionExpression="#workflow_status = :workflow_waiting_status AND CurrentStage = :waiting_stage_name",
+            ExpressionAttributeValues={
+                ':workflow_waiting_status': awsmie.WORKFLOW_STATUS_WAITING,
+                ':workflow_status': awsmie.WORKFLOW_STATUS_RESUMED,
+                ':waiting_stage_name': waiting_stage_name
+            }
+        )
+    except ClientError as e:
+        if e.response['Error']['Code'] == "ConditionalCheckFailedException":
+            print(e.response['Error']['Message'])
+            raise BadRequestError("Workflow status is not 'Waiting' or Current stage doesn't match the request")
+        else:
+            raise
+
+    # Queue the resumed workflow so it can run when resources are available
+    # FIXME - must set workflow status to error if this fails since we marked it as QUeued .  we had to do that to avoid
+    # race condition on status with the execution itself.  Once we hand it off to the state machine, we can't touch the status again.
+    response = SQS_CLIENT.send_message(QueueUrl=STAGE_EXECUTION_QUEUE_URL, MessageBody=json.dumps(workflow_execution))
+    # the response contains MD5 of the body, a message Id, MD5 of message attributes, and a sequence number (for FIFO queues)
+    logger.info('Message ID : {}'.format(response['MessageId']))
+    
+    # We just queued a workflow so, Trigger the workflow_scheduler
+    response = LAMBDA_CLIENT.invoke(
+        FunctionName=WORKFLOW_SCHEDULER_LAMBDA_ARN,
+        InvocationType='Event'
+    )
+    
+    return workflow_execution
 
 
 @app.route('/workflow/execution', cors=True, methods=['GET'], authorizer=authorizer)

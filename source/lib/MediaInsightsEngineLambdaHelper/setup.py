@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="Media Insights Engine Lambda Helper",
-    version="0.0.3",
+    version="0.0.4",
     author="Brandon Dold",
     author_email="brandold@amazon.com",
     description="Helper classes for developing Media Insights Engine Lambda Functions",

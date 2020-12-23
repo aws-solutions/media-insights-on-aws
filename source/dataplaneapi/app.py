@@ -615,6 +615,9 @@ def put_asset_metadata(asset_id):
         return {"Status": "Failed"}
 
 
+
+
+
 @app.route('/metadata/{asset_id}', cors=True, methods=['GET'], authorizer=authorizer)
 def get_asset_metadata(asset_id):
     """

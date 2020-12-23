@@ -11,7 +11,10 @@ deployment/lambda_layer_factory/lambda_layer-python-*
 *.DS_Store
 *.iml
 .idea/
-
+*~HEAD
+*~staging*
+*~release*
+test/unit/.coverage
 # these are not checked in to o.g. git project
 package-lock.json
 
@@ -34,7 +37,8 @@ doc/sphinx/output/
 
 # explicitly named "private" files
 **/private*webapp/README.md
+private/
 
 # LambdaHelper builds
-lib/MediaInsightsEngineLambdaHelper/Media_Insights_Engine_Lambda_Helper.egg-info
-lib/MediaInsightsEngineLambdaHelper/build
+source/lib/MediaInsightsEngineLambdaHelper/Media_Insights_Engine_Lambda_Helper.egg-info
+source/lib/MediaInsightsEngineLambdaHelper/build/*

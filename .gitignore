@@ -40,5 +40,5 @@ doc/sphinx/output/
 private/
 
 # LambdaHelper builds
-lib/MediaInsightsEngineLambdaHelper/Media_Insights_Engine_Lambda_Helper.egg-info
-lib/MediaInsightsEngineLambdaHelper/build
+source/lib/MediaInsightsEngineLambdaHelper/Media_Insights_Engine_Lambda_Helper.egg-info
+source/lib/MediaInsightsEngineLambdaHelper/build/*

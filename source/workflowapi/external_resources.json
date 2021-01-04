@@ -255,8 +255,8 @@
                       "Action": [
                         "iam:PassRole",
                         "iam:CreatePolicy",
-                        "iam:AttachRolePolicy",
-                        "iam:DetachRolePolicy"
+                        "iam:PutRolePolicy",
+                        "iam:DeleteRolePolicy"
                       ],
                       "Resource": [
                         "*"

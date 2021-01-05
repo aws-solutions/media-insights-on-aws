@@ -280,8 +280,10 @@
                   },
                   {
                       "Effect": "Allow",
-                      "Action": [ 
-                        "iam:PassRole"
+                      "Action": [
+                        "iam:PassRole",
+                        "iam:PutRolePolicy",
+                        "iam:DeleteRolePolicy"
                       ],
                       "Resource": [
                         "*"

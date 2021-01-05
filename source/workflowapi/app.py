@@ -570,6 +570,28 @@ def create_operation(operation):
             )
             raise
 
+        # Create an IAM policy to allow InvokeFunction on the StartLambdaArn and MonitorLambdaArn
+        policy = {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Action": "lambda:InvokeFunction",
+                    "Resource": [
+                        operation["StartLambdaArn"]
+                    ]
+                }
+            ]
+        }
+        if operation["Type"] == "Async":
+            policy['Statement'][0]['Resource'].append(operation["MonitorLambdaArn"])
+        # Attach that policy to the stage execution role
+        IAM_CLIENT.put_role_policy(
+            RoleName=STAGE_EXECUTION_ROLE.split('/')[1],
+            PolicyName=operation["Name"]+STACK_SHORT_UUID,
+            PolicyDocument=json.dumps(policy)
+        )
+
     except ConflictError as e:
         logger.error ("got CoonflictError: {}".format (e))
         raise
@@ -937,6 +959,30 @@ def delete_operation(Name, Force):
                 Key={
                     'Name': Name
                 })
+
+            # Now that the operator has been deleted, we no longer need
+            # the inline IAM policy which provided InvokeFunction for that operator,
+            # so we delete that policy here.
+            #
+            # The policy name will be the same as the operator name.
+            # Paginate thru list_role_policies() until we find
+            # that policy, then delete it.
+            policy_found = False
+            response = IAM_CLIENT.list_role_policies(RoleName=STAGE_EXECUTION_ROLE)
+            for policy in response['PolicyNames']:
+                if policy['PolicyName'] == Name:
+                    policy_found = True
+            while policy_found is False and response['IsTruncated'] is True:
+                response = IAM_CLIENT.list_attached_role_policies(RoleName=STAGE_EXECUTION_ROLE, Marker=response['Marker'])
+                for policy in response['AttachedPolicies']:
+                    if policy['PolicyName'] == Name:
+                        policy_found = True
+            # If the policy was found, then delete it.
+            if policy_found is True:
+                IAM_CLIENT.delete_role_policy(
+                    RoleName=STAGE_EXECUTION_ROLE.split('/')[1],
+                    PolicyName=Name
+                )
 
             # Flag dependent workflows
             flag_operation_dependent_workflows(Name)

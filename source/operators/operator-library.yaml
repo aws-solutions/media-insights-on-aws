@@ -42,6 +42,9 @@ Resources:
     Type: "AWS::SNS::Topic"
     Properties:
       DisplayName: "SNS Role for Rekognition"
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   # IAM Roles:
 
@@ -82,6 +85,9 @@ Resources:
                   - "xray:PutTraceSegments"
                   - "xray:PutTelemetryRecords"
                 Resource: "*"
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   mediainfoLambdaRole:
     Type: "AWS::IAM::Role"
@@ -121,6 +127,9 @@ Resources:
                   - "xray:PutTraceSegments"
                   - "xray:PutTelemetryRecords"
                 Resource: "*"
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   mediaConvertS3Role:
     Type: "AWS::IAM::Role"
@@ -144,7 +153,9 @@ Resources:
                   - "s3:PutObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
                 Effect: "Allow"
-              
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   mediaConvertLambdaRole:
     Type: "AWS::IAM::Role"
@@ -198,6 +209,9 @@ Resources:
                   - "xray:PutTraceSegments"
                   - "xray:PutTelemetryRecords"
                 Resource: "*"
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   transcribeRole:
     Type: "AWS::IAM::Role"
@@ -251,6 +265,9 @@ Resources:
                   - "xray:PutTraceSegments"
                   - "xray:PutTelemetryRecords"
                 Resource: "*"
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   captionsRole:
     Type: "AWS::IAM::Role"
@@ -291,6 +308,9 @@ Resources:
                   - "xray:PutTraceSegments"
                   - "xray:PutTelemetryRecords"
                 Resource: "*"
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   translateS3Role:
     Type: "AWS::IAM::Role"
@@ -376,6 +396,9 @@ Resources:
                   - "xray:PutTraceSegments"
                   - "xray:PutTelemetryRecords"
                 Resource: "*"
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   pollyRole:
     Type: "AWS::IAM::Role"
@@ -437,6 +460,9 @@ Resources:
                   - "xray:PutTraceSegments"
                   - "xray:PutTelemetryRecords"
                 Resource: "*"
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   comprehendS3Role:
     Type: "AWS::IAM::Role"
@@ -474,6 +500,9 @@ Resources:
                   - "xray:PutTraceSegments"
                   - "xray:PutTelemetryRecords"
                 Resource: "*"
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   comprehendRole:
     Type: "AWS::IAM::Role"
@@ -565,6 +594,9 @@ Resources:
                   - "xray:PutTraceSegments"
                   - "xray:PutTelemetryRecords"
                 Resource: "*"
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   rekognitionRole:
     Type: "AWS::IAM::Role"
@@ -615,6 +647,9 @@ Resources:
                   - "xray:PutTraceSegments"
                   - "xray:PutTelemetryRecords"
                 Resource: "*"
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   # Lambda functions
 
@@ -626,7 +661,7 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt genericDataLookupLambdaRole.Arn
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -645,6 +680,9 @@ Resources:
           OPERATOR_NAME: "GenericDataLookup"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DataLookupRole: !GetAtt genericDataLookupLambdaRole.Arn
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   # Mediainfo
 
@@ -655,7 +693,7 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt mediainfoLambdaRole.Arn
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -675,6 +713,9 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DataLookupRole: !GetAtt mediainfoLambdaRole.Arn
           LD_LIBRARY_PATH: "/opt/python/"
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   # Comprehend
 
@@ -685,7 +726,7 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt comprehendRole.Arn
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -705,6 +746,9 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           comprehendRole: !GetAtt comprehendS3Role.Arn
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   getKeyPhrases:
     Type: "AWS::Lambda::Function"
@@ -713,7 +757,7 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt comprehendRole.Arn
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -733,6 +777,9 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           comprehendRole: !GetAtt comprehendS3Role.Arn
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   startEntityDetection:
     Type: "AWS::Lambda::Function"
@@ -741,7 +788,7 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt comprehendRole.Arn
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -761,6 +808,9 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           comprehendRole: !GetAtt comprehendS3Role.Arn
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   getEntityDetection:
     Type: "AWS::Lambda::Function"
@@ -769,7 +819,7 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt comprehendRole.Arn
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -789,7 +839,9 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           comprehendRole: !GetAtt comprehendS3Role.Arn
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
-
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   # Rekognition
 
@@ -800,7 +852,7 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt "rekognitionRole.Arn"
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -822,7 +874,9 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
-
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   checkTechnicalCueDetection:
     Type: "AWS::Lambda::Function"
@@ -831,7 +885,7 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt "rekognitionRole.Arn"
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -853,8 +907,9 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
-
-
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   startShotDetection:
     Type: "AWS::Lambda::Function"
@@ -863,7 +918,7 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt "rekognitionRole.Arn"
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -885,7 +940,9 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
-
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   checkShotDetection:
     Type: "AWS::Lambda::Function"
@@ -894,7 +951,7 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt "rekognitionRole.Arn"
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -916,7 +973,9 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
-
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   startCelebrityRecognition:
     Type: "AWS::Lambda::Function"
@@ -925,7 +984,7 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt "rekognitionRole.Arn"
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -947,6 +1006,9 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   checkCelebrityRecognition:
     Type: "AWS::Lambda::Function"
@@ -955,7 +1017,7 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt "rekognitionRole.Arn"
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -976,6 +1038,9 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   startContentModeration:
     Type: "AWS::Lambda::Function"
@@ -984,7 +1049,7 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt "rekognitionRole.Arn"
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -1006,6 +1071,9 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   checkContentModeration:
     Type: "AWS::Lambda::Function"
@@ -1014,7 +1082,7 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt "rekognitionRole.Arn"
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -1035,6 +1103,9 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   startFaceDetection:
     Type: "AWS::Lambda::Function"
@@ -1043,7 +1114,7 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt "rekognitionRole.Arn"
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -1066,6 +1137,9 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   checkFaceDetection:
     Type: "AWS::Lambda::Function"
@@ -1074,7 +1148,7 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt "rekognitionRole.Arn"
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -1096,6 +1170,9 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   startFaceSearch:
     Type: "AWS::Lambda::Function"
@@ -1104,7 +1181,7 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt "rekognitionRole.Arn"
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -1127,6 +1204,9 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   checkFaceSearch:
     Type: "AWS::Lambda::Function"
@@ -1135,7 +1215,7 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt "rekognitionRole.Arn"
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -1157,7 +1237,9 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
-
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   startTextDetection:
     Type: "AWS::Lambda::Function"
@@ -1166,7 +1248,7 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt "rekognitionRole.Arn"
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -1187,6 +1269,9 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   checkTextDetection:
     Type: "AWS::Lambda::Function"
@@ -1195,7 +1280,7 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt "rekognitionRole.Arn"
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -1217,7 +1302,9 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
-
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   startLabelDetection:
     Type: "AWS::Lambda::Function"
@@ -1226,7 +1313,7 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt "rekognitionRole.Arn"
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -1247,6 +1334,9 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   checkLabelDetection:
     Type: "AWS::Lambda::Function"
@@ -1255,7 +1345,7 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt "rekognitionRole.Arn"
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -1277,6 +1367,9 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   startPersonTracking:
     Type: "AWS::Lambda::Function"
@@ -1285,7 +1378,7 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt "rekognitionRole.Arn"
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -1304,6 +1397,9 @@ Resources:
           REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
           OPERATOR_NAME: "personTracking"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   checkPersonTracking:
     Type: "AWS::Lambda::Function"
@@ -1312,7 +1408,7 @@ Resources:
       Layers:
         - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt "rekognitionRole.Arn"
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -1334,6 +1430,9 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   # Mediaconvert Lambdas
 
@@ -1344,7 +1443,7 @@ Resources:
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "mediaConvertLambdaRole.Arn"
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -1363,6 +1462,9 @@ Resources:
           mediaconvertRole: !GetAtt "mediaConvertS3Role.Arn"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   StartThumbnailFunction:
     Type: "AWS::Lambda::Function"
@@ -1371,7 +1473,7 @@ Resources:
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "mediaConvertLambdaRole.Arn"
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -1390,6 +1492,9 @@ Resources:
           mediaconvertRole: !GetAtt "mediaConvertS3Role.Arn"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   CheckThumbnailFunction:
     Type: "AWS::Lambda::Function"
@@ -1398,7 +1503,7 @@ Resources:
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "mediaConvertLambdaRole.Arn"
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -1417,6 +1522,9 @@ Resources:
           mediaconvertRole: !GetAtt "mediaConvertS3Role.Arn"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   CheckMediaConvertFunction:
     Type: "AWS::Lambda::Function"
@@ -1425,7 +1533,7 @@ Resources:
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "mediaConvertLambdaRole.Arn"
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -1443,6 +1551,9 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   # Transcribe Lambdas
 
@@ -1453,7 +1564,7 @@ Resources:
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "transcribeRole.Arn"
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -1471,6 +1582,9 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   CheckTranscribeFunction:
     Type: "AWS::Lambda::Function"
@@ -1479,7 +1593,7 @@ Resources:
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "transcribeRole.Arn"
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -1499,6 +1613,9 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   # Create Web Captions Lambda
 
@@ -1509,7 +1626,7 @@ Resources:
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "captionsRole.Arn"
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -1529,6 +1646,9 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   # Create Time Series Lambda
 
@@ -1539,7 +1659,7 @@ Resources:
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "captionsRole.Arn"
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -1558,6 +1678,9 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   CreateVTTCaptionsFunction:
     Type: "AWS::Lambda::Function"
@@ -1566,7 +1689,7 @@ Resources:
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "captionsRole.Arn"
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -1585,6 +1708,9 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   WebToSRTCaptionsFunction:
     Type: "AWS::Lambda::Function"
@@ -1593,7 +1719,7 @@ Resources:
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "captionsRole.Arn"
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -1612,6 +1738,9 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   WebToVTTCaptionsFunction:
     Type: "AWS::Lambda::Function"
@@ -1620,7 +1749,7 @@ Resources:
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "captionsRole.Arn"
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -1639,6 +1768,9 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   # Translate Lambdas
 
@@ -1649,7 +1781,7 @@ Resources:
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "translateRole.Arn"
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -1669,6 +1801,9 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   StartTranslateWebcaptionsFunction:
     Type: "AWS::Lambda::Function"
@@ -1695,6 +1830,9 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   CheckTranslateWebcaptionsFunction:
     Type: "AWS::Lambda::Function"
@@ -1720,6 +1858,9 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   # WebCaptions Polly tracks
   StartPollyWebCaptionsFunction:
@@ -1746,6 +1887,9 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   CheckPollyWebCaptionsFunction:
     Type: "AWS::Lambda::Function"
@@ -1771,7 +1915,10 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
-  
+      Tags:
+        - Key: "environment"
+          Value: "mie"
+
   # Polly Lambdas
 
   StartPollyFunction:
@@ -1781,7 +1928,7 @@ Resources:
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "pollyRole.Arn"
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -1799,6 +1946,9 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   CheckPollyFunction:
     Type: "AWS::Lambda::Function"
@@ -1807,7 +1957,7 @@ Resources:
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "pollyRole.Arn"
-      TracingConfig: 
+      TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -1825,6 +1975,9 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   # Register as operators in the control plane
 

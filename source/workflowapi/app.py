@@ -588,7 +588,7 @@ def create_operation(operation):
         # Attach that policy to the stage execution role
         IAM_CLIENT.put_role_policy(
             RoleName=STAGE_EXECUTION_ROLE.split('/')[1],
-            PolicyName=operation["Name"]+STACK_SHORT_UUID,
+            PolicyName=operation["Name"],
             PolicyDocument=json.dumps(policy)
         )
 
@@ -968,19 +968,19 @@ def delete_operation(Name, Force):
             # Paginate thru list_role_policies() until we find
             # that policy, then delete it.
             policy_found = False
-            response = IAM_CLIENT.list_role_policies(RoleName=STAGE_EXECUTION_ROLE)
-            for policy in response['PolicyNames']:
-                if policy['PolicyName'] == Name:
-                    policy_found = True
+            role_name = STAGE_EXECUTION_ROLE.split('/')[1]
+            response = IAM_CLIENT.list_role_policies(RoleName=role_name)
+            if Name in response['PolicyNames']:
+                policy_found = True
             while policy_found is False and response['IsTruncated'] is True:
-                response = IAM_CLIENT.list_attached_role_policies(RoleName=STAGE_EXECUTION_ROLE, Marker=response['Marker'])
-                for policy in response['AttachedPolicies']:
-                    if policy['PolicyName'] == Name:
-                        policy_found = True
+                response = IAM_CLIENT.list_role_policies(RoleName=role_name, Marker=response['Marker'])
+                if Name in response['PolicyNames']:
+                    policy_found = True
             # If the policy was found, then delete it.
             if policy_found is True:
+                logger.info("Deleting policy " + Name + " from role " + role_name)
                 IAM_CLIENT.delete_role_policy(
-                    RoleName=STAGE_EXECUTION_ROLE.split('/')[1],
+                    RoleName=role_name,
                     PolicyName=Name
                 )
 

@@ -119,59 +119,22 @@ find "$source_dir"/lib/MediaInsightsEngineLambdaHelper/dist/
 cd "$template_dir"/ || exit 1
 
 echo "------------------------------------------------------------------------------"
-echo "Building Lambda Layers"
+echo "Downloading Lambda Layers"
 echo "------------------------------------------------------------------------------"
-# Build MediaInsightsEngineLambdaHelper Python package
-cd "$template_dir"/lambda_layer_factory/ || exit 1
-rm -f media_insights_engine_lambda_layer_python*.zip*
-rm -f Media_Insights_Engine*.whl
-cp -R "$source_dir"/lib/MediaInsightsEngineLambdaHelper .
-cd MediaInsightsEngineLambdaHelper/ || exit 1
-echo "Building MIE Lambda Helper python library"
-python3 setup.py bdist_wheel > /dev/null
-cp dist/*.whl ../
-cp dist/*.whl "$source_dir"/lib/MediaInsightsEngineLambdaHelper/dist/
-echo "MIE Lambda Helper python library is at $source_dir/lib/MediaInsightsEngineLambdaHelper/dist/"
-cd "$source_dir"/lib/MediaInsightsEngineLambdaHelper/dist/ || exit 1
-ls -1 "$(pwd)"/*.whl
-if [ $? -ne 0 ]; then
-  echo "ERROR: Failed to build MIE Lambda Helper python library"
-  exit 1
-fi
-cd "$template_dir"/lambda_layer_factory/ || exit 1
-rm -rf MediaInsightsEngineLambdaHelper/
-file=$(ls Media_Insights_Engine*.whl)
-# Note, $(pwd) will be mapped to /packages/ in the Docker container used for building the Lambda zip files. We reference /packages/ in requirements.txt for that reason.
-# Add the whl file to requirements.txt if it is not already there
-mv requirements.txt requirements.txt.old
-cat requirements.txt.old | grep -v "Media_Insights_Engine_Lambda_Helper" > requirements.txt
-echo "/packages/$file" >> requirements.txt;
-# Build Lambda layer zip files and rename them to the filenames expected by media-insights-stack.yaml. The Lambda layer build script runs in Docker.
-# If Docker is not installed, then we'll use prebuilt Lambda layer zip files.
-echo "Running build-lambda-layer.sh:"
-echo ""
-rm -rf lambda_layer-python-* lambda_layer-python*.zip
-./build-lambda-layer.sh requirements.txt > /dev/null
-if [ $? -eq 0 ]; then
-  mv lambda_layer-python3.6.zip media_insights_engine_lambda_layer_python3.6.zip
-  mv lambda_layer-python3.7.zip media_insights_engine_lambda_layer_python3.7.zip
-  mv lambda_layer-python3.8.zip media_insights_engine_lambda_layer_python3.8.zip
-  rm -rf lambda_layer-python-3.6/ lambda_layer-python-3.7/ lambda_layer-python-3.8/
-  echo "Lambda layer build script completed.";
-else
-  echo "WARNING: Lambda layer build script failed. We'll use a pre-built Lambda layers instead.";
-  echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.6.zip"
-  wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.6.zip
-  echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.7.zip"
-  wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.7.zip
-  echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.8.zip"
-  wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.8.zip
-fi
+
+echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.6.zip"
+wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.6.zip
+echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.7.zip"
+wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.7.zip
+echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.8.zip"
+wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.8.zip
+
 echo "Copying Lambda layer zips to $dist_dir:"
+
 cp -v media_insights_engine_lambda_layer_python3.6.zip "$dist_dir"
 cp -v media_insights_engine_lambda_layer_python3.7.zip "$dist_dir"
 cp -v media_insights_engine_lambda_layer_python3.8.zip "$dist_dir"
-mv requirements.txt.old requirements.txt
+
 cd "$template_dir" || exit 1
 
 echo "------------------------------------------------------------------------------"

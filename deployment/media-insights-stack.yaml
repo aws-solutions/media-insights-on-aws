@@ -24,7 +24,7 @@ Parameters:
     MinValue: 1
 
   EnableXrayTrace:
-    Description: Enable Active Xray tracing on all entry points to the stack 
+    Description: Enable Active Xray tracing on all entry points to the stack
     Type: String
     Default: No
     AllowedValues:
@@ -52,14 +52,14 @@ Conditions:
   DeployAnalyticsPipelineCondition: !Equals [!Ref DeployAnalyticsPipeline, Yes]
   EnableTraceOnEntryPoints: !Equals [!Ref EnableXrayTrace, Yes]
 
-  
+
 Mappings:
   SourceCode:
     General:
       S3Bucket: "%%BUCKET_NAME%%"
       CodeKeyPrefix: "media_insights_engine/%%VERSION%%/code"
       TemplateKeyPrefix: "media_insights_engine/%%VERSION%%/cf"
-  
+
 Resources:
   # Helper function - create a short UUID to avoid name conflicts
   MieHelperFunction:
@@ -424,10 +424,13 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Action: "lambda:InvokeFunction"
-                Resource: "arn:aws:lambda:*:*:function:*"
+                Resource:
+                  - "arn:aws:lambda:*:*:function:*OperatorLibrary*"
+                  - "arn:aws:lambda:*:*:function:*start-wait-operation"
+                  - "arn:aws:lambda:*:*:function:*check-wait-operation"
                 Effect: "Allow"
               - Effect: "Allow"
-                Action: 
+                Action:
                   - "xray:PutTraceSegments"
                   - "xray:PutTelemetryRecords"
                   - "xray:GetSamplingRules"
@@ -494,14 +497,14 @@ Resources:
                   - "dynamodb:GetRecords"
                   - "dynamodb:GetShardIterator"
                   - "dynamodb:ListStreams"
-                Resource: 
+                Resource:
                   Fn::GetAtt:
                     - WorkflowExecutionTable
                     - StreamArn
               - Effect: Allow
                 Action:
                   - "sns:Publish"
-                Resource: 
+                Resource:
                   !Ref WorkflowExecutionEventTopic
               # TODO: Security - Scope this down
               - Effect: Allow
@@ -757,7 +760,7 @@ Resources:
         Version: '2012-10-17'
         Statement:
         - Effect: Allow
-          Principal: 
+          Principal:
             AWS: !Ref 'AWS::AccountId'
           Action:
           - sqs:SendMessage
@@ -775,7 +778,7 @@ Resources:
       Endpoint: !GetAtt WorkflowExecutionEventQueue.Arn
       TopicArn: !Ref WorkflowExecutionEventTopic
 
-  
+
   # Services - SQS
 
   WorkflowExecutionLambdaDeadLetterQueue:
@@ -887,7 +890,7 @@ Resources:
           SYSTEM_TABLE_NAME: !Ref SystemTable
           DEFAULT_MAX_CONCURRENT_WORKFLOWS: !Ref MaxConcurrentWorkflows
       Handler: app.workflow_scheduler_lambda
-      TracingConfig: 
+      TracingConfig:
           Mode: !If [EnableTraceOnEntryPoints, "Active", "PassThrough"]
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -934,7 +937,7 @@ Resources:
               - WorkflowSchedulerLambda
               - Arn
       Handler: app.workflow_error_handler_lambda
-      TracingConfig: 
+      TracingConfig:
           Mode: !If [EnableTraceOnEntryPoints, "Active", "PassThrough"]
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -967,7 +970,7 @@ Resources:
     Type: AWS::Events::Rule
     Properties:
         Name: !Sub "${AWS::StackName}-state-machine-error-handler"
-        Description: "state machine error handler"  
+        Description: "state machine error handler"
         EventPattern:
             source:
                 - "aws.states"
@@ -991,7 +994,7 @@ Resources:
           Action: lambda:InvokeFunction
           Principal: events.amazonaws.com
           SourceArn: !GetAtt StateMachineErrorCloudWatchEvent.Arn
-  
+
 
   CompleteStageLambda:
     DependsOn:
@@ -1010,7 +1013,7 @@ Resources:
               - WorkflowSchedulerLambda
               - Arn
       Handler: app.complete_stage_execution_lambda
-      TracingConfig: 
+      TracingConfig:
           Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -1043,7 +1046,7 @@ Resources:
           WORKFLOW_EXECUTION_TABLE_NAME: !Ref WorkflowExecutionTable
           WORKFLOW_TABLE_NAME: !Ref WorkflowTable
       Handler: app.filter_operation_lambda
-      TracingConfig: 
+      TracingConfig:
           Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -1073,7 +1076,7 @@ Resources:
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "operatorFailedRole.Arn"
-      TracingConfig: 
+      TracingConfig:
           Mode: "PassThrough"
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -1179,7 +1182,7 @@ Resources:
     Type: "AWS::Lambda::EventSourceMapping"
     Properties:
       Enabled: true
-      EventSourceArn: 
+      EventSourceArn:
         Fn::GetAtt:
           - WorkflowExecutionTable
           - StreamArn

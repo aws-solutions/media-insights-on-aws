@@ -511,14 +511,14 @@ Resources:
                   - "dynamodb:GetRecords"
                   - "dynamodb:GetShardIterator"
                   - "dynamodb:ListStreams"
-                Resource: 
+                Resource:
                   Fn::GetAtt:
                     - WorkflowExecutionTable
                     - StreamArn
               - Effect: Allow
                 Action:
                   - "sns:Publish"
-                Resource: 
+                Resource:
                   !Ref WorkflowExecutionEventTopic
               # TODO: Security - Scope this down
               - Effect: Allow
@@ -801,7 +801,7 @@ Resources:
         Version: '2012-10-17'
         Statement:
         - Effect: Allow
-          Principal: 
+          Principal:
             AWS: !Ref 'AWS::AccountId'
           Action:
           - sqs:SendMessage
@@ -819,7 +819,7 @@ Resources:
       Endpoint: !GetAtt WorkflowExecutionEventQueue.Arn
       TopicArn: !Ref WorkflowExecutionEventTopic
 
-  
+
   # Services - SQS
 
   WorkflowExecutionLambdaDeadLetterQueue:
@@ -1025,7 +1025,7 @@ Resources:
   StateMachineErrorCloudWatchEvent:
     Type: AWS::Events::Rule
     Properties:
-        Name: !Sub "${AWS::StackName}-state-machine-error-handler"
+        Name: !Sub "${AWS::StackName}-state-error-handler"
         Description: "state machine error handler"
         EventPattern:
             source:
@@ -1253,7 +1253,7 @@ Resources:
     Type: "AWS::Lambda::EventSourceMapping"
     Properties:
       Enabled: true
-      EventSourceArn: 
+      EventSourceArn:
         Fn::GetAtt:
           - WorkflowExecutionTable
           - StreamArn

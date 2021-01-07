@@ -52,7 +52,6 @@ Conditions:
   DeployAnalyticsPipelineCondition: !Equals [!Ref DeployAnalyticsPipeline, Yes]
   EnableTraceOnEntryPoints: !Equals [!Ref EnableXrayTrace, Yes]
 
-
 Mappings:
   SourceCode:
     General:
@@ -78,6 +77,10 @@ Resources:
       Handler: index.handler
       Runtime: python3.6
       Role: !GetAtt MieHelperExecutionRole.Arn
+      Tags:
+        - Key: "environment"
+          Value: "mie"
+
   MieHelperFunctionPermissions:
     Type: AWS::Lambda::Permission
     Properties:
@@ -117,6 +120,9 @@ Resources:
               - Effect: Allow
                 Action: ['logs:*']
                 Resource: 'arn:aws:logs:*:*:*'
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   StageExecutionRole:
     Type: AWS::IAM::Role
@@ -135,6 +141,9 @@ Resources:
                 - lambda.amazonaws.com
             Action:
               - sts:AssumeRole
+      Tags:
+        - Key: "environment"
+          Value: "mie"
       Policies:
         - PolicyName: !Sub "${AWS::StackName}-stage-execution-lambda"
           PolicyDocument:
@@ -156,7 +165,7 @@ Resources:
                   ]
                 Condition:
                   StringEquals:
-                    aws:ResourceTag/environment: mie
+                    aws:ResourceTag/environment: "mie"
               - Effect: Allow
                 Action:
                   - "dynamodb:GetItem"
@@ -270,6 +279,9 @@ Resources:
                 - lambda.amazonaws.com
             Action:
               - sts:AssumeRole
+      Tags:
+        - Key: "environment"
+          Value: "mie"
       Policies:
         - PolicyName: !Sub "${AWS::StackName}-operation-lambda"
           PolicyDocument:
@@ -298,7 +310,7 @@ Resources:
                   ]
                 Condition:
                   StringEquals:
-                    aws:ResourceTag/environment: mie
+                    aws:ResourceTag/environment: "mie"
               - Effect: Allow
                 Action:
                   - "dynamodb:GetItem"
@@ -402,7 +414,6 @@ Resources:
                   - "xray:PutTelemetryRecords"
                 Resource: "*"
 
-
   StepFunctionRole:
     Type: "AWS::IAM::Role"
     Metadata:
@@ -418,6 +429,9 @@ Resources:
             Effect: "Allow"
             Principal:
               Service: "states.amazonaws.com"
+      Tags:
+        - Key: "environment"
+          Value: "mie"
       Policies:
         - PolicyName: !Sub "${AWS::StackName}-sfn-lambda-exec"
           PolicyDocument:
@@ -452,6 +466,9 @@ Resources:
             Effect: "Allow"
             Principal:
               Service: "lambda.amazonaws.com"
+      Tags:
+        - Key: "environment"
+          Value: "mie"
       Policies:
         - PolicyName: !Sub "${AWS::StackName}-operator-failed"
           PolicyDocument:
@@ -528,6 +545,9 @@ Resources:
         - AttributeName: Name
           KeyType: HASH
       TableName: !Join ["", [Ref: "AWS::StackName", "System"]]
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   WorkflowTable:
     Type: AWS::DynamoDB::Table
@@ -542,6 +562,9 @@ Resources:
         - AttributeName: Name
           KeyType: HASH
       TableName: !Join ["", [Ref: "AWS::StackName", "Workflow"]]
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   StageTable:
     Type: AWS::DynamoDB::Table
@@ -556,6 +579,9 @@ Resources:
         - AttributeName: Name
           KeyType: HASH
       TableName: !Join ["", [Ref: "AWS::StackName", "Stage"]]
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   OperationTable:
     Type: AWS::DynamoDB::Table
@@ -570,6 +596,9 @@ Resources:
         - AttributeName: Name
           KeyType: HASH
       TableName: !Join ["", [Ref: "AWS::StackName", "Operation"]]
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   HistoryTable:
     Type: AWS::DynamoDB::Table
@@ -588,6 +617,9 @@ Resources:
         - AttributeName: Version
           KeyType: RANGE
       TableName: !Join ["", [Ref: "AWS::StackName", "History"]]
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   WorkflowExecutionTable:
     Type: AWS::DynamoDB::Table
@@ -621,6 +653,9 @@ Resources:
       TableName: !Join ["", [Ref: "AWS::StackName", "WorkflowExecution"]]
       StreamSpecification:
         StreamViewType: "NEW_AND_OLD_IMAGES"
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   DataplaneTable:
     Type: AWS::DynamoDB::Table
@@ -637,6 +672,9 @@ Resources:
       TableName: !Join ["", [Ref: "AWS::StackName", "DataplaneTable"]]
       StreamSpecification:
         StreamViewType: "NEW_AND_OLD_IMAGES"
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   # Services - S3
   DataplaneLogsBucket:
@@ -653,6 +691,9 @@ Resources:
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
+      Tags:
+        - Key: "environment"
+          Value: "mie"
     Metadata:
       cfn_nag:
         rules_to_suppress:
@@ -700,6 +741,9 @@ Resources:
             ExpirationInDays: 10
             AbortIncompleteMultipartUpload:
               DaysAfterInitiation: 1
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   DataplaneBucketPolicy:
     Type: "AWS::S3::BucketPolicy"
@@ -786,12 +830,18 @@ Resources:
     Properties:
       QueueName: !Sub "${AWS::StackName}-WorkflowExecLambdaDLQ"
       MessageRetentionPeriod: 43200 # #Maximum, 12 hours in seconds.
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   StageExecutionDeadLetterQueue:
     Type: "AWS::SQS::Queue"
     Properties:
       QueueName: !Sub "${AWS::StackName}-StageExecDLQ"
       MessageRetentionPeriod: 43200 # #Maximum, 12 hours in seconds.
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   StageExecutionQueue:
     Type: AWS::SQS::Queue
@@ -805,6 +855,9 @@ Resources:
             - StageExecutionDeadLetterQueue
             - Arn
         maxReceiveCount: 1 # Don't retry if stage times out
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   # Lambda Layers:
 
@@ -879,6 +932,7 @@ Resources:
       SourceArn: !Sub ${LambdaSchedule.Arn}
 
   WorkflowSchedulerLambda:
+    Type: AWS::Lambda::Function
     Properties:
       Environment:
         Variables:
@@ -917,10 +971,13 @@ Resources:
           Fn::GetAtt:
             - WorkflowExecutionLambdaDeadLetterQueue
             - Arn
-    Type: AWS::Lambda::Function
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   # Workflow state machine error handler
   WorkflowErrorHandlerLambda:
+    Type: AWS::Lambda::Function
     Properties:
       Environment:
         Variables:
@@ -964,7 +1021,9 @@ Resources:
           Fn::GetAtt:
             - WorkflowExecutionLambdaDeadLetterQueue
             - Arn
-    Type: AWS::Lambda::Function
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   StateMachineErrorCloudWatchEvent:
     Type: AWS::Events::Rule
@@ -995,8 +1054,8 @@ Resources:
           Principal: events.amazonaws.com
           SourceArn: !GetAtt StateMachineErrorCloudWatchEvent.Arn
 
-
   CompleteStageLambda:
+    Type: AWS::Lambda::Function
     DependsOn:
       - WorkflowSchedulerLambda
     Properties:
@@ -1034,9 +1093,12 @@ Resources:
           - Arn
       Runtime: python3.7
       Timeout: 900
-    Type: AWS::Lambda::Function
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   FilterOperationLambda:
+    Type: AWS::Lambda::Function
     Properties:
       Environment:
         Variables:
@@ -1067,10 +1129,12 @@ Resources:
           - Arn
       Runtime: python3.7
       Timeout: 900
-    Type: AWS::Lambda::Function
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   OperatorFailedLambda:
-    Type: "AWS::Lambda::Function"
+    Type: AWS::Lambda::Function
     Properties:
       Handler: "operator_failed.lambda_handler"
       Layers:
@@ -1088,11 +1152,13 @@ Resources:
               "operator_failed.zip",
             ],
           ]
-      Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
       Runtime: "python3.7"
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   StartWaitOperationLambda:
+    Type: AWS::Lambda::Function
     Properties:
       FunctionName: !Sub "${AWS::StackName}-start-wait-operation"
       Environment:
@@ -1122,9 +1188,12 @@ Resources:
           - Arn
       Runtime: python3.7
       Timeout: 900
-    Type: AWS::Lambda::Function
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   CheckWaitOperationLambda:
+    Type: AWS::Lambda::Function
     Properties:
       FunctionName: !Sub "${AWS::StackName}-check-wait-operation"
       Environment:
@@ -1154,7 +1223,9 @@ Resources:
           - Arn
       Runtime: python3.7
       Timeout: 900
-    Type: AWS::Lambda::Function
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
   WorkflowExecutionStreamingFunction:
     Type: "AWS::Lambda::Function"
@@ -1175,6 +1246,9 @@ Resources:
             ],
           ]
       Runtime: "python3.7"
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
 # stream event mapping for lambda
 

@@ -22,7 +22,7 @@
 echo "------------------------------------------------------------------------------"
 echo "Creating a temporary Python virtualenv for this script"
 echo "------------------------------------------------------------------------------"
-source_dir="../source"
+source_dir="../../source"
 docs_dir=`pwd`
 
 python -c "import os; print (os.getenv('VIRTUAL_ENV'))" | grep -q None

@@ -1,3 +1,0 @@
-.. chalice:project:: ../source/dataplaneapi
-
-

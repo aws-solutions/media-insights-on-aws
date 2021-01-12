@@ -1,0 +1,353 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dataplaneapi &#8212; AWS Media Insights Engine</title><link rel="stylesheet" href="../_static/bootstrap-reboot.css" type="text/css" />
+    
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/custom-tabs.css" type="text/css" />
+    
+
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script type="text/javascript">
+        function _scroll(subjectId) {
+            var subjectElement = $(subjectId);
+            var actualSubjectHeight = subjectElement.height();
+            var startingPosition = subjectElement[0].getBoundingClientRect().top;
+            return function() {
+                var availableHeight = $(window).height() - startingPosition;
+                // Subtract the scroll position to account for sticky movement.
+                availableHeight += Math.min($(window).scrollTop(), 40);
+                var cappedHeight = Math.min(actualSubjectHeight, availableHeight);
+                if (subjectElement.css("height") !== cappedHeight) {
+                    subjectElement.css("height", cappedHeight);
+                }
+            };
+        }
+
+        // Scroll and resize the the columns when scrolled.
+        $(function() {
+            var rightScroll = _scroll("#right-column > .column-body");
+            var scrollFn = function() {
+                rightScroll.call(this, arguments);
+            };
+            scrollFn();
+            $(window).scroll(scrollFn);
+            $(window).resize(scrollFn);
+        });
+
+        // Scroll spy to change highlighted navigation element.
+        $(function() {
+            var section = document.querySelectorAll(".section");
+            var sections = {};
+            var i = 0;
+            Array.prototype.forEach.call(section, function(e) {
+                sections[e.id] = e.offsetTop;
+            });
+            var scrollSpy = function() {
+                var scrollPosition = document.documentElement.scrollTop || document.body.scrollTop;
+                for (i in sections) {
+                    if (sections[i] <= scrollPosition) {
+                        $('#right-column .current').removeClass('current');
+                        $("#right-column a[href='#" + i + "']").addClass('current');
+                    }
+                }
+            };
+            $(window).scroll(scrollSpy);
+            scrollSpy();
+        });
+    </script>
+    <!---->
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Workflowapi" href="controlplane.html" />
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  </head><body>
+    <header>
+        <div class="header-flex width-wrapper">
+            <div class="site-logo">
+                <a href="../index.html">
+		  <span class="logo-icon"><img src="../_static/img/MIE_logo_icon.png" /></span>
+                </a>
+            </div>
+
+            <ul id="page-navigation">
+                <li class="site-page first"><a href="../quickstart.html">Quick Start</a></li>
+                <li class="site-page"><a href="../tutorials/index.html">Tutorials</a></li>
+                <li class="site-page"><a href="../samples/index.html">Samples</a></li>
+                <li class="site-page"><a href="../main.html">Documentation</a></li>
+                <li class="site-page"><a href="https://github.com/awslabs/aws-media-insights-engine">Code</a></li>
+                <li class="site-search hidden-sm">
+                    <form action="../search.html" method="get">
+                        <input type="hidden" name="check_keywords" value="yes" />
+                        <input type="hidden" name="area" value="default" />
+                        <input class="search-input" autocomplete="off" type="search" name="q" placeholder="Search" />
+                    </form>
+                </li>
+            </ul>
+        </div>
+    </header>
+    
+        
+        
+        <section id="page-container">
+            <div class="width-wrapper flex">
+                <article id="document-body">
+                    
+                    
+  <div class="chalice-app section" id="dataplaneapi">
+<h1 class="chalice-appname">Dataplaneapi<a class="headerlink" href="#dataplaneapi" title="Permalink to this headline">¶</a></h1>
+<div class="chalice-route section" id="index">
+<h2 class="chalice-routename"><span class="chalice-methodlist"><em class="chalice-method get property">GET</em></span> <code class="chalice-path sig-name descname">/</code><a class="headerlink" href="#index" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="chalice-route section" id="create-asset">
+<h2 class="chalice-routename"><span class="chalice-methodlist"><em class="chalice-method post property">POST</em></span> <code class="chalice-path sig-name descname">/create</code><a class="headerlink" href="#create-asset" title="Permalink to this headline">¶</a></h2>
+<p>Create an asset in the dataplane from a json input composed of the input key and bucket of the object.</p>
+<p>Body:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s2">&quot;Input&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;S3Bucket&quot;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="si">{somenbucket}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;S3Key&quot;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="si">{somekey}</span><span class="s2">&quot;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<dl>
+<dt>Returns:</dt><dd><dl>
+<dt>A dict containing the asset id and the location of the media object in the dataplane.</dt><dd><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s2">&quot;AssetId&quot;</span><span class="p">:</span> <span class="n">asset_id</span><span class="p">,</span>
+    <span class="s2">&quot;S3Bucket&quot;</span><span class="p">:</span> <span class="n">dataplane_s3_bucket</span><span class="p">,</span>
+    <span class="s2">&quot;S3Key&quot;</span><span class="p">:</span> <span class="n">key</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd>
+<dt>Raises:</dt><dd><p>ChaliceViewError - 500</p>
+</dd>
+</dl>
+</div>
+<div class="chalice-route section" id="download">
+<h2 class="chalice-routename"><span class="chalice-methodlist"><em class="chalice-method post property">POST</em></span> <code class="chalice-path sig-name descname">/download</code><a class="headerlink" href="#download" title="Permalink to this headline">¶</a></h2>
+<p>Generate a pre-signed URL that can be used to download media files from S3.</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>Pre-signed S3 URL for downloading files from S3 to a web application.</p>
+</dd>
+<dt>Raises:</dt><dd><p>ChaliceViewError - 500</p>
+</dd>
+</dl>
+</div>
+<div class="chalice-route section" id="media-upload-path">
+<h2 class="chalice-routename"><span class="chalice-methodlist"><em class="chalice-method get property">GET</em></span> <code class="chalice-path sig-name descname">/mediapath/{asset_id}/{workflow_id}</code><a class="headerlink" href="#media-upload-path" title="Permalink to this headline">¶</a></h2>
+<p>Generate a media storage path in the dataplane S3 bucket.</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>Dictionary containing the S3 bucket and key for uploading a given asset media object to the dataplane.</p>
+</dd>
+<dt>Raises:</dt><dd><p>ChaliceViewError - 500</p>
+</dd>
+</dl>
+</div>
+<div class="chalice-route section" id="list-all-assets">
+<h2 class="chalice-routename"><span class="chalice-methodlist"><em class="chalice-method get property">GET</em></span> <code class="chalice-path sig-name descname">/metadata</code><a class="headerlink" href="#list-all-assets" title="Permalink to this headline">¶</a></h2>
+<dl>
+<dt>Returns:</dt><dd><p>Dict containing a list of all assets by their asset_id. The list returns empty if no assets have been created.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+<dl class="simple">
+<dt>{</dt><dd><p>“assets”: [“$asset_id_1”, “$asset_id_2”…]</p>
+</dd>
+</dl>
+<p>}</p>
+</dd>
+<dt>Raises:</dt><dd><p>ChaliceViewError - 500</p>
+</dd>
+</dl>
+</div>
+<div class="chalice-route section" id="delete-asset">
+<h2 class="chalice-routename"><span class="chalice-methodlist"><em class="chalice-method delete property">DELETE</em></span> <code class="chalice-path sig-name descname">/metadata/{asset_id}</code><a class="headerlink" href="#delete-asset" title="Permalink to this headline">¶</a></h2>
+<p>Deletes an asset and all metadata from the dataplane.</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>Deletion status from dataplane.</p>
+</dd>
+<dt>Raises:</dt><dd><p>ChaliceViewError - 500</p>
+</dd>
+</dl>
+</div>
+<div class="chalice-route section" id="get-asset-metadata">
+<h2 class="chalice-routename"><span class="chalice-methodlist"><em class="chalice-method get property">GET</em></span> <code class="chalice-path sig-name descname">/metadata/{asset_id}</code><a class="headerlink" href="#get-asset-metadata" title="Permalink to this headline">¶</a></h2>
+<p>Retrieves all of the metadata for a specified asset.</p>
+<p>The first call to this method will return a dictionary containing the asset_id, a results key containing
+global asset information, and a cursor to iterate through each stored metadata type.</p>
+<p>To receive the additional metadata, make additional calls to this endpoint and pass in the value of the cursor
+response key as the value for the cursor query parameter.</p>
+<p>Once all results have been retrieved, no cursor key will be present in the response.</p>
+<dl>
+<dt>Returns:</dt><dd><p>All asset metadata</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+<dl class="simple">
+<dt>{</dt><dd><p>“asset_id”: asset_id,
+“operator”: operator_name,
+“cursor”: encoded_cursor_value,
+“results”: global_asset_info (if first call) / operator metadata</p>
+</dd>
+</dl>
+<p>}</p>
+</dd>
+<dt>Raises:</dt><dd><p>ChaliceViewError - 500</p>
+</dd>
+</dl>
+</div>
+<div class="chalice-route section" id="put-asset-metadata">
+<h2 class="chalice-routename"><span class="chalice-methodlist"><em class="chalice-method post property">POST</em></span> <code class="chalice-path sig-name descname">/metadata/{asset_id}</code><a class="headerlink" href="#put-asset-metadata" title="Permalink to this headline">¶</a></h2>
+<p>Adds operation metadata for an asset.</p>
+<p>If the results are in a paginated format, such as from Rekognition, you must set the paginate query param to
+“true” for each page of metadata a put metadata call is made for. For the final page of results,
+the “end” query param must be set to “true”, which will tell the dataplane that the paginated session is
+over and update the pointer for that metadata type.</p>
+<p>Query String Params:
+:param paginate: Boolean to tell dataplane that the results will come in as pages.
+:param end: Boolean to declare the last page in a set of paginated results.</p>
+<p>Body:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s2">&quot;OperatorName&quot;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="si">{some_operator}</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Results&quot;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="si">{json_formatted_results}</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;WorkflowId&quot;</span><span class="p">:</span> <span class="s2">&quot;workflow-id&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Returns:</p>
+<blockquote>
+<div><p>Dictionary containing the status of the PUT metadata operation. If a pointer is updated, the response will also
+include the S3 Bucket and S3 Key that the data was written to.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+<dl class="simple">
+<dt>{</dt><dd><p>“Status”: “$status”, “Bucket”: $bucket, “Key”: $metadata_key</p>
+</dd>
+</dl>
+<p>}</p>
+</div></blockquote>
+<dl class="simple">
+<dt>Raises:</dt><dd><p>BadRequestError - 400
+ChaliceViewError - 500</p>
+</dd>
+</dl>
+</div>
+<div class="chalice-route section" id="delete-operator-metadata">
+<h2 class="chalice-routename"><span class="chalice-methodlist"><em class="chalice-method delete property">DELETE</em></span> <code class="chalice-path sig-name descname">/metadata/{asset_id}/{operator_name}</code><a class="headerlink" href="#delete-operator-metadata" title="Permalink to this headline">¶</a></h2>
+<p>Deletes the specified operator metadata from an asset.</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>Deletion status from dataplane.</p>
+</dd>
+<dt>Raises:</dt><dd><p>NotFoundError - 404
+ChaliceViewError - 500
+…</p>
+</dd>
+</dl>
+</div>
+<div class="chalice-route section" id="get-asset-metadata-operator">
+<h2 class="chalice-routename"><span class="chalice-methodlist"><em class="chalice-method get property">GET</em></span> <code class="chalice-path sig-name descname">/metadata/{asset_id}/{operator_name}</code><a class="headerlink" href="#get-asset-metadata-operator" title="Permalink to this headline">¶</a></h2>
+<p>Retrieves specified operator metadata for a given asset.</p>
+<p>If the results are paginated, the first call to this method will include a cursor in the response.</p>
+<p>To receive the remaining paginated data, make additional calls to this endpoint and pass in the value of the cursor
+response key as the value for the cursor query parameter.</p>
+<p>Once all results have been retrieved, no cursor key will be present in the response.</p>
+<p>Returns:</p>
+<blockquote>
+<div><p>Metadata that a specific operator created</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+<dl class="simple">
+<dt>{</dt><dd><p>“asset_id”: asset_id,
+“operator”: operator_name,
+“cursor”: encoded_cursor_value,
+“results”: first_page_data</p>
+</dd>
+</dl>
+<p>}</p>
+</div></blockquote>
+<dl class="simple">
+<dt>Raises:</dt><dd><p>ChaliceViewError - 500</p>
+</dd>
+</dl>
+</div>
+<div class="chalice-route section" id="upload">
+<h2 class="chalice-routename"><span class="chalice-methodlist"><em class="chalice-method post property">POST</em></span> <code class="chalice-path sig-name descname">/upload</code><a class="headerlink" href="#upload" title="Permalink to this headline">¶</a></h2>
+<p>Generate a pre-signed URL that can be used to upload media files to S3 from a web application</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>Pre-signed S3 URL for uploading files to S3 from a web application</p>
+</dd>
+<dt>Raises:</dt><dd><p>ChaliceViewError - 500</p>
+</dd>
+</dl>
+</div>
+</div>
+
+
+                    
+                    <section class="relations">
+                        
+                        <a href="controlplane.html" title="previous chapter" class="previous-page clearfix hidden-xs">← Workflowapi</a>
+                        
+                    </section>
+                    
+                </article><aside id="right-column" class="side-column hidden-sm">
+                    <div class="column-body">
+                        <section class="sidebar">
+                            
+                            <section class="next-previous">
+                                
+                                <a href="controlplane.html" title="previous chapter" class="previous-page clearfix hidden-xs">← Prev</a>
+                                
+                            </section>
+                            
+                            <ul>
+<li><a class="reference internal" href="#">Dataplaneapi</a><ul>
+<li><a class="reference internal" href="#index"><span class="chalice-methodlist"><em class="chalice-method get property">GET</em></span> <code class="chalice-path sig-name descname">/</code></a></li>
+<li><a class="reference internal" href="#create-asset"><span class="chalice-methodlist"><em class="chalice-method post property">POST</em></span> <code class="chalice-path sig-name descname">/create</code></a></li>
+<li><a class="reference internal" href="#download"><span class="chalice-methodlist"><em class="chalice-method post property">POST</em></span> <code class="chalice-path sig-name descname">/download</code></a></li>
+<li><a class="reference internal" href="#media-upload-path"><span class="chalice-methodlist"><em class="chalice-method get property">GET</em></span> <code class="chalice-path sig-name descname">/mediapath/{asset_id}/{workflow_id}</code></a></li>
+<li><a class="reference internal" href="#list-all-assets"><span class="chalice-methodlist"><em class="chalice-method get property">GET</em></span> <code class="chalice-path sig-name descname">/metadata</code></a></li>
+<li><a class="reference internal" href="#delete-asset"><span class="chalice-methodlist"><em class="chalice-method delete property">DELETE</em></span> <code class="chalice-path sig-name descname">/metadata/{asset_id}</code></a></li>
+<li><a class="reference internal" href="#get-asset-metadata"><p>Duplicate implicit target name: “/metadata/{asset_id}”.</p>
+</a></li>
+<li><a class="reference internal" href="#put-asset-metadata"><p>Duplicate implicit target name: “/metadata/{asset_id}”.</p>
+</a></li>
+<li><a class="reference internal" href="#delete-operator-metadata"><span class="chalice-methodlist"><em class="chalice-method delete property">DELETE</em></span> <code class="chalice-path sig-name descname">/metadata/{asset_id}/{operator_name}</code></a></li>
+<li><a class="reference internal" href="#get-asset-metadata-operator"><p>Duplicate implicit target name: “/metadata/{asset_id}/{operator_name}”.</p>
+</a></li>
+<li><a class="reference internal" href="#upload"><span class="chalice-methodlist"><em class="chalice-method post property">POST</em></span> <code class="chalice-path sig-name descname">/upload</code></a></li>
+</ul>
+</li>
+</ul>
+
+                        </section>
+                    </div>
+                </aside></div>
+        </section>
+        
+    
+<footer id="footer">
+    <div class="width-wrapper">
+        <div class="copyright">
+            <p>©2020, Amazon Web Services, Inc or its affiliates. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
+  </body>
+</html>

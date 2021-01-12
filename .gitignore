@@ -32,9 +32,6 @@ deployment/lambda_layer_factory/*.whl
 deployment/lambda_layer_factory/python/**
 deployment/lambda_layer_factory/python 2/**
 
-# documentation build
-doc/sphinx/output/
-
 # explicitly named "private" files
 **/private*webapp/README.md
 private/

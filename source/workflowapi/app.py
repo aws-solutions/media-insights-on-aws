@@ -245,17 +245,17 @@ def download_vocabulary():
     """ Download the contents of a Transcibe Custom Vocabulary
 
     Returns:
-        
+
         .. code-block:: python
 
             [
                 {
                 "Name": "Value"
                 },
-            ...]  
+            ...]
 
     Raises:
-        
+
     """
     print('download_vocabulary request: '+app.current_request.raw_body.decode())
     transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
@@ -569,6 +569,44 @@ def create_operation(operation):
                 }
             )
             raise
+
+        # TODO: Once IAM supports the ability to use tag-based policies for
+        #  InvokeFunction, put that in the StepFunctionRole definition in
+        #  media-insights-stack.yaml and remove the following code block. Inline
+        #  policies have length limitations which will prevent users from adding
+        #  more than about 35 new operators via the MIE workflow api. Tag based
+        #  policies will not have any such limitation.
+
+        # Skip the inline policy creation for operators packaged with MIE.
+        # The inline policy is not needed for those operators because the
+        # StepFunctionRole has already been defined with permission to invoke
+        # those Lambdas (see media-insigts-stack.yaml).
+        if not ("OperatorLibrary" in operation["StartLambdaArn"] or "start-wait-operation" in operation["StartLambdaArn"]):
+            # If true then this is a new user-defined operator which needs to be added
+            # to the StepFunctionRole.
+            #
+            # Create an IAM policy to allow InvokeFunction on the StartLambdaArn
+            policy = {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Action": "lambda:InvokeFunction",
+                        "Resource": [
+                            operation["StartLambdaArn"]
+                        ]
+                    }
+                ]
+            }
+            # Add the MonitorLambdaArn to that policy for async operators
+            if operation["Type"] == "Async":
+                policy['Statement'][0]['Resource'].append(operation["MonitorLambdaArn"])
+            # Attach that policy to the stage execution role as an inline policy
+            IAM_CLIENT.put_role_policy(
+                RoleName=STAGE_EXECUTION_ROLE.split('/')[1],
+                PolicyName=operation["Name"],
+                PolicyDocument=json.dumps(policy)
+            )
 
     except ConflictError as e:
         logger.error ("got CoonflictError: {}".format (e))
@@ -937,6 +975,37 @@ def delete_operation(Name, Force):
                 Key={
                     'Name': Name
                 })
+
+            # TODO: Once IAM supports the ability to use tag-based policies for
+            #  InvokeFunction, put that in the StepFunctionRole definition in
+            #  media-insights-stack.yaml and remove the following code block. Inline
+            #  policies have length limitations which will prevent users from adding
+            #  more than about 35 new operators via the MIE workflow api. Tag based
+            #  policies will not have any such limitation.
+
+            if not ("OperatorLibrary" in operation["StartLambdaArn"] or "start-wait-operation" in operation["StartLambdaArn"]):
+                # If true then this is a deleted operator has an inline policy which
+                # need to be removed from the StepFunctionRole.
+
+                # The policy name will be the same as the operator name.
+                # Paginate thru list_role_policies() until we find
+                # that policy, then delete it.
+                policy_found = False
+                role_name = STAGE_EXECUTION_ROLE.split('/')[1]
+                response = IAM_CLIENT.list_role_policies(RoleName=role_name)
+                if Name in response['PolicyNames']:
+                    policy_found = True
+                while policy_found is False and response['IsTruncated'] is True:
+                    response = IAM_CLIENT.list_role_policies(RoleName=role_name, Marker=response['Marker'])
+                    if Name in response['PolicyNames']:
+                        policy_found = True
+                # If the policy was found, then delete it.
+                if policy_found is True:
+                    logger.info("Deleting policy " + Name + " from role " + role_name)
+                    IAM_CLIENT.delete_role_policy(
+                        RoleName=role_name,
+                        PolicyName=Name
+                    )
 
             # Flag dependent workflows
             flag_operation_dependent_workflows(Name)
@@ -2172,7 +2241,7 @@ def update_workflow_execution(Id):
 
     Raises:
         200: The workflow execution was updated successfully.
-        400: Bad Request - the input stage was not found, the current stage did not match the WaitingStageName, 
+        400: Bad Request - the input stage was not found, the current stage did not match the WaitingStageName,
              or the Workflow Status was not "Waiting"
         500: Internal server error
     """
@@ -2198,7 +2267,7 @@ def resume_workflow_execution(trigger, id, waiting_stage_name):
     workflow_execution = {}
     workflow_execution["Id"] = id
     workflow_execution["Status"] = awsmie.WORKFLOW_STATUS_RESUMED
- 
+
     try:
         response = execution_table.update_item(
             Key={
@@ -2228,13 +2297,13 @@ def resume_workflow_execution(trigger, id, waiting_stage_name):
     response = SQS_CLIENT.send_message(QueueUrl=STAGE_EXECUTION_QUEUE_URL, MessageBody=json.dumps(workflow_execution))
     # the response contains MD5 of the body, a message Id, MD5 of message attributes, and a sequence number (for FIFO queues)
     logger.info('Message ID : {}'.format(response['MessageId']))
-    
+
     # We just queued a workflow so, Trigger the workflow_scheduler
     response = LAMBDA_CLIENT.invoke(
         FunctionName=WORKFLOW_SCHEDULER_LAMBDA_ARN,
         InvocationType='Event'
     )
-    
+
     return workflow_execution
 
 

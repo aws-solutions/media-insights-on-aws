@@ -438,7 +438,10 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Action: "lambda:InvokeFunction"
-                Resource: "arn:aws:lambda:*:*:function:*"
+                Resource:
+                  - "arn:aws:lambda:*:*:function:*OperatorLibrary*"
+                  - "arn:aws:lambda:*:*:function:*start-wait-operation"
+                  - "arn:aws:lambda:*:*:function:*check-wait-operation"
                 Effect: "Allow"
               - Effect: "Allow"
                 Action:
@@ -511,14 +514,14 @@ Resources:
                   - "dynamodb:GetRecords"
                   - "dynamodb:GetShardIterator"
                   - "dynamodb:ListStreams"
-                Resource: 
+                Resource:
                   Fn::GetAtt:
                     - WorkflowExecutionTable
                     - StreamArn
               - Effect: Allow
                 Action:
                   - "sns:Publish"
-                Resource: 
+                Resource:
                   !Ref WorkflowExecutionEventTopic
               # TODO: Security - Scope this down
               - Effect: Allow
@@ -801,7 +804,7 @@ Resources:
         Version: '2012-10-17'
         Statement:
         - Effect: Allow
-          Principal: 
+          Principal:
             AWS: !Ref 'AWS::AccountId'
           Action:
           - sqs:SendMessage
@@ -819,7 +822,7 @@ Resources:
       Endpoint: !GetAtt WorkflowExecutionEventQueue.Arn
       TopicArn: !Ref WorkflowExecutionEventTopic
 
-  
+
   # Services - SQS
 
   WorkflowExecutionLambdaDeadLetterQueue:
@@ -1253,7 +1256,7 @@ Resources:
     Type: "AWS::Lambda::EventSourceMapping"
     Properties:
       Enabled: true
-      EventSourceArn: 
+      EventSourceArn:
         Fn::GetAtt:
           - WorkflowExecutionTable
           - StreamArn

@@ -4,8 +4,8 @@ Description: "Media Insight Engine - Operator library"
 Mappings:
   SourceCode:
     General:
-      S3Bucket: "%%BUCKET_NAME%%"
-      KeyPrefix: "media_insights_engine/%%VERSION%%/code"
+      RegionalS3Bucket: "%%REGIONAL_BUCKET_NAME%%"
+      CodeKeyPrefix: "media_insights_engine/%%VERSION%%"
 
 Parameters:
   DataPlaneEndpoint:
@@ -338,7 +338,7 @@ Resources:
                   - "s3:ListBucket"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}"
                 Effect: "Allow"
-  
+
   translateRole:
     Type: "AWS::IAM::Role"
     Metadata:
@@ -664,12 +664,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "generic_data_lookup.zip",
             ],
           ]
@@ -696,12 +696,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "mediainfo.zip",
             ],
           ]
@@ -729,12 +729,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "start_key_phrases.zip",
             ],
           ]
@@ -760,12 +760,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "get_key_phrases.zip",
             ],
           ]
@@ -791,12 +791,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "start_entity_detection.zip",
             ],
           ]
@@ -822,12 +822,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "get_entity_detection.zip",
             ],
           ]
@@ -855,12 +855,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "start_technical_cue_detection.zip",
             ],
           ]
@@ -888,12 +888,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "check_technical_cue_status.zip",
             ],
           ]
@@ -921,12 +921,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "start_shot_detection.zip",
             ],
           ]
@@ -954,12 +954,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "check_shot_detection_status.zip",
             ],
           ]
@@ -987,12 +987,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "start_celebrity_recognition.zip",
             ],
           ]
@@ -1020,12 +1020,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "check_celebrity_recognition_status.zip",
             ],
           ]
@@ -1052,12 +1052,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "start_content_moderation.zip",
             ],
           ]
@@ -1085,12 +1085,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "check_content_moderation_status.zip",
             ],
           ]
@@ -1117,12 +1117,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "start_face_detection.zip",
             ],
           ]
@@ -1151,12 +1151,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "check_face_detection_status.zip",
             ],
           ]
@@ -1184,12 +1184,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "start_face_search.zip",
             ],
           ]
@@ -1218,12 +1218,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "check_face_search_status.zip",
             ],
           ]
@@ -1251,12 +1251,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "start_text_detection.zip",
             ],
           ]
@@ -1283,12 +1283,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "check_text_detection_status.zip",
             ],
           ]
@@ -1316,12 +1316,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "start_label_detection.zip",
             ],
           ]
@@ -1348,12 +1348,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "check_label_detection_status.zip",
             ],
           ]
@@ -1381,12 +1381,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "start_person_tracking.zip",
             ],
           ]
@@ -1411,12 +1411,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "check_person_tracking_status.zip",
             ],
           ]
@@ -1446,12 +1446,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "start_media_convert.zip",
             ],
           ]
@@ -1476,12 +1476,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "start_thumbnail.zip",
             ],
           ]
@@ -1506,12 +1506,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "check_thumbnail.zip",
             ],
           ]
@@ -1536,12 +1536,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "get_media_convert.zip",
             ],
           ]
@@ -1567,12 +1567,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "start_transcribe.zip",
             ],
           ]
@@ -1596,12 +1596,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "get_transcribe.zip",
             ],
           ]
@@ -1629,12 +1629,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "webcaptions.zip",
             ],
           ]
@@ -1662,12 +1662,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "webcaptions.zip",
             ],
           ]
@@ -1692,12 +1692,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "webcaptions.zip",
             ],
           ]
@@ -1722,12 +1722,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "webcaptions.zip",
             ],
           ]
@@ -1752,12 +1752,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "webcaptions.zip",
             ],
           ]
@@ -1784,12 +1784,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "start_translate.zip",
             ],
           ]
@@ -1813,12 +1813,12 @@ Resources:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "translateRole.Arn"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "webcaptions.zip",
             ],
           ]
@@ -1842,12 +1842,12 @@ Resources:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "translateRole.Arn"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "webcaptions.zip",
             ],
           ]
@@ -1871,12 +1871,12 @@ Resources:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "pollyRole.Arn"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "webcaptions.zip",
             ],
           ]
@@ -1899,12 +1899,12 @@ Resources:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "pollyRole.Arn"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "webcaptions.zip",
             ],
           ]
@@ -1931,12 +1931,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "start_polly.zip",
             ],
           ]
@@ -1960,12 +1960,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "get_polly.zip",
             ],
           ]
@@ -2052,7 +2052,7 @@ Resources:
       ResourceType: "Operation"
       Name: "WebCaptions"
       Type: "Sync"
-      Configuration: 
+      Configuration:
         { "MediaType": "MetadataOnly", "SourceLanguageCode": "en", "Enabled": true }
       StartLambdaArn: !GetAtt WebCaptionsFunction.Arn
 
@@ -2063,7 +2063,7 @@ Resources:
       ResourceType: "Operation"
       Name: "PollyWebCaptions"
       Type: "Async"
-      Configuration: 
+      Configuration:
         { "MediaType": "MetadataOnly", "SourceLanguageCode": "en", "Enabled": true }
       StartLambdaArn: !GetAtt StartPollyWebCaptionsFunction.Arn
       MonitorLambdaArn: !GetAtt CheckPollyWebCaptionsFunction.Arn
@@ -2133,7 +2133,7 @@ Resources:
           "SourceLanguageCode": "en",
         }
       StartLambdaArn: !GetAtt TranslateFunction.Arn
-  
+
   TranslateWebCaptionsOperation:
     Type: Custom::CustomResource
     Properties:
@@ -2141,7 +2141,7 @@ Resources:
       ResourceType: "Operation"
       Name: "TranslateWebCaptions"
       Type: "Async"
-      Configuration: 
+      Configuration:
         {
           "MediaType": "MetadataOnly",
           "TargetLanguageCodes": ["es"],
@@ -2353,7 +2353,7 @@ Resources:
       Configuration: { "MediaType": "MetadataOnly", "Enabled": false }
       StartLambdaArn: !Ref StartWaitOperationLambda
       MonitorLambdaArn: !Ref CheckWaitOperationLambda
-      
+
   # Export operator names as outputs
 
 Outputs:

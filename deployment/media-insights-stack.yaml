@@ -55,9 +55,10 @@ Conditions:
 Mappings:
   SourceCode:
     General:
-      S3Bucket: "%%BUCKET_NAME%%"
-      CodeKeyPrefix: "media_insights_engine/%%VERSION%%/code"
-      TemplateKeyPrefix: "media_insights_engine/%%VERSION%%/cf"
+      GlobalS3Bucket: "%%GLOBAL_BUCKET_NAME%%"
+      RegionalS3Bucket: "%%REGIONAL_BUCKET_NAME%%"
+      CodeKeyPrefix: "media_insights_engine/%%VERSION%%"
+      TemplateKeyPrefix: "media_insights_engine/%%VERSION%%"
 
 Resources:
   # Helper function - create a short UUID to avoid name conflicts
@@ -511,14 +512,14 @@ Resources:
                   - "dynamodb:GetRecords"
                   - "dynamodb:GetShardIterator"
                   - "dynamodb:ListStreams"
-                Resource: 
+                Resource:
                   Fn::GetAtt:
                     - WorkflowExecutionTable
                     - StreamArn
               - Effect: Allow
                 Action:
                   - "sns:Publish"
-                Resource: 
+                Resource:
                   !Ref WorkflowExecutionEventTopic
               # TODO: Security - Scope this down
               - Effect: Allow
@@ -801,7 +802,7 @@ Resources:
         Version: '2012-10-17'
         Statement:
         - Effect: Allow
-          Principal: 
+          Principal:
             AWS: !Ref 'AWS::AccountId'
           Action:
           - sqs:SendMessage
@@ -819,7 +820,7 @@ Resources:
       Endpoint: !GetAtt WorkflowExecutionEventQueue.Arn
       TopicArn: !Ref WorkflowExecutionEventTopic
 
-  
+
   # Services - SQS
 
   WorkflowExecutionLambdaDeadLetterQueue:
@@ -865,7 +866,7 @@ Resources:
       CompatibleRuntimes:
         - python3.7
       Content:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
         S3Key:
           !Join [
             "/",
@@ -885,7 +886,7 @@ Resources:
       CompatibleRuntimes:
         - python3.6
       Content:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
         S3Key:
           !Join [
             "/",
@@ -944,7 +945,7 @@ Resources:
       TracingConfig:
           Mode: !If [EnableTraceOnEntryPoints, "Active", "PassThrough"]
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
         S3Key:
           !Join [
             "/",
@@ -994,7 +995,7 @@ Resources:
       TracingConfig:
           Mode: !If [EnableTraceOnEntryPoints, "Active", "PassThrough"]
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
         S3Key:
           !Join [
             "/",
@@ -1072,7 +1073,7 @@ Resources:
       TracingConfig:
           Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
         S3Key:
           !Join [
             "/",
@@ -1108,7 +1109,7 @@ Resources:
       TracingConfig:
           Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
         S3Key:
           !Join [
             "/",
@@ -1140,7 +1141,7 @@ Resources:
       TracingConfig:
           Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
         S3Key:
           !Join [
             "/",
@@ -1169,7 +1170,7 @@ Resources:
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
         S3Key:
           !Join [
             "/",
@@ -1204,7 +1205,7 @@ Resources:
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
         S3Key:
           !Join [
             "/",
@@ -1233,7 +1234,7 @@ Resources:
         Variables:
           TOPIC_ARN: !Ref WorkflowExecutionEventTopic
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
         S3Key:
           !Join [
             "/",
@@ -1253,7 +1254,7 @@ Resources:
     Type: "AWS::Lambda::EventSourceMapping"
     Properties:
       Enabled: true
-      EventSourceArn: 
+      EventSourceArn:
         Fn::GetAtt:
           - WorkflowExecutionTable
           - StreamArn
@@ -1269,10 +1270,8 @@ Resources:
           "",
           [
             "https://",
-            !FindInMap ["SourceCode", "General", "S3Bucket"],
-            ".s3.",
-            Ref: "AWS::Region",
-            ".amazonaws.com/",
+            !FindInMap ["SourceCode", "General", "GlobalS3Bucket"],
+            ".s3.amazonaws.com/",
             !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
             "/media-insights-dataplane-api-stack.template",
           ],
@@ -1280,7 +1279,7 @@ Resources:
       Parameters:
         DataplaneTableName: !Ref DataplaneTable
         DataplaneBucketName: !Ref Dataplane
-        DeploymentPackageBucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        DeploymentPackageBucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
         TracingConfigMode: !If [EnableTraceOnEntryPoints, "Active", "PassThrough"]
         DeploymentPackageKey:
           !Join [
@@ -1304,10 +1303,8 @@ Resources:
           "",
           [
             "https://",
-            !FindInMap ["SourceCode", "General", "S3Bucket"],
-            ".s3.",
-            Ref: "AWS::Region",
-            ".amazonaws.com/",
+            !FindInMap [ "SourceCode", "General", "GlobalS3Bucket" ],
+            ".s3.amazonaws.com/",
             !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
             "/media-insights-dataplane-streaming-stack.template",
           ],
@@ -1328,10 +1325,8 @@ Resources:
           "",
           [
             "https://",
-            !FindInMap ["SourceCode", "General", "S3Bucket"],
-            ".s3.",
-            Ref: "AWS::Region",
-            ".amazonaws.com/",
+            !FindInMap [ "SourceCode", "General", "GlobalS3Bucket" ],
+            ".s3.amazonaws.com/",
             !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
             "/media-insights-workflowapi-stack.template",
           ],
@@ -1371,7 +1366,7 @@ Resources:
             - Outputs.APIHandlerArn
         DataPlaneBucket: !Ref Dataplane
         OperatorFailedHandlerLambdaArn: !GetAtt OperatorFailedLambda.Arn
-        DeploymentPackageBucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        DeploymentPackageBucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
         DeploymentPackageKey:
           !Join [
             "/",
@@ -1392,10 +1387,8 @@ Resources:
           "",
           [
             "https://",
-            !FindInMap ["SourceCode", "General", "S3Bucket"],
-            ".s3.",
-            Ref: "AWS::Region",
-            ".amazonaws.com/",
+            !FindInMap [ "SourceCode", "General", "GlobalS3Bucket" ],
+            ".s3.amazonaws.com/",
             !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
             "/media-insights-operator-library.template",
           ],
@@ -1426,10 +1419,8 @@ Resources:
           "",
           [
             "https://",
-            !FindInMap ["SourceCode", "General", "S3Bucket"],
-            ".s3.",
-            Ref: "AWS::Region",
-            ".amazonaws.com/",
+            !FindInMap [ "SourceCode", "General", "GlobalS3Bucket" ],
+            ".s3.amazonaws.com/",
             !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
             "/media-insights-test-operations-stack.template",
           ],

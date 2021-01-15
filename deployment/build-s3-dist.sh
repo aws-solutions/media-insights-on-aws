@@ -23,7 +23,7 @@
 #
 ###############################################################################
 
-trap cleanup SIGINT SIGTERM ERR EXIT
+trap die SIGINT SIGTERM ERR EXIT
 
 usage() {
   msg "$msg"
@@ -44,7 +44,6 @@ EOF
 }
 
 cleanup() {
-  trap - SIGINT SIGTERM ERR EXIT
   # Deactivate and remove the temporary python virtualenv used to run this script
   if [[ "$VIRTUAL_ENV" != "" ]];
   then
@@ -61,6 +60,8 @@ msg() {
 }
 
 die() {
+  trap - SIGINT SIGTERM ERR EXIT
+  cleanup
   local msg=$1
   local code=${2-1} # default exit status 1
   msg "$msg"
@@ -178,6 +179,7 @@ VENV=$(mktemp -d)
 python3 -m venv "$VENV"
 source "$VENV"/bin/activate
 pip install --quiet boto3 chalice docopt pyyaml jsonschema aws_xray_sdk
+which chalice
 export PYTHONPATH="$PYTHONPATH:$source_dir/lib/MediaInsightsEngineLambdaHelper/"
 echo "PYTHONPATH=$PYTHONPATH"
 if [ $? -ne 0 ]; then
@@ -319,7 +321,7 @@ sed -i.orig -e "$new_regional_bucket" "$template_dist_dir/media-insights-datapla
 sed -i.orig -e "$new_version" "$template_dist_dir/media-insights-dataplane-streaming-stack.template"
 
 echo "------------------------------------------------------------------------------"
-echo "Operators"
+echo "Building Operators"
 echo "------------------------------------------------------------------------------"
 
 # ------------------------------------------------------------------------------"
@@ -577,68 +579,12 @@ zip -q -r9 start_person_tracking.zip start_person_tracking.py
 zip -q -r9 check_person_tracking_status.zip check_person_tracking_status.py
 zip -q -r9 start_text_detection.zip start_text_detection.py
 zip -q -r9 check_text_detection_status.zip check_text_detection_status.py
-
-
-# remove this when service is GA
-
-[ -e dist ] && rm -rf dist
-mkdir -p dist
-cd dist
-cp ../start_technical_cue_detection.py .
-mkdir rekognition-segment-detection
-cd rekognition-segment-detection
-mkdir 2016-06-27
-cd 2016-06-27
-cp ../../../service-2.json .
-cd ../../
-zip -q -r9 ../start_technical_cue_detection.zip *
-cd ../
-
-
-[ -e dist ] && rm -rf dist
-mkdir -p dist
-cd dist
-cp ../check_technical_cue_status.py .
-mkdir rekognition-segment-detection
-cd rekognition-segment-detection
-mkdir 2016-06-27
-cd 2016-06-27
-cp ../../../service-2.json .
-cd ../../
-zip -q -r9 ../check_technical_cue_status.zip *
-cd ../
-
+zip -q -r9 check_text_detection_status.zip check_text_detection_status.py
+zip -q -r9 start_technical_cue_detection.zip start_technical_cue_detection.py
+zip -q -r9 check_technical_cue_status.zip check_technical_cue_status.py
+zip -q -r9 start_shot_detection.zip start_shot_detection.py
+zip -q -r9 check_shot_detection_status.zip check_shot_detection_status.py
 mv -f ./*.zip "$build_dist_dir"
-
-
-[ -e dist ] && rm -rf dist
-mkdir -p dist
-cd dist
-cp ../start_shot_detection.py .
-mkdir rekognition-segment-detection
-cd rekognition-segment-detection
-mkdir 2016-06-27
-cd 2016-06-27
-cp ../../../service-2.json .
-cd ../../
-zip -q -r9 ../start_shot_detection.zip *
-cd ../
-
-[ -e dist ] && rm -rf dist
-mkdir -p dist
-cd dist
-cp ../check_shot_detection_status.py .
-mkdir rekognition-segment-detection
-cd rekognition-segment-detection
-mkdir 2016-06-27
-cd 2016-06-27
-cp ../../../service-2.json .
-cd ../../
-zip -q -r9 ../check_shot_detection_status.zip *
-cd ../
-
-mv -f ./*.zip "$build_dist_dir"
-
 
 # ------------------------------------------------------------------------------"
 # Test operators

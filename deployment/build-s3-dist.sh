@@ -30,8 +30,6 @@ usage() {
   cat <<EOF
 Usage: $(basename "${BASH_SOURCE[0]}") [-h] [-v] [--no-layer] --template-bucket TEMPLATE_BUCKET --code-bucket CODE_BUCKET --version VERSION --region REGION
 
-Script description here.
-
 Available options:
 
 -h, --help        Print this help and exit (optional)

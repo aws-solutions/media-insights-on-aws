@@ -7,29 +7,120 @@
 #   Build cloud formation templates for the Media Insights Engine
 #
 # USAGE:
-#  ./build-s3-dist.sh {SOURCE-BUCKET} {VERSION} {REGION} [PROFILE]
-#    SOURCE-BUCKET should be the name for the S3 bucket location where the
-#      template will source the Lambda code from.
+#  ./build-s3-dist.sh [-h] [-v] [--no-layer] --template-bucket {TEMPLATE_BUCKET} --code-bucket {CODE_BUCKET} --version {VERSION} --region {REGION}
+#    TEMPLATE_BUCKET should be the name for the S3 bucket location where MIE
+#      cloud formation templates should be saved.
+#    CODE_BUCKET should be the name for the S3 bucket location where cloud
+#      formation templates should find Lambda source code packages.
 #    VERSION should be in a format like v1.0.0
 #    REGION needs to be in a format like us-east-1
-#    PROFILE is optional. It's the profile  that you have setup in ~/.aws/config
-#      that you want to use for aws CLI commands.
+#
+#    The following options are available:
+#
+#     -h | --help       Print usage
+#     -v | --verbose    Print script debug info
+#     --no-layer        Do not build AWS Lamda layer
 #
 ###############################################################################
 
-# Check to see if input has been provided:
-if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ]; then
-    echo "Please provide the base source bucket name,  version where the lambda code will eventually reside and the region of the deploy."
-    echo "USAGE: ./build-s3-dist.sh {TEMPLATE_BUCKET} {CODE_BUCKET} {VERSION} {REGION}"
-    echo "For example: ./build-s3-dist.sh mie_template_bucket mie_code_bucket v1.0.0 us-east-1"
-    exit 1
-fi
+trap cleanup SIGINT SIGTERM ERR EXIT
 
-global_bucket=$1
-regional_bucket=$2
-version=$3
-region=$4
+usage() {
+  msg "$msg"
+  cat <<EOF
+Usage: $(basename "${BASH_SOURCE[0]}") [-h] [-v] [--no-layer] --template-bucket TEMPLATE_BUCKET --code-bucket CODE_BUCKET --version VERSION --region REGION
 
+Script description here.
+
+Available options:
+
+-h, --help        Print this help and exit (optional)
+-v, --verbose     Print script debug info (optional)
+--no-layer        Do not build AWS Lamda layer (optional)
+--template-bucket S3 bucket to put cloud formation templates
+--code-bucket     S3 bucket to put Lambda code packages
+--version         Arbitrary string indicating build version
+--region          AWS Region, formatted like us-west-2
+EOF
+  exit 1
+}
+
+cleanup() {
+  trap - SIGINT SIGTERM ERR EXIT
+  # Deactivate and remove the temporary python virtualenv used to run this script
+  if [[ "$VIRTUAL_ENV" != "" ]];
+  then
+    deactivate
+    rm -rf "$VENV"
+    echo "------------------------------------------------------------------------------"
+    echo "Cleaning up complete"
+    echo "------------------------------------------------------------------------------"
+  fi
+}
+
+msg() {
+  echo >&2 -e "${1-}"
+}
+
+die() {
+  local msg=$1
+  local code=${2-1} # default exit status 1
+  msg "$msg"
+  exit "$code"
+}
+
+parse_params() {
+  # default values of variables set from params
+  flag=0
+  param=''
+
+  while :; do
+    case "${1-}" in
+    -h | --help) usage ;;
+    -v | --verbose) set -x ;;
+    --no-layer) NO_LAYER=1 ;;
+    --template-bucket)
+      global_bucket="${2}"
+      shift
+      ;;
+    --code-bucket)
+      regional_bucket="${2}"
+      shift
+      ;;
+    --version)
+      version="${2}"
+      shift
+      ;;
+    --region)
+      region="${2}"
+      shift
+      ;;
+    -?*) die "Unknown option: $1" ;;
+    *) break ;;
+    esac
+    shift
+  done
+
+  args=("$@")
+
+  # check required params and arguments
+  [[ -z "${global_bucket}" ]] && usage "Missing required parameter: template-bucket"
+  [[ -z "${regional_bucket}" ]] && usage "Missing required parameter: code-bucket"
+  [[ -z "${version}" ]] && usage "Missing required parameter: version"
+  [[ -z "${region}" ]] && usage "Missing required parameter: region"
+
+  return 0
+}
+
+parse_params "$@"
+msg "Build parameters:"
+msg "- TEMPLATE_BUCKET: ${global_bucket}"
+msg "- CODE_BUCKET: ${regional_bucket}"
+msg "- VERSION: ${version}"
+msg "- REGION: ${region}"
+
+echo ""
+sleep 3
 s3domain="s3.$region.amazonaws.com"
 
 # Check if region is supported:
@@ -70,7 +161,6 @@ template_dist_dir="$template_dir/global-s3-assets"
 build_dist_dir="$template_dir/regional-s3-assets"
 dist_dir="$template_dir/dist"
 source_dir="$template_dir/../source"
-echo "template_dir: ${template_dir}"
 
 # Create and activate a temporary Python environment for this script.
 echo "------------------------------------------------------------------------------"
@@ -126,61 +216,78 @@ echo -n "Created: "
 find "$source_dir"/lib/MediaInsightsEngineLambdaHelper/dist/
 cd "$template_dir"/ || exit 1
 
-echo "------------------------------------------------------------------------------"
-echo "Building Lambda Layers"
-echo "------------------------------------------------------------------------------"
-# Build MediaInsightsEngineLambdaHelper Python package
-cd "$template_dir"/lambda_layer_factory/ || exit 1
-rm -f media_insights_engine_lambda_layer_python*.zip*
-rm -f Media_Insights_Engine*.whl
-cp -R "$source_dir"/lib/MediaInsightsEngineLambdaHelper .
-cd MediaInsightsEngineLambdaHelper/ || exit 1
-echo "Building MIE Lambda Helper python library"
-python3 setup.py bdist_wheel > /dev/null
-cp dist/*.whl ../
-cp dist/*.whl "$source_dir"/lib/MediaInsightsEngineLambdaHelper/dist/
-echo "MIE Lambda Helper python library is at $source_dir/lib/MediaInsightsEngineLambdaHelper/dist/"
-cd "$source_dir"/lib/MediaInsightsEngineLambdaHelper/dist/ || exit 1
-ls -1 "$(pwd)"/*.whl
-if [ $? -ne 0 ]; then
-  echo "ERROR: Failed to build MIE Lambda Helper python library"
-  exit 1
-fi
-cd "$template_dir"/lambda_layer_factory/ || exit 1
-rm -rf MediaInsightsEngineLambdaHelper/
-file=$(ls Media_Insights_Engine*.whl)
-# Note, $(pwd) will be mapped to /packages/ in the Docker container used for building the Lambda zip files. We reference /packages/ in requirements.txt for that reason.
-# Add the whl file to requirements.txt if it is not already there
-mv requirements.txt requirements.txt.old
-cat requirements.txt.old | grep -v "Media_Insights_Engine_Lambda_Helper" > requirements.txt
-echo "/packages/$file" >> requirements.txt;
-# Build Lambda layer zip files and rename them to the filenames expected by media-insights-stack.yaml. The Lambda layer build script runs in Docker.
-# If Docker is not installed, then we'll use prebuilt Lambda layer zip files.
-echo "Running build-lambda-layer.sh:"
-echo ""
-rm -rf lambda_layer-python-* lambda_layer-python*.zip
-./build-lambda-layer.sh requirements.txt > /dev/null
-if [ $? -eq 0 ]; then
-  mv lambda_layer-python3.6.zip media_insights_engine_lambda_layer_python3.6.zip
-  mv lambda_layer-python3.7.zip media_insights_engine_lambda_layer_python3.7.zip
-  mv lambda_layer-python3.8.zip media_insights_engine_lambda_layer_python3.8.zip
-  rm -rf lambda_layer-python-3.6/ lambda_layer-python-3.7/ lambda_layer-python-3.8/
-  echo "Lambda layer build script completed.";
-else
-  echo "WARNING: Lambda layer build script failed. We'll use a pre-built Lambda layers instead.";
+if [[ -z "${NO_LAYER}" ]]; then
+  echo "------------------------------------------------------------------------------"
+  echo "Downloading Lambda Layers"
+  echo "------------------------------------------------------------------------------"
   echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.6.zip"
   wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.6.zip
   echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.7.zip"
   wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.7.zip
   echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.8.zip"
   wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.8.zip
+  echo "Copying Lambda layer zips to $dist_dir:"
+  cp -v media_insights_engine_lambda_layer_python3.6.zip "$dist_dir"
+  cp -v media_insights_engine_lambda_layer_python3.7.zip "$dist_dir"
+  cp -v media_insights_engine_lambda_layer_python3.8.zip "$dist_dir"
+  cd "$template_dir" || exit 1
+else
+  echo "------------------------------------------------------------------------------"
+  echo "Building Lambda Layers"
+  echo "------------------------------------------------------------------------------"
+  # Build MediaInsightsEngineLambdaHelper Python package
+  cd "$template_dir"/lambda_layer_factory/ || exit 1
+  rm -f media_insights_engine_lambda_layer_python*.zip*
+  rm -f Media_Insights_Engine*.whl
+  cp -R "$source_dir"/lib/MediaInsightsEngineLambdaHelper .
+  cd MediaInsightsEngineLambdaHelper/ || exit 1
+  echo "Building MIE Lambda Helper python library"
+  python3 setup.py bdist_wheel > /dev/null
+  cp dist/*.whl ../
+  cp dist/*.whl "$source_dir"/lib/MediaInsightsEngineLambdaHelper/dist/
+  echo "MIE Lambda Helper python library is at $source_dir/lib/MediaInsightsEngineLambdaHelper/dist/"
+  cd "$source_dir"/lib/MediaInsightsEngineLambdaHelper/dist/ || exit 1
+  ls -1 "$(pwd)"/*.whl
+  if [ $? -ne 0 ]; then
+    echo "ERROR: Failed to build MIE Lambda Helper python library"
+    exit 1
+  fi
+  cd "$template_dir"/lambda_layer_factory/ || exit 1
+  rm -rf MediaInsightsEngineLambdaHelper/
+  file=$(ls Media_Insights_Engine*.whl)
+  # Note, $(pwd) will be mapped to /packages/ in the Docker container used for building the Lambda zip files. We reference /packages/ in requirements.txt for that reason.
+  # Add the whl file to requirements.txt if it is not already there
+  mv requirements.txt requirements.txt.old
+  cat requirements.txt.old | grep -v "Media_Insights_Engine_Lambda_Helper" > requirements.txt
+  echo "/packages/$file" >> requirements.txt;
+  # Build Lambda layer zip files and rename them to the filenames expected by media-insights-stack.yaml. The Lambda layer build script runs in Docker.
+  # If Docker is not installed, then we'll use prebuilt Lambda layer zip files.
+  echo "Running build-lambda-layer.sh:"
+  echo ""
+  rm -rf lambda_layer-python-* lambda_layer-python*.zip
+  ./build-lambda-layer.sh requirements.txt > /dev/null
+  if [ $? -eq 0 ]; then
+    mv lambda_layer-python3.6.zip media_insights_engine_lambda_layer_python3.6.zip
+    mv lambda_layer-python3.7.zip media_insights_engine_lambda_layer_python3.7.zip
+    mv lambda_layer-python3.8.zip media_insights_engine_lambda_layer_python3.8.zip
+    rm -rf lambda_layer-python-3.6/ lambda_layer-python-3.7/ lambda_layer-python-3.8/
+    echo "Lambda layer build script completed.";
+  else
+    echo "WARNING: Lambda layer build script failed. We'll use a pre-built Lambda layers instead.";
+    echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.6.zip"
+    wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.6.zip
+    echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.7.zip"
+    wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.7.zip
+    echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.8.zip"
+    wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.8.zip
+  fi
+  echo "Copying Lambda layer zips to $build_dist_dir:"
+  cp -v media_insights_engine_lambda_layer_python3.6.zip "$build_dist_dir"
+  cp -v media_insights_engine_lambda_layer_python3.7.zip "$build_dist_dir"
+  cp -v media_insights_engine_lambda_layer_python3.8.zip "$build_dist_dir"
+  mv requirements.txt.old requirements.txt
+  cd "$template_dir" || exit 1
 fi
-echo "Copying Lambda layer zips to $build_dist_dir:"
-cp -v media_insights_engine_lambda_layer_python3.6.zip "$build_dist_dir"
-cp -v media_insights_engine_lambda_layer_python3.7.zip "$build_dist_dir"
-cp -v media_insights_engine_lambda_layer_python3.8.zip "$build_dist_dir"
-mv requirements.txt.old requirements.txt
-cd "$template_dir" || exit 1
 
 echo "------------------------------------------------------------------------------"
 echo "CloudFormation Templates"
@@ -727,13 +834,7 @@ echo "--------------------------------------------------------------------------
 echo "S3 packaging complete"
 echo "------------------------------------------------------------------------------"
 
-# Deactivate and remove the temporary python virtualenv used to run this script
-deactivate
-rm -rf "$VENV"
-
-echo "------------------------------------------------------------------------------"
-echo "Cleaning up complete"
-echo "------------------------------------------------------------------------------"
+cleanup
 
 echo ""
 echo "Template to deploy:"

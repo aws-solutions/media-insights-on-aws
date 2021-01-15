@@ -7,29 +7,120 @@
 #   Build cloud formation templates for the Media Insights Engine
 #
 # USAGE:
-#  ./build-s3-dist.sh {SOURCE-BUCKET} {VERSION} {REGION} [PROFILE]
-#    SOURCE-BUCKET should be the name for the S3 bucket location where the
-#      template will source the Lambda code from.
+#  ./build-s3-dist.sh [-h] [-v] [--no-layer] --template-bucket {TEMPLATE_BUCKET} --code-bucket {CODE_BUCKET} --version {VERSION} --region {REGION}
+#    TEMPLATE_BUCKET should be the name for the S3 bucket location where MIE
+#      cloud formation templates should be saved.
+#    CODE_BUCKET should be the name for the S3 bucket location where cloud
+#      formation templates should find Lambda source code packages.
 #    VERSION should be in a format like v1.0.0
 #    REGION needs to be in a format like us-east-1
-#    PROFILE is optional. It's the profile  that you have setup in ~/.aws/config
-#      that you want to use for aws CLI commands.
+#
+#    The following options are available:
+#
+#     -h | --help       Print usage
+#     -v | --verbose    Print script debug info
+#     --no-layer        Do not build AWS Lamda layer
 #
 ###############################################################################
 
-# Check to see if input has been provided:
-if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ]; then
-    echo "Please provide the base source bucket name,  version where the lambda code will eventually reside and the region of the deploy."
-    echo "USAGE: ./build-s3-dist.sh {TEMPLATE_BUCKET} {CODE_BUCKET} {VERSION} {REGION}"
-    echo "For example: ./build-s3-dist.sh mie_template_bucket mie_code_bucket v1.0.0 us-east-1"
-    exit 1
-fi
+trap cleanup SIGINT SIGTERM ERR EXIT
 
-global_bucket=$1
-regional_bucket=$2
-version=$3
-region=$4
+usage() {
+  msg "$msg"
+  cat <<EOF
+Usage: $(basename "${BASH_SOURCE[0]}") [-h] [-v] [--no-layer] --template-bucket TEMPLATE_BUCKET --code-bucket CODE_BUCKET --version VERSION --region REGION
 
+Script description here.
+
+Available options:
+
+-h, --help        Print this help and exit (optional)
+-v, --verbose     Print script debug info (optional)
+--no-layer        Do not build AWS Lamda layer (optional)
+--template-bucket S3 bucket to put cloud formation templates
+--code-bucket     S3 bucket to put Lambda code packages
+--version         Arbitrary string indicating build version
+--region          AWS Region, formatted like us-west-2
+EOF
+  exit 1
+}
+
+cleanup() {
+  trap - SIGINT SIGTERM ERR EXIT
+  # Deactivate and remove the temporary python virtualenv used to run this script
+  if [[ "$VIRTUAL_ENV" != "" ]];
+  then
+    deactivate
+    rm -rf "$VENV"
+    echo "------------------------------------------------------------------------------"
+    echo "Cleaning up complete"
+    echo "------------------------------------------------------------------------------"
+  fi
+}
+
+msg() {
+  echo >&2 -e "${1-}"
+}
+
+die() {
+  local msg=$1
+  local code=${2-1} # default exit status 1
+  msg "$msg"
+  exit "$code"
+}
+
+parse_params() {
+  # default values of variables set from params
+  flag=0
+  param=''
+
+  while :; do
+    case "${1-}" in
+    -h | --help) usage ;;
+    -v | --verbose) set -x ;;
+    --no-layer) NO_LAYER=1 ;;
+    --template-bucket)
+      global_bucket="${2}"
+      shift
+      ;;
+    --code-bucket)
+      regional_bucket="${2}"
+      shift
+      ;;
+    --version)
+      version="${2}"
+      shift
+      ;;
+    --region)
+      region="${2}"
+      shift
+      ;;
+    -?*) die "Unknown option: $1" ;;
+    *) break ;;
+    esac
+    shift
+  done
+
+  args=("$@")
+
+  # check required params and arguments
+  [[ -z "${global_bucket}" ]] && usage "Missing required parameter: template-bucket"
+  [[ -z "${regional_bucket}" ]] && usage "Missing required parameter: code-bucket"
+  [[ -z "${version}" ]] && usage "Missing required parameter: version"
+  [[ -z "${region}" ]] && usage "Missing required parameter: region"
+
+  return 0
+}
+
+parse_params "$@"
+msg "Build parameters:"
+msg "- TEMPLATE_BUCKET: ${global_bucket}"
+msg "- CODE_BUCKET: ${regional_bucket}"
+msg "- VERSION: ${version}"
+msg "- REGION: ${region}"
+
+echo ""
+sleep 3
 s3domain="s3.$region.amazonaws.com"
 
 # Check if region is supported:
@@ -70,7 +161,6 @@ template_dist_dir="$template_dir/global-s3-assets"
 build_dist_dir="$template_dir/regional-s3-assets"
 dist_dir="$template_dir/dist"
 source_dir="$template_dir/../source"
-echo "template_dir: ${template_dir}"
 
 # Create and activate a temporary Python environment for this script.
 echo "------------------------------------------------------------------------------"
@@ -125,6 +215,25 @@ python3 setup.py bdist_wheel > /dev/null
 echo -n "Created: "
 find "$source_dir"/lib/MediaInsightsEngineLambdaHelper/dist/
 cd "$template_dir"/ || exit 1
+
+echo "------------------------------------------------------------------------------"
+echo "Downloading Lambda Layers"
+echo "------------------------------------------------------------------------------"
+
+echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.6.zip"
+wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.6.zip
+echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.7.zip"
+wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.7.zip
+echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.8.zip"
+wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.8.zip
+
+echo "Copying Lambda layer zips to $dist_dir:"
+
+cp -v media_insights_engine_lambda_layer_python3.6.zip "$dist_dir"
+cp -v media_insights_engine_lambda_layer_python3.7.zip "$dist_dir"
+cp -v media_insights_engine_lambda_layer_python3.8.zip "$dist_dir"
+
+cd "$template_dir" || exit 1
 
 echo "------------------------------------------------------------------------------"
 echo "Building Lambda Layers"
@@ -727,13 +836,7 @@ echo "--------------------------------------------------------------------------
 echo "S3 packaging complete"
 echo "------------------------------------------------------------------------------"
 
-# Deactivate and remove the temporary python virtualenv used to run this script
-deactivate
-rm -rf "$VENV"
-
-echo "------------------------------------------------------------------------------"
-echo "Cleaning up complete"
-echo "------------------------------------------------------------------------------"
+cleanup
 
 echo ""
 echo "Template to deploy:"

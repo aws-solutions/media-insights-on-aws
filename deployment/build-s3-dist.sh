@@ -23,7 +23,7 @@
 #
 ###############################################################################
 
-trap die SIGINT SIGTERM ERR EXIT
+trap cleanup SIGINT SIGTERM ERR EXIT
 
 usage() {
   msg "$msg"
@@ -44,6 +44,7 @@ EOF
 }
 
 cleanup() {
+  trap - SIGINT SIGTERM ERR EXIT
   # Deactivate and remove the temporary python virtualenv used to run this script
   if [[ "$VIRTUAL_ENV" != "" ]];
   then
@@ -60,7 +61,6 @@ msg() {
 }
 
 die() {
-  trap - SIGINT SIGTERM ERR EXIT
   cleanup
   local msg=$1
   local code=${2-1} # default exit status 1
@@ -113,10 +113,11 @@ parse_params() {
 
 parse_params "$@"
 msg "Build parameters:"
-msg "- TEMPLATE_BUCKET: ${global_bucket}"
-msg "- CODE_BUCKET: ${regional_bucket}"
-msg "- VERSION: ${version}"
-msg "- REGION: ${region}"
+msg "- Template bucket: ${global_bucket}"
+msg "- Code bucket: ${regional_bucket}"
+msg "- Version: ${version}"
+msg "- Region: ${region}"
+msg "- Build layer? $(if [[ -z $NO_LAYER ]]; then echo 'Yes, please.'; else echo 'No, thanks.'; fi)"
 
 echo ""
 sleep 3
@@ -216,7 +217,7 @@ echo -n "Created: "
 find "$source_dir"/lib/MediaInsightsEngineLambdaHelper/dist/
 cd "$template_dir"/ || exit 1
 
-if [[ -z "${NO_LAYER}" ]]; then
+if [[ ! -z "${NO_LAYER}" ]]; then
   echo "------------------------------------------------------------------------------"
   echo "Downloading Lambda Layers"
   echo "------------------------------------------------------------------------------"
@@ -227,9 +228,9 @@ if [[ -z "${NO_LAYER}" ]]; then
   echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.8.zip"
   wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.8.zip
   echo "Copying Lambda layer zips to $dist_dir:"
-  cp -v media_insights_engine_lambda_layer_python3.6.zip "$dist_dir"
-  cp -v media_insights_engine_lambda_layer_python3.7.zip "$dist_dir"
-  cp -v media_insights_engine_lambda_layer_python3.8.zip "$dist_dir"
+  cp -v media_insights_engine_lambda_layer_python3.6.zip "$build_dist_dir"
+  cp -v media_insights_engine_lambda_layer_python3.7.zip "$build_dist_dir"
+  cp -v media_insights_engine_lambda_layer_python3.8.zip "$build_dist_dir"
   cd "$template_dir" || exit 1
 else
   echo "------------------------------------------------------------------------------"
@@ -321,7 +322,7 @@ sed -i.orig -e "$new_regional_bucket" "$template_dist_dir/media-insights-datapla
 sed -i.orig -e "$new_version" "$template_dist_dir/media-insights-dataplane-streaming-stack.template"
 
 echo "------------------------------------------------------------------------------"
-echo "Building Operators"
+echo "Operators"
 echo "------------------------------------------------------------------------------"
 
 # ------------------------------------------------------------------------------"
@@ -786,8 +787,10 @@ echo "TEMPLATE='"https://"$global_bucket"."$s3domain"/media_insights_engine/"$ve
 
 # Save the template URI for test automation scripts:
 touch $template_dist_dir/templateUrl.txt
-echo "https://"$global_bucket"."$s3domain"/media_insights_engine/"$version"/media-insights-stack.template" > ${dist_dir}/templateUrl.txt
+echo "https://"$global_bucket"."$s3domain"/media_insights_engine/"$version"/media-insights-stack.template" > templateUrl.txt
 
 echo "------------------------------------------------------------------------------"
 echo "Done"
 echo "------------------------------------------------------------------------------"
+
+exit 0

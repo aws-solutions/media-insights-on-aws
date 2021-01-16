@@ -125,7 +125,7 @@ SCHEMA = load_apischema()
 
 @app.route('/')
 def index():
-        """ Test the API endpoint
+    """ Test the API endpoint
 
     Returns:
         

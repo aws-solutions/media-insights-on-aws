@@ -51,7 +51,6 @@ cleanup_and_die() {
 }
 
 cleanup() {
-  echo "Cleaning up..."
   # Deactivate and remove the temporary python virtualenv used to run this script
   if [[ "$VIRTUAL_ENV" != "" ]];
   then
@@ -233,9 +232,9 @@ if [[ ! -z "${NO_LAYER}" ]]; then
   echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.8.zip"
   wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.8.zip
   echo "Copying Lambda layer zips to $dist_dir:"
-  cp -v media_insights_engine_lambda_layer_python3.6.zip "$regional_dist_dir"
-  cp -v media_insights_engine_lambda_layer_python3.7.zip "$regional_dist_dir"
-  cp -v media_insights_engine_lambda_layer_python3.8.zip "$regional_dist_dir"
+  mv media_insights_engine_lambda_layer_python3.6.zip "$regional_dist_dir"
+  mv media_insights_engine_lambda_layer_python3.7.zip "$regional_dist_dir"
+  mv media_insights_engine_lambda_layer_python3.8.zip "$regional_dist_dir"
   cd "$build_dir" || exit 1
 else
   echo "------------------------------------------------------------------------------"
@@ -286,9 +285,9 @@ else
     wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.8.zip
   fi
   echo "Copying Lambda layer zips to $regional_dist_dir:"
-  cp -v media_insights_engine_lambda_layer_python3.6.zip "$regional_dist_dir"
-  cp -v media_insights_engine_lambda_layer_python3.7.zip "$regional_dist_dir"
-  cp -v media_insights_engine_lambda_layer_python3.8.zip "$regional_dist_dir"
+  mv media_insights_engine_lambda_layer_python3.6.zip "$regional_dist_dir"
+  mv media_insights_engine_lambda_layer_python3.7.zip "$regional_dist_dir"
+  mv media_insights_engine_lambda_layer_python3.8.zip "$regional_dist_dir"
   mv requirements.txt.old requirements.txt
   cd "$build_dir" || exit 1
 fi
@@ -746,8 +745,6 @@ echo "TEMPLATE='"https://"$global_bucket"."$s3domain"/media_insights_engine/"$ve
 touch $global_dist_dir/templateUrl.txt
 echo "https://"$global_bucket"."$s3domain"/media_insights_engine/"$version"/media-insights-stack.template" > templateUrl.txt
 
-echo "------------------------------------------------------------------------------"
-echo "Done"
-echo "------------------------------------------------------------------------------"
 cleanup
-die 0
+echo "Done"
+exit 0

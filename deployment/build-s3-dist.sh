@@ -742,7 +742,7 @@ echo "Template to deploy:"
 echo "TEMPLATE='"https://"$global_bucket"."$s3domain"/media_insights_engine/"$version"/media-insights-stack.template"'"
 
 # Save the template URI for test automation scripts:
-touch $global_dist_dir/templateUrl.txt
+touch templateUrl.txt
 echo "https://"$global_bucket"."$s3domain"/media_insights_engine/"$version"/media-insights-stack.template" > templateUrl.txt
 
 cleanup

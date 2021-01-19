@@ -32,8 +32,8 @@ jobs:
           MIE_STACK_NAME="pr${SHORT_SHA}"
           REGION=us-west-2
           VERSION="pr${SHORT_SHA}"
-          DIST_OUTPUT_BUCKET=mie-dev
-          TEMPLATE_OUTPUT_BUCKET=mie-dev
+          DIST_OUTPUT_BUCKET=mie-dev-$REGION
+          TEMPLATE_OUTPUT_BUCKET=mie-dev-$REGION
           ./build-s3-dist.sh --no-layer --template-bucket $TEMPLATE_OUTPUT_BUCKET --code-bucket $DIST_OUTPUT_BUCKET --version $VERSION --region $REGION
           read -r TEMPLATE < templateUrl.txt
           aws cloudformation create-stack --stack-name $MIE_STACK_NAME --template-url $TEMPLATE --region $REGION --parameters ParameterKey=DeployTestResources,ParameterValue=true ParameterKey=MaxConcurrentWorkflows,ParameterValue=10 ParameterKey=DeployAnalyticsPipeline,ParameterValue=true ParameterKey=EnableXrayTrace,ParameterValue=true --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --disable-rollback

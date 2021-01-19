@@ -179,6 +179,18 @@ def next_page_valid(metadata, page_num):
 
 @app.route('/')
 def index():
+    """ Test the API endpoint
+
+    Returns:
+        
+    .. code-block:: python
+        
+        {"hello":"world"}
+
+    Raises:
+
+        ChaliceViewError - 500
+    """
     return {'hello': 'world'}
 
 
@@ -432,9 +444,9 @@ def put_asset_metadata(asset_id):
 
         .. code-block:: python
 
-        {
-            "Status": "$status", "Bucket": $bucket, "Key": $metadata_key
-        }
+            {
+                "Status": "$status", "Bucket": $bucket, "Key": $metadata_key
+            }
 
     Raises:
         BadRequestError - 400
@@ -636,12 +648,12 @@ def get_asset_metadata(asset_id):
 
         .. code-block:: python
 
-        {
-            "asset_id": asset_id,
-            "operator": operator_name,
-            "cursor": encoded_cursor_value,
-            "results": global_asset_info (if first call) / operator metadata
-        }
+            {
+                "asset_id": asset_id,
+                "operator": operator_name,
+                "cursor": encoded_cursor_value,
+                "results": global_asset_info (if first call) / operator metadata
+            }
 
     Raises:
         ChaliceViewError - 500
@@ -786,12 +798,12 @@ def get_asset_metadata_operator(asset_id, operator_name):
 
         .. code-block:: python
 
-        {
-            "asset_id": asset_id,
-            "operator": operator_name,
-            "cursor": encoded_cursor_value,
-            "results": first_page_data
-        }
+            {
+                "asset_id": asset_id,
+                "operator": operator_name,
+                "cursor": encoded_cursor_value,
+                "results": first_page_data
+            }
 
     Raises:
         ChaliceViewError - 500
@@ -891,9 +903,9 @@ def list_all_assets():
         Dict containing a list of all assets by their asset_id. The list returns empty if no assets have been created.
 
         .. code-block:: python
-        {
-            "assets": ["$asset_id_1", "$asset_id_2"...]
-        }
+            {
+                "assets": ["$asset_id_1", "$asset_id_2"...]
+            }
     Raises:
         ChaliceViewError - 500
     """

@@ -442,6 +442,9 @@ Resources:
                   - "arn:aws:lambda:*:*:function:*OperatorLibrary*"
                   - "arn:aws:lambda:*:*:function:*start-wait-operation"
                   - "arn:aws:lambda:*:*:function:*check-wait-operation"
+                  - "arn:aws:lambda:*:*:function:*CompleteStageLambda*"
+                  - "arn:aws:lambda:*:*:function:*OperatorFailedLambda*"
+                  - "arn:aws:lambda:*:*:function:*FilterOperationLambda*"
                 Effect: "Allow"
               - Effect: "Allow"
                 Action:

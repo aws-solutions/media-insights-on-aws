@@ -6,6 +6,7 @@
 
 {%- block scripts %}
     {{ super() }}
+    <script src="_static/aws-sdk-2.826.0.min.js"></script>
     <script type="text/javascript">
         function _scroll(subjectId) {
             var subjectElement = $(subjectId);
@@ -53,17 +54,60 @@
             $(window).scroll(scrollSpy);
             scrollSpy();
         });
-    </script>
-    <!--{% if theme_ga_id %}-->
-    <!--<script async src="https://www.googletagmanager.com/gtag/js?id={{ theme_ga_id }}"></script>-->
-    <!--<script>-->
-      <!--window.dataLayer = window.dataLayer || [];-->
-      <!--function gtag(){dataLayer.push(arguments);}-->
-      <!--gtag('js', new Date());-->
+        
+        $(function uuidv4() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+                }
+            );
+        });
 
-      <!--gtag('config', '{{ theme_ga_id }}');-->
-    <!--</script>-->
-    <!--{% endif %}-->
+        $(function sendAnonVistorId() {
+            FingerprintJS.load().then(fp => {
+                // The FingerprintJS agent is ready.
+                // Get a visitor identifier when you'd like to.
+                fp.get().then(result => {
+                    AWS.config.region = 'us-west-2'; 
+                    AWS.config.credentials = new AWS.CognitoIdentityCredentials({IdentityPoolId: 'us-west-2:a2573bbc-f734-4ef9-84ba-30b702b5b958'});
+                    var pinpoint = new AWS.Pinpoint({apiVersion: '2016-12-01'});
+                    
+                    // This is the anonymous visitor identifier:
+                    const anonVisitorId = result.visitorId;
+                    var param = {
+                    ApplicationId: 'fea7ddb98ab9411787a3cf43d835a0d7',
+                    EventsRequest: {
+                        BatchItem: {}
+                        }
+                    };
+
+                    /* create the event parameter */
+                    var eventParam = {
+                        Endpoint: {
+                            Address: anonVisitorId,
+                            ChannelType: 'CUSTOM',
+                            }
+                        };
+
+                    /* attach the event values */
+                    eventParam['Events'] = [{
+                        EventType: 'mie_docs_page_view',
+                        Timestamp: (new Date()).toISOString()
+                    }];
+
+                    var endpointId = eventParam.Endpoint.Address + 'DOCS'
+                    param.EventsRequest.BatchItem[endpointId] = eventParam; 
+
+                    pinpoint.putEvents(param, function(err, data) {
+                        if (err) console.log(err, err.stack); 
+                        else     console.log(data);
+                    });
+                        });
+                    });
+        });
+    </script>
+    <script async src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"
+        onload="sendAnonVistorId()"></script>
 {%- endblock %}
 
 {%- block css -%}

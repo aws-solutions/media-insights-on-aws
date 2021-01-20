@@ -119,7 +119,7 @@ parse_params() {
 parse_params "$@"
 msg "Build parameters:"
 msg "- Template bucket: ${global_bucket}"
-msg "- Code bucket: ${regional_bucket}"
+msg "- Code bucket: ${regional_bucket}-${region}"
 msg "- Version: ${version}"
 msg "- Region: ${region}"
 msg "- Build layer? $(if [[ -z $NO_LAYER ]]; then echo 'Yes, please.'; else echo 'No, thanks.'; fi)"
@@ -728,10 +728,12 @@ echo "--------------------------------------------------------------------------
 echo "Copy dist to S3"
 echo "------------------------------------------------------------------------------"
 
-echo "Copying the prepared distribution to S3..."
+echo "Copying the prepared distribution to:"
+echo "s3://$global_bucket/media_insights_engine/$version/"
+echo "s3://${regional_bucket}-${region}/media_insights_engine/$version/"
 set -x
 aws s3 sync $global_dist_dir s3://$global_bucket/media_insights_engine/$version/
-aws s3 sync $regional_dist_dir s3://$regional_bucket/media_insights_engine/$version/
+aws s3 sync $regional_dist_dir s3://${regional_bucket}-${region}/media_insights_engine/$version/
 set +x
 
 echo "------------------------------------------------------------------------------"

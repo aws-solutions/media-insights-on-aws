@@ -32,7 +32,7 @@ jobs:
           MIE_STACK_NAME="pr${SHORT_SHA}"
           REGION=us-west-2
           VERSION="pr${SHORT_SHA}"
-          DIST_OUTPUT_BUCKET=mie-dev-us-west-2
+          DIST_OUTPUT_BUCKET=mie-dev
           TEMPLATE_OUTPUT_BUCKET=mie-dev-us-west-2
           ./build-s3-dist.sh --no-layer --template-bucket $TEMPLATE_OUTPUT_BUCKET --code-bucket $DIST_OUTPUT_BUCKET --version $VERSION --region $REGION
           read -r TEMPLATE < templateUrl.txt

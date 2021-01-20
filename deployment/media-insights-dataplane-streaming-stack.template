@@ -11,6 +11,9 @@ Parameters:
   DynamoTableArn:
     Type: String
     Description: "Arn of the Dataplane Dynamo DB table"
+  botoConfig:
+    Type: String
+    Description: "Botocore config"
 
 Mappings:
   SourceCode:
@@ -56,6 +59,7 @@ Resources:
       Environment:
         Variables:
           StreamName: !Ref AnalyticsStream
+          botoConfig: !Ref botoConfig
       Tags:
         - Key: "environment"
           Value: "mie"

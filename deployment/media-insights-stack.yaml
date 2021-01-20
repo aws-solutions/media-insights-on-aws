@@ -1238,6 +1238,7 @@ Resources:
       Environment:
         Variables:
           TOPIC_ARN: !Ref WorkflowExecutionEventTopic
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Code:
         S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
         S3Key:
@@ -1284,6 +1285,7 @@ Resources:
           ],
         ]
       Parameters:
+        botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
         DataplaneTableName: !Ref DataplaneTable
         DataplaneBucketName: !Ref Dataplane
         DeploymentPackageBucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
@@ -1324,6 +1326,7 @@ Resources:
             - DataplaneTable
             - StreamArn
         DynamoTableArn: !GetAtt DataplaneTable.Arn
+        botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
 
   # Workflow creation and execution API
   MediaInsightsWorkflowApi:
@@ -1343,6 +1346,7 @@ Resources:
           ],
         ]
       Parameters:
+        botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
         ShortUUID: !GetAtt GetShortUUID.Data
         StageExecutionQueueUrl: !Ref StageExecutionQueue
         StageExecutionRole: !GetAtt StepFunctionRole.Arn

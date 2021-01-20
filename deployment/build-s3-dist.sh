@@ -722,6 +722,7 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 rm -rf ./dist
+cd "$build_dir"/ || exit 1
 
 echo "------------------------------------------------------------------------------"
 echo "Copy dist to S3"

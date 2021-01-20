@@ -730,7 +730,7 @@ echo "--------------------------------------------------------------------------
 echo "Copying the prepared distribution to S3..."
 set -x
 aws s3 sync $global_dist_dir s3://$global_bucket/media_insights_engine/$version/
-aws s3 sync $regional_dist_dir s3://$regional_bucket-$region/media_insights_engine/$version/
+aws s3 sync $regional_dist_dir s3://$regional_bucket/media_insights_engine/$version/
 set +x
 
 echo "------------------------------------------------------------------------------"

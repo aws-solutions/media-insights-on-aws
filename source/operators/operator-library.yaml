@@ -2033,15 +2033,27 @@ Resources:
       StartLambdaArn: !GetAtt StartThumbnailFunction.Arn
       MonitorLambdaArn: !GetAtt CheckThumbnailFunction.Arn
 
-  TranscribeOperation:
+  TranscribeAudioOperation:
     Type: Custom::CustomResource
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Operation"
-      Name: "Transcribe"
+      Name: "TranscribeAudio"
       Type: "Async"
       Configuration:
         { "TranscribeLanguage": "en-US", "MediaType": "Audio", "Enabled": true }
+      StartLambdaArn: !GetAtt StartTranscribeFunction.Arn
+      MonitorLambdaArn: !GetAtt CheckTranscribeFunction.Arn
+
+  TranscribeVideoOperation:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "TranscribeVideo"
+      Type: "Async"
+      Configuration:
+        { "TranscribeLanguage": "en-US", "MediaType": "Video", "Enabled": true }
       StartLambdaArn: !GetAtt StartTranscribeFunction.Arn
       MonitorLambdaArn: !GetAtt CheckTranscribeFunction.Arn
 
@@ -2382,11 +2394,16 @@ Outputs:
     Value: !GetAtt ThumbnailOperation.Name
     Export:
       Name: !Join [":", [!Ref "AWS::StackName", Thumbnail]]
-  TranscribeOperation:
-    Description: "Operation name of transcribe"
-    Value: !GetAtt TranscribeOperation.Name
+  TranscribeAudioOperation:
+    Description: "Operation name of transcribe for audio"
+    Value: !GetAtt TranscribeAudioOperation.Name
     Export:
-      Name: !Join [":", [!Ref "AWS::StackName", Transcribe]]
+      Name: !Join [":", [!Ref "AWS::StackName", TranscribeAudio]]
+  TranscribeVideoOperation:
+    Description: "Operation name of transcribe for video"
+    Value: !GetAtt TranscribeVideoOperation.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", TranscribeVideo]]
   WebCaptionsOperation:
     Description: "Operation to create web captions"
     Value: !GetAtt WebCaptionsOperation.Name

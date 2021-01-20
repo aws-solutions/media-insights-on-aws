@@ -32,7 +32,7 @@ def test_workflow_execution(workflow_api, dataplane_api, stack_resources, testin
                         "Operations": ["celebrityRecognition", "contentModeration", "faceDetection", "labelDetection",
                                        "personTracking", "shotDetection", "textDetection", "Mediaconvert",
                                        "technicalCueDetection"]}
-    test_audio_stage = {"Name": "TestAudio", "Operations": ["Transcribe"]}
+    test_audio_stage = {"Name": "TestAudio", "Operations": ["TranscribeAudio"]}
     test_text_stage = {"Name": "TestText", "Operations": ["Translate", "ComprehendKeyPhrases", "ComprehendEntities"]}
 
     test_workflow = {

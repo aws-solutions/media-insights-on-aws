@@ -203,6 +203,17 @@
                   "Resource": "*",
                   "Effect": "Allow",
                   "Sid": "Logging"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "iam:ListRolePolicies",
+                    "iam:PutRolePolicy",
+                    "iam:DeleteRolePolicy"
+                  ],
+                  "Resource": [
+                    "*"
+                  ]
                 }
               ]
             },
@@ -280,14 +291,21 @@
                   },
                   {
                       "Effect": "Allow",
-                      "Action": [ 
+                      "Action": [
                         "iam:PassRole"
                       ],
                       "Resource": [
                         "*"
                       ]
-                    }
-          
+                  },
+                  {
+                      "Effect": "Allow",
+                      "Action": [
+                        "iam:PutRolePolicy",
+                        "iam:DeleteRolePolicy"
+                      ],
+                      "Resource": {"Ref": "StageExecutionRole"}
+                  }
               ]
             },
             "PolicyName": "MieWorkflowCustomResourceRolePolicy"

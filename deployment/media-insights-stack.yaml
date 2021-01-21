@@ -58,6 +58,7 @@ Mappings:
       S3Bucket: "%%BUCKET_NAME%%"
       CodeKeyPrefix: "media_insights_engine/%%VERSION%%/code"
       TemplateKeyPrefix: "media_insights_engine/%%VERSION%%/cf"
+      FrameworkVersion: "%%VERSION%%"
 
 Resources:
   # Helper function - create a short UUID to avoid name conflicts
@@ -1297,6 +1298,7 @@ Resources:
             ],
           ]
         MediaInsightsEnginePython37Layer: !Ref MediaInsightsEnginePython37Layer
+        FrameworkVersion: !FindInMap ["SourceCode", "General", "FrameworkVersion"]
 
   Analytics:
     Type: "AWS::CloudFormation::Stack"
@@ -1386,6 +1388,7 @@ Resources:
             "workflowapi.zip",
             ],
           ]
+        FrameworkVersion: !FindInMap ["SourceCode", "General", "FrameworkVersion"]
 
   OperatorLibrary:
     DependsOn:
@@ -1503,4 +1506,8 @@ Outputs:
   TestStack:
     Condition: DeployTestResourcesCondition
     Value: !Ref TestResources
-
+  Version:
+    Description: Media Insights Engine Version
+    Value: !FindInMap ["SourceCode", "General", "FrameworkVersion"]
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", Version]]

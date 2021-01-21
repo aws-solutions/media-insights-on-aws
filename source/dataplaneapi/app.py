@@ -49,6 +49,8 @@ logger.addHandler(handler)
 
 app_name = 'dataplaneapi'
 app = Chalice(app_name=app_name)
+api_version = "1.0.0"
+framework_version = os.environ['FRAMEWORK_VERSION']
 
 # DDB resources
 dataplane_table_name = os.environ['DATAPLANE_TABLE_NAME']
@@ -192,6 +194,21 @@ def index():
         ChaliceViewError - 500
     """
     return {'hello': 'world'}
+
+
+@app.route('/version', cors=True, methods=['GET'], authorizer=authorizer)
+def version():
+    """
+    Get the dataplane api and framework version numbers
+
+    Returns:
+
+    .. code-block:: python
+
+        {"ApiVersion": "vx.x.x", "FrameworkVersion": "vx.x.x"}
+    """
+    versions = {"ApiVersion": api_version, "FrameworkVersion": framework_version}
+    return versions
 
 
 # TODO: Change the name of this method - "upload" is too vague

@@ -23,6 +23,10 @@
     "TracingConfigMode": {
       "Type": "String",
       "Description": "Sets tracing mode for stack entry points.  Allowed values: Active, PassThrough"
+    },
+    "FrameworkVersion": {
+      "Type": "String",
+      "Description": "Version of the Media Insights Engine Framework"
     }
   },
   "Resources": {
@@ -107,6 +111,9 @@
             },
             "DATAPLANE_BUCKET": {
                 "Ref": "DataplaneBucketName"
+            },
+            "FRAMEWORK_VERSION": {
+              "Ref": "FrameworkVersion"
             }
           }
         },

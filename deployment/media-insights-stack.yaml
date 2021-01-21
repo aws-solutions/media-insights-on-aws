@@ -59,6 +59,7 @@ Mappings:
       RegionalS3Bucket: "%%REGIONAL_BUCKET_NAME%%"
       CodeKeyPrefix: "media_insights_engine/%%VERSION%%"
       TemplateKeyPrefix: "media_insights_engine/%%VERSION%%"
+      FrameworkVersion: "%%VERSION%%"
 
 Resources:
   # Helper function - create a short UUID to avoid name conflicts

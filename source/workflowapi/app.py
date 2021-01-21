@@ -18,6 +18,7 @@ import os
 # from datetime import time
 from datetime import datetime
 from operator import itemgetter
+from botocore import config
 import json
 import time
 import decimal
@@ -35,6 +36,7 @@ API_STAGE = "dev"
 app = Chalice(app_name=APP_NAME)
 app.debug = True
 API_VERSION = "2.0.0"
+FRAMEWORK_VERSION = os.environ['FRAMEWORK_VERSION']
 
 
 def is_aws():
@@ -76,23 +78,26 @@ FILTER_OPERATION_LAMBDA_ARN = os.environ["FILTER_OPERATION_LAMBDA_ARN"]
 OPERATOR_FAILED_LAMBDA_ARN = os.environ["OPERATOR_FAILED_LAMBDA_ARN"]
 WORKFLOW_SCHEDULER_LAMBDA_ARN = os.environ["WORKFLOW_SCHEDULER_LAMBDA_ARN"]
 
+mie_config = json.loads(os.environ['botoConfig'])
+config = config.Config(**mie_config)
+
 # DynamoDB
-DYNAMO_CLIENT = boto3.client("dynamodb")
-DYNAMO_RESOURCE = boto3.resource("dynamodb")
+DYNAMO_CLIENT = boto3.client("dynamodb", config=config)
+DYNAMO_RESOURCE = boto3.resource("dynamodb", config=config)
 
 # Step Functions
-SFN_CLIENT = boto3.client('stepfunctions')
+SFN_CLIENT = boto3.client('stepfunctions', config=config)
 
 # Simple Queue Service
-SQS_RESOURCE = boto3.resource('sqs')
-SQS_CLIENT = boto3.client('sqs')
+SQS_RESOURCE = boto3.resource('sqs', config=config)
+SQS_CLIENT = boto3.client('sqs', config=config)
 
 # IAM resource
-IAM_CLIENT = boto3.client('iam')
-IAM_RESOURCE = boto3.resource('iam')
+IAM_CLIENT = boto3.client('iam', config=config)
+IAM_RESOURCE = boto3.resource('iam', config=config)
 
 # Lambda
-LAMBDA_CLIENT = boto3.client("lambda")
+LAMBDA_CLIENT = boto3.client("lambda", config=config)
 # Helper class to convert a DynamoDB item to JSON.
 
 authorizer = IAMAuthorizer()
@@ -138,6 +143,22 @@ def index():
         500: ChaliceViewError - internal server error
     """
     return {'hello': 'world'}
+
+
+@app.route('/version', cors=True, methods=['GET'], authorizer=authorizer)
+def version():
+    """
+    Get the workflow api and framework version numbers
+
+    Returns:
+
+    .. code-block:: python
+
+        {"ApiVersion": "vx.x.x", "FrameworkVersion": "vx.x.x"}
+    """
+    versions = {"ApiVersion": API_VERSION, "FrameworkVersion": FRAMEWORK_VERSION}
+    return versions
+
 
 ##############################################################################
 #   ____            _                   ____       _

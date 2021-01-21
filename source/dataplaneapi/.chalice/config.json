@@ -2,9 +2,11 @@
   "version": "2.0",
   "app_name": "dataplaneapi",
   "environment_variables": {
+    "botoConfig": "{}",
     "DATAPLANE_TABLE_NAME": "",
     "DATAPLANE_BUCKET": "",
-    "USER_POOL_ARN": ""
+    "USER_POOL_ARN": "",
+    "FRAMEWORK_VERSION": ""
   },
   "stages": {
     "dev": {

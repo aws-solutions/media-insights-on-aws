@@ -4,8 +4,8 @@ Description: "Media Insight Engine - Operator library"
 Mappings:
   SourceCode:
     General:
-      S3Bucket: "%%BUCKET_NAME%%"
-      KeyPrefix: "media_insights_engine/%%VERSION%%/code"
+      RegionalS3Bucket: "%%REGIONAL_BUCKET_NAME%%"
+      CodeKeyPrefix: "media_insights_engine/%%VERSION%%"
 
 Parameters:
   DataPlaneEndpoint:
@@ -338,7 +338,7 @@ Resources:
                   - "s3:ListBucket"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}"
                 Effect: "Allow"
-  
+
   translateRole:
     Type: "AWS::IAM::Role"
     Metadata:
@@ -664,12 +664,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "generic_data_lookup.zip",
             ],
           ]
@@ -680,6 +680,7 @@ Resources:
           OPERATOR_NAME: "GenericDataLookup"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DataLookupRole: !GetAtt genericDataLookupLambdaRole.Arn
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -696,12 +697,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "mediainfo.zip",
             ],
           ]
@@ -713,6 +714,7 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DataLookupRole: !GetAtt mediainfoLambdaRole.Arn
           LD_LIBRARY_PATH: "/opt/python/"
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -729,12 +731,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "start_key_phrases.zip",
             ],
           ]
@@ -745,7 +747,7 @@ Resources:
           OPERATOR_NAME: "comprehendStartKeyPhrases"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           comprehendRole: !GetAtt comprehendS3Role.Arn
-          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -760,12 +762,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "get_key_phrases.zip",
             ],
           ]
@@ -776,7 +778,7 @@ Resources:
           OPERATOR_NAME: "comprehendGetKeyPhrases"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           comprehendRole: !GetAtt comprehendS3Role.Arn
-          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -791,12 +793,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "start_entity_detection.zip",
             ],
           ]
@@ -807,7 +809,7 @@ Resources:
           OPERATOR_NAME: "comprehendStartEntityDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           comprehendRole: !GetAtt comprehendS3Role.Arn
-          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -822,12 +824,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "get_entity_detection.zip",
             ],
           ]
@@ -838,7 +840,7 @@ Resources:
           OPERATOR_NAME: "comprehendEntityDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           comprehendRole: !GetAtt comprehendS3Role.Arn
-          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -855,12 +857,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "start_technical_cue_detection.zip",
             ],
           ]
@@ -873,7 +875,7 @@ Resources:
           OPERATOR_NAME: "technicalCueDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -888,12 +890,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "check_technical_cue_status.zip",
             ],
           ]
@@ -906,7 +908,7 @@ Resources:
           OPERATOR_NAME: "technicalCueDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -921,12 +923,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "start_shot_detection.zip",
             ],
           ]
@@ -939,7 +941,7 @@ Resources:
           OPERATOR_NAME: "shotDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -954,12 +956,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "check_shot_detection_status.zip",
             ],
           ]
@@ -972,7 +974,7 @@ Resources:
           OPERATOR_NAME: "shotDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -987,12 +989,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "start_celebrity_recognition.zip",
             ],
           ]
@@ -1005,7 +1007,7 @@ Resources:
           OPERATOR_NAME: "celebrityRecognition"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1020,12 +1022,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "check_celebrity_recognition_status.zip",
             ],
           ]
@@ -1037,7 +1039,7 @@ Resources:
           OPERATOR_NAME: "celebrityRecognition"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1052,12 +1054,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "start_content_moderation.zip",
             ],
           ]
@@ -1070,7 +1072,7 @@ Resources:
           OPERATOR_NAME: "contentModeration"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1085,12 +1087,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "check_content_moderation_status.zip",
             ],
           ]
@@ -1102,7 +1104,7 @@ Resources:
           OPERATOR_NAME: "contentModeration"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1117,12 +1119,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "start_face_detection.zip",
             ],
           ]
@@ -1136,7 +1138,7 @@ Resources:
           OPERATOR_NAME: "faceDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1151,12 +1153,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "check_face_detection_status.zip",
             ],
           ]
@@ -1169,7 +1171,7 @@ Resources:
           OPERATOR_NAME: "faceDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1184,12 +1186,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "start_face_search.zip",
             ],
           ]
@@ -1203,7 +1205,7 @@ Resources:
           OPERATOR_NAME: "faceSearch"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1218,12 +1220,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "check_face_search_status.zip",
             ],
           ]
@@ -1236,7 +1238,7 @@ Resources:
           OPERATOR_NAME: "faceSearch"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1251,12 +1253,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "start_text_detection.zip",
             ],
           ]
@@ -1268,7 +1270,7 @@ Resources:
           OPERATOR_NAME: "textDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1283,12 +1285,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "check_text_detection_status.zip",
             ],
           ]
@@ -1301,7 +1303,7 @@ Resources:
           OPERATOR_NAME: "textDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1316,12 +1318,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "start_label_detection.zip",
             ],
           ]
@@ -1333,7 +1335,7 @@ Resources:
           OPERATOR_NAME: "labelDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1348,12 +1350,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "check_label_detection_status.zip",
             ],
           ]
@@ -1366,7 +1368,7 @@ Resources:
           OPERATOR_NAME: "labelDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1381,12 +1383,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "start_person_tracking.zip",
             ],
           ]
@@ -1396,7 +1398,7 @@ Resources:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
           REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
           OPERATOR_NAME: "personTracking"
-          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1411,12 +1413,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "check_person_tracking_status.zip",
             ],
           ]
@@ -1429,7 +1431,7 @@ Resources:
           OPERATOR_NAME: "personTracking"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1446,12 +1448,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "start_media_convert.zip",
             ],
           ]
@@ -1462,6 +1464,7 @@ Resources:
           mediaconvertRole: !GetAtt "mediaConvertS3Role.Arn"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1476,12 +1479,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "start_thumbnail.zip",
             ],
           ]
@@ -1492,6 +1495,7 @@ Resources:
           mediaconvertRole: !GetAtt "mediaConvertS3Role.Arn"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1506,12 +1510,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "check_thumbnail.zip",
             ],
           ]
@@ -1522,6 +1526,7 @@ Resources:
           mediaconvertRole: !GetAtt "mediaConvertS3Role.Arn"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1536,12 +1541,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "get_media_convert.zip",
             ],
           ]
@@ -1551,6 +1556,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1567,12 +1573,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "start_transcribe.zip",
             ],
           ]
@@ -1581,7 +1587,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1596,12 +1602,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "get_transcribe.zip",
             ],
           ]
@@ -1612,7 +1618,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1629,12 +1635,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "webcaptions.zip",
             ],
           ]
@@ -1645,7 +1651,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1662,12 +1668,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "webcaptions.zip",
             ],
           ]
@@ -1677,7 +1683,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1692,12 +1698,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "webcaptions.zip",
             ],
           ]
@@ -1707,7 +1713,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1722,12 +1728,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "webcaptions.zip",
             ],
           ]
@@ -1737,7 +1743,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1752,12 +1758,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "webcaptions.zip",
             ],
           ]
@@ -1767,7 +1773,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1784,12 +1790,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "start_translate.zip",
             ],
           ]
@@ -1800,7 +1806,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1813,12 +1819,12 @@ Resources:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "translateRole.Arn"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "webcaptions.zip",
             ],
           ]
@@ -1829,7 +1835,7 @@ Resources:
           translateRole: !GetAtt translateS3Role.Arn
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1842,12 +1848,12 @@ Resources:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "translateRole.Arn"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "webcaptions.zip",
             ],
           ]
@@ -1857,7 +1863,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1871,12 +1877,12 @@ Resources:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "pollyRole.Arn"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "webcaptions.zip",
             ],
           ]
@@ -1886,7 +1892,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1899,12 +1905,12 @@ Resources:
         - !Ref "MediaInsightsEnginePython37Layer"
       Role: !GetAtt "pollyRole.Arn"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "webcaptions.zip",
             ],
           ]
@@ -1914,7 +1920,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1931,12 +1937,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "start_polly.zip",
             ],
           ]
@@ -1945,7 +1951,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1960,12 +1966,12 @@ Resources:
       TracingConfig:
         Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
             "/",
             [
-            !FindInMap ["SourceCode", "General", "KeyPrefix"],
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
             "get_polly.zip",
             ],
           ]
@@ -1974,7 +1980,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -2033,15 +2039,27 @@ Resources:
       StartLambdaArn: !GetAtt StartThumbnailFunction.Arn
       MonitorLambdaArn: !GetAtt CheckThumbnailFunction.Arn
 
-  TranscribeOperation:
+  TranscribeAudioOperation:
     Type: Custom::CustomResource
     Properties:
       ServiceToken: !Ref WorkflowCustomResourceArn
       ResourceType: "Operation"
-      Name: "Transcribe"
+      Name: "TranscribeAudio"
       Type: "Async"
       Configuration:
         { "TranscribeLanguage": "en-US", "MediaType": "Audio", "Enabled": true }
+      StartLambdaArn: !GetAtt StartTranscribeFunction.Arn
+      MonitorLambdaArn: !GetAtt CheckTranscribeFunction.Arn
+
+  TranscribeVideoOperation:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "TranscribeVideo"
+      Type: "Async"
+      Configuration:
+        { "TranscribeLanguage": "en-US", "MediaType": "Video", "Enabled": true }
       StartLambdaArn: !GetAtt StartTranscribeFunction.Arn
       MonitorLambdaArn: !GetAtt CheckTranscribeFunction.Arn
 
@@ -2052,7 +2070,7 @@ Resources:
       ResourceType: "Operation"
       Name: "WebCaptions"
       Type: "Sync"
-      Configuration: 
+      Configuration:
         { "MediaType": "MetadataOnly", "SourceLanguageCode": "en", "Enabled": true }
       StartLambdaArn: !GetAtt WebCaptionsFunction.Arn
 
@@ -2063,7 +2081,7 @@ Resources:
       ResourceType: "Operation"
       Name: "PollyWebCaptions"
       Type: "Async"
-      Configuration: 
+      Configuration:
         { "MediaType": "MetadataOnly", "SourceLanguageCode": "en", "Enabled": true }
       StartLambdaArn: !GetAtt StartPollyWebCaptionsFunction.Arn
       MonitorLambdaArn: !GetAtt CheckPollyWebCaptionsFunction.Arn
@@ -2133,7 +2151,7 @@ Resources:
           "SourceLanguageCode": "en",
         }
       StartLambdaArn: !GetAtt TranslateFunction.Arn
-  
+
   TranslateWebCaptionsOperation:
     Type: Custom::CustomResource
     Properties:
@@ -2141,7 +2159,7 @@ Resources:
       ResourceType: "Operation"
       Name: "TranslateWebCaptions"
       Type: "Async"
-      Configuration: 
+      Configuration:
         {
           "MediaType": "MetadataOnly",
           "TargetLanguageCodes": ["es"],
@@ -2353,7 +2371,7 @@ Resources:
       Configuration: { "MediaType": "MetadataOnly", "Enabled": false }
       StartLambdaArn: !Ref StartWaitOperationLambda
       MonitorLambdaArn: !Ref CheckWaitOperationLambda
-      
+
   # Export operator names as outputs
 
 Outputs:
@@ -2382,11 +2400,16 @@ Outputs:
     Value: !GetAtt ThumbnailOperation.Name
     Export:
       Name: !Join [":", [!Ref "AWS::StackName", Thumbnail]]
-  TranscribeOperation:
-    Description: "Operation name of transcribe"
-    Value: !GetAtt TranscribeOperation.Name
+  TranscribeAudioOperation:
+    Description: "Operation name of transcribe for audio"
+    Value: !GetAtt TranscribeAudioOperation.Name
     Export:
-      Name: !Join [":", [!Ref "AWS::StackName", Transcribe]]
+      Name: !Join [":", [!Ref "AWS::StackName", TranscribeAudio]]
+  TranscribeVideoOperation:
+    Description: "Operation name of transcribe for video"
+    Value: !GetAtt TranscribeVideoOperation.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", TranscribeVideo]]
   WebCaptionsOperation:
     Description: "Operation to create web captions"
     Value: !GetAtt WebCaptionsOperation.Name

@@ -39,6 +39,9 @@ except ClientError as e:
     print(e.response['Error']['Message'])
 '''
 
+mie_config = json.loads(os.environ['botoConfig'])
+config = Config(**mie_config)
+
 formatter = logging.Formatter('{%(pathname)s:%(lineno)d} %(levelname)s - %(message)s')
 handler = logging.StreamHandler()
 handler.setFormatter(formatter)
@@ -49,11 +52,13 @@ logger.addHandler(handler)
 
 app_name = 'dataplaneapi'
 app = Chalice(app_name=app_name)
+api_version = "1.0.0"
+framework_version = os.environ['FRAMEWORK_VERSION']
 
 # DDB resources
 dataplane_table_name = os.environ['DATAPLANE_TABLE_NAME']
-dynamo_client = boto3.client('dynamodb')
-dynamo_resource = boto3.resource('dynamodb')
+dynamo_client = boto3.client('dynamodb', config=config)
+dynamo_resource = boto3.resource('dynamodb', config=config)
 
 # S3 resources
 dataplane_s3_bucket = os.environ['DATAPLANE_BUCKET']
@@ -65,8 +70,8 @@ authorizer = IAMAuthorizer()
 # TODO: Should we add a variable for the upload bucket?
 
 base_s3_uri = 'private/assets/'
-s3_client = boto3.client('s3')
-s3_resource = boto3.resource('s3')
+s3_client = boto3.client('s3', config=config)
+s3_resource = boto3.resource('s3', config=config)
 
 
 class DecimalEncoder(json.JSONEncoder):
@@ -192,6 +197,21 @@ def index():
         ChaliceViewError - 500
     """
     return {'hello': 'world'}
+
+
+@app.route('/version', cors=True, methods=['GET'], authorizer=authorizer)
+def version():
+    """
+    Get the dataplane api and framework version numbers
+
+    Returns:
+
+    .. code-block:: python
+
+        {"ApiVersion": "vx.x.x", "FrameworkVersion": "vx.x.x"}
+    """
+    versions = {"ApiVersion": api_version, "FrameworkVersion": framework_version}
+    return versions
 
 
 # TODO: Change the name of this method - "upload" is too vague

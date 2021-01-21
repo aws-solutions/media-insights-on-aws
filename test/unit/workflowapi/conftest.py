@@ -23,6 +23,7 @@ def mock_env_variables(monkeypatch):
     monkeypatch.setenv("OPERATOR_FAILED_LAMBDA_ARN", "testFailedLambdaArn")
     monkeypatch.setenv("WORKFLOW_SCHEDULER_LAMBDA_ARN", "testSchedulerArn")
     monkeypatch.setenv("DataplaneEndpoint", "testDataplaneEndpoint")
+    monkeypatch.setenv("botoConfig", '{"user_agent_extra": "AwsSolution/mie/vX.X.X"}')
 
 
 @pytest.fixture

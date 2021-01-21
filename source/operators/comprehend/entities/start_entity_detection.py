@@ -16,7 +16,7 @@ patch_all()
 mie_config = json.loads(os.environ['botoConfig'])
 config = config.Config(**mie_config)
 comprehend = boto3.client('comprehend', config=config)
-s3 = boto3.client('s3')
+s3 = boto3.client('s3', config=config)
 comprehend_role = os.environ['comprehendRole']
 region = os.environ['AWS_REGION']
 headers = {"Content-Type": "application/json"}

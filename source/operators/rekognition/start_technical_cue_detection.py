@@ -26,7 +26,7 @@ output_object = OutputHelper(operator_name)
 
 mie_config = json.loads(os.environ['botoConfig'])
 config = config.Config(**mie_config)
-rek = boto3.client('rekognition')
+rek = boto3.client('rekognition', config=config)
 
 
 def start_technical_cue_detection(bucket, key):

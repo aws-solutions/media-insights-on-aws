@@ -1,5 +1,9 @@
 {
   "Parameters": {
+    "botoConfig": {
+      "Type": "String",
+      "Description": "Botocore config"
+    },
     "DataplaneTableName": {
       "Type": "String",
       "Description": "Table used for storing asset metadata"
@@ -106,6 +110,9 @@
         "Runtime": "python3.7",
         "Environment": {
           "Variables": {
+            "botoConfig": {
+              "Ref": "botoConfig"
+            },
             "DATAPLANE_TABLE_NAME": {
                 "Ref": "DataplaneTableName"
             },

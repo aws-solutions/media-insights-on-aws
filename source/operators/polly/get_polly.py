@@ -15,7 +15,7 @@ patch_all()
 mie_config = json.loads(os.environ['botoConfig'])
 config = config.Config(**mie_config)
 polly = boto3.client('polly', config=config)
-s3 = boto3.client("s3")
+s3 = boto3.client("s3", config=config)
 
 
 def lambda_handler(event, context):

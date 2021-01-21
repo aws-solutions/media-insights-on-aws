@@ -48,7 +48,7 @@ if [ $? -ne 0 ]; then
   echo "ERROR: install Docker before running this script"
   exit 1
 else
-  pgrep -f docker > /dev/null
+  docker ps > /dev/null
   if [ $? -ne 0 ]; then
       echo "ERROR: start Docker before running this script"
       exit 1

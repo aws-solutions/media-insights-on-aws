@@ -133,17 +133,23 @@ class API:
 
     # TODO: This test is currently broken. Seems to be a real issue with the API that needs looked into.
 
-    # def get_all_metadata(self, asset_id, cursor=None):
-    #     if cursor is None:
-    #         url = self.stack_resources["DataplaneApiEndpoint"] + 'metadata/' + asset_id
-    #     else:
-    #         url = self.stack_resources["DataplaneApiEndpoint"] + 'metadata/' + asset_id + "?cursor=" + cursor
-    #     headers = {"Content-Type": "application/json"}
-    #     print("GET /metadata/{asset}".format(asset=asset_id))
-    #     metadata_response = requests.get(url, headers=headers, verify=False, auth=self.auth)
-    #     print(metadata_response.json())
-    #     print(metadata_response.text)
-    #     return metadata_response
+    def get_all_metadata(self, asset_id, cursor=None):
+        
+        url = self.stack_resources["DataplaneApiEndpoint"] + 'metadata/' + asset_id
+        headers = {"Content-Type": "application/json"}
+        print("GET /metadata/{asset}".format(asset=asset_id))
+        
+        if cursor is None:
+            print("GET /metadata/{asset}".format(asset=asset_id))
+            metadata_response = requests.get(url, headers=headers, verify=False, auth=self.auth) 
+        else:
+            print("GET /metadata/{asset}?cursor={cursor}".format(asset=asset_id, cursor=cursor))
+            query_params = {"cursor": cursor}
+            metadata_response = requests.get(url, headers=headers, params=query_params, verify=False, auth=self.auth) 
+        
+        print(metadata_response.json())
+        print(metadata_response.text)
+        return metadata_response
 
     def get_single_metadata_field(self, asset_id, operator):
         metadata_field = operator["OperatorName"]

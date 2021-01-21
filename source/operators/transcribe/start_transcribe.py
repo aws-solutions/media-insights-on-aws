@@ -44,7 +44,7 @@ def lambda_handler(event, context):
     except KeyError:
         bucket = operator_object.input["Media"]["Video"]["S3Bucket"]
         key = operator_object.input["Media"]["Video"]["S3Key"]
-        file_type = os.path.splitext(key)[1]
+        file_type = key.split('.')[-1]
     except Exception:
         operator_object.update_workflow_status("Error")
         operator_object.add_workflow_metadata(TranscribeError="No valid inputs")

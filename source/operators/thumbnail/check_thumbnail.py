@@ -9,6 +9,8 @@
 
 import os
 import boto3
+import json
+from botocore import config
 from aws_xray_sdk.core import xray_recorder
 from aws_xray_sdk.core import patch_all
 
@@ -18,7 +20,11 @@ from MediaInsightsEngineLambdaHelper import MasExecutionError
 patch_all()
 
 region = os.environ["AWS_REGION"]
-mediaconvert = boto3.client("mediaconvert", region_name=region)
+
+mie_config = json.loads(os.environ['botoConfig'])
+config = config.Config(**mie_config)
+
+mediaconvert = boto3.client("mediaconvert", config=config, region_name=region)
 
 def lambda_handler(event, context):
     print("We got the following event:\n", event)

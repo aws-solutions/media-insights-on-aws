@@ -6,7 +6,7 @@ from boto3 import resource
 from botocore.client import ClientError
 from aws_xray_sdk.core import xray_recorder
 from aws_xray_sdk.core import patch_all
-
+from botocore import config
 import uuid
 import logging
 import os
@@ -60,19 +60,22 @@ if "DEFAULT_MAX_CONCURRENT_WORKFLOWS" in os.environ:
 else:
     DEFAULT_MAX_CONCURRENT_WORKFLOWS = 10
 
+mie_config = json.loads(os.environ['botoConfig'])
+config = config.Config(**mie_config)
+
 # DynamoDB
-DYNAMO_CLIENT = boto3.client("dynamodb")
-DYNAMO_RESOURCE = boto3.resource("dynamodb")
+DYNAMO_CLIENT = boto3.client("dynamodb", config=config)
+DYNAMO_RESOURCE = boto3.resource("dynamodb", config=config)
 
 # Step Functions
-SFN_CLIENT = boto3.client('stepfunctions')
+SFN_CLIENT = boto3.client('stepfunctions', config=config)
 
 # Simple Queue Service
-SQS_RESOURCE = boto3.resource('sqs')
-SQS_CLIENT = boto3.client('sqs')
+SQS_RESOURCE = boto3.resource('sqs', config=config)
+SQS_CLIENT = boto3.client('sqs', config=config)
 
 # Lambda
-LAMBDA_CLIENT = boto3.client("lambda")
+LAMBDA_CLIENT = boto3.client("lambda", config=config)
 
 
 def list_workflow_executions_by_status(Status):

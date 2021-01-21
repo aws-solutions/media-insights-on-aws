@@ -948,6 +948,7 @@ Resources:
           WORKFLOW_TABLE_NAME: !Ref WorkflowTable
           SYSTEM_TABLE_NAME: !Ref SystemTable
           DEFAULT_MAX_CONCURRENT_WORKFLOWS: !Ref MaxConcurrentWorkflows
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Handler: app.workflow_scheduler_lambda
       TracingConfig:
           Mode: !If [EnableTraceOnEntryPoints, "Active", "PassThrough"]

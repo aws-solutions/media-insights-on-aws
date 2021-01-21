@@ -3,16 +3,15 @@
 # PURPOSE:
 # Uses Sphinx with autodoc and chalicedoc plugins to generate pretty HTML
 # documentation from docstrings in source/dataplaneapi/api.py and
-# source/workflowapi/api.py. Output docs will be saved to doc/sphinx/output/.
+# source/workflowapi/api.py. Output docs will be saved to docs/source/output/.
 #
-# This output is manually copied to the MIE wiki:
-#   https://w.amazon.com/bin/view/Media_insights_engine/docs
+# This output is manually copied to the MIE gh-pages hosting branch
+#
 #
 # PRELIMINARY:
 #  python3 must be installed.
 #
 # USAGE:
-#  cd doc/sphinx/
 #  ./build_docs.sh
 #  open output/index.html
 #
@@ -68,6 +67,8 @@ export DATAPLANE_TABLE_NAME="test"
 export DATAPLANE_BUCKET="test"
 export STACK_SHORT_UUID="test"
 export HISTORY_TABLE_NAME="test"
+export botoConfig="{}"
+export FRAMEWORK_VERSION='vX.X.X'
 
 cd "$docs_dir"
 

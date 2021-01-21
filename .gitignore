@@ -1,6 +1,8 @@
 deployment/media-analysis-dataplane-api-stack.yaml
 venv/
 **/dist
+global-s3-assets/
+regional-s3-assets/
 package/
 node_modules/
 source/web_site/build/

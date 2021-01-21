@@ -6,7 +6,6 @@ For a high level summary of MIE and its use cases, please read, [How to Rapidly 
 
 # Installation
 
-
 You can deploy MIE in your AWS account with the following Cloud Formation templates:
 
 Region| Launch

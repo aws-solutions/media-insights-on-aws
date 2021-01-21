@@ -7,28 +7,125 @@
 #   Build cloud formation templates for the Media Insights Engine
 #
 # USAGE:
-#  ./build-s3-dist.sh {SOURCE-BUCKET} {VERSION} {REGION} [PROFILE]
-#    SOURCE-BUCKET should be the name for the S3 bucket location where the
-#      template will source the Lambda code from.
+#  ./build-s3-dist.sh [-h] [-v] [--no-layer] --template-bucket {TEMPLATE_BUCKET} --code-bucket {CODE_BUCKET} --version {VERSION} --region {REGION}
+#    TEMPLATE_BUCKET should be the name for the S3 bucket location where MIE
+#      cloud formation templates should be saved.
+#    CODE_BUCKET should be the name for the S3 bucket location where cloud
+#      formation templates should find Lambda source code packages.
 #    VERSION should be in a format like v1.0.0
 #    REGION needs to be in a format like us-east-1
-#    PROFILE is optional. It's the profile  that you have setup in ~/.aws/config
-#      that you want to use for aws CLI commands.
+#
+#    The following options are available:
+#
+#     -h | --help       Print usage
+#     -v | --verbose    Print script debug info
+#     --no-layer        Do not build AWS Lamda layer
 #
 ###############################################################################
 
-# Check to see if input has been provided:
-if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ]; then
-    echo "Please provide the base source bucket name,  version where the lambda code will eventually reside and the region of the deploy."
-    echo "USAGE: ./build-s3-dist.sh SOURCE-BUCKET VERSION REGION [PROFILE]"
-    echo "For example: ./build-s3-dist.sh mie01 v1.0.0 us-east-1 default"
-    exit 1
-fi
+trap cleanup_and_die SIGINT SIGTERM ERR
 
-bucket=$1
-version=$2
-region=$3
-if [ -n "$4" ]; then profile=$4; fi
+usage() {
+  msg "$msg"
+  cat <<EOF
+Usage: $(basename "${BASH_SOURCE[0]}") [-h] [-v] [--no-layer] --template-bucket TEMPLATE_BUCKET --code-bucket CODE_BUCKET --version VERSION --region REGION
+
+Available options:
+
+-h, --help        Print this help and exit (optional)
+-v, --verbose     Print script debug info (optional)
+--no-layer        Do not build AWS Lamda layer (optional)
+--template-bucket S3 bucket to put cloud formation templates
+--code-bucket     S3 bucket to put Lambda code packages
+--version         Arbitrary string indicating build version
+--region          AWS Region, formatted like us-west-2
+EOF
+  exit 1
+}
+
+cleanup_and_die() {
+  trap - SIGINT SIGTERM ERR
+  echo "Trapped signal."
+  cleanup
+  die 1
+}
+
+cleanup() {
+  # Deactivate and remove the temporary python virtualenv used to run this script
+  if [[ "$VIRTUAL_ENV" != "" ]];
+  then
+    deactivate
+    #rm -rf "$VENV"
+    echo "------------------------------------------------------------------------------"
+    echo "Cleaning up complete"
+    echo "------------------------------------------------------------------------------"
+  fi
+}
+
+msg() {
+  echo >&2 -e "${1-}"
+}
+
+die() {
+  local msg=$1
+  local code=${2-1} # default exit status 1
+  msg "$msg"
+  exit "$code"
+}
+
+parse_params() {
+  # default values of variables set from params
+  flag=0
+  param=''
+
+  while :; do
+    case "${1-}" in
+    -h | --help) usage ;;
+    -v | --verbose) set -x ;;
+    --no-layer) NO_LAYER=1 ;;
+    --template-bucket)
+      global_bucket="${2}"
+      shift
+      ;;
+    --code-bucket)
+      regional_bucket="${2}"
+      shift
+      ;;
+    --version)
+      version="${2}"
+      shift
+      ;;
+    --region)
+      region="${2}"
+      shift
+      ;;
+    -?*) die "Unknown option: $1" ;;
+    *) break ;;
+    esac
+    shift
+  done
+
+  args=("$@")
+
+  # check required params and arguments
+  [[ -z "${global_bucket}" ]] && usage "Missing required parameter: template-bucket"
+  [[ -z "${regional_bucket}" ]] && usage "Missing required parameter: code-bucket"
+  [[ -z "${version}" ]] && usage "Missing required parameter: version"
+  [[ -z "${region}" ]] && usage "Missing required parameter: region"
+
+  return 0
+}
+
+parse_params "$@"
+msg "Build parameters:"
+msg "- Template bucket: ${global_bucket}"
+msg "- Code bucket: ${regional_bucket}-${region}"
+msg "- Version: ${version}"
+msg "- Region: ${region}"
+msg "- Build layer? $(if [[ -z $NO_LAYER ]]; then echo 'Yes, please.'; else echo 'No, thanks.'; fi)"
+
+echo ""
+sleep 3
 s3domain="s3.$region.amazonaws.com"
 
 # Check if region is supported:
@@ -64,10 +161,11 @@ exit 1
 fi
 
 # Get reference for all important folders
-template_dir="$PWD"
-dist_dir="$template_dir/dist"
-source_dir="$template_dir/../source"
-echo "template_dir: ${template_dir}"
+build_dir="$PWD"
+global_dist_dir="$build_dir/global-s3-assets"
+regional_dist_dir="$build_dir/regional-s3-assets"
+dist_dir="$build_dir/dist"
+source_dir="$build_dir/../source"
 
 # Create and activate a temporary Python environment for this script.
 echo "------------------------------------------------------------------------------"
@@ -78,17 +176,17 @@ if [ $? -ne 0 ]; then
     echo "ERROR: Do not run this script inside Virtualenv. Type \`deactivate\` and run again.";
     exit 1;
 fi
-command -v python3
+echo "Using virtual python environment:"
+VENV=$(mktemp -d) && echo "$VENV"
+command -v python3 > /dev/null
 if [ $? -ne 0 ]; then
     echo "ERROR: install Python3 before running this script"
     exit 1
 fi
-VENV=$(mktemp -d)
 python3 -m venv "$VENV"
 source "$VENV"/bin/activate
-pip install --quiet boto3 chalice docopt pyyaml jsonschema aws_xray_sdk
+pip3 install --quiet boto3 chalice docopt pyyaml jsonschema aws_xray_sdk
 export PYTHONPATH="$PYTHONPATH:$source_dir/lib/MediaInsightsEngineLambdaHelper/"
-echo "PYTHONPATH=$PYTHONPATH"
 if [ $? -ne 0 ]; then
     echo "ERROR: Failed to install required Python libraries."
     exit 1
@@ -99,11 +197,16 @@ echo "Create distribution directory"
 echo "------------------------------------------------------------------------------"
 
 # Setting up directories
-echo "rm -rf $dist_dir"
-rm -rf "$dist_dir"
-# Create new dist directory
-echo "mkdir -p $dist_dir"
-mkdir -p "$dist_dir"
+echo "rm -rf $global_dist_dir"
+rm -rf "$global_dist_dir"
+echo "mkdir -p $global_dist_dir"
+mkdir -p "$global_dist_dir"
+echo "mkdir -p $global_dist_dir/website"
+mkdir -p "$global_dist_dir"/website
+echo "rm -rf $regional_dist_dir"
+rm -rf "$regional_dist_dir"
+echo "mkdir -p $regional_dist_dir"
+mkdir -p "$regional_dist_dir"
 
 echo "------------------------------------------------------------------------------"
 echo "Building MIEHelper package"
@@ -116,88 +219,109 @@ rm -rf Media_Insights_Engine_Lambda_Helper.egg-info
 python3 setup.py bdist_wheel > /dev/null
 echo -n "Created: "
 find "$source_dir"/lib/MediaInsightsEngineLambdaHelper/dist/
-cd "$template_dir"/ || exit 1
+cd "$build_dir"/ || exit 1
 
-echo "------------------------------------------------------------------------------"
-echo "Building Lambda Layers"
-echo "------------------------------------------------------------------------------"
-# Build MediaInsightsEngineLambdaHelper Python package
-cd "$template_dir"/lambda_layer_factory/ || exit 1
-rm -f media_insights_engine_lambda_layer_python*.zip*
-rm -f Media_Insights_Engine*.whl
-cp -R "$source_dir"/lib/MediaInsightsEngineLambdaHelper .
-cd MediaInsightsEngineLambdaHelper/ || exit 1
-echo "Building MIE Lambda Helper python library"
-python3 setup.py bdist_wheel > /dev/null
-cp dist/*.whl ../
-cp dist/*.whl "$source_dir"/lib/MediaInsightsEngineLambdaHelper/dist/
-echo "MIE Lambda Helper python library is at $source_dir/lib/MediaInsightsEngineLambdaHelper/dist/"
-cd "$source_dir"/lib/MediaInsightsEngineLambdaHelper/dist/ || exit 1
-ls -1 "$(pwd)"/*.whl
-if [ $? -ne 0 ]; then
-  echo "ERROR: Failed to build MIE Lambda Helper python library"
-  exit 1
-fi
-cd "$template_dir"/lambda_layer_factory/ || exit 1
-rm -rf MediaInsightsEngineLambdaHelper/
-file=$(ls Media_Insights_Engine*.whl)
-# Note, $(pwd) will be mapped to /packages/ in the Docker container used for building the Lambda zip files. We reference /packages/ in requirements.txt for that reason.
-# Add the whl file to requirements.txt if it is not already there
-mv requirements.txt requirements.txt.old
-cat requirements.txt.old | grep -v "Media_Insights_Engine_Lambda_Helper" > requirements.txt
-echo "/packages/$file" >> requirements.txt;
-# Build Lambda layer zip files and rename them to the filenames expected by media-insights-stack.yaml. The Lambda layer build script runs in Docker.
-# If Docker is not installed, then we'll use prebuilt Lambda layer zip files.
-echo "Running build-lambda-layer.sh:"
-echo ""
-rm -rf lambda_layer-python-* lambda_layer-python*.zip
-./build-lambda-layer.sh requirements.txt > /dev/null
-if [ $? -eq 0 ]; then
-  mv lambda_layer-python3.6.zip media_insights_engine_lambda_layer_python3.6.zip
-  mv lambda_layer-python3.7.zip media_insights_engine_lambda_layer_python3.7.zip
-  mv lambda_layer-python3.8.zip media_insights_engine_lambda_layer_python3.8.zip
-  rm -rf lambda_layer-python-3.6/ lambda_layer-python-3.7/ lambda_layer-python-3.8/
-  echo "Lambda layer build script completed.";
-else
-  echo "WARNING: Lambda layer build script failed. We'll use a pre-built Lambda layers instead.";
+if [[ ! -z "${NO_LAYER}" ]]; then
+  echo "------------------------------------------------------------------------------"
+  echo "Downloading Lambda Layers"
+  echo "------------------------------------------------------------------------------"
   echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.6.zip"
   wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.6.zip
   echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.7.zip"
   wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.7.zip
   echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.8.zip"
   wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.8.zip
+  echo "Copying Lambda layer zips to $dist_dir:"
+  mv media_insights_engine_lambda_layer_python3.6.zip "$regional_dist_dir"
+  mv media_insights_engine_lambda_layer_python3.7.zip "$regional_dist_dir"
+  mv media_insights_engine_lambda_layer_python3.8.zip "$regional_dist_dir"
+  cd "$build_dir" || exit 1
+else
+  echo "------------------------------------------------------------------------------"
+  echo "Building Lambda Layers"
+  echo "------------------------------------------------------------------------------"
+  # Build MediaInsightsEngineLambdaHelper Python package
+  cd "$build_dir"/lambda_layer_factory/ || exit 1
+  rm -f media_insights_engine_lambda_layer_python*.zip*
+  rm -f Media_Insights_Engine*.whl
+  cp -R "$source_dir"/lib/MediaInsightsEngineLambdaHelper .
+  cd MediaInsightsEngineLambdaHelper/ || exit 1
+  echo "Building MIE Lambda Helper python library"
+  python3 setup.py bdist_wheel > /dev/null
+  cp dist/*.whl ../
+  cp dist/*.whl "$source_dir"/lib/MediaInsightsEngineLambdaHelper/dist/
+  echo "MIE Lambda Helper python library is at $source_dir/lib/MediaInsightsEngineLambdaHelper/dist/"
+  cd "$source_dir"/lib/MediaInsightsEngineLambdaHelper/dist/ || exit 1
+  ls -1 "$(pwd)"/*.whl
+  if [ $? -ne 0 ]; then
+    echo "ERROR: Failed to build MIE Lambda Helper python library"
+    exit 1
+  fi
+  cd "$build_dir"/lambda_layer_factory/ || exit 1
+  rm -rf MediaInsightsEngineLambdaHelper/
+  file=$(ls Media_Insights_Engine*.whl)
+  # Note, $(pwd) will be mapped to /packages/ in the Docker container used for building the Lambda zip files. We reference /packages/ in requirements.txt for that reason.
+  # Add the whl file to requirements.txt if it is not already there
+  mv requirements.txt requirements.txt.old
+  cat requirements.txt.old | grep -v "Media_Insights_Engine_Lambda_Helper" > requirements.txt
+  echo "/packages/$file" >> requirements.txt;
+  # Build Lambda layer zip files and rename them to the filenames expected by media-insights-stack.yaml. The Lambda layer build script runs in Docker.
+  # If Docker is not installed, then we'll use prebuilt Lambda layer zip files.
+  echo "Running build-lambda-layer.sh:"
+  rm -rf lambda_layer-python-* lambda_layer-python*.zip
+  if `./build-lambda-layer.sh requirements.txt > /dev/null`; then
+    mv lambda_layer-python3.6.zip media_insights_engine_lambda_layer_python3.6.zip
+    mv lambda_layer-python3.7.zip media_insights_engine_lambda_layer_python3.7.zip
+    mv lambda_layer-python3.8.zip media_insights_engine_lambda_layer_python3.8.zip
+    rm -rf lambda_layer-python-3.6/ lambda_layer-python-3.7/ lambda_layer-python-3.8/
+    echo "Lambda layer build script completed.";
+  else
+    echo "WARNING: Lambda layer build script failed. We'll use a pre-built Lambda layers instead.";
+    echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.6.zip"
+    wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.6.zip
+    echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.7.zip"
+    wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.7.zip
+    echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.8.zip"
+    wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.8.zip
+  fi
+  echo "Copying Lambda layer zips to $regional_dist_dir:"
+  mv media_insights_engine_lambda_layer_python3.6.zip "$regional_dist_dir"
+  mv media_insights_engine_lambda_layer_python3.7.zip "$regional_dist_dir"
+  mv media_insights_engine_lambda_layer_python3.8.zip "$regional_dist_dir"
+  mv requirements.txt.old requirements.txt
+  cd "$build_dir" || exit 1
 fi
-echo "Copying Lambda layer zips to $dist_dir:"
-cp -v media_insights_engine_lambda_layer_python3.6.zip "$dist_dir"
-cp -v media_insights_engine_lambda_layer_python3.7.zip "$dist_dir"
-cp -v media_insights_engine_lambda_layer_python3.8.zip "$dist_dir"
-mv requirements.txt.old requirements.txt
-cd "$template_dir" || exit 1
 
 echo "------------------------------------------------------------------------------"
 echo "CloudFormation Templates"
 echo "------------------------------------------------------------------------------"
 
 echo "Preparing template files:"
-cp "$source_dir/operators/operator-library.yaml" "$dist_dir/media-insights-operator-library.template"
-cp "$template_dir/media-insights-stack.yaml" "$dist_dir/media-insights-stack.template"
-cp "$template_dir/string.yaml" "$dist_dir/string.template"
-cp "$template_dir/media-insights-test-operations-stack.yaml" "$dist_dir/media-insights-test-operations-stack.template"
-cp "$template_dir/media-insights-dataplane-streaming-stack.template" "$dist_dir/media-insights-dataplane-streaming-stack.template"
-find "$dist_dir"
-echo "Updating code source bucket in template files with '$bucket'"
+cp "$source_dir/operators/operator-library.yaml" "$global_dist_dir/media-insights-operator-library.template"
+cp "$build_dir/media-insights-stack.yaml" "$global_dist_dir/media-insights-stack.template"
+cp "$build_dir/string.yaml" "$global_dist_dir/string.template"
+cp "$build_dir/media-insights-test-operations-stack.yaml" "$global_dist_dir/media-insights-test-operations-stack.template"
+cp "$build_dir/media-insights-dataplane-streaming-stack.template" "$global_dist_dir/media-insights-dataplane-streaming-stack.template"
+find "$global_dist_dir"
+echo "Updating template source bucket in template files with '$global_bucket'"
+echo "Updating code source bucket in template files with '$regional_bucket'"
 echo "Updating solution version in template files with '$version'"
-new_bucket="s/%%BUCKET_NAME%%/$bucket/g"
+new_global_bucket="s/%%GLOBAL_BUCKET_NAME%%/$global_bucket/g"
+new_regional_bucket="s/%%REGIONAL_BUCKET_NAME%%/$regional_bucket/g"
 new_version="s/%%VERSION%%/$version/g"
 # Update templates in place. Copy originals to [filename].orig
-sed -i.orig -e "$new_bucket" "$dist_dir/media-insights-stack.template"
-sed -i.orig -e "$new_version" "$dist_dir/media-insights-stack.template"
-sed -i.orig -e "$new_bucket" "$dist_dir/media-insights-operator-library.template"
-sed -i.orig -e "$new_version" "$dist_dir/media-insights-operator-library.template"
-sed -i.orig -e "$new_bucket" "$dist_dir/media-insights-test-operations-stack.template"
-sed -i.orig -e "$new_version" "$dist_dir/media-insights-test-operations-stack.template"
-sed -i.orig -e "$new_bucket" "$dist_dir/media-insights-dataplane-streaming-stack.template"
-sed -i.orig -e "$new_version" "$dist_dir/media-insights-dataplane-streaming-stack.template"
+sed -i.orig -e "$new_global_bucket" "$global_dist_dir/media-insights-stack.template"
+sed -i.orig -e "$new_regional_bucket" "$global_dist_dir/media-insights-stack.template"
+sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-stack.template"
+sed -i.orig -e "$new_global_bucket" "$global_dist_dir/media-insights-operator-library.template"
+sed -i.orig -e "$new_regional_bucket" "$global_dist_dir/media-insights-operator-library.template"
+sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-operator-library.template"
+sed -i.orig -e "$new_global_bucket" "$global_dist_dir/media-insights-test-operations-stack.template"
+sed -i.orig -e "$new_regional_bucket" "$global_dist_dir/media-insights-test-operations-stack.template"
+sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-test-operations-stack.template"
+sed -i.orig -e "$new_global_bucket" "$global_dist_dir/media-insights-dataplane-streaming-stack.template"
+sed -i.orig -e "$new_regional_bucket" "$global_dist_dir/media-insights-dataplane-streaming-stack.template"
+sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-dataplane-streaming-stack.template"
 
 echo "------------------------------------------------------------------------------"
 echo "Operators"
@@ -212,7 +336,7 @@ cd "$source_dir/operators/operator_failed" || exit 1
 [ -e dist ] && rm -rf dist
 mkdir -p dist
 zip -q dist/operator_failed.zip operator_failed.py
-cp "./dist/operator_failed.zip" "$dist_dir/operator_failed.zip"
+cp "./dist/operator_failed.zip" "$regional_dist_dir/operator_failed.zip"
 rm -rf ./dist
 
 # ------------------------------------------------------------------------------"
@@ -227,7 +351,7 @@ mkdir -p dist
 # Add the app code to the dist zip.
 zip -q dist/mediainfo.zip mediainfo.py
 # Zip is ready. Copy it to the distribution directory.
-cp "./dist/mediainfo.zip" "$dist_dir/mediainfo.zip"
+cp "./dist/mediainfo.zip" "$regional_dist_dir/mediainfo.zip"
 rm -rf ./dist
 
 # ------------------------------------------------------------------------------"
@@ -240,8 +364,8 @@ cd "$source_dir/operators/mediaconvert" || exit 1
 mkdir -p dist
 zip -q dist/start_media_convert.zip start_media_convert.py
 zip -q dist/get_media_convert.zip get_media_convert.py
-cp "./dist/start_media_convert.zip" "$dist_dir/start_media_convert.zip"
-cp "./dist/get_media_convert.zip" "$dist_dir/get_media_convert.zip"
+cp "./dist/start_media_convert.zip" "$regional_dist_dir/start_media_convert.zip"
+cp "./dist/get_media_convert.zip" "$regional_dist_dir/get_media_convert.zip"
 rm -rf ./dist
 
 # ------------------------------------------------------------------------------"
@@ -259,7 +383,7 @@ elif [ -d ./dist/start_thumbnail.zip ]; then
   echo "Package already present"
 fi
 zip -q -g dist/start_thumbnail.zip start_thumbnail.py
-cp "./dist/start_thumbnail.zip" "$dist_dir/start_thumbnail.zip"
+cp "./dist/start_thumbnail.zip" "$regional_dist_dir/start_thumbnail.zip"
 
 if ! [ -d ./dist/check_thumbnail.zip ]; then
   zip -q -r9 ./dist/check_thumbnail.zip .
@@ -267,7 +391,7 @@ elif [ -d ./dist/check_thumbnail.zip ]; then
   echo "Package already present"
 fi
 zip -q -g dist/check_thumbnail.zip check_thumbnail.py
-cp "./dist/check_thumbnail.zip" "$dist_dir/check_thumbnail.zip"
+cp "./dist/check_thumbnail.zip" "$regional_dist_dir/check_thumbnail.zip"
 rm -rf ./dist
 
 # ------------------------------------------------------------------------------"
@@ -280,8 +404,8 @@ cd "$source_dir/operators/transcribe" || exit 1
 mkdir -p dist
 zip -q -g ./dist/start_transcribe.zip ./start_transcribe.py
 zip -q -g ./dist/get_transcribe.zip ./get_transcribe.py
-cp "./dist/start_transcribe.zip" "$dist_dir/start_transcribe.zip"
-cp "./dist/get_transcribe.zip" "$dist_dir/get_transcribe.zip"
+cp "./dist/start_transcribe.zip" "$regional_dist_dir/start_transcribe.zip"
+cp "./dist/get_transcribe.zip" "$regional_dist_dir/get_transcribe.zip"
 rm -rf ./dist
 
 # ------------------------------------------------------------------------------"
@@ -302,21 +426,12 @@ pushd package || exit 1
 touch ./setup.cfg
 echo "[install]" > ./setup.cfg
 echo "prefix= " >> ./setup.cfg
-# Try and handle failure if pip version mismatch
-if [ -x "$(command -v pip)" ]; then
-  pip install --quiet -r ../requirements.txt --target .
-elif [ -x "$(command -v pip3)" ]; then
-  echo "pip not found, trying with pip3"
-  pip3 install --quiet -r ../requirements.txt --target .
-elif ! [ -x "$(command -v pip)" ] && ! [ -x "$(command -v pip3)" ]; then
-  echo "No version of pip installed. This script requires pip. Cleaning up and exiting."
-  exit 1
-fi
+pip3 install --quiet -r ../requirements.txt --target .
 zip -q -r9 ../dist/webcaptions.zip .
 popd || exit 1
 
 zip -g ./dist/webcaptions.zip ./webcaptions.py
-cp "./dist/webcaptions.zip" "$dist_dir/webcaptions.zip"
+cp "./dist/webcaptions.zip" "$regional_dist_dir/webcaptions.zip"
 
 # ------------------------------------------------------------------------------"
 # Translate Operations
@@ -336,16 +451,7 @@ echo "create lambda package"
 touch ./setup.cfg
 echo "[install]" > ./setup.cfg
 echo "prefix= " >> ./setup.cfg
-# Try and handle failure if pip version mismatch
-if [ -x "$(command -v pip)" ]; then
-  pip install --quiet -r ../requirements.txt --target .
-elif [ -x "$(command -v pip3)" ]; then
-  echo "pip not found, trying with pip3"
-  pip3 install --quiet -r ../requirements.txt --target .
-elif ! [ -x "$(command -v pip)" ] && ! [ -x "$(command -v pip3)" ]; then
- echo "No version of pip installed. This script requires pip. Cleaning up and exiting."
- exit 1
-fi
+pip3 install --quiet -r ../requirements.txt --target .
 if ! [ -d ../dist/start_translate.zip ]; then
   zip -q -r9 ../dist/start_translate.zip .
 
@@ -354,7 +460,7 @@ elif [ -d ../dist/start_translate.zip ]; then
 fi
 popd || exit 1
 zip -q -g ./dist/start_translate.zip ./start_translate.py
-cp "./dist/start_translate.zip" "$dist_dir/start_translate.zip"
+cp "./dist/start_translate.zip" "$regional_dist_dir/start_translate.zip"
 rm -rf ./dist ./package
 
 # ------------------------------------------------------------------------------"
@@ -367,8 +473,8 @@ cd "$source_dir/operators/polly" || exit 1
 mkdir -p dist
 zip -q -g ./dist/start_polly.zip ./start_polly.py
 zip -q -g ./dist/get_polly.zip ./get_polly.py
-cp "./dist/start_polly.zip" "$dist_dir/start_polly.zip"
-cp "./dist/get_polly.zip" "$dist_dir/get_polly.zip"
+cp "./dist/start_polly.zip" "$regional_dist_dir/start_polly.zip"
+cp "./dist/get_polly.zip" "$regional_dist_dir/get_polly.zip"
 rm -rf ./dist
 
 # ------------------------------------------------------------------------------"
@@ -409,9 +515,9 @@ for dir in ./*;
       zip -q -g dist/start_key_phrases.zip start_key_phrases.py
       zip -q -g dist/get_key_phrases.zip get_key_phrases.py
       echo "$PWD"
-      cp ./dist/start_key_phrases.zip "$dist_dir/start_key_phrases.zip"
-      cp ./dist/get_key_phrases.zip "$dist_dir/get_key_phrases.zip"
-      mv -f ./dist/*.zip "$dist_dir"
+      cp ./dist/start_key_phrases.zip "$regional_dist_dir/start_key_phrases.zip"
+      cp ./dist/get_key_phrases.zip "$regional_dist_dir/get_key_phrases.zip"
+      mv -f ./dist/*.zip "$regional_dist_dir"
     elif [[ "$dir" == "./entities" ]]; then
       if ! [ -d ../dist/start_entity_detection.zip ]; then
       zip -q -r9 ../dist/start_entity_detection.zip .
@@ -427,7 +533,7 @@ for dir in ./*;
       echo "$PWD"
       zip -q -g dist/start_entity_detection.zip start_entity_detection.py
       zip -q -g dist/get_entity_detection.zip get_entity_detection.py
-      mv -f ./dist/*.zip "$dist_dir"
+      mv -f ./dist/*.zip "$regional_dist_dir"
     fi
     rm -rf ./dist ./package
     cd ..
@@ -458,68 +564,12 @@ zip -q -r9 start_person_tracking.zip start_person_tracking.py
 zip -q -r9 check_person_tracking_status.zip check_person_tracking_status.py
 zip -q -r9 start_text_detection.zip start_text_detection.py
 zip -q -r9 check_text_detection_status.zip check_text_detection_status.py
-
-
-# remove this when service is GA
-
-[ -e dist ] && rm -rf dist
-mkdir -p dist
-cd dist
-cp ../start_technical_cue_detection.py .
-mkdir rekognition-segment-detection
-cd rekognition-segment-detection
-mkdir 2016-06-27
-cd 2016-06-27
-cp ../../../service-2.json .
-cd ../../
-zip -q -r9 ../start_technical_cue_detection.zip *
-cd ../
-
-
-[ -e dist ] && rm -rf dist
-mkdir -p dist
-cd dist
-cp ../check_technical_cue_status.py .
-mkdir rekognition-segment-detection
-cd rekognition-segment-detection
-mkdir 2016-06-27
-cd 2016-06-27
-cp ../../../service-2.json .
-cd ../../
-zip -q -r9 ../check_technical_cue_status.zip *
-cd ../
-
-mv -f ./*.zip "$dist_dir"
-
-
-[ -e dist ] && rm -rf dist
-mkdir -p dist
-cd dist
-cp ../start_shot_detection.py .
-mkdir rekognition-segment-detection
-cd rekognition-segment-detection
-mkdir 2016-06-27
-cd 2016-06-27
-cp ../../../service-2.json .
-cd ../../
-zip -q -r9 ../start_shot_detection.zip *
-cd ../
-
-[ -e dist ] && rm -rf dist
-mkdir -p dist
-cd dist
-cp ../check_shot_detection_status.py .
-mkdir rekognition-segment-detection
-cd rekognition-segment-detection
-mkdir 2016-06-27
-cd 2016-06-27
-cp ../../../service-2.json .
-cd ../../
-zip -q -r9 ../check_shot_detection_status.zip *
-cd ../
-
-mv -f ./*.zip "$dist_dir"
-
+zip -q -r9 check_text_detection_status.zip check_text_detection_status.py
+zip -q -r9 start_technical_cue_detection.zip start_technical_cue_detection.py
+zip -q -r9 check_technical_cue_status.zip check_technical_cue_status.py
+zip -q -r9 start_shot_detection.zip start_shot_detection.py
+zip -q -r9 check_shot_detection_status.zip check_shot_detection_status.py
+mv -f ./*.zip "$regional_dist_dir"
 
 # ------------------------------------------------------------------------------"
 # Test operators
@@ -530,7 +580,7 @@ cd "$source_dir/operators/test" || exit
 [ -e dist ] && rm -rf dist
 mkdir -p dist
 zip -q -g ./dist/test_operations.zip ./test.py
-cp "./dist/test_operations.zip" "$dist_dir/test_operations.zip"
+cp "./dist/test_operations.zip" "$regional_dist_dir/test_operations.zip"
 rm -rf ./dist
 
 echo "------------------------------------------------------------------------------"
@@ -550,23 +600,14 @@ pushd package || exit 1
 touch ./setup.cfg
 echo "[install]" > ./setup.cfg
 echo "prefix= " >> ./setup.cfg
-# Try and handle failure if pip version mismatch
-if [ -x "$(command -v pip)" ]; then
-  pip install --quiet -r ../requirements.txt --target .
-elif [ -x "$(command -v pip3)" ]; then
-  echo "pip not found, trying with pip3"
-  pip3 install --quiet -r ../requirements.txt --target .
-elif ! [ -x "$(command -v pip)" ] && ! [ -x "$(command -v pip3)" ]; then
-  echo "No version of pip installed. This script requires pip. Cleaning up and exiting."
-  exit 1
-fi
+which pip3
+python3 -c "import boto3"
+pip3 install --quiet -r ../requirements.txt --target .
 zip -q -r9 ../dist/ddbstream.zip .
 popd || exit 1
-
 zip -q -g dist/ddbstream.zip ./*.py
-cp "./dist/ddbstream.zip" "$dist_dir/ddbstream.zip"
+cp "./dist/ddbstream.zip" "$regional_dist_dir/ddbstream.zip"
 rm -rf ./dist ./package
-
 
 echo "------------------------------------------------------------------------------"
 echo "Workflow Scheduler"
@@ -580,27 +621,16 @@ mkdir -p dist
 mkdir -p package
 echo "preparing packages from requirements.txt"
 # Package dependencies listed in requirements.txt
-cd package || exit 1
+pushd package || exit 1
 # Handle distutils install errors with setup.cfg
 touch ./setup.cfg
 echo "[install]" > ./setup.cfg
 echo "prefix= " >> ./setup.cfg
-cd ..
-# Try and handle failure if pip version mismatch
-if [ -x "$(command -v pip)" ]; then
-  pip install --quiet -r ./requirements.txt --target package/
-elif [ -x "$(command -v pip3)" ]; then
-  echo "pip not found, trying with pip3"
-  pip3 install --quiet -r ./requirements.txt --target package/
-elif ! [ -x "$(command -v pip)" ] && ! [ -x "$(command -v pip3)" ]; then
-  echo "No version of pip installed. This script requires pip. Cleaning up and exiting."
-  exit 1
-fi
-cd package || exit 1
+pip3 install --quiet -r ../requirements.txt --target .
 zip -q -r9 ../dist/workflow.zip .
-cd ..
+popd || exit 1
 zip -q -g dist/workflow.zip ./*.py
-cp "./dist/workflow.zip" "$dist_dir/workflow.zip"
+cp "./dist/workflow.zip" "$regional_dist_dir/workflow.zip"
 rm -rf ./dist ./package/
 
 echo "------------------------------------------------------------------------------"
@@ -617,20 +647,20 @@ if ! [ -x "$(command -v chalice)" ]; then
 fi
 
 # Remove chalice deployments to force redeploy when there are changes to configuration only
-# Otherwise, chalice will use the existing deployment package 
+# Otherwise, chalice will use the existing deployment package
 [ -e .chalice/deployments ] && rm -rf .chalice/deployments
 
 echo "running chalice..."
 chalice package --merge-template external_resources.json dist
 echo "...chalice done"
-echo "cp ./dist/sam.json $dist_dir/media-insights-workflowapi-stack.template"
-cp dist/sam.json "$dist_dir"/media-insights-workflowapi-stack.template
+echo "cp ./dist/sam.json $global_dist_dir/media-insights-workflowapi-stack.template"
+cp dist/sam.json "$global_dist_dir"/media-insights-workflowapi-stack.template
 if [ $? -ne 0 ]; then
   echo "ERROR: Failed to build workflow api template"
   exit 1
 fi
-echo "cp ./dist/deployment.zip $dist_dir/workflowapi.zip"
-cp ./dist/deployment.zip "$dist_dir"/workflowapi.zip
+echo "cp ./dist/deployment.zip $regional_dist_dir/workflowapi.zip"
+cp ./dist/deployment.zip "$regional_dist_dir"/workflowapi.zip
 if [ $? -ne 0 ]; then
   echo "ERROR: Failed to build workflow api template"
   exit 1
@@ -654,21 +684,12 @@ pushd package || exit 1
 touch ./setup.cfg
 echo "[install]" > ./setup.cfg
 echo "prefix= " >> ./setup.cfg
-# Try and handle failure if pip version mismatch
-if [ -x "$(command -v pip)" ]; then
-  pip install --quiet -r ../requirements.txt --target .
-elif [ -x "$(command -v pip3)" ]; then
-  echo "pip not found, trying with pip3"
-  pip3 install --quiet -r ../requirements.txt --target .
-elif ! [ -x "$(command -v pip)" ] && ! [ -x "$(command -v pip3)" ]; then
-  echo "No version of pip installed. This script requires pip. Cleaning up and exiting."
-  exit 1
-fi
+pip3 install --quiet -r ../requirements.txt --target .
 zip -q -r9 ../dist/workflowstream.zip .
 popd || exit 1
 
 zip -q -g dist/workflowstream.zip ./*.py
-cp "./dist/workflowstream.zip" "$dist_dir/workflowstream.zip"
+cp "./dist/workflowstream.zip" "$regional_dist_dir/workflowstream.zip"
 
 echo "------------------------------------------------------------------------------"
 echo "Dataplane API Stack"
@@ -684,66 +705,49 @@ if ! [ -x "$(command -v chalice)" ]; then
 fi
 
 # Remove chalice deployments to force redeploy when there are changes to configuration only
-# Otherwise, chalice will use the existing deployment package 
+# Otherwise, chalice will use the existing deployment package
 [ -e .chalice/deployments ] && rm -rf .chalice/deployments
 
 chalice package --merge-template external_resources.json dist
-echo "cp ./dist/sam.json $dist_dir/media-insights-dataplane-api-stack.template"
-cp dist/sam.json "$dist_dir"/media-insights-dataplane-api-stack.template
+echo "cp ./dist/sam.json $global_dist_dir/media-insights-dataplane-api-stack.template"
+cp dist/sam.json "$global_dist_dir"/media-insights-dataplane-api-stack.template
 if [ $? -ne 0 ]; then
   echo "ERROR: Failed to build dataplane api template"
   exit 1
 fi
-echo "cp ./dist/deployment.zip $dist_dir/dataplaneapi.zip"
-cp ./dist/deployment.zip "$dist_dir"/dataplaneapi.zip
+echo "cp ./dist/deployment.zip $regional_dist_dir/dataplaneapi.zip"
+cp ./dist/deployment.zip "$regional_dist_dir"/dataplaneapi.zip
 if [ $? -ne 0 ]; then
   echo "ERROR: Failed to build dataplane api template"
   exit 1
 fi
 rm -rf ./dist
-
+cd "$build_dir"/ || exit 1
 
 echo "------------------------------------------------------------------------------"
 echo "Copy dist to S3"
 echo "------------------------------------------------------------------------------"
 
-echo "Copying the prepared distribution to S3..."
-for file in "$dist_dir"/*.zip
-do
-  if [ -n "$profile" ]; then
-    aws s3 cp "$file" s3://"$bucket"/media_insights_engine/"$version"/code/ --profile "$profile"
-  else
-    aws s3 cp "$file" s3://"$bucket"/media_insights_engine/"$version"/code/
-  fi
-done
-for file in "$dist_dir"/*.template
-do
-  if [ -n "$profile" ]; then
-    aws s3 cp "$file" s3://"$bucket"/media_insights_engine/"$version"/cf/ --profile "$profile"
-  else
-    aws s3 cp "$file" s3://"$bucket"/media_insights_engine/"$version"/cf/
-  fi
-done
+echo "Copying the prepared distribution to:"
+echo "s3://$global_bucket/media_insights_engine/$version/"
+echo "s3://${regional_bucket}-${region}/media_insights_engine/$version/"
+set -x
+aws s3 sync $global_dist_dir s3://$global_bucket/media_insights_engine/$version/
+aws s3 sync $regional_dist_dir s3://${regional_bucket}-${region}/media_insights_engine/$version/
+set +x
 
 echo "------------------------------------------------------------------------------"
 echo "S3 packaging complete"
 echo "------------------------------------------------------------------------------"
 
-# Deactivate and remove the temporary python virtualenv used to run this script
-deactivate
-rm -rf "$VENV"
-
-echo "------------------------------------------------------------------------------"
-echo "Cleaning up complete"
-echo "------------------------------------------------------------------------------"
-
 echo ""
 echo "Template to deploy:"
-echo "TEMPLATE='"https://"$bucket"."$s3domain"/media_insights_engine/"$version"/cf/media-insights-stack.template"'"
+echo "TEMPLATE='"https://"$global_bucket"."$s3domain"/media_insights_engine/"$version"/media-insights-stack.template"'"
 
-touch $dist_dir/templateUrl.txt
-echo "https://"$bucket"."$s3domain"/media_insights_engine/"$version"/cf/media-insights-stack.template" > ${dist_dir}/templateUrl.txt
+# Save the template URI for test automation scripts:
+touch templateUrl.txt
+echo "https://"$global_bucket"."$s3domain"/media_insights_engine/"$version"/media-insights-stack.template" > templateUrl.txt
 
-echo "------------------------------------------------------------------------------"
+cleanup
 echo "Done"
-echo "------------------------------------------------------------------------------"
+exit 0

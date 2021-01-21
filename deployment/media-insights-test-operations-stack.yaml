@@ -19,8 +19,8 @@ Parameters:
 Mappings:
     SourceCode:
         General:
-            S3Bucket: '%%BUCKET_NAME%%'
-            KeyPrefix: "media_insights_engine/%%VERSION%%/code"
+            RegionalS3Bucket: "%%REGIONAL_BUCKET_NAME%%"
+            CodeKeyPrefix: "media_insights_engine/%%VERSION%%"
 
 Resources:
 
@@ -73,8 +73,8 @@ Resources:
       FunctionName: !Sub "${AWS::StackName}-video-sync-ok"
       Handler: test.video_sync_ok_lambda_handler
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
-        S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "KeyPrefix"],  "test_operations.zip"]]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
+        S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       MemorySize: 256
@@ -98,8 +98,8 @@ Resources:
       FunctionName: !Sub "${AWS::StackName}-video-sync-fail"
       Handler: test.video_sync_fail_lambda_handler
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
-        S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "KeyPrefix"],  "test_operations.zip"]]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
+        S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       MemorySize: 256
@@ -123,8 +123,8 @@ Resources:
       FunctionName: !Sub "${AWS::StackName}-video-async-ok"
       Handler: test.video_async_ok_lambda_handler
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
-        S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "KeyPrefix"],  "test_operations.zip"]]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
+        S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       MemorySize: 256
@@ -148,8 +148,8 @@ Resources:
       FunctionName: !Sub "${AWS::StackName}-video-async-ok-monitor"
       Handler: test.video_async_ok_monitor_lambda_handler
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
-        S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "KeyPrefix"],  "test_operations.zip"]]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
+        S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       MemorySize: 256
@@ -173,8 +173,8 @@ Resources:
       FunctionName: !Sub "${AWS::StackName}-video-async-fail-monitor"
       Handler: test.video_async_fail_monitor_lambda_handler
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
-        S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "KeyPrefix"],  "test_operations.zip"]]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
+        S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       MemorySize: 256
@@ -198,8 +198,8 @@ Resources:
       FunctionName: !Sub "${AWS::StackName}-audio-sync-ok"
       Handler: test.audio_sync_ok_lambda_handler
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
-        S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "KeyPrefix"],  "test_operations.zip"]]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
+        S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       MemorySize: 256
@@ -223,8 +223,8 @@ Resources:
       FunctionName: !Sub "${AWS::StackName}-audio-async-ok"
       Handler: test.audio_async_ok_lambda_handler
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
-        S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "KeyPrefix"],  "test_operations.zip"]]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
+        S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       MemorySize: 256
@@ -248,8 +248,8 @@ Resources:
       FunctionName: !Sub "${AWS::StackName}-audio-async-ok-monitor"
       Handler: test.audio_async_ok_monitor_lambda_handler
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
-        S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "KeyPrefix"],  "test_operations.zip"]]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
+        S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       MemorySize: 256
@@ -273,8 +273,8 @@ Resources:
       FunctionName: !Sub "${AWS::StackName}-image-sync-ok"
       Handler: test.image_sync_ok_lambda_handler
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
-        S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "KeyPrefix"],  "test_operations.zip"]]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
+        S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       MemorySize: 256
@@ -298,8 +298,8 @@ Resources:
       FunctionName: !Sub "${AWS::StackName}-image-async-ok"
       Handler: test.image_async_ok_lambda_handler
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
-        S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "KeyPrefix"],  "test_operations.zip"]]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
+        S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       MemorySize: 256
@@ -323,8 +323,8 @@ Resources:
       FunctionName: !Sub "${AWS::StackName}-image-async-ok-monitor"
       Handler: test.image_async_ok_monitor_lambda_handler
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
-        S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "KeyPrefix"],  "test_operations.zip"]]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
+        S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       MemorySize: 256
@@ -348,8 +348,8 @@ Resources:
       FunctionName: !Sub "${AWS::StackName}-text-sync-ok"
       Handler: test.text_sync_ok_lambda_handler
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
-        S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "KeyPrefix"],  "test_operations.zip"]]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
+        S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       MemorySize: 256
@@ -373,8 +373,8 @@ Resources:
       FunctionName: !Sub "${AWS::StackName}-text-async-ok"
       Handler: test.text_async_ok_lambda_handler
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
-        S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "KeyPrefix"],  "test_operations.zip"]]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
+        S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       MemorySize: 256
@@ -398,8 +398,8 @@ Resources:
       FunctionName: !Sub "${AWS::StackName}-text-async-ok-monitor"
       Handler: test.text_async_ok_monitor_lambda_handler
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
-        S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "KeyPrefix"],  "test_operations.zip"]]
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
+        S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
         - !Ref "MediaInsightsEnginePython37Layer"
       MemorySize: 256

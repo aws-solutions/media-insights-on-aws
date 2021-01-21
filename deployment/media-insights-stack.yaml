@@ -1067,6 +1067,7 @@ Resources:
     Properties:
       Environment:
         Variables:
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
           STAGE_EXECUTION_QUEUE_URL: !Ref StageExecutionQueue
           STAGE_TABLE_NAME: !Ref StageTable
           OPERATION_TABLE_NAME: !Ref OperationTable
@@ -1108,6 +1109,7 @@ Resources:
     Properties:
       Environment:
         Variables:
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
           STAGE_EXECUTION_QUEUE_URL: !Ref StageExecutionQueue
           STAGE_TABLE_NAME: !Ref StageTable
           OPERATION_TABLE_NAME: !Ref OperationTable
@@ -1169,6 +1171,7 @@ Resources:
       FunctionName: !Sub "${AWS::StackName}-start-wait-operation"
       Environment:
         Variables:
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
           STAGE_EXECUTION_QUEUE_URL: !Ref StageExecutionQueue
           STAGE_TABLE_NAME: !Ref StageTable
           OPERATION_TABLE_NAME: !Ref OperationTable
@@ -1204,6 +1207,7 @@ Resources:
       FunctionName: !Sub "${AWS::StackName}-check-wait-operation"
       Environment:
         Variables:
+          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
           STAGE_EXECUTION_QUEUE_URL: !Ref StageExecutionQueue
           STAGE_TABLE_NAME: !Ref StageTable
           OPERATION_TABLE_NAME: !Ref OperationTable

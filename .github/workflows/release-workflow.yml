@@ -225,7 +225,8 @@ jobs:
           REGION=us-west-2
           VERSION=v${{ github.event.inputs.version }}
           DIST_OUTPUT_BUCKET=rodeolabz
-          ./build-s3-dist-no-layer-build.sh $DIST_OUTPUT_BUCKET-$REGION $VERSION $REGION
+          TEMPLATE_OUTPUT_BUCKET=rodeolabz-$REGION
+          ./build-s3-dist.sh --no-layer --template-bucket $TEMPLATE_OUTPUT_BUCKET --code-bucket $DIST_OUTPUT_BUCKET --version $VERSION --region $REGION
 
   deploy-us-east-1:
     needs: update-version-in-docs
@@ -249,8 +250,8 @@ jobs:
           REGION=us-east-1
           VERSION=v${{ github.event.inputs.version }}
           DIST_OUTPUT_BUCKET=rodeolabz
-          ./build-s3-dist-no-layer-build.sh $DIST_OUTPUT_BUCKET-$REGION $VERSION $REGION
-
+          TEMPLATE_OUTPUT_BUCKET=rodeolabz-$REGION
+          ./build-s3-dist.sh --no-layer --template-bucket $TEMPLATE_OUTPUT_BUCKET --code-bucket $DIST_OUTPUT_BUCKET --version $VERSION --region $REGION
 
   create-git-staging-branch:
     needs:

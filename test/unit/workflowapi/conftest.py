@@ -23,6 +23,7 @@ def mock_env_variables(monkeypatch):
     monkeypatch.setenv("OPERATOR_FAILED_LAMBDA_ARN", "testFailedLambdaArn")
     monkeypatch.setenv("WORKFLOW_SCHEDULER_LAMBDA_ARN", "testSchedulerArn")
     monkeypatch.setenv("DataplaneEndpoint", "testDataplaneEndpoint")
+    monkeypatch.setenv("FRAMEWORK_VERSION", "v9.9.9")
 
 
 @pytest.fixture

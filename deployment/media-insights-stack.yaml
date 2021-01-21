@@ -1032,7 +1032,7 @@ Resources:
   StateMachineErrorCloudWatchEvent:
     Type: AWS::Events::Rule
     Properties:
-        Name: !Sub "${AWS::StackName}-state-machine-error-handler"
+        Name: !Sub "${AWS::StackName}-state-error-handler"
         Description: "state machine error handler"
         EventPattern:
             source:
@@ -1296,6 +1296,7 @@ Resources:
             ],
           ]
         MediaInsightsEnginePython37Layer: !Ref MediaInsightsEnginePython37Layer
+        FrameworkVersion: !FindInMap ["SourceCode", "General", "FrameworkVersion"]
 
   Analytics:
     Type: "AWS::CloudFormation::Stack"
@@ -1381,6 +1382,7 @@ Resources:
             "workflowapi.zip",
             ],
           ]
+        FrameworkVersion: !FindInMap ["SourceCode", "General", "FrameworkVersion"]
 
   OperatorLibrary:
     DependsOn:
@@ -1494,4 +1496,8 @@ Outputs:
   TestStack:
     Condition: DeployTestResourcesCondition
     Value: !Ref TestResources
-
+  Version:
+    Description: Media Insights Engine Version
+    Value: !FindInMap ["SourceCode", "General", "FrameworkVersion"]
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", Version]]

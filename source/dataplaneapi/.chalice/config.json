@@ -5,7 +5,8 @@
     "botoConfig": "{}",
     "DATAPLANE_TABLE_NAME": "",
     "DATAPLANE_BUCKET": "",
-    "USER_POOL_ARN": ""
+    "USER_POOL_ARN": "",
+    "FRAMEWORK_VERSION": ""
   },
   "stages": {
     "dev": {

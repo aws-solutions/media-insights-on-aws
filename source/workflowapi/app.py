@@ -36,6 +36,7 @@ API_STAGE = "dev"
 app = Chalice(app_name=APP_NAME)
 app.debug = True
 API_VERSION = "2.0.0"
+FRAMEWORK_VERSION = os.environ['FRAMEWORK_VERSION']
 
 
 def is_aws():
@@ -142,6 +143,22 @@ def index():
         500: ChaliceViewError - internal server error
     """
     return {'hello': 'world'}
+
+
+@app.route('/version', cors=True, methods=['GET'], authorizer=authorizer)
+def version():
+    """
+    Get the workflow api and framework version numbers
+
+    Returns:
+
+    .. code-block:: python
+
+        {"ApiVersion": "vx.x.x", "FrameworkVersion": "vx.x.x"}
+    """
+    versions = {"ApiVersion": API_VERSION, "FrameworkVersion": FRAMEWORK_VERSION}
+    return versions
+
 
 ##############################################################################
 #   ____            _                   ____       _

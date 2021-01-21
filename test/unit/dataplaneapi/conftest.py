@@ -9,6 +9,7 @@ def mock_env_variables(monkeypatch):
     monkeypatch.setenv("DATAPLANE_TABLE_NAME", "testDataplaneTableName")
     monkeypatch.setenv("DATAPLANE_BUCKET", "testDataplaneBucketName")
     monkeypatch.setenv("botoConfig", '{"user_agent_extra": "AwsSolution/mie/vX.X.X"}')
+    monkeypatch.setenv("FRAMEWORK_VERSION", "v9.9.9")
 
 
 @pytest.fixture

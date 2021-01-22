@@ -1,5 +1,9 @@
 {
   "Parameters": {
+    "botoConfig": {
+      "Type": "String",
+      "Description": "Botocore config"
+    },
     "DeploymentPackageBucket": {
       "Type": "String",
       "Description": "Bucket that contains the dataplane deployment package"
@@ -83,6 +87,10 @@
     "TracingConfigMode": {
       "Type": "String",
       "Description": "Sets tracing mode for stack entry points.  Allowed values: Active, PassThrough"
+    },
+    "FrameworkVersion": {
+      "Type": "String",
+      "Description": "Version of the Media Insights Engine Framework"
     }
   },
   "Resources": {
@@ -203,6 +211,17 @@
                   "Resource": "*",
                   "Effect": "Allow",
                   "Sid": "Logging"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "iam:ListRolePolicies",
+                    "iam:PutRolePolicy",
+                    "iam:DeleteRolePolicy"
+                  ],
+                  "Resource": [
+                    "*"
+                  ]
                 }
               ]
             },
@@ -280,14 +299,21 @@
                   },
                   {
                       "Effect": "Allow",
-                      "Action": [ 
+                      "Action": [
                         "iam:PassRole"
                       ],
                       "Resource": [
                         "*"
                       ]
-                    }
-          
+                  },
+                  {
+                      "Effect": "Allow",
+                      "Action": [
+                        "iam:PutRolePolicy",
+                        "iam:DeleteRolePolicy"
+                      ],
+                      "Resource": {"Ref": "StageExecutionRole"}
+                  }
               ]
             },
             "PolicyName": "MieWorkflowCustomResourceRolePolicy"
@@ -300,6 +326,9 @@
         "Runtime": "python3.7",
         "Environment": {
           "Variables": {
+                "botoConfig": {
+                  "Ref": "botoConfig"
+                },
                 "STACK_SHORT_UUID": {
                   "Ref": "ShortUUID"
                 },
@@ -361,6 +390,9 @@
         "Runtime": "python3.7",
         "Environment": {
           "Variables": {
+                "botoConfig": {
+                  "Ref": "botoConfig"
+                },
                 "STACK_SHORT_UUID": {
                   "Ref": "ShortUUID"
                 },
@@ -405,6 +437,9 @@
                 },
                 "OPERATOR_FAILED_LAMBDA_ARN": {
                     "Ref": "OperatorFailedHandlerLambdaArn"
+                },
+                "FRAMEWORK_VERSION": {
+                  "Ref": "FrameworkVersion"
                 }
             }
         },

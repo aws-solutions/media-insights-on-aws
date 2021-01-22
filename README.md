@@ -1,4 +1,4 @@
-![MIE logo](doc/images/MIE_logo.png)
+![MIE logo](docs/assets/images/MIE_logo.png)
 
 Media Insights Engine (MIE) is a development framework for building serverless applications that process video, images, audio, and text  on AWS. This repository contains the MIE back-end framework. Users interact with MIE through REST APIs or by invoking MIE Lambda functions directly. You will not find a graphical user interface (GUI) in this repository, but a reference application for MIE that includes a GUI is in the [Media Insights](https://github.com/awslabs/aws-media-insights) repository. 
 
@@ -6,19 +6,18 @@ For a high level summary of MIE and its use cases, please read, [How to Rapidly 
 
 # Installation
 
-
 You can deploy MIE in your AWS account with the following Cloud Formation templates:
 
 Region| Launch
 ------|-----
-US East (N. Virginia) | [![Launch in us-east-1](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-east-1.s3.amazonaws.com/media_insights_engine/v2.0.1/cf/media-insights-stack.template)
-US West (Oregon) | [![Launch in us-west-2](doc/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-west-2.s3.us-west-2.amazonaws.com/media_insights_engine/v2.0.1/cf/media-insights-stack.template)
+US East (N. Virginia) | [![Launch in us-east-1](docs/assets/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-east-1.s3.amazonaws.com/media_insights_engine/v2.0.2/media-insights-stack.template)
+US West (Oregon) | [![Launch in us-west-2](docs/assets/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-west-2.s3.us-west-2.amazonaws.com/media_insights_engine/v2.0.2/media-insights-stack.template)
 
 The Cloud Formation options for these one-click deploys are described in the [installation parameters](#installation-parameters) section.
 
 After the stack finished deploying then you should see the following nested stacks (with slightly different names than shown below):
 
-<img src="doc/images/stack_resources.png" width=300>
+<img src="docs/assets/images/stack_resources.png" width=300>
 
 ## Build from scratch:
 
@@ -66,7 +65,7 @@ MIE provides the following three fundamental constructs for building multimedia 
 
  The following diagram shows how operators, workflows, and data persistence fit in the MIE architecture:
 
-![](doc/images/MIE-execute-workflow-architecture.png)
+![](docs/assets/images/MIE-execute-workflow-architecture.png)
 
 ### Architecture components:
 
@@ -117,7 +116,7 @@ For instructions on how to extend MIE, read the API reference and builder's guid
 
 MIE uses AWS_IAM to authorize REST API requests. The following screenshot shows how to test authentication to the MIE API using Postman. Be sure to specify the AccessKey and SecretKey for your own AWS environment.
 
-<img src="doc/images/sample_postman.png" width=600>
+<img src="docs/assets/images/sample_postman.png" width=600>
 
 For more information, see the [Implementation Guide](https://github.com/awslabs/aws-media-insights/blob/master/IMPLEMENTATION_GUIDE.md).
 
@@ -131,7 +130,7 @@ See the [CONTRIBUTING](CONTRIBUTING.md) file for how to contribute.
 
 # Logo
 
-The [MIE logo](doc/images/MIE_logo.png) features a clapperboard representing *multimedia*, centered inside a crosshair representing *under scrutiny*. 
+The [MIE logo](docs/assets/images/MIE_logo.png) features a clapperboard representing *multimedia*, centered inside a crosshair representing *under scrutiny*. 
 
 # License
 

@@ -39,6 +39,9 @@ except ClientError as e:
     print(e.response['Error']['Message'])
 '''
 
+mie_config = json.loads(os.environ['botoConfig'])
+config = Config(**mie_config)
+
 formatter = logging.Formatter('{%(pathname)s:%(lineno)d} %(levelname)s - %(message)s')
 handler = logging.StreamHandler()
 handler.setFormatter(formatter)
@@ -49,11 +52,13 @@ logger.addHandler(handler)
 
 app_name = 'dataplaneapi'
 app = Chalice(app_name=app_name)
+api_version = "1.0.0"
+framework_version = os.environ['FRAMEWORK_VERSION']
 
 # DDB resources
 dataplane_table_name = os.environ['DATAPLANE_TABLE_NAME']
-dynamo_client = boto3.client('dynamodb')
-dynamo_resource = boto3.resource('dynamodb')
+dynamo_client = boto3.client('dynamodb', config=config)
+dynamo_resource = boto3.resource('dynamodb', config=config)
 
 # S3 resources
 dataplane_s3_bucket = os.environ['DATAPLANE_BUCKET']
@@ -65,8 +70,8 @@ authorizer = IAMAuthorizer()
 # TODO: Should we add a variable for the upload bucket?
 
 base_s3_uri = 'private/assets/'
-s3_client = boto3.client('s3')
-s3_resource = boto3.resource('s3')
+s3_client = boto3.client('s3', config=config)
+s3_resource = boto3.resource('s3', config=config)
 
 
 class DecimalEncoder(json.JSONEncoder):
@@ -179,7 +184,34 @@ def next_page_valid(metadata, page_num):
 
 @app.route('/')
 def index():
+    """ Test the API endpoint
+
+    Returns:
+        
+    .. code-block:: python
+        
+        {"hello":"world"}
+
+    Raises:
+
+        ChaliceViewError - 500
+    """
     return {'hello': 'world'}
+
+
+@app.route('/version', cors=True, methods=['GET'], authorizer=authorizer)
+def version():
+    """
+    Get the dataplane api and framework version numbers
+
+    Returns:
+
+    .. code-block:: python
+
+        {"ApiVersion": "vx.x.x", "FrameworkVersion": "vx.x.x"}
+    """
+    versions = {"ApiVersion": api_version, "FrameworkVersion": framework_version}
+    return versions
 
 
 # TODO: Change the name of this method - "upload" is too vague
@@ -432,9 +464,9 @@ def put_asset_metadata(asset_id):
 
         .. code-block:: python
 
-        {
-            "Status": "$status", "Bucket": $bucket, "Key": $metadata_key
-        }
+            {
+                "Status": "$status", "Bucket": $bucket, "Key": $metadata_key
+            }
 
     Raises:
         BadRequestError - 400
@@ -636,12 +668,12 @@ def get_asset_metadata(asset_id):
 
         .. code-block:: python
 
-        {
-            "asset_id": asset_id,
-            "operator": operator_name,
-            "cursor": encoded_cursor_value,
-            "results": global_asset_info (if first call) / operator metadata
-        }
+            {
+                "asset_id": asset_id,
+                "operator": operator_name,
+                "cursor": encoded_cursor_value,
+                "results": global_asset_info (if first call) / operator metadata
+            }
 
     Raises:
         ChaliceViewError - 500
@@ -786,12 +818,12 @@ def get_asset_metadata_operator(asset_id, operator_name):
 
         .. code-block:: python
 
-        {
-            "asset_id": asset_id,
-            "operator": operator_name,
-            "cursor": encoded_cursor_value,
-            "results": first_page_data
-        }
+            {
+                "asset_id": asset_id,
+                "operator": operator_name,
+                "cursor": encoded_cursor_value,
+                "results": first_page_data
+            }
 
     Raises:
         ChaliceViewError - 500
@@ -891,9 +923,9 @@ def list_all_assets():
         Dict containing a list of all assets by their asset_id. The list returns empty if no assets have been created.
 
         .. code-block:: python
-        {
-            "assets": ["$asset_id_1", "$asset_id_2"...]
-        }
+            {
+                "assets": ["$asset_id_1", "$asset_id_2"...]
+            }
     Raises:
         ChaliceViewError - 500
     """

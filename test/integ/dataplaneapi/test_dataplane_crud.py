@@ -93,21 +93,21 @@ def test_dataplane_api(dataplane_api):
 
     # Retrieve all metadata from the asset
 
-    # print("Retrieving all metadata for the asset: {asset}".format(asset=asset_id))
-    #
-    # cursor = None
-    #
-    # more_results = True
-    # while more_results:
-    #     retrieve_metadata_response = api.get_all_metadata(asset_id, cursor)
-    #     assert retrieve_metadata_response.status_code == 200
-    #     retrieved_metadata = retrieve_metadata_response.json()
-    #     print(retrieved_metadata)
-    #     if "cursor" in retrieved_metadata:
-    #         cursor = retrieved_metadata["cursor"]
-    #     else:
-    #         more_results = False
-    # print("Successfully retrieved all metadata for asset: {asset}".format(asset=asset_id))
+    print("Retrieving all metadata for the asset: {asset}".format(asset=asset_id))
+    
+    cursor = None
+    
+    more_results = True
+    while more_results:
+        retrieve_metadata_response = api.get_all_metadata(asset_id, cursor)
+        assert retrieve_metadata_response.status_code == 200
+        retrieved_metadata = retrieve_metadata_response.json()
+        print(retrieved_metadata)
+        if "cursor" in retrieved_metadata:
+            cursor = retrieved_metadata["cursor"]
+        else:
+            more_results = False
+    print("Successfully retrieved all metadata for asset: {asset}".format(asset=asset_id))
 
     # Retrieve specific metadata from the asset
 

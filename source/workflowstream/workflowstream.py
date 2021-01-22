@@ -5,12 +5,16 @@ import os
 import boto3
 # need to use simplejson as the std lib json package cannot handle float values
 import simplejson as json
+from botocore import config
 from boto3.dynamodb.types import TypeDeserializer
 
 serializer = TypeDeserializer()
 
+mie_config = json.loads(os.environ['botoConfig'])
+config = config.Config(**mie_config)
+
 topic_arn = os.environ['TOPIC_ARN']
-sns = boto3.client('sns')
+sns = boto3.client('sns', config=config)
 
 def deserialize(data):
     if isinstance(data, list):

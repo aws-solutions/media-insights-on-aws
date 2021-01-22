@@ -33,7 +33,8 @@ jobs:
           REGION=us-west-2
           VERSION=$SHORT_SHA
           DIST_OUTPUT_BUCKET=mie-dev
-          ./build-s3-dist-no-layer-build.sh $DIST_OUTPUT_BUCKET-$REGION $VERSION $REGION
+          TEMPLATE_OUTPUT_BUCKET=mie-dev
+          ./build-s3-dist.sh --no-layer --template-bucket $TEMPLATE_OUTPUT_BUCKET --code-bucket $DIST_OUTPUT_BUCKET --version $VERSION --region $REGION 
           aws cloudformation deploy --stack-name $MIE_STACK_NAME --template-file dist/media-insights-stack.template --s3-bucket $DIST_OUTPUT_BUCKET-$REGION --s3-prefix media_insights_engine/$VERSION --parameter-overrides DeployTestResources=true MaxConcurrentWorkflows=10 DeployAnalyticsPipeline=true EnableXrayTrace=true --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --force-upload
 
   test-us-west-2:

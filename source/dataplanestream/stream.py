@@ -6,6 +6,7 @@ import boto3
 # need to use simplejson as the std lib json package cannot handle float values
 import simplejson as json
 from boto3.dynamodb.types import TypeDeserializer
+from botocore import config
 from aws_xray_sdk.core import xray_recorder
 from aws_xray_sdk.core import patch_all
 
@@ -13,7 +14,10 @@ from aws_xray_sdk.core import patch_all
 
 patch_all()
 
-ks = boto3.client('kinesis')
+mie_config = json.loads(os.environ['botoConfig'])
+config = config.Config(**mie_config)
+
+ks = boto3.client('kinesis', config=config)
 stream_name = os.environ['StreamName']
 serializer = TypeDeserializer()
 

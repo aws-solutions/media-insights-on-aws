@@ -18,6 +18,7 @@ import os
 # from datetime import time
 from datetime import datetime
 from operator import itemgetter
+from botocore import config
 import json
 import time
 import decimal
@@ -35,6 +36,7 @@ API_STAGE = "dev"
 app = Chalice(app_name=APP_NAME)
 app.debug = True
 API_VERSION = "2.0.0"
+FRAMEWORK_VERSION = os.environ['FRAMEWORK_VERSION']
 
 
 def is_aws():
@@ -76,23 +78,26 @@ FILTER_OPERATION_LAMBDA_ARN = os.environ["FILTER_OPERATION_LAMBDA_ARN"]
 OPERATOR_FAILED_LAMBDA_ARN = os.environ["OPERATOR_FAILED_LAMBDA_ARN"]
 WORKFLOW_SCHEDULER_LAMBDA_ARN = os.environ["WORKFLOW_SCHEDULER_LAMBDA_ARN"]
 
+mie_config = json.loads(os.environ['botoConfig'])
+config = config.Config(**mie_config)
+
 # DynamoDB
-DYNAMO_CLIENT = boto3.client("dynamodb")
-DYNAMO_RESOURCE = boto3.resource("dynamodb")
+DYNAMO_CLIENT = boto3.client("dynamodb", config=config)
+DYNAMO_RESOURCE = boto3.resource("dynamodb", config=config)
 
 # Step Functions
-SFN_CLIENT = boto3.client('stepfunctions')
+SFN_CLIENT = boto3.client('stepfunctions', config=config)
 
 # Simple Queue Service
-SQS_RESOURCE = boto3.resource('sqs')
-SQS_CLIENT = boto3.client('sqs')
+SQS_RESOURCE = boto3.resource('sqs', config=config)
+SQS_CLIENT = boto3.client('sqs', config=config)
 
 # IAM resource
-IAM_CLIENT = boto3.client('iam')
-IAM_RESOURCE = boto3.resource('iam')
+IAM_CLIENT = boto3.client('iam', config=config)
+IAM_RESOURCE = boto3.resource('iam', config=config)
 
 # Lambda
-LAMBDA_CLIENT = boto3.client("lambda")
+LAMBDA_CLIENT = boto3.client("lambda", config=config)
 # Helper class to convert a DynamoDB item to JSON.
 
 authorizer = IAMAuthorizer()
@@ -125,7 +130,35 @@ SCHEMA = load_apischema()
 
 @app.route('/')
 def index():
+    """ Test the API endpoint
+
+    Returns:
+        
+    .. code-block:: python
+        
+        {"hello":"world"}
+
+    Raises:
+
+        500: ChaliceViewError - internal server error
+    """
     return {'hello': 'world'}
+
+
+@app.route('/version', cors=True, methods=['GET'], authorizer=authorizer)
+def version():
+    """
+    Get the workflow api and framework version numbers
+
+    Returns:
+
+    .. code-block:: python
+
+        {"ApiVersion": "vx.x.x", "FrameworkVersion": "vx.x.x"}
+    """
+    versions = {"ApiVersion": API_VERSION, "FrameworkVersion": FRAMEWORK_VERSION}
+    return versions
+
 
 ##############################################################################
 #   ____            _                   ____       _
@@ -171,7 +204,7 @@ def create_system_configuration_api():
         200: The system configuration was set successfully successfully.
         400: Bad Request
              - an input value is invalid
-        500: Internal server error
+        500: ChaliceViewError - internal server error
     """
 
     try:
@@ -211,7 +244,7 @@ def get_system_configuration_api():
 
     Raises:
         200: The system configuration was returned successfully.
-        500: Internal server error
+        500: ChaliceViewError - internal server error
     """
 
     try:
@@ -229,164 +262,6 @@ def get_system_configuration_api():
     return response["Items"]
 
 
-@app.route('/transcribe/get_vocabulary', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
-def get_vocabulary():
-    print('get_vocabulary request: '+app.current_request.raw_body.decode())
-    transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
-    vocabulary_name = json.loads(app.current_request.raw_body.decode())['vocabulary_name']
-    response = transcribe_client.get_vocabulary(VocabularyName=vocabulary_name)
-    # Convert time field to a format that is JSON serializable
-    response['LastModifiedTime'] = response['LastModifiedTime'].isoformat()
-    return response
-
-
-@app.route('/transcribe/download_vocabulary', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
-def download_vocabulary():
-    """ Download the contents of a Transcibe Custom Vocabulary
-
-    Returns:
-        
-        .. code-block:: python
-
-            [
-                {
-                "Name": "Value"
-                },
-            ...]  
-
-    Raises:
-        
-    """
-    print('download_vocabulary request: '+app.current_request.raw_body.decode())
-    transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
-    vocabulary_name = json.loads(app.current_request.raw_body.decode())['vocabulary_name']
-    url = transcribe_client.get_vocabulary(VocabularyName=vocabulary_name)['DownloadUri']
-    import urllib.request
-    vocabulary_file = urllib.request.urlopen(url).read().decode("utf-8")
-    vocabulary_json = []
-    vocabulary_fields = vocabulary_file.split('\n')[0].split('\t')
-    for line in vocabulary_file.split('\n')[1:]:
-        vocabulary_item_array = line.split('\t')
-        vocabulary_item_json = {}
-        # if vocab item is missing any fields, then skip it
-        if len(vocabulary_item_array) == len(vocabulary_fields):
-            i = 0
-            for field in vocabulary_fields:
-                vocabulary_item_json[field] = vocabulary_item_array[i]
-                i = i + 1
-        vocabulary_json.append(vocabulary_item_json)
-    return {"vocabulary": vocabulary_json}
-
-
-@app.route('/transcribe/list_vocabularies', cors=True, methods=['GET'], authorizer=authorizer)
-def list_vocabularies():
-    # List all custom vocabularies
-    print('list_vocabularies request: '+app.current_request.raw_body.decode())
-    transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
-    response = transcribe_client.list_vocabularies(MaxResults=100)
-    vocabularies = response['Vocabularies']
-    while ('NextToken' in response):
-        response = transcribe_client.list_vocabularies(MaxResults=100, NextToken=response['NextToken'])
-        vocabularies = vocabularies + response['Vocabularies']
-    # Convert time field to a format that is JSON serializable
-    for item in vocabularies:
-        item['LastModifiedTime'] = item['LastModifiedTime'].isoformat()
-    return response
-
-
-@app.route('/transcribe/delete_vocabulary', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
-def delete_vocabulary():
-    # Delete the specified vocabulary if it exists
-    print('delete_vocabulary request: '+app.current_request.raw_body.decode())
-    transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
-    vocabulary_name = json.loads(app.current_request.raw_body.decode())['vocabulary_name']
-    response = transcribe_client.delete_vocabulary(VocabularyName=vocabulary_name)
-    return response
-
-
-@app.route('/transcribe/create_vocabulary', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
-def create_vocabulary():
-    # Save the input vocab to a new vocabulary
-    print('create_vocabulary request: '+app.current_request.raw_body.decode())
-    transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
-    vocabulary_name = json.loads(app.current_request.raw_body.decode())['vocabulary_name']
-    language_code = json.loads(app.current_request.raw_body.decode())['language_code']
-    response = transcribe_client.create_vocabulary(
-        VocabularyName=vocabulary_name,
-        LanguageCode=language_code,
-        VocabularyFileUri=json.loads(app.current_request.raw_body.decode())['s3uri']
-    )
-    return response
-
-
-@app.route('/translate/get_terminology', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
-def get_terminology():
-    print('get_terminology request: '+app.current_request.raw_body.decode())
-    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
-    terminology_name = json.loads(app.current_request.raw_body.decode())['terminology_name']
-    response = translate_client.get_terminology(Name=terminology_name, TerminologyDataFormat='CSV')
-    # Remove response metadata since we don't need it
-    del response['ResponseMetadata']
-    # Convert time field to a format that is JSON serializable
-    response['TerminologyProperties']['CreatedAt'] = response['TerminologyProperties']['CreatedAt'].isoformat()
-    response['TerminologyProperties']['LastUpdatedAt'] = response['TerminologyProperties']['LastUpdatedAt'].isoformat()
-    return response
-
-
-@app.route('/translate/download_terminology', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
-def download_terminology():
-    # This function returns the specified terminology in CSV format, wrapped in a JSON formatted response.
-    print('download_terminology request: '+app.current_request.raw_body.decode())
-    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
-    terminology_name = json.loads(app.current_request.raw_body.decode())['terminology_name']
-    url = translate_client.get_terminology(Name=terminology_name, TerminologyDataFormat='CSV')['TerminologyDataLocation']['Location']
-    import urllib.request
-    terminology_csv = urllib.request.urlopen(url).read().decode("utf-8")
-    return {"terminology": terminology_csv}
-
-
-@app.route('/translate/list_terminologies', cors=True, methods=['GET'], authorizer=authorizer)
-def list_terminologies():
-    # This function returns a list of saved terminologies
-    print('list_terminologies request: '+app.current_request.raw_body.decode())
-    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
-    response = translate_client.list_terminologies(MaxResults=100)
-    terminologies = response['TerminologyPropertiesList']
-    while ('NextToken' in response):
-        response = translate_client.list_terminologies(MaxResults=100, NextToken=response['NextToken'])
-        terminologies = terminologies + response['TerminologyPropertiesList']
-    # Convert time field to a format that is JSON serializable
-    for item in terminologies:
-        item['CreatedAt'] = item['CreatedAt'].isoformat()
-        item['LastUpdatedAt'] = item['LastUpdatedAt'].isoformat()
-    return response
-
-
-@app.route('/translate/delete_terminology', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
-def delete_terminology():
-    # Delete the specified terminology if it exists
-    print('delete_terminology request: '+app.current_request.raw_body.decode())
-    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
-    terminology_name = json.loads(app.current_request.raw_body.decode())['terminology_name']
-    response = translate_client.delete_terminology(Name=terminology_name)
-    return response
-
-
-@app.route('/translate/create_terminology', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
-def create_terminology():
-    # Save the input terminology to a new terminology
-    print('create_terminology request: '+app.current_request.raw_body.decode())
-    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
-    terminology_name = json.loads(app.current_request.raw_body.decode())['terminology_name']
-    terminology_csv = json.loads(app.current_request.raw_body.decode())['terminology_csv']
-    response = translate_client.import_terminology(
-        Name=terminology_name,
-        MergeStrategy='OVERWRITE',
-        TerminologyData={'File': terminology_csv, 'Format':'CSV'}
-    )
-    response['TerminologyProperties']['CreatedAt'] = response['TerminologyProperties']['CreatedAt'].isoformat()
-    response['TerminologyProperties']['LastUpdatedAt'] = response['TerminologyProperties']['LastUpdatedAt'].isoformat()
-    return response
 
 ##############################################################################
 #    ___                       _
@@ -417,7 +292,6 @@ def create_operation_api():
 
 
     Body:
-
     .. code-block:: python
 
         {
@@ -462,7 +336,7 @@ def create_operation_api():
              - one or more of the required input keys is missing
              - an input value is invalid
         409: Conflict
-        500: Internal server error
+        500: ChaliceViewError - internal server error
     """
 
     operation = None
@@ -569,6 +443,44 @@ def create_operation(operation):
                 }
             )
             raise
+
+        # TODO: Once IAM supports the ability to use tag-based policies for
+        #  InvokeFunction, put that in the StepFunctionRole definition in
+        #  media-insights-stack.yaml and remove the following code block. Inline
+        #  policies have length limitations which will prevent users from adding
+        #  more than about 35 new operators via the MIE workflow api. Tag based
+        #  policies will not have any such limitation.
+
+        # Skip the inline policy creation for operators packaged with MIE.
+        # The inline policy is not needed for those operators because the
+        # StepFunctionRole has already been defined with permission to invoke
+        # those Lambdas (see media-insigts-stack.yaml).
+        if not ("OperatorLibrary" in operation["StartLambdaArn"] or "start-wait-operation" in operation["StartLambdaArn"]):
+            # If true then this is a new user-defined operator which needs to be added
+            # to the StepFunctionRole.
+            #
+            # Create an IAM policy to allow InvokeFunction on the StartLambdaArn
+            policy = {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Action": "lambda:InvokeFunction",
+                        "Resource": [
+                            operation["StartLambdaArn"]
+                        ]
+                    }
+                ]
+            }
+            # Add the MonitorLambdaArn to that policy for async operators
+            if operation["Type"] == "Async":
+                policy['Statement'][0]['Resource'].append(operation["MonitorLambdaArn"])
+            # Attach that policy to the stage execution role as an inline policy
+            IAM_CLIENT.put_role_policy(
+                RoleName=STAGE_EXECUTION_ROLE.split('/')[1],
+                PolicyName=operation["Name"],
+                PolicyDocument=json.dumps(policy)
+            )
 
     except ConflictError as e:
         logger.error ("got CoonflictError: {}".format (e))
@@ -835,7 +747,7 @@ def list_operations():
 
     Raises:
         200: All operations returned sucessfully.
-        500: Internal server error
+        500: ChaliceViewError - internal server error
     """
 
     table = DYNAMO_RESOURCE.Table(OPERATION_TABLE_NAME)
@@ -882,11 +794,12 @@ def delete_operation_api(Name):
     """ Delete a an operation
 
     Returns:
+        A dictionary contianing the operation definition.
 
     Raises:
         200: Operation deleted sucessfully.
         400: Bad Request - there are dependent workflows and query parameter force=false
-        500: Internal server error
+        500: ChaliceViewError - internal server error
     """
     Force = False
     params = app.current_request.query_params
@@ -937,6 +850,37 @@ def delete_operation(Name, Force):
                 Key={
                     'Name': Name
                 })
+
+            # TODO: Once IAM supports the ability to use tag-based policies for
+            #  InvokeFunction, put that in the StepFunctionRole definition in
+            #  media-insights-stack.yaml and remove the following code block. Inline
+            #  policies have length limitations which will prevent users from adding
+            #  more than about 35 new operators via the MIE workflow api. Tag based
+            #  policies will not have any such limitation.
+
+            if not ("OperatorLibrary" in operation["StartLambdaArn"] or "start-wait-operation" in operation["StartLambdaArn"]):
+                # If true then this is a deleted operator has an inline policy which
+                # need to be removed from the StepFunctionRole.
+
+                # The policy name will be the same as the operator name.
+                # Paginate thru list_role_policies() until we find
+                # that policy, then delete it.
+                policy_found = False
+                role_name = STAGE_EXECUTION_ROLE.split('/')[1]
+                response = IAM_CLIENT.list_role_policies(RoleName=role_name)
+                if Name in response['PolicyNames']:
+                    policy_found = True
+                while policy_found is False and response['IsTruncated'] is True:
+                    response = IAM_CLIENT.list_role_policies(RoleName=role_name, Marker=response['Marker'])
+                    if Name in response['PolicyNames']:
+                        policy_found = True
+                # If the policy was found, then delete it.
+                if policy_found is True:
+                    logger.info("Deleting policy " + Name + " from role " + role_name)
+                    IAM_CLIENT.delete_role_policy(
+                        RoleName=role_name,
+                        PolicyName=Name
+                    )
 
             # Flag dependent workflows
             flag_operation_dependent_workflows(Name)
@@ -1049,7 +993,7 @@ def create_stage_api():
         200: The stage was created successfully.
         400: Bad Request - one of the input state machines was not found or was invalid
         409: Conflict
-        500: Internal server error
+        500: ChaliceViewError - internal server error
     """
 
     stage = None
@@ -1181,7 +1125,7 @@ def list_stages():
 
     Raises:
         200: All operations returned sucessfully.
-        500: Internal server error
+        500: ChaliceViewError - internal server error
     """
 
     table = DYNAMO_RESOURCE.Table(STAGE_TABLE_NAME)
@@ -1228,12 +1172,13 @@ def delete_stage_api(Name):
     """ Delete a stage
 
     Returns:
+        A dictionary contianing the stage definition.
 
     Raises:
         200: Stage deleted sucessfully.
         400: Bad Request - there are dependent workflows and query parameter force=False
         404: Not found
-        500: Internal server error
+        500: ChaliceViewError - internal server error
     """
     Force = False
     params = app.current_request.query_params
@@ -1390,7 +1335,7 @@ def create_workflow_api():
     Raises:
         200: The workflow was created successfully.
         400: Bad Request - one of the input stages was not found or was invalid
-        500: Internal server error
+        500: ChaliceViewError - internal server error
     """
 
     workflow = json.loads(app.current_request.raw_body.decode())
@@ -1619,7 +1564,7 @@ def update_workflow_api():
     Raises:
         200: The workflow was updated successfully.
         400: Bad Request - one of the input stages was not found or was invalid
-        500: Internal server error
+        500: ChaliceViewError - internal server error
     """
     workflow = json.loads(app.current_request.raw_body.decode())
     logger.info(json.dumps(workflow))
@@ -1707,7 +1652,7 @@ def list_workflows():
 
     Raises:
         200: All workflows returned sucessfully.
-        500: Internal server error
+        500: ChaliceViewError - internal server error
     """
 
     table = DYNAMO_RESOURCE.Table(WORKFLOW_TABLE_NAME)
@@ -1754,7 +1699,7 @@ def list_workflows_by_stage(StageName):
 
     Raises:
         200: All workflows returned sucessfully.
-        500: Internal server error
+        500: ChaliceViewError - internal server error
     """
 
     table = DYNAMO_RESOURCE.Table(WORKFLOW_TABLE_NAME)
@@ -1782,7 +1727,7 @@ def get_workflow_by_name(Name):
     Raises:
         200: All workflows returned sucessfully.
         404: Not found
-        500: Internal server error
+        500: ChaliceViewError - internal server error
     """
     table = DYNAMO_RESOURCE.Table(WORKFLOW_TABLE_NAME)
     workflow = None
@@ -1810,7 +1755,7 @@ def get_workflow_configuration_by_name(Name):
     Raises:
         200: All workflows returned sucessfully.
         404: Not found
-        500: Internal server error
+        500: ChaliceViewError - internal server error
     """
     table = DYNAMO_RESOURCE.Table(WORKFLOW_TABLE_NAME)
     workflow = None
@@ -1841,7 +1786,7 @@ def delete_workflow_api(Name):
     Raises:
         200: Workflow deleted sucessfully.
         404: Not found
-        500: Internal server error
+        500: ChaliceViewError - internal server error
     """
 
     stage = delete_workflow(Name)
@@ -1964,7 +1909,7 @@ def create_workflow_execution_api():
     Raises:
         200: The workflow execution was created successfully.
         400: Bad Request - the input workflow was not found or was invalid
-        500: Internal server error
+        500: ChaliceViewError - internal server error
     """
 
     workflow_execution = json.loads(app.current_request.raw_body.decode())
@@ -2172,9 +2117,9 @@ def update_workflow_execution(Id):
 
     Raises:
         200: The workflow execution was updated successfully.
-        400: Bad Request - the input stage was not found, the current stage did not match the WaitingStageName, 
+        400: Bad Request - the input stage was not found, the current stage did not match the WaitingStageName,
              or the Workflow Status was not "Waiting"
-        500: Internal server error
+        500: ChaliceViewError - internal server error
     """
     response = {}
     params = json.loads(app.current_request.raw_body.decode())
@@ -2198,7 +2143,7 @@ def resume_workflow_execution(trigger, id, waiting_stage_name):
     workflow_execution = {}
     workflow_execution["Id"] = id
     workflow_execution["Status"] = awsmie.WORKFLOW_STATUS_RESUMED
- 
+
     try:
         response = execution_table.update_item(
             Key={
@@ -2228,13 +2173,13 @@ def resume_workflow_execution(trigger, id, waiting_stage_name):
     response = SQS_CLIENT.send_message(QueueUrl=STAGE_EXECUTION_QUEUE_URL, MessageBody=json.dumps(workflow_execution))
     # the response contains MD5 of the body, a message Id, MD5 of message attributes, and a sequence number (for FIFO queues)
     logger.info('Message ID : {}'.format(response['MessageId']))
-    
+
     # We just queued a workflow so, Trigger the workflow_scheduler
     response = LAMBDA_CLIENT.invoke(
         FunctionName=WORKFLOW_SCHEDULER_LAMBDA_ARN,
         InvocationType='Event'
     )
-    
+
     return workflow_execution
 
 
@@ -2247,7 +2192,7 @@ def list_workflow_executions():
 
     Raises:
         200: All workflow executions returned sucessfully.
-        500: Internal server error
+        500: ChaliceViewError - internal server error
     """
 
     table = DYNAMO_RESOURCE.Table(WORKFLOW_EXECUTION_TABLE_NAME)
@@ -2317,7 +2262,7 @@ def list_workflow_executions_by_assetid(AssetId):
     Raises:
         200: Workflow executions returned sucessfully.
         404: Not found
-        500: Internal server error
+        500: ChaliceViewError - internal server error
     """
     table = DYNAMO_RESOURCE.Table(WORKFLOW_EXECUTION_TABLE_NAME)
 
@@ -2365,7 +2310,7 @@ def get_workflow_execution_by_id(Id):
     Raises:
         200: Workflow executions returned sucessfully.
         404: Not found
-        500: Internal server error
+        500: ChaliceViewError - internal server error
     """
     table = DYNAMO_RESOURCE.Table(WORKFLOW_EXECUTION_TABLE_NAME)
     workflow_execution = None
@@ -2393,7 +2338,7 @@ def delete_workflow_execution(Id):
     Raises:
         200: Workflow execution deleted sucessfully.
         404: Not found
-        500: Internal server error
+        500: ChaliceViewError - internal server error
     """
     table = DYNAMO_RESOURCE.Table(WORKFLOW_EXECUTION_TABLE_NAME)
 
@@ -2470,6 +2415,340 @@ def update_workflow_execution_status(id, status, message):
             InvocationType='Event'
         )
 
+# ================================================================================================
+#      ___        ______    ____                  _            ____                _           
+#     / \ \      / / ___|  / ___|  ___ _ ____   _(_) ___ ___  |  _ \ _ __ _____  _(_) ___ ___  
+#    / _ \ \ /\ / /\___ \  \___ \ / _ | '__\ \ / | |/ __/ _ \ | |_) | '__/ _ \ \/ | |/ _ / __| 
+#   / ___ \ V  V /  ___) |  ___) |  __| |   \ V /| | (_|  __/ |  __/| | | (_) >  <| |  __\__ \ 
+#  /_/   \_\_/\_/  |____/  |____/ \___|_|    \_/ |_|\___\___| |_|   |_|  \___/_/\_|_|\___|___/                                                                                          
+# 
+# ================================================================================================
+
+@app.route('/service/transcribe/get_vocabulary', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
+def get_vocabulary():
+    """ Get the description for an Amazon Transcribe custom vocabulary.
+
+    Returns:
+        This is a proxy for boto3 get_vocabulary and returns the output from that SDK method.  
+        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.get_vocabulary>`_
+
+    Raises:
+        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.get_vocabulary>`_
+    """
+    print('get_vocabulary request: '+app.current_request.raw_body.decode())
+    transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
+    vocabulary_name = json.loads(app.current_request.raw_body.decode())['vocabulary_name']
+    response = transcribe_client.get_vocabulary(VocabularyName=vocabulary_name)
+    # Convert time field to a format that is JSON serializable
+    response['LastModifiedTime'] = response['LastModifiedTime'].isoformat()
+    return response
+
+
+@app.route('/service/transcribe/download_vocabulary', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
+def download_vocabulary():
+    """ Get the contents of an Amazon Transcribe custom vocabulary.
+
+    Body:
+
+    .. code-block:: python
+
+        {
+            "vocabulary_name": string
+        }
+
+
+    Returns:
+        A list of vocabulary terms.  
+
+        .. code-block:: python
+
+            {
+                "vocabulary": [{
+                    "Phrase": string,
+                    "IPA": string,
+                    "SoundsLike": string,
+                    "DisplayAs": string
+                    },
+                    ...
+            }
+
+    Raises:
+        500: ChaliceViewError - internal server error
+    """
+    print('download_vocabulary request: '+app.current_request.raw_body.decode())
+    transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
+    vocabulary_name = json.loads(app.current_request.raw_body.decode())['vocabulary_name']
+    url = transcribe_client.get_vocabulary(VocabularyName=vocabulary_name)['DownloadUri']
+    import urllib.request
+    vocabulary_file = urllib.request.urlopen(url).read().decode("utf-8")
+    vocabulary_json = []
+    vocabulary_fields = vocabulary_file.split('\n')[0].split('\t')
+    for line in vocabulary_file.split('\n')[1:]:
+        vocabulary_item_array = line.split('\t')
+        vocabulary_item_json = {}
+        # if vocab item is missing any fields, then skip it
+        if len(vocabulary_item_array) == len(vocabulary_fields):
+            i = 0
+            for field in vocabulary_fields:
+                vocabulary_item_json[field] = vocabulary_item_array[i]
+                i = i + 1
+        vocabulary_json.append(vocabulary_item_json)
+    return {"vocabulary": vocabulary_json}
+
+
+@app.route('/service/transcribe/list_vocabularies', cors=True, methods=['GET'], authorizer=authorizer)
+def list_vocabularies():
+    """ List all the available Amazon Transcribe custom vocabularies in this region.
+
+    Returns:
+        This is a proxy for boto3 list_vocabularies and returns the output from that SDK method.  
+        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.list_vocabularies>`_
+
+    Raises:
+        See the boto3 documentation for details
+        500: ChaliceViewError - internal server error
+    """
+    # List all custom vocabularies
+    print('list_vocabularies request: '+app.current_request.raw_body.decode())
+    transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
+    response = transcribe_client.list_vocabularies(MaxResults=100)
+    vocabularies = response['Vocabularies']
+    while ('NextToken' in response):
+        response = transcribe_client.list_vocabularies(MaxResults=100, NextToken=response['NextToken'])
+        vocabularies = vocabularies + response['Vocabularies']
+    # Convert time field to a format that is JSON serializable
+    for item in vocabularies:
+        item['LastModifiedTime'] = item['LastModifiedTime'].isoformat()
+    return response
+
+
+@app.route('/service/transcribe/delete_vocabulary', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
+def delete_vocabulary():
+    """ Delete an Amazon Transcribe custom vocabulary.
+
+    Body:
+
+        .. code-block:: python
+
+            {
+                'vocabulary_name': 'string'
+            }
+
+    Returns:
+
+        This is a proxy for boto3 delete_vocabulary and returns the output from that SDK method.  
+        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.delete_vocabulary>`_
+
+    Raises:
+        See the boto3 documentation for details
+        500: ChaliceViewError - internal server error
+    """
+    # Delete the specified vocabulary if it exists
+    print('delete_vocabulary request: '+app.current_request.raw_body.decode())
+    transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
+    vocabulary_name = json.loads(app.current_request.raw_body.decode())['vocabulary_name']
+    response = transcribe_client.delete_vocabulary(VocabularyName=vocabulary_name)
+    return response
+
+
+@app.route('/service/transcribe/create_vocabulary', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
+def create_vocabulary():
+    """ Create an Amazon Transcribe custom vocabulary.
+
+    Body:
+
+        .. code-block:: python
+
+            {
+                'vocabulary_name'='string',
+                'language_code'='af-ZA'|'ar-AE'|'ar-SA'|'cy-GB'|'da-DK'|'de-CH'|'de-DE'|'en-AB'|'en-AU'|'en-GB'|'en-IE'|'en-IN'|'en-US'|'en-WL'|'es-ES'|'es-US'|'fa-IR'|'fr-CA'|'fr-FR'|'ga-IE'|'gd-GB'|'he-IL'|'hi-IN'|'id-ID'|'it-IT'|'ja-JP'|'ko-KR'|'ms-MY'|'nl-NL'|'pt-BR'|'pt-PT'|'ru-RU'|'ta-IN'|'te-IN'|'tr-TR'|'zh-CN',
+                's3uri'='string'
+            }
+
+
+    Returns:
+        This is a proxy for boto3 create_vocabulary and returns the output from that SDK method.  
+        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.create_vocabulary>`_
+
+    Raises:
+        See the boto3 documentation for details
+        500: ChaliceViewError - internal server error
+    """
+    # Save the input vocab to a new vocabulary
+    print('create_vocabulary request: '+app.current_request.raw_body.decode())
+    transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
+    vocabulary_name = json.loads(app.current_request.raw_body.decode())['vocabulary_name']
+    language_code = json.loads(app.current_request.raw_body.decode())['language_code']
+    response = transcribe_client.create_vocabulary(
+        VocabularyName=vocabulary_name,
+        LanguageCode=language_code,
+        VocabularyFileUri=json.loads(app.current_request.raw_body.decode())['s3uri']
+    )
+    return response
+
+
+@app.route('/service/translate/get_terminology', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
+def get_terminology():
+    """ Get a link to the CSV formatted description for an Amazon Translate terminology.
+
+    Body:
+
+    .. code-block:: python
+
+        {
+            'terminology_name'='string'
+        }
+
+    Returns:
+        This is a proxy for boto3 get_terminology and returns the output from that SDK method.  
+        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/translate.html#Translate.Client.get_terminology>`_
+
+    Raises:
+        See the boto3 documentation for details 
+        500: ChaliceViewError - internal server error
+    """
+    print('get_terminology request: '+app.current_request.raw_body.decode())
+    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
+    terminology_name = json.loads(app.current_request.raw_body.decode())['terminology_name']
+    response = translate_client.get_terminology(Name=terminology_name, TerminologyDataFormat='CSV')
+    # Remove response metadata since we don't need it
+    del response['ResponseMetadata']
+    # Convert time field to a format that is JSON serializable
+    response['TerminologyProperties']['CreatedAt'] = response['TerminologyProperties']['CreatedAt'].isoformat()
+    response['TerminologyProperties']['LastUpdatedAt'] = response['TerminologyProperties']['LastUpdatedAt'].isoformat()
+    return response
+
+
+@app.route('/service/translate/download_terminology', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
+def download_terminology():
+    """ Get the CSV formated contents of an Amazon Translate terminology.
+
+    Body:
+
+    .. code-block:: python
+
+        {
+            'terminology_name'='string'
+        }
+
+
+    Returns:
+        A string contining the CSV formatted Amazon Transcribe terminology
+
+        .. code-block:: python
+
+            {
+                'terminology_csv': string  
+            }
+
+    Raises:
+        See the boto3 documentation for details
+        500: ChaliceViewError - internal server error
+    """
+    # This function returns the specified terminology in CSV format, wrapped in a JSON formatted response.
+    print('download_terminology request: '+app.current_request.raw_body.decode())
+    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
+    terminology_name = json.loads(app.current_request.raw_body.decode())['terminology_name']
+    url = translate_client.get_terminology(Name=terminology_name, TerminologyDataFormat='CSV')['TerminologyDataLocation']['Location']
+    import urllib.request
+    terminology_csv = urllib.request.urlopen(url).read().decode("utf-8")
+    return {"terminology": terminology_csv}
+
+
+@app.route('/service/translate/list_terminologies', cors=True, methods=['GET'], authorizer=authorizer)
+def list_terminologies():
+    """ Get the list of available Amazon Translate custom terminologies for this region
+
+    Returns:
+        This is a proxy for boto3 get_terminology and returns the output from that SDK method.  
+        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/translate.html#Translate.Client.list_terminologies>`_
+
+    Raises:
+        See the boto3 documentation for details 
+        500: Internal server error
+    """
+    # This function returns a list of saved terminologies
+    print('list_terminologies request: '+app.current_request.raw_body.decode())
+    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
+    response = translate_client.list_terminologies(MaxResults=100)
+    terminologies = response['TerminologyPropertiesList']
+    while ('NextToken' in response):
+        response = translate_client.list_terminologies(MaxResults=100, NextToken=response['NextToken'])
+        terminologies = terminologies + response['TerminologyPropertiesList']
+    # Convert time field to a format that is JSON serializable
+    for item in terminologies:
+        item['CreatedAt'] = item['CreatedAt'].isoformat()
+        item['LastUpdatedAt'] = item['LastUpdatedAt'].isoformat()
+    return response
+
+
+@app.route('/service/translate/delete_terminology', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
+def delete_terminology():
+    """ Delete an Amazon Translate Terminology
+
+    Body:
+
+    .. code-block:: python
+
+        {
+            'terminology_name': 'string'
+        }
+
+
+    Returns:
+
+        This is a proxy for boto3 delete_terminology and returns the output from that SDK method.  
+        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/translate.html#Translate.Client.delete_terminology>`_
+
+
+    Raises:
+        See the boto3 documentation for details 
+        500: ChaliceViewError - internal server error
+    """
+    # Delete the specified terminology if it exists
+    print('delete_terminology request: '+app.current_request.raw_body.decode())
+    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
+    terminology_name = json.loads(app.current_request.raw_body.decode())['terminology_name']
+    response = translate_client.delete_terminology(Name=terminology_name)
+    return response
+
+
+@app.route('/service/translate/create_terminology', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
+def create_terminology():
+    """ Create an Amazon Translate Terminology.  If the terminology already exists, overwrite the terminology
+        with this new content.
+
+    Body:
+
+    .. code-block:: python
+
+        {
+            'terminology_name'='string',
+            'terminology_csv'='string'
+        }
+
+
+    Returns:
+        This is a proxy for boto3 create_vocabulary and returns the output from that SDK method.  
+        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/translate.html#TranslateService.Client.create_terminology>`_
+
+    Raises:
+        See the boto3 documentation for details
+        500: ChaliceViewError - internal server error
+    """
+    # Save the input terminology to a new terminology
+    print('create_terminology request: '+app.current_request.raw_body.decode())
+    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
+    terminology_name = json.loads(app.current_request.raw_body.decode())['terminology_name']
+    terminology_csv = json.loads(app.current_request.raw_body.decode())['terminology_csv']
+    response = translate_client.import_terminology(
+        Name=terminology_name,
+        MergeStrategy='OVERWRITE',
+        TerminologyData={'File': terminology_csv, 'Format':'CSV'}
+    )
+    response['TerminologyProperties']['CreatedAt'] = response['TerminologyProperties']['CreatedAt'].isoformat()
+    response['TerminologyProperties']['LastUpdatedAt'] = response['TerminologyProperties']['LastUpdatedAt'].isoformat()
+    return response
 
 # ================================================================================================
 #   ____          _                    ____
@@ -2646,3 +2925,4 @@ def send_response(event, context, response_status, response_data):
 def timeout_handler(_signal, _frame):
     '''Handle SIGALRM'''
     raise Exception('Time exceeded')
+

@@ -11,13 +11,15 @@ Parameters:
   DynamoTableArn:
     Type: String
     Description: "Arn of the Dataplane Dynamo DB table"
+  botoConfig:
+    Type: String
+    Description: "Botocore config"
 
 Mappings:
   SourceCode:
     General:
-        S3Bucket: '%%BUCKET_NAME%%'
-        KeyPrefix: "media_insights_engine/%%VERSION%%/code"
-        TemplateKeyPrefix: "media_insights_engine/%%VERSION%%/cf"
+      RegionalS3Bucket: "%%REGIONAL_BUCKET_NAME%%"
+      CodeKeyPrefix: "media_insights_engine/%%VERSION%%"
 
 Resources:
 # kinesis data stream
@@ -25,10 +27,13 @@ Resources:
   AnalyticsStream:
     Type: "AWS::Kinesis::Stream"
     Properties:
-        ShardCount: !Ref KinesisShardCount
-        StreamEncryption:
-          EncryptionType: "KMS"
-          KeyId: "alias/aws/kinesis"
+      ShardCount: !Ref KinesisShardCount
+      StreamEncryption:
+        EncryptionType: "KMS"
+        KeyId: "alias/aws/kinesis"
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
 # ddb stream lambda
 
@@ -37,15 +42,15 @@ Resources:
     Properties:
       Handler: "stream.lambda_handler"
       Role: !GetAtt LambdaStreamRole.Arn
-      TracingConfig: 
+      TracingConfig:
           Mode: "PassThrough"
       Code:
-        S3Bucket: !FindInMap ["SourceCode", "General", "S3Bucket"]
+        S3Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
         S3Key:
           !Join [
             "/",
             [
-              !FindInMap ["SourceCode", "General", "KeyPrefix"],
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
               "ddbstream.zip",
             ],
           ]
@@ -53,6 +58,10 @@ Resources:
       Environment:
         Variables:
           StreamName: !Ref AnalyticsStream
+          botoConfig: !Ref botoConfig
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
 # stream event mapping for lambda
 
@@ -116,6 +125,9 @@ Resources:
                   - "logs:CreateLogStream"
                   - "logs:PutLogEvents"
                 Resource: "*"
+      Tags:
+        - Key: "environment"
+          Value: "mie"
 
 Outputs:
   analyticsStreamArn:

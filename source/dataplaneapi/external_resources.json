@@ -1,5 +1,9 @@
 {
   "Parameters": {
+    "botoConfig": {
+      "Type": "String",
+      "Description": "Botocore config"
+    },
     "DataplaneTableName": {
       "Type": "String",
       "Description": "Table used for storing asset metadata"
@@ -23,6 +27,10 @@
     "TracingConfigMode": {
       "Type": "String",
       "Description": "Sets tracing mode for stack entry points.  Allowed values: Active, PassThrough"
+    },
+    "FrameworkVersion": {
+      "Type": "String",
+      "Description": "Version of the Media Insights Engine Framework"
     }
   },
   "Resources": {
@@ -102,11 +110,17 @@
         "Runtime": "python3.7",
         "Environment": {
           "Variables": {
+            "botoConfig": {
+              "Ref": "botoConfig"
+            },
             "DATAPLANE_TABLE_NAME": {
                 "Ref": "DataplaneTableName"
             },
             "DATAPLANE_BUCKET": {
                 "Ref": "DataplaneBucketName"
+            },
+            "FRAMEWORK_VERSION": {
+              "Ref": "FrameworkVersion"
             }
           }
         },

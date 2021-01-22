@@ -19,7 +19,7 @@ patch_all()
 mie_config = json.loads(os.environ['botoConfig'])
 config = config.Config(**mie_config)
 translate_client = boto3.client('translate', config=config)
-s3 = boto3.client('s3')
+s3 = boto3.client('s3', config=config)
 
 
 def lambda_handler(event, context):

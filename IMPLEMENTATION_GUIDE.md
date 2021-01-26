@@ -9,15 +9,14 @@ Join our Gitter chat at [https://gitter.im/awslabs/aws-media-insights-engine](ht
 **Contents**
 
 [1. Overview](#1-overview)
-- [1.2. Architecture Overview](#12-architecture-overview)
 
-[2. Security](#3-security)
+[2. Security](#2-security)
 
-[3. Developer Quick Start Guide](#4-developer-quick-start-guide)
-- [3.1. Prerequisites](#41-prerequisites)
-- [3.2. Building MIE (the framework) from source code](#42-building-mie-the-framework-from-source-code)
-- [3.3. Building Media Insights (the application) from source code](#43-building-media-insights-the-application-from-source-code)
-- [3.4. Implementing a new Operator in MIE](#44-implementing-a-new-operator-in-mie)
+[3. Developer Guide](#3-developer-guide)
+- [3.1. Prerequisites](#31-prerequisites)
+- [3.2. Building MIE (the framework) from source code](#32-building-mie-the-framework-from-source-code)
+- [3.3. Building Media Insights (the application) from source code](#33-building-media-insights-the-application-from-source-code)
+- [3.4. Implementing a new Operator in MIE](#34-implementing-a-new-operator-in-mie)
   - [Step 1: Write operator Lambda functions](#step-1-write-operator-lambda-functions)
   - [Step 2: Add your operator to the MIE operator library](#step-2-add-your-operator-to-the-mie-operator-library)
   - [Step 3: Add your operator to a workflow](#step-3-add-your-operator-to-a-workflow)
@@ -26,7 +25,7 @@ Join our Gitter chat at [https://gitter.im/awslabs/aws-media-insights-engine](ht
   - [Step 6: Deploy your Custom Operator](#step-6-deploy-your-custom-build)
   - [Step 7: Test your new workflow and operator](#step-7-test-your-new-workflow-and-operator)
 
-[4. API Documentation](#5-api-documentation)
+[4. API Documentation](#4-api-documentation)
 
 [5. Troubleshooting](#5-troubleshooting)
 
@@ -38,26 +37,13 @@ This guide discusses architectural considerations and configuration steps for de
 
 The guide is for IT infrastructure architects and developers who have practical experience working with video workflows and architecting on the AWS Cloud.
 
-## 1.2. Architecture Overview
-
-Media Insights Engine is a _serverless_ architecture on AWS. The following diagram shows which AWS services are used by MIE and how they interact when a workflow executes.
-
-![](docs/assets/images/MIE-execute-workflow-architecture.png)
-
-MIE consists of a control plane and data plane, as shown above. Users primarily interact with these services in two ways:
-
-1. By using the control plane to create, read, update, and delete (CRUD) custom operators and workflows, and to execute those workflows.
-2. By implementing a consumer of the Kinesis data stream in the data plane to extract, transform, and load (ETL) data from the master MIE data store to downstream databases that support the data access patterns required by end-user applications.
-
-MIE includes an operator library with several commonly used media analysis functions. However, workflow definitions and data pipeline consumers are entirely use-case dependent and therefore must be user-defined. The procedure for this is explained in [section 4](#44-implementing-a-new-operator-in-mie).
-
 # 2. Security
 
 MIE uses AWS_IAM to authorize REST API requests. The following screenshot shows how to test authentication to the MIE API using Postman. Be sure to specify the AccessKey and SecretKey for your own AWS environment.
 
 <img src="docs/assets/images/sample_postman.png" width=600>
 
-# 3. Developer Quick Start Guide
+# 3. Developer Guide
 
 This document will show you how to build, distribute, and deploy Media Insights Engine (MIE) on AWS and how to implement new operators within the MIE stack.
 

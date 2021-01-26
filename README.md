@@ -66,7 +66,7 @@ MIE consists of a control plane and data plane, as shown above. Users primarily 
 1. By using the control plane to create, read, update, and delete (CRUD) custom operators and workflows, and to execute those workflows.
 2. By implementing a consumer of the Kinesis data stream in the data plane to extract, transform, and load (ETL) data from the master MIE data store to downstream databases that support the data access patterns required by end-user applications.
 
-MIE includes an operator library with several commonly used media analysis functions. However, workflow definitions and data pipeline consumers are entirely use-case dependent and therefore must be user-defined. The procedure for this is explained in the [Implementation Guide](IMPLEMENTATION_GUIDE.md#44-implementing-a-new-operator-in-mie).
+MIE includes an operator library with several commonly used media analysis functions. However, workflow definitions and data pipeline consumers are entirely use-case dependent and therefore must be user-defined. This procedure is explained in the [Implementation Guide](IMPLEMENTATION_GUIDE.md#44-implementing-a-new-operator-in-mie).
 
 ### Architecture components:
 

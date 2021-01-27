@@ -22,11 +22,13 @@ Join our Gitter chat at [https://gitter.im/awslabs/aws-media-insights-engine](ht
   - [Step 5: Deploy your Custom Operator](#step-5-deploy-your-custom-build)
   - [Step 6: Test your new workflow and operator](#step-6-test-your-new-workflow-and-operator)
 
-[5. API Documentation](#5-api-documentation)
+[5. Implementing a new data plane consumer](#5-implementing-a-new-data-plane-consumer)
 
-[6. Troubleshooting](#6-troubleshooting)
+[6. API Documentation](#6-api-documentation)
 
-[7. Glossary](#7-glossary)
+[7. Troubleshooting](#7-troubleshooting)
+
+[8. Glossary](#8-glossary)
 
 ## 1. Overview
 This guide describes how to build MIE from source code and how to build applications that use MIE as a back-end for executing multimedia workflows. This guide is intended for software developers who have experience working with the AWS Cloud.
@@ -337,46 +339,28 @@ aws s3 cp test_image.jpg s3://"$DATAPLANE_BUCKET"/
 awscurl -X POST --data '{"Name":"'$WORKFLOW_NAME'", "Configuration":'$CONFIGURATION', "Input":{"Media":{"Image":{"S3Bucket":"'$DATAPLANE_BUCKET'","S3Key":"test_image.jpg"}}}}' $WORKFLOW_API_ENDPOINT/workflow/execution
 ```
 
-
 #### Monitor your test
 
 You can monitor workflows with the following logs:
 
 * Your operator lambda. To find this log, search the Lambda functions for your operator name.
 * The data plane API lambda. To find this log, search Lambda functions for "MediaInsightsDataplaneApiStack".
-* The Elasticsearch consumer lambda. To find this log, search Lambda functions for "ElasticsearchConsumer".
 
 #### Validate metadata in the data plane
 
 When your operator finishes successfully then you can see data saved from the `Dataplane.store_asset_metadata()` function in the following DynamoDB table:
 
-#### Validate metadata in Elasticsearch
+# 5. Implementing a new Data Plane Consumer
 
-Validating data in Elasticsearch is easiest via the Kibana GUI. However, access to Kibana is disabled by default. To enable it, open your Elasticsearch Service domain in the AWS Console and click the "Modify access policy" under the Actions menu and add a policy that allows connections from your local IP address, such as:
+The data plane stores each item as an object in S3 and stores their S3 object identifier in DynamoDB. However, many application scenarios involve data access patterns that require capabilities beyond those provided by DynamoDB and S3. For example, Elasticsearch may be needed to support interactive analytics, Amazon SNS may be needed to provide real-time messaging and notifications, or Amazon Quicksight may be need to support analytical reporting over big data sets.
 
-```
-{
-  "Effect": "Allow",
-  "Principal": {
-    "AWS": "*"
-  },
-  "Action": "es:*",
-  "Resource": "arn:aws:es:us-west-2:123456789012:domain/mie-es/*",
-  "Condition": {
-    "IpAddress": {
-      "aws:SourceIp": "52.108.112.178/32"
-    }
-  }
-}
-```
+The data plane provides a change-data-capture (CDC) stream from DynamoDB to communicate new and changed data to stream consumers, running in AWS Lambda, where ETL tasks can transform and load raw data to the downstream data stores supporting end-user applications. This CDC stream is provided as a Kinesis Data Stream. The ARN for this is provided as an output called `AnalyticsStreamArn` in the base MIE CloudFormation stack, as shown below:
 
-Click Submit to save the new policy. After your domain is finished updating, click on the link to open Kibana. Now click on the **Discover** link from the left-hand side menu. This should take you to a page for creating an index pattern if you haven't created one already. Create an `mie*` index pattern in the **Index pattern** textbox. This will include all the indices that were created in the MIE stack.
+<img src="docs/assets/images/analytics_stream_output.png" width=300>
 
-<img src="docs/assets/images/kibana-create-index.png" width=600>
+For more information about how to implement Kinesis Data Stream consumers in MIE, check out the [MIE demo application](https://github.com/awslabs/aws-media-insights/README.md#advanced-usage), which includes a data stream consumer that feeds Elasticsearch.
 
-Now you can use Kibana to validate that your operator's data is present in Elasticsearch. You can validate this by running a workflow where your operator is the only enabled operator, then searching for the asset_id produced by that workflow in Kibana.
-
-# 5. API Documentation
+# 6. API Documentation
 
 ## Summary:
 * Data plane API
@@ -813,7 +797,7 @@ Now you can use Kibana to validate that your operator's data is present in Elast
   * 404: Not found
   * 500: Internal server error
 
-# 6. Troubleshooting
+# 7. Troubleshooting
 
 ## How to enable AWS X-Ray request tracing for MIE
 
@@ -896,7 +880,7 @@ If an error occurs in the Step Function service that causes the state machine ex
 
 The **WorkflowErrorHandlerLambda:** lambda resource is triggered when the Step Functions service emits `Step Functions Execution Status Change` EventBridge events that have an error status (`FAILED, TIMED_OUT, ABORTED`).  The error handler propagates the error to the MIE control plane if the workflow is not already completed.
 
-# 7. Glossary
+# 8. Glossary
 
 ## Workflow API
 Triggers the execution of a workflow. Also triggers create, update and delete workflows and operators.  Monitors the status of workflows.

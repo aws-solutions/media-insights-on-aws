@@ -18,10 +18,9 @@ Join our Gitter chat at [https://gitter.im/awslabs/aws-media-insights-engine](ht
   - [Step 1: Write operator Lambda functions](#step-1-write-operator-lambda-functions)
   - [Step 2: Add your operator to the MIE operator library](#step-2-add-your-operator-to-the-mie-operator-library)
   - [Step 3: Add your operator to a workflow](#step-3-add-your-operator-to-a-workflow)
-  - [Step 4: Add your operator to the Elasticsearch consumer](#step-4-add-your-operator-to-the-elasticsearch-consumer-optional)
-  - [Step 5: Update the build script to deploy your operator to AWS Lambda](#step-5-update-the-build-script-to-deploy-your-operator-to-aws-lambda)
-  - [Step 6: Deploy your Custom Operator](#step-6-deploy-your-custom-build)
-  - [Step 7: Test your new workflow and operator](#step-7-test-your-new-workflow-and-operator)
+  - [Step 4: Update the build script to deploy your operator to AWS Lambda](#step-4-update-the-build-script-to-deploy-your-operator-to-aws-lambda)
+  - [Step 5: Deploy your Custom Operator](#step-5-deploy-your-custom-build)
+  - [Step 6: Test your new workflow and operator](#step-6-test-your-new-workflow-and-operator)
 
 [5. API Documentation](#5-api-documentation)
 
@@ -288,14 +287,7 @@ Export your operator as an output like this:
 
 It's easiest to create a new workflow by copying end editing on of the existing workflows in the `cloudformation/` directory. A workflow consists of one or more stages. Operators in the same stage will run at the same time (i.e. "in parallel") and stages will run one at a time. The workflow defines the order in which stages sequentially run.
 
-### Step 4: Add your operator to the Elasticsearch consumer (optional)
-***(Difficulty: 30 minutes)***
-
-The [Media Insights](https://github.com/awslabs/aws-media-insights) front-end obtains data from Elasticsearch. If you want to surface data from your new operator in that front-end, then edit `source/consumers/elastic/lambda_handler.py` and add your operator name to the list of `supported_operators`. Define a processing method to create Elasticsearch records from metadata JSON objects. This method should concatenate pages, flatten JSON arrays, add the operator name, add the workflow name, and add any other fields that can be useful for analytics. Call this processing method alongside the other processing methods referenced in the `lambda_handler()` entrypoint.
-
-Finally, you will need to write the front-end code for retrieving your new operator's data from Elasticsearch and rendering it in the GUI.
-
-### Step 5: Update the build script to deploy your operator to AWS Lambda
+### Step 4: Update the build script to deploy your operator to AWS Lambda
 ***(Difficulty: 5 minutes)***
 
 Update the "`Make lambda package`" section in [`build-s3-dist.sh`](deployment/build-s3-dist.sh) to zip your operator's Lambda function(s) into the `deployment/dist` directory, like this:
@@ -304,11 +296,11 @@ Update the "`Make lambda package`" section in [`build-s3-dist.sh`](deployment/bu
 zip -r9 my_operator.zip my_operator.py
 ```
 
-### Step 6: Deploy your custom build
+### Step 5: Deploy your custom build
 
 Run the build script to generate cloud formation templates then deploy them as described in the [README](https://github.com/awslabs/aws-media-insights/blob/old_dev_webapp_merge/README.md#build-from-source)
 
-### Step 7: Test your new workflow and operator
+### Step 6: Test your new workflow and operator
 
 To test workflows and operators, you will submit requests to the workflow API endpoint using AWS_IAM authorization. Tools like [Postman](README.md#Security) (as described in the [README](README.md#Security)) and [awscurl](https://github.com/okigan/awscurl) make AWS_IAM authorization easy. The following examples assume your AWS access key and secret key are set up as required by awscurl:
 

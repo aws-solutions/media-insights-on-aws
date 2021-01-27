@@ -356,7 +356,7 @@ The data plane stores each item as an object in S3 and stores their S3 object id
 
 The data plane provides a change-data-capture (CDC) stream from DynamoDB to communicate media analysis data to stream consumers where ETL tasks can transform and load raw data to the downstream data stores that support end-user applications. This CDC stream is provided as a Kinesis Data Stream. The ARN for this is provided as an output called `AnalyticsStreamArn` in the base MIE CloudFormation stack, as shown below:
 
-<img src="docs/assets/images/analytics_stream_output.png" width=300>
+<img src="docs/assets/images/analytics_stream_output.png" width=400>
 
 For more information about how to implement Kinesis Data Stream consumers in MIE, check out the [MIE demo application](https://github.com/awslabs/aws-media-insights/README.md#advanced-usage), which includes a data stream consumer that feeds Elasticsearch.
 

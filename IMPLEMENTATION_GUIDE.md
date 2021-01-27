@@ -10,7 +10,7 @@ Join our Gitter chat at [https://gitter.im/awslabs/aws-media-insights-engine](ht
 
 [1. Overview](#1-overview)
 [2. Prerequisites](#2-prerequisites)
-[3. Building the MIE framework from source code](#3-building-mie-the-framework-from-source-code)
+[3. Building the MIE framework from source code](#3-building-the-mie-framework-from-source-code)
 [4. Implementing a new Operator in MIE](#4-implementing-a-new-operator-in-mie)
   - [Step 1: Write operator Lambda functions](#step-1-write-operator-lambda-functions)
   - [Step 2: Add your operator to the MIE operator library](#step-2-add-your-operator-to-the-mie-operator-library)
@@ -80,7 +80,7 @@ Operator inputs can include a list of media, metadata and the user-defined workf
 
 Operator outputs include the execution status, and S3 locators for the newly derived media and metadata objects saved in S3. These outputs get passed to other operators in downstream workflow stages.
 
-Operators should interact with the MIE data persistence layer via the `MediaInsightsEngineLambdaHelper`, which is located under [lib/MediaInsightsEngineLambdaHelper/](./lib/MediaInsightsEngineLambdaHelper/MediaInsightsEngineLambdaHelper/__init__.py).
+Operators should interact with the MIE data persistence layer via the `MediaInsightsEngineLambdaHelper`, which is located under [source/lib/MediaInsightsEngineLambdaHelper/](source/lib/MediaInsightsEngineLambdaHelper/MediaInsightsEngineLambdaHelper/__init__.py).
 
 ### Step 1: Write operator Lambda functions
 ***(Difficulty: >1 hour)***
@@ -102,7 +102,7 @@ output_object = OutputHelper("my_operator_name")
 
 #### How to get Asset and Workflow IDs
 
-Get the Workflow and Asset ID from the Lambda entrypoint's event object:
+Get the Workflow and Asset ID from the Lambda's entrypoint event object:
 
 ```
 # Lambda function entrypoint:
@@ -113,7 +113,7 @@ def lambda_handler(event, context):
 
 #### How to get input Media Objects
 
-Media objects are passed using their location in S3.  Use the `boto3` S3 client access them from S3 using the locations specified in the Lambda entrypoint's event object:
+Media objects are passed using their location in S3.  Use the `boto3` S3 client access them from S3 using the locations specified in the Lambda's entrypoint event object:
 
 ```
 def lambda_handler(event, context):
@@ -127,7 +127,7 @@ def lambda_handler(event, context):
 
 #### How to get operator configuration input
 
-Operator configurations can be accessed from the "Configuration" attribute in the Lambda entrypoint's event object. For example, here's how the face search operator gets the user-specified face collection id:
+Operator configurations can be accessed from the "Configuration" attribute in the Lambda's entrypoint event object. For example, here's how the face search operator gets the user-specified face collection id:
 
 ```
 collection_id = event["Configuration"]["CollectionId"]
@@ -157,7 +157,7 @@ def lambda_handler(event, context):
 
 #### How to read data from upstream operators
 
-Metadata that was output by upstream operators can be accessed from the Lambda entrypoint's event object, like this:
+Metadata that was output by upstream operators can be accessed from the Lambda's entrypoint event object, like this:
 
 ```
 my_data_1 = event["Input"]["MetaData"]["MyData1"]
@@ -183,7 +183,7 @@ operator_object = MediaInsightsOperationHelper(event)
 operator_object.add_media_object(my_media_type, bucket, key)
 ```
 
-The my_media_type variable should be "Video", "Audio", or "Text".
+The `my_media_type` variable should be "Video", "Audio", or "Text".
 
 #### Retrieve media objects from the data plane
 
@@ -195,7 +195,7 @@ key = operator_object.input["Media"][my_media_type]["S3Key"]
 s3_response = s3.get_object(Bucket=bucket, Key=key)
 ```
 
-The my_media_type variable should be "Video", "Audio", or "Text".
+Again, the `my_media_type` variable should be "Video", "Audio", or "Text".
 
 ### Step 2: Add your operator to the MIE operator library
 ***(Difficulty: 30 minutes)***
@@ -304,7 +304,7 @@ Run the build script to generate cloud formation templates then deploy them as d
 
 ### Step 7: Test your new workflow and operator
 
-To test workflows and operators, you will submit requests to the workflow API endpoint using AWS_IAM authorization. Tools like [Postman](README.md#Security) (as described in the [README](README.md#Security)) and [awscurl](https://github.com/okigan/awscurl) make AWS_IAM authorization easy. The following examples assume your AWS access key and secret key are setup as required by awscurl:
+To test workflows and operators, you will submit requests to the workflow API endpoint using AWS_IAM authorization. Tools like [Postman](README.md#Security) (as described in the [README](README.md#Security)) and [awscurl](https://github.com/okigan/awscurl) make AWS_IAM authorization easy. The following examples assume your AWS access key and secret key are set up as required by awscurl:
 
 *Sample command to list all available workflows:*
 ```
@@ -345,10 +345,10 @@ awscurl -X POST --data '{"Name":"'$WORKFLOW_NAME'", "Configuration":'$CONFIGURAT
 You can monitor workflows with the following logs:
 
 * Your operator lambda. To find this log, search the Lambda functions for your operator name.
-* The dataplane API lambda. To find this log, search Lambda functions for "MediaInsightsDataplaneApiStack".
+* The data plane API lambda. To find this log, search Lambda functions for "MediaInsightsDataplaneApiStack".
 * The Elasticsearch consumer lambda. To find this log, search Lambda functions for "ElasticsearchConsumer".
 
-#### Validate metadata in dataplane
+#### Validate metadata in the data plane
 
 When your operator finishes successfully then you can see data saved from the `Dataplane.store_asset_metadata()` function in the following DynamoDB table:
 
@@ -381,7 +381,7 @@ Now you can use Kibana to validate that your operator's data is present in Elast
 # 5. API Documentation
 
 ## Summary:
-* Dataplane API
+* Data plane API
   * GET /
   * POST /create
   * POST /download
@@ -390,7 +390,7 @@ Now you can use Kibana to validate that your operator's data is present in Elast
   * DELETE /metadata/{asset_id}
   * DELETE /metadata/{asset_id}/{operator_name}
   * POST /upload
-* Workflow API
+* Workflow (control plane) API
   * GET /
   * POST /system/configuration
   * POST /workflow
@@ -405,9 +405,9 @@ Now you can use Kibana to validate that your operator's data is present in Elast
   * DELETE /workflow/stage/{Name}
   * DELETE /workflow/{Name}
 
-## Dataplane API
+## Data plane API
 
-* Create an asset in the dataplane from a json input composed of the input key and bucket of the object:
+* Create an asset in the data plane from a json input composed of the input key and bucket of the object:
 
   `POST /create`
 
@@ -469,7 +469,7 @@ Now you can use Kibana to validate that your operator's data is present in Elast
   Returns: None
 
   Raises:
-  * 200: The system configuration was set successfully successfully.
+  * 200: The system configuration was set successfully.
   * 400: Bad Request
   * 500: Internal server error - an input value is invalid
 
@@ -512,7 +512,7 @@ Now you can use Kibana to validate that your operator's data is present in Elast
   * 400: Bad Request - one of the input stages was not found or was invalid
   * 500: Internal server error
 
-* List all workflow defintions
+* List all workflow definitions
 
   `GET /workflow`
 
@@ -520,18 +520,18 @@ Now you can use Kibana to validate that your operator's data is present in Elast
   * A list of workflow definitions.
 
   Raises:
-  * 200: All workflows returned sucessfully.
+  * 200: All workflows returned successfully.
   * 500: Internal server error
 
-* Get a workflow configruation object by name
+* Get a workflow configuration object by name
 
   `GET /workflow/configuration/{Name}`
 
   Returns:
-  * A dictionary contianing the workflow configuration.
+  * A dictionary containing the workflow configuration.
 
   Raises:
-  * 200: All workflows returned sucessfully.
+  * 200: All workflows returned successfully.
   * 404: Not found
   * 500: Internal server error
 
@@ -563,7 +563,7 @@ Now you can use Kibana to validate that your operator's data is present in Elast
     }
     ```
   Returns:
-  * A dict mapping keys to the corresponding workflow execution created including the WorkflowExecutionId, the AWS queue and state machine resources assiciated with the workflow execution and the current execution status of the workflow.
+  * A dict mapping keys to the corresponding workflow execution created including the WorkflowExecutionId, the AWS queue and state machine resources associated with the workflow execution and the current execution status of the workflow.
 
   Raises:
   * 200: The workflow execution was created successfully.
@@ -578,7 +578,7 @@ Now you can use Kibana to validate that your operator's data is present in Elast
   * A list of workflow executions.
 
   Raises:
-  * 200: All workflow executions returned sucessfully.
+  * 200: All workflow executions returned successfully.
   * 500: Internal server error
 
 * Get workflow executions by AssetId:
@@ -589,7 +589,7 @@ Now you can use Kibana to validate that your operator's data is present in Elast
   * A list of dictionaries containing the workflow executions matching the AssetId.
 
   Raises:
-  * 200: Workflow executions returned sucessfully.
+  * 200: Workflow executions returned successfully.
   * 404: Not found
   * 500: Internal server error
 
@@ -601,7 +601,7 @@ Now you can use Kibana to validate that your operator's data is present in Elast
   * A list of dictionaries containing the workflow executions with the requested status
 
   Raises:
-  * 200: All workflows returned sucessfully.
+  * 200: All workflows returned successfully.
   * 404: Not found
   * 500: Internal server error
 
@@ -610,7 +610,7 @@ Now you can use Kibana to validate that your operator's data is present in Elast
   `DELETE /workflow/execution/{Id}`
 
   Raises:
-  * 200: Workflow execution deleted sucessfully.
+  * 200: Workflow execution deleted successfully.
   * 404: Not found
   * 500: Internal server error
 
@@ -622,7 +622,7 @@ Now you can use Kibana to validate that your operator's data is present in Elast
   * A dictionary containing the workflow execution.
 
   Raises:
-  * 200: Workflow executions returned sucessfully.
+  * 200: Workflow executions returned successfully.
   * 404: Not found
   * 500: Internal server error
 
@@ -636,7 +636,7 @@ Now you can use Kibana to validate that your operator's data is present in Elast
 
   Operators can be synchronous (Sync) or asynchronous (Async). Synchronous operators complete before returning control to the invoker, while asynchronous operators return control to the invoker when the operation is successfully initiated, but not complete. Asynchronous operators require an additional monitoring task to check the status of the operation.
 
-  For more information on how to implemenent lambdas to be used in MIE operators, see [6.3. Implementing a new Operator in MIE](#63-implementing-a-new-operator-in-mie)
+  For more information on how to implement lambdas to be used in MIE operators, see [4. Implementing a new Operator in MIE](#4-implementing-a-new-operator-in-mie)
 
     ```
     Body:
@@ -693,15 +693,15 @@ Now you can use Kibana to validate that your operator's data is present in Elast
   * A list of operation definitions.
 
   Raises:
-  * 200: All operations returned sucessfully.
+  * 200: All operations returned successfully.
   * 500: Internal server error
 
-* Delete a an operation
+* Delete an operation
 
   `DELETE /workflow/operation/{Name}`
 
   Raises:
-  * 200: Operation deleted sucessfully.
+  * 200: Operation deleted successfully.
   * 500: Internal server error
 
 * Get an operation definition by name
@@ -712,7 +712,7 @@ Now you can use Kibana to validate that your operator's data is present in Elast
   * A dictionary containing the operation definition.
 
   Raises:
-  * 200: All operations returned sucessfully.
+  * 200: All operations returned successfully.
   * 404: Not found
   * 500: Internal server error
 
@@ -758,7 +758,7 @@ Now you can use Kibana to validate that your operator's data is present in Elast
   * 409: Conflict
   * 500: Internal server error
 
-* List all stage defintions
+* List all stage definitions
 
   `GET /workflow/stage`
 
@@ -766,7 +766,7 @@ Now you can use Kibana to validate that your operator's data is present in Elast
   * A list of operation definitions.
 
   Raises:
-  * 200: All operations returned sucessfully.
+  * 200: All operations returned successfully.
   * 500: Internal server error
 
 * Delete a stage
@@ -776,7 +776,7 @@ Now you can use Kibana to validate that your operator's data is present in Elast
   Returns:
 
   Raises:
-  * 200: Stage deleted sucessfully.
+  * 200: Stage deleted successfully.
   * 404: Not found
   * 500: Internal server error
 
@@ -785,10 +785,10 @@ Now you can use Kibana to validate that your operator's data is present in Elast
   `GET /workflow/stage/{Name}`
 
   Returns:
-  A dictionary contianing the stage definition.
+  A dictionary containing the stage definition.
 
   Raises:
-  * 200: All stages returned sucessfully.
+  * 200: All stages returned successfully.
   * 404: Not found
   * 500: Internal server error
 
@@ -799,7 +799,7 @@ Now you can use Kibana to validate that your operator's data is present in Elast
   Returns:
 
   Raises:
-  * 200: Workflow deleted sucessfully.
+  * 200: Workflow deleted successfully.
   * 404: Not found
   * 500: Internal server error
 
@@ -808,10 +808,10 @@ Now you can use Kibana to validate that your operator's data is present in Elast
   `GET /workflow/{Name}`
 
   Returns:
-  * A dictionary contianing the workflow definition.
+  * A dictionary containing the workflow definition.
 
   Raises:
-  * 200: All workflows returned sucessfully.
+  * 200: All workflows returned successfully.
   * 404: Not found
   * 500: Internal server error
 
@@ -835,13 +835,13 @@ By default, tracing for MIE is disabled.  You can enable AWS X-Ray tracing for M
 
 ### Enable tracing from API Gateway entry points
 
-Additionally, you can enable tracing for API Gateway requests in the AWS Console by checking  the *Enable tracing* option for the deployed API Gateway stages for both the Workflow API and the Dataplane API.  See the [AWS console documentation](https://docs.aws.amazon.com/xray/latest/devguide/xray-services-apigateway.html) for more info.
+Additionally, you can enable tracing for API Gateway requests in the AWS Console by checking  the *Enable tracing* option for the deployed API Gateway stages for both the Workflow API and the Data plane API.  See the [AWS console documentation](https://docs.aws.amazon.com/xray/latest/devguide/xray-services-apigateway.html) for more info.
 
 ### Developing custom tracing in MIE lambda functions
 
 MIE Lambdas import the [X-Ray Python packages](https://docs.aws.amazon.com/xray/latest/devguide/xray-sdk-python.html) and patch any supported libraries at runtime. MIE Lambdas are ready for future instrumentation by developers using the X-Ray Python packages.
 
-The MIE Lambda Layer contains all the packages depedencies needed to support X-Ray, so they are available to any new Lambdas that use the Layer.
+The MIE Lambda Layer contains all the packages dependencies needed to support X-Ray, so they are available to any new Lambdas that use the Layer.
 
 ## MIE workflow error handling
 
@@ -894,7 +894,7 @@ Operators use `Catch` and `Retry` to handle errors that occur in the steps of th
 
 #### Workflow state machine error handling
 
-If an error occurs in the Step Function service that causes the state machine execution for an MIE workflow to be terminated immediately, then the `Catch` and `Retry` and **OperatorFailed** lambda will not be able to handle the error.  These types of errors can occur in a number of circumstances.  For example, when the Step Function history limit is exceeded or the execution is Stopped (aborted) from the AWS console.  Failure to handle these errors will the the workflow in a perpetually `Started` status in the MIE control plane.
+If an error occurs in the Step Function service that causes the state machine execution for an MIE workflow to be terminated immediately, then the `Catch` and `Retry` and **OperatorFailed** lambda will not be able to handle the error.  These types of errors can occur in a number of circumstances.  For example, when the Step Function history limit is exceeded, or the execution is Stopped (aborted) from the AWS console.  Failure to handle these errors will the workflow in a perpetually `Started` status in the MIE control plane.
 
 The **WorkflowErrorHandlerLambda:** lambda resource is triggered when the Step Functions service emits `Step Functions Execution Status Change` EventBridge events that have an error status (`FAILED, TIMED_OUT, ABORTED`).  The error handler propagates the error to the MIE control plane if the workflow is not already completed.
 
@@ -904,7 +904,7 @@ The **WorkflowErrorHandlerLambda:** lambda resource is triggered when the Step F
 Triggers the execution of a workflow. Also triggers create, update and delete workflows and operators.  Monitors the status of workflows.
 
 ## Control plane
-Executes the AWS Step Functions state machine for the workflow against the provided input.  Workflow state machines are generated from MIE operators.  As operators within the state machine are executed, the interact with the MIE data plane to store and retrieve derived asset and metadata generated from the workflow.
+Executes the AWS Step Functions state machine for the workflow against the provided input.  Workflow state machines are generated from MIE operators.  As operators within the state machine are executed, they interact with the MIE data plane to store and retrieve media objects and data files.
 
 ## Operators
 Generated state machines that perform media analysis or transformation operation.
@@ -925,5 +925,5 @@ Stores metadata for an asset that can be retrieved as a single block or pages of
 
 ### **Data plane pipeline consumer**
 
-A lambda function that consumes data from the data plane pipeline and stores it (or acts on it) in another downstream data store.  Data can be stored in different kind of data stores to fit the data management and query needs of the application.  There can be 0 or more pipeline consumers in a MIE application.
+A lambda function that consumes data from the data plane pipeline and stores it (or acts on it) in another downstream data store.  Data can be stored in different kinds of data stores to fit the data management and query needs of the application. There may be 0 or more pipeline consumers in a MIE application.
 

@@ -354,7 +354,7 @@ When your operator finishes successfully then you can see data saved from the `D
 
 The data plane stores each item as an object in S3 and stores their S3 object identifier in DynamoDB. However, many application scenarios involve data access patterns that require capabilities beyond those provided by DynamoDB and S3. For example, Elasticsearch may be needed to support interactive analytics, Amazon SNS may be needed to provide real-time messaging and notifications, or Amazon Quicksight may be need to support analytical reporting over big data sets.
 
-The data plane provides a change-data-capture (CDC) stream from DynamoDB to communicate new and changed data to stream consumers, running in AWS Lambda, where ETL tasks can transform and load raw data to the downstream data stores supporting end-user applications. This CDC stream is provided as a Kinesis Data Stream. The ARN for this is provided as an output called `AnalyticsStreamArn` in the base MIE CloudFormation stack, as shown below:
+The data plane provides a change-data-capture (CDC) stream from DynamoDB to communicate media analysis data to stream consumers where ETL tasks can transform and load raw data to the downstream data stores that support end-user applications. This CDC stream is provided as a Kinesis Data Stream. The ARN for this is provided as an output called `AnalyticsStreamArn` in the base MIE CloudFormation stack, as shown below:
 
 <img src="docs/assets/images/analytics_stream_output.png" width=300>
 

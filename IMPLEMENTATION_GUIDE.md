@@ -14,7 +14,7 @@ Join our Gitter chat at [https://gitter.im/awslabs/aws-media-insights-engine](ht
 
 [3. Building the MIE framework from source code](#3-building-the-mie-framework-from-source-code)
 
-[4. Implementing a new Operator in MIE](#4-implementing-a-new-operator-in-mie)
+[4. Implementing a new operator](#4-implementing-a-new-operator-in-mie)
   - [Step 1: Write operator Lambda functions](#step-1-write-operator-lambda-functions)
   - [Step 2: Add your operator to the MIE operator library](#step-2-add-your-operator-to-the-mie-operator-library)
   - [Step 3: Add your operator to a workflow](#step-3-add-your-operator-to-a-workflow)
@@ -22,7 +22,7 @@ Join our Gitter chat at [https://gitter.im/awslabs/aws-media-insights-engine](ht
   - [Step 5: Deploy your Custom Operator](#step-5-deploy-your-custom-build)
   - [Step 6: Test your new workflow and operator](#step-6-test-your-new-workflow-and-operator)
 
-[5. Implementing a new data plane consumer](#5-implementing-a-new-data-plane-consumer)
+[5. Implementing a new data stream consumer](#5-implementing-a-new-data-stream-consumer)
 
 [6. API Documentation](#6-api-documentation)
 
@@ -350,7 +350,7 @@ You can monitor workflows with the following logs:
 
 When your operator finishes successfully then you can see data saved from the `Dataplane.store_asset_metadata()` function in the following DynamoDB table:
 
-# 5. Implementing a new Data Plane Consumer
+# 5. Implementing a new data stream consumer
 
 The data plane stores each item as an object in S3 and stores their S3 object identifier in DynamoDB. However, many application scenarios involve data access patterns that require capabilities beyond those provided by DynamoDB and S3. For example, Elasticsearch may be needed to support interactive analytics, Amazon SNS may be needed to provide real-time messaging and notifications, or Amazon Quicksight may be need to support analytical reporting over big data sets.
 

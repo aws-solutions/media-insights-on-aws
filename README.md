@@ -119,7 +119,7 @@ MIE uses AWS_IAM to authorize REST API requests. The following screenshot shows 
 
 <img src="docs/assets/images/sample_postman.png" width=600>
 
-For more information, see the [Implementation Guide](https://github.com/awslabs/aws-media-insights/blob/master/IMPLEMENTATION_GUIDE.md).
+For more information, see the [Implementation Guide](IMPLEMENTATION_GUIDE.md).
 
 # Known Issues
 

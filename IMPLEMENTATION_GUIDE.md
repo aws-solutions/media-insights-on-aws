@@ -9,8 +9,11 @@ Join our Gitter chat at [https://gitter.im/awslabs/aws-media-insights-engine](ht
 **Contents**
 
 [1. Overview](#1-overview)
+
 [2. Prerequisites](#2-prerequisites)
+
 [3. Building the MIE framework from source code](#3-building-the-mie-framework-from-source-code)
+
 [4. Implementing a new Operator in MIE](#4-implementing-a-new-operator-in-mie)
   - [Step 1: Write operator Lambda functions](#step-1-write-operator-lambda-functions)
   - [Step 2: Add your operator to the MIE operator library](#step-2-add-your-operator-to-the-mie-operator-library)
@@ -19,8 +22,11 @@ Join our Gitter chat at [https://gitter.im/awslabs/aws-media-insights-engine](ht
   - [Step 5: Update the build script to deploy your operator to AWS Lambda](#step-5-update-the-build-script-to-deploy-your-operator-to-aws-lambda)
   - [Step 6: Deploy your Custom Operator](#step-6-deploy-your-custom-build)
   - [Step 7: Test your new workflow and operator](#step-7-test-your-new-workflow-and-operator)
+
 [5. API Documentation](#5-api-documentation)
+
 [6. Troubleshooting](#6-troubleshooting)
+
 [7. Glossary](#7-glossary)
 
 ## 1. Overview

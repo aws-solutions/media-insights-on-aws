@@ -358,7 +358,7 @@ The data plane provides a change-data-capture (CDC) stream from DynamoDB to comm
 
 <img src="docs/assets/images/analytics_stream_output.png" width=400>
 
-For more information about how to implement Kinesis Data Stream consumers in MIE, check out the [MIE demo application](https://github.com/awslabs/aws-media-insights/README.md#advanced-usage), which includes a data stream consumer that feeds Elasticsearch.
+For more information about how to implement Kinesis Data Stream consumers in MIE, check out the [MIE demo application](https://github.com/awslabs/aws-media-insights/blob/master/README.md#advanced-usage), which includes a data stream consumer that feeds Elasticsearch.
 
 # 6. API Documentation
 

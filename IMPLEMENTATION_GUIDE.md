@@ -1,6 +1,6 @@
 # Developer's Guide for building applications on the Media Insights Engine
 
-This guide explains how to build applications on the [Media Insights Engine](https://github.com/awslabs/aws-media-insights-engine).
+This guide explains how to build applications on the [Media Insights Engine](https://github.com/awslabs/aws-media-insights-engine) framework.
 
 Join our Gitter chat at [https://gitter.im/awslabs/aws-media-insights-engine](https://gitter.im/awslabs/aws-media-insights-engine). This public chat forum was created to foster communication between MIE developers worldwide.
 
@@ -9,14 +9,9 @@ Join our Gitter chat at [https://gitter.im/awslabs/aws-media-insights-engine](ht
 **Contents**
 
 [1. Overview](#1-overview)
-
-[2. Security](#2-security)
-
-[3. Developer Guide](#3-developer-guide)
-- [3.1. Prerequisites](#31-prerequisites)
-- [3.2. Building MIE (the framework) from source code](#32-building-mie-the-framework-from-source-code)
-- [3.3. Building Media Insights (the application) from source code](#33-building-media-insights-the-application-from-source-code)
-- [3.4. Implementing a new Operator in MIE](#34-implementing-a-new-operator-in-mie)
+[2. Prerequisites](#2-prerequisites)
+[3. Building the MIE framework from source code](#3-building-mie-the-framework-from-source-code)
+[4. Implementing a new Operator in MIE](#4-implementing-a-new-operator-in-mie)
   - [Step 1: Write operator Lambda functions](#step-1-write-operator-lambda-functions)
   - [Step 2: Add your operator to the MIE operator library](#step-2-add-your-operator-to-the-mie-operator-library)
   - [Step 3: Add your operator to a workflow](#step-3-add-your-operator-to-a-workflow)
@@ -24,54 +19,40 @@ Join our Gitter chat at [https://gitter.im/awslabs/aws-media-insights-engine](ht
   - [Step 5: Update the build script to deploy your operator to AWS Lambda](#step-5-update-the-build-script-to-deploy-your-operator-to-aws-lambda)
   - [Step 6: Deploy your Custom Operator](#step-6-deploy-your-custom-build)
   - [Step 7: Test your new workflow and operator](#step-7-test-your-new-workflow-and-operator)
+[5. API Documentation](#5-api-documentation)
+[6. Troubleshooting](#6-troubleshooting)
+[7. Glossary](#7-glossary)
 
-[4. API Documentation](#4-api-documentation)
+## 1. Overview
+This guide describes how to build MIE from source code and how to build applications that use MIE as a back-end for executing multimedia workflows. This guide is intended for software developers who have experience working with the AWS Cloud.
 
-[5. Troubleshooting](#5-troubleshooting)
-
-[6. Glossary](#6-glossary)
-
-
-# 1. Overview
-This guide discusses architectural considerations and configuration steps for deploying the Media Insights Engine (MIE) solution on the Amazon Web Services (AWS) Cloud. It includes links to an AWS CloudFormation template that launches, configures, and runs the AWS services required to deploy this solution using AWS best practices for security and availability.
-
-The guide is for IT infrastructure architects and developers who have practical experience working with video workflows and architecting on the AWS Cloud.
-
-# 2. Security
-
-MIE uses AWS_IAM to authorize REST API requests. The following screenshot shows how to test authentication to the MIE API using Postman. Be sure to specify the AccessKey and SecretKey for your own AWS environment.
-
-<img src="docs/assets/images/sample_postman.png" width=600>
-
-# 3. Developer Guide
-
-This document will show you how to build, distribute, and deploy Media Insights Engine (MIE) on AWS and how to implement new operators within the MIE stack.
-
-## 3.1. Prerequisites
+## 2. Prerequisites
 
 You must have the following build tools in order to build MIE and the Media Insights front-end application:
 
 * AWS CLI - configured
 * Docker - installed and running
 
-## 3.2. Building MIE (the framework) from source code
+## 3. Building the MIE framework from source code
 
 Run the following commands to build and deploy MIE cloud formation templates from scratch. Be sure to define values for `MIE_STACK_NAME` and `REGION` first.
 
 ```
+MIE_STACK_NAME=[YOUR STACK NAME]
+REGION=[YOUR REGION]
 git clone https://github.com/awslabs/aws-media-insights-engine
 cd aws-media-insights-engine (https://github.com/awslabs/aws-media-insights-engine)
 git checkout development_merge_isolated (https://github.com/awslabs/aws-media-insights-engine/tree/development_merge_isolated) 
 cd deployment
-MIE_STACK_NAME=[YOUR STACK NAME]
-REGION=[YOUR REGION]
 VERSION=1.0.0
 DATETIME=$(date '+%s')
-DIST_OUTPUT_BUCKET=media-insights-engine-$DATETIME
+DIST_OUTPUT_BUCKET=media-insights-engine-$DATETIME-dist
+TEMPLATE_OUTPUT_BUCKET=media-insights-engine-$DATETIME
 aws s3 mb s3://$DIST_OUTPUT_BUCKET-$REGION --region $REGION
-./build-s3-dist.sh $DIST_OUTPUT_BUCKET-$REGION $VERSION $REGION 
-TEMPLATE=[copy from the last line output from the build script]
-aws cloudformation create-stack --stack-name $MIE_STACK_NAME --template-url $TEMPLATE --region $REGION --parameters ParameterKey=DeployOperatorLibrary,ParameterValue=true ParameterKey=DeployTestWorkflow,ParameterValue=true ParameterKey=MaxConcurrentWorkflows,ParameterValue=10 ParameterKey=DeployAnalyticsPipeline,ParameterValue=true --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --profile default --disable-rollback
+./build-s3-dist.sh --template-bucket $TEMPLATE_OUTPUT_BUCKET --code-bucket $DIST_OUTPUT_BUCKET --version $VERSION --region $REGION | tee >( grep TEMPLATE >template )
+TEMPLATE=$(cat template | cut -f 2 -d "'")
+rm -f template 
+aws cloudformation create-stack --stack-name $MIE_STACK_NAME --template-url $TEMPLATE --region $REGION --parameters ParameterKey=DeployTestResources,ParameterValue=true ParameterKey=EnableXrayTrace,ParameterValue=true ParameterKey=MaxConcurrentWorkflows,ParameterValue=10 ParameterKey=DeployAnalyticsPipeline,ParameterValue=true --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --profile default --disable-rollback
 ```
 
 After the stack finished deploying then you should see the following 6 nested stacks (with slightly different names than shown below):
@@ -84,42 +65,7 @@ After the stack finishes deploying then remove the temporary build bucket like t
 aws s3 rb s3://$DIST_OUTPUT_BUCKET-$REGION --region $REGION --profile default --force
 ```
 
-## 3.3. Building Media Insights (the application) from source code
-
-MIE (the framework) must be installed in your AWS account before installing the Media Insights front-end application. The following commands will build and deploy the Media Insights front-end application with a prebuilt version of the most recent MIE release. Be sure to define values for `EMAIL`, `WEBAPP_STACK_NAME`, and `REGION` first.
-
-```
-EMAIL=[specify your email]
-WEBAPP_STACK_NAME=[specify a stack name]
-REGION=[specify a region]
-VERSION=1.0.0
-git clone https://github.com/awslabs/aws-media-insights
-cd aws-media-insights
-cd deployment
-DATETIME=$(date '+%s')
-DIST_OUTPUT_BUCKET=media-insights-engine-frontend-$DATETIME
-aws s3 mb s3://$DIST_OUTPUT_BUCKET-$REGION --region $REGION
-./build.sh $DIST_OUTPUT_BUCKET-$REGION $VERSION $REGION
-```
-
-#### *Option 1:* Install front-end only
-```
-MIE_STACK_NAME=[specify the name of your exising MIE stack]
-TEMPLATE=[copy "With existing MIE deployment" link from output of build script]
-aws cloudformation create-stack --stack-name $WEBAPP_STACK_NAME --template-url $TEMPLATE --region $REGION --parameters ParameterKey=MieStackName,ParameterValue=$MIE_STACK_NAME ParameterKey=AdminEmail,ParameterValue=$EMAIL --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --profile default --disable-rollback
-```
-
-#### *Option 2:* Install back-end + front-end
-```
-TEMPLATE=[copy "Without existing MIE deployment" link from output of build script]
-aws cloudformation create-stack --stack-name $WEBAPP_STACK_NAME --template-url $TEMPLATE --region $REGION --parameters ParameterKey=AdminEmail,ParameterValue=$EMAIL --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --profile default --disable-rollback
-```
-
-When finished your stack should look like this:
-
-<img src="docs/assets/images/nested_stacks.png" width=300>
-
-## 3.4. Implementing a new Operator in MIE
+## 4. Implementing a new Operator in MIE
 
 Operators are Lambda functions that:
 
@@ -128,7 +74,7 @@ Operators are Lambda functions that:
 
 Operators run as part of an MIE workflow. Workflows are [AWS Step Functions](https://aws.amazon.com/step-functions/) that define the order in which operators run.
 
-Operators can be _synchronous_ or _asynchronous_.  Synchronous operators start an  analysis (or transformation) job and get its result in a single Lambda function. Async operators use seperate Lambda functions to start jobs and get their results. Typically, async operators run for several minutes.
+Operators can be _synchronous_ or _asynchronous_.  Synchronous operators start an  analysis (or transformation) job and get its result in a single Lambda function. Async operators use separate Lambda functions to start jobs and get their results. Typically, async operators run for several minutes.
 
 Operator inputs can include a list of media, metadata and the user-defined workflow and/or operator configurations.
 
@@ -154,7 +100,7 @@ from MediaInsightsEngineLambdaHelper import OutputHelper
 output_object = OutputHelper("my_operator_name")
 ```
 
-##### How to get Asset and Workflow IDs
+#### How to get Asset and Workflow IDs
 
 Get the Workflow and Asset ID from the Lambda entrypoint's event object:
 
@@ -165,7 +111,7 @@ def lambda_handler(event, context):
     asset_id = event['AssetId']
 ```
 
-##### How to get input Media Objects
+#### How to get input Media Objects
 
 Media objects are passed using their location in S3.  Use the `boto3` S3 client access them from S3 using the locations specified in the Lambda entrypoint's event object:
 
@@ -179,7 +125,7 @@ def lambda_handler(event, context):
         s3key = event["Input"]["Media"]["Image"]["S3Key"]
 ```
 
-##### How to get operator configuration input
+#### How to get operator configuration input
 
 Operator configurations can be accessed from the "Configuration" attribute in the Lambda entrypoint's event object. For example, here's how the face search operator gets the user-specified face collection id:
 
@@ -187,7 +133,7 @@ Operator configurations can be accessed from the "Configuration" attribute in th
 collection_id = event["Configuration"]["CollectionId"]
 ```
 
-##### How to write data to downstream operators
+#### How to write data to downstream operators
 
 Metadata derived by an operator can be passed as input to the next stage in a workflow by adding said data to the operator's `output_object`. Do this with the `add_workflow_metadata` function in the OutputHelper, as shown below:
 
@@ -209,7 +155,7 @@ def lambda_handler(event, context):
     return output_object.return_output_object()
 ```        
 
-##### How to read data from upstream operators
+#### How to read data from upstream operators
 
 Metadata that was output by upstream operators can be accessed from the Lambda entrypoint's event object, like this:
 
@@ -217,7 +163,7 @@ Metadata that was output by upstream operators can be accessed from the Lambda e
 my_data_1 = event["Input"]["MetaData"]["MyData1"]
 ```
 
-##### How to store media metadata to the data plane
+#### How to store media metadata to the data plane
 
 Use `store_asset_metadata()` to store results. For paged results, call that function for each page.
 
@@ -227,7 +173,7 @@ dataplane = DataPlane()
 metadata_upload = dataplane.store_asset_metadata(asset_id, operator_name, workflow_id, response)
 ```
 
-##### Store media objects to the data plane S3 bucket
+#### Store media objects to the data plane S3 bucket
 
 Operators can derive new media objects. For example, the Transcribe operator derives a new text object from an input audio object. Save new media objects with `add_media_object()`, like this:
 
@@ -239,7 +185,7 @@ operator_object.add_media_object(my_media_type, bucket, key)
 
 The my_media_type variable should be "Video", "Audio", or "Text".
 
-##### Retrieve media objects from the data plane
+#### Retrieve media objects from the data plane
 
 ```
 from MediaInsightsEngineLambdaHelper import MediaInsightsOperationHelper
@@ -358,7 +304,7 @@ Run the build script to generate cloud formation templates then deploy them as d
 
 ### Step 7: Test your new workflow and operator
 
-To test workflows and operators, you will submit requests to the workflow API endpoint using AWS_IAM authorization. Tools like [Postman](#4-security) (as shown above) and [awscurl](https://github.com/okigan/awscurl) make AWS_IAM authorization easy. The following examples assume your AWS access key and secret key are setup as required by awscurl:
+To test workflows and operators, you will submit requests to the workflow API endpoint using AWS_IAM authorization. Tools like [Postman](README.md#Security) (as described in the [README](README.md#Security)) and [awscurl](https://github.com/okigan/awscurl) make AWS_IAM authorization easy. The following examples assume your AWS access key and secret key are setup as required by awscurl:
 
 *Sample command to list all available workflows:*
 ```
@@ -432,7 +378,7 @@ Click Submit to save the new policy. After your domain is finished updating, cli
 
 Now you can use Kibana to validate that your operator's data is present in Elasticsearch. You can validate this by running a workflow where your operator is the only enabled operator, then searching for the asset_id produced by that workflow in Kibana.
 
-# 4. API Documentation
+# 5. API Documentation
 
 ## Summary:
 * Dataplane API
@@ -869,7 +815,7 @@ Now you can use Kibana to validate that your operator's data is present in Elast
   * 404: Not found
   * 500: Internal server error
 
-# 5. Troubleshooting
+# 6. Troubleshooting
 
 ## How to enable AWS X-Ray request tracing for MIE
 
@@ -952,7 +898,7 @@ If an error occurs in the Step Function service that causes the state machine ex
 
 The **WorkflowErrorHandlerLambda:** lambda resource is triggered when the Step Functions service emits `Step Functions Execution Status Change` EventBridge events that have an error status (`FAILED, TIMED_OUT, ABORTED`).  The error handler propagates the error to the MIE control plane if the workflow is not already completed.
 
-# 6. Glossary
+# 7. Glossary
 
 ## Workflow API
 Triggers the execution of a workflow. Also triggers create, update and delete workflows and operators.  Monitors the status of workflows.

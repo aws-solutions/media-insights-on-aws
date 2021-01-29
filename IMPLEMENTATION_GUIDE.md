@@ -673,7 +673,7 @@ For more information about how to implement Kinesis Data Stream consumers in MIE
 For more information, see the comments in this commit:
 [awslabs/aws-media-insights-engine@451ec2e](https://github.com/awslabs/aws-media-insights-engine/commit/451ec2edc04881dd8947d5855e9145f51056465f)
 
-Here is a sample command that shows how to create an operator from the command line:
+Here is a sample command that shows how to create an operator from `/workflow/operation` on the command line:
 
 ```
 OPERATOR_NAME="op1"
@@ -682,6 +682,7 @@ START_ARN="arn:aws:lambda:us-west-2:773074507832:function:mie03d-OperatorFailedL
 MONITOR_ARN="arn:aws:lambda:us-west-2:773074507832:function:mie03d-OperatorFailedLambda-11W1LAY0CWCUZ"
 REGION="us-west-2"
 awscurl --region ${REGION} -X POST -H "Content-Type: application/json" -d '{"StartLambdaArn": "'${START_ARN}'", "Configuration": {"MediaType": "Video", "Enabled": true}, "Type": "Async", "Name": "'${OPERATOR_NAME}'", "MonitorLambdaArn": "'${MONITOR_ARN}}'"' ${WORKFLOW_API_ENDPOINT}workflow/operation;```
+```
 
 * List all defined operators
 

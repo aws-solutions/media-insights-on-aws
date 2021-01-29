@@ -612,11 +612,11 @@ For more information about how to implement Kinesis Data Stream consumers in MIE
 
   `POST /workflow/operation`
 
-  Generates an operation state machine using the operation lambda(s) provided
+  Generates an operation state machine using the operation lambda(s) provided.
 
   Creates a singleton operator stage that can be used to run the operator as a single-operator stage in a workflow.
 
-  Operators can be synchronous (Sync) or asynchronous (Async). Synchronous operators complete before returning control to the invoker, while asynchronous operators return control to the invoker when the operation is successfully initiated, but not complete. Asynchronous operators require an additional monitoring task to check the status of the operation.
+  Operators can be synchronous (Sync) or asynchronous (Async). Synchronous operators complete before returning control to the invoker, while asynchronous operators return control to the invoker immediately after the operation is successfully initiated. Asynchronous operators require an additional monitoring task to check the status of the operation.
 
   For more information on how to implement lambdas to be used in MIE operators, see [4. Implementing a new Operator in MIE](#4-implementing-a-new-operator-in-mie)
 
@@ -666,6 +666,22 @@ For more information about how to implement Kinesis Data Stream consumers in MIE
     * an input value is invalid
   * 409: Conflict
   * 500: Internal server error
+
+
+***Update (January 29, 2021):*** Do not try to create more than 35 new operators via `/workflow/operation`. The IAM inline policy used in `media-insights-stack.yaml` to grant `InvokeFunction` permission to the `StepFunctionRole` for new operators will exceed the maximum length allowed by IAM if users create more than 35 operators (+/- 1).
+
+For more information, see the comments in this commit:
+[awslabs/aws-media-insights-engine@451ec2e](https://github.com/awslabs/aws-media-insights-engine/commit/451ec2edc04881dd8947d5855e9145f51056465f)
+
+Here is a sample command that shows how to create an operator from the command line:
+
+```
+OPERATOR_NAME="op1"
+WORKFLOW_API_ENDPOINT="https://tvplry8vn3.execute-api.us-west-2.amazonaws.com/api/"
+START_ARN="arn:aws:lambda:us-west-2:773074507832:function:mie03d-OperatorFailedLambda-11W1LAY0CWCUZ"
+MONITOR_ARN="arn:aws:lambda:us-west-2:773074507832:function:mie03d-OperatorFailedLambda-11W1LAY0CWCUZ"
+REGION="us-west-2"
+awscurl --region ${REGION} -X POST -H "Content-Type: application/json" -d '{"StartLambdaArn": "'${START_ARN}'", "Configuration": {"MediaType": "Video", "Enabled": true}, "Type": "Async", "Name": "'${OPERATOR_NAME}'", "MonitorLambdaArn": "'${MONITOR_ARN}}'"' ${WORKFLOW_API_ENDPOINT}workflow/operation;```
 
 * List all defined operators
 

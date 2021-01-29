@@ -681,7 +681,7 @@ For more information about how to implement Kinesis Data Stream consumers in MIE
   START_ARN="arn:aws:lambda:us-west-2:773074507832:function:mie03d-OperatorFailedLambda-11W1LAY0CWCUZ"
   MONITOR_ARN="arn:aws:lambda:us-west-2:773074507832:function:mie03d-OperatorFailedLambda-11W1LAY0CWCUZ"
   REGION="us-west-2"
-  awscurl --region ${REGION} -X POST -H "Content-Type: application/json" -d '{"StartLambdaArn": "'${START_ARN}'", "Configuration": {"MediaType": "Video", "Enabled": true}, "Type": "Async", "Name": "'${OPERATOR_NAME}'", "MonitorLambdaArn": "'${MONITOR_ARN}}'"' ${WORKFLOW_API_ENDPOINT}workflow/operation;```
+  awscurl --region ${REGION} -X POST -H "Content-Type: application/json" -d '{"StartLambdaArn": "'${START_ARN}'", "Configuration": {"MediaType": "Video", "Enabled": true}, "Type": "Async", "Name": "'${OPERATOR_NAME}'", "MonitorLambdaArn": "'${MONITOR_ARN}}'"' ${WORKFLOW_API_ENDPOINT}workflow/operation;
   ```
 
 * List all defined operators

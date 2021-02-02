@@ -53,19 +53,20 @@ MIE itself does not have a significant cost footprint. The MIE control plane and
 
 # Limits
 
-The latest MIE release has been verified to support videos up to 2 hours in duration. 
+MIE can support videos up to 2 hours in duration. 
 
 # Architecture Overview
 
-MIE provides the following three fundamental constructs for building multimedia applications:
-
-1. ***Operators:*** AWS Lambda functions that transform or analyze media objects. MIE includes a Python library that you can use to control how operators execute in workflows and to control how operators persist data.
-2. ***Workflows:*** a sequence of operators that work together to derive new media objects or new media metadata. MIE provides a REST API for creating and executing workflows within AWS Step Functions.
-3. ***Persistence:*** a storage system for storing or retrieving multimodal data, like binary media objects and plain text metadata. MIE provides a REST API for CRUD functions in a data plane that uses both Amazon S3 and Amazon DynamoDB. 
-
- The following diagram shows how operators, workflows, and data persistence fit in the MIE architecture:
+Media Insights Engine is a _serverless_ architecture on AWS. The following diagram shows which AWS services are used by MIE and how they interact when a workflow executes.
 
 ![](docs/assets/images/MIE-execute-workflow-architecture.png)
+
+MIE consists of a control plane and data plane, as shown above. Users primarily interact with these services in two ways:
+
+1. By using the control plane to create, read, update, and delete (CRUD) custom operators and workflows, and to execute those workflows.
+2. By implementing a consumer of the Kinesis data stream in the data plane to extract, transform, and load (ETL) data from the master MIE data store to downstream databases that support the data access patterns required by end-user applications.
+
+MIE includes an operator library with several commonly used media analysis functions. However, workflow definitions and data pipeline consumers are entirely use-case dependent and therefore must be user-defined. This procedure is explained in the [Implementation Guide](IMPLEMENTATION_GUIDE.md#44-implementing-a-new-operator-in-mie).
 
 ### Architecture components:
 
@@ -118,7 +119,7 @@ MIE uses AWS_IAM to authorize REST API requests. The following screenshot shows 
 
 <img src="docs/assets/images/sample_postman.png" width=600>
 
-For more information, see the [Implementation Guide](https://github.com/awslabs/aws-media-insights/blob/master/IMPLEMENTATION_GUIDE.md).
+For more information, see the [Implementation Guide](IMPLEMENTATION_GUIDE.md).
 
 # Known Issues
 

@@ -6,6 +6,7 @@ regional-s3-assets/
 package/
 node_modules/
 source/web_site/build/
+deployment/templateUrl.txt
 deployment/lambda_layer_factory/*.whl
 deployment/lambda_layer_factory/*.zip
 deployment/lambda_layer_factory/lambda_layer-python-*

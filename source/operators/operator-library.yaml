@@ -692,7 +692,9 @@ Resources:
                   - "rekognition:StartLabelDetection"
                   - "rekognition:StartPersonTracking"
                   - "rekognition:StartTextDetection"
+                  - "rekognition:GetTextDetection"
                   - "rekognition:StartSegmentDetection"
+                  - "rekognition:GetSegmentDetection"
                 # These Rekognition actions do not support resource-level permissions, so we must use Resource: *
                 Resource: "*"
                 Effect: "Allow"

@@ -66,6 +66,13 @@ def test_workflow_execution(workflow_api, dataplane_api, stack_resources, testin
         }
     }
 
+    # clean up previously incomplete tests
+
+    delete_preprocess_stage_request = workflow_api.delete_stage_request(test_preprocess_stage["Name"])
+    delete_video_stage_request = workflow_api.delete_stage_request(test_video_stage["Name"])
+    delete_audio_stage_request = workflow_api.delete_stage_request(test_audio_stage["Name"])
+    delete_text_stage_request = workflow_api.delete_stage_request(test_text_stage["Name"])
+
     # create stages
 
     preprocess_stage_request = workflow_api.create_stage_request(test_preprocess_stage)

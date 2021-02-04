@@ -126,6 +126,16 @@ def workflow_scheduler_lambda(event, context):
         if "Item" in response:
             MaxConcurrentWorkflows = response["Item"]["Value"]
             logger.info("Got MaxConcurrentWorkflows = {}".format(response["Item"]["Value"]))
+        else:
+
+            system_table.put_item(
+                Key={
+                    'Name': 'MaxConcurrentWorkflows'
+                },
+                Value={
+                    DEFAULT_MAX_CONCURRENT_WORKFLOWS
+                }
+            )
 
         # Check if there are slots to run a workflow
         # FIXME - we really need consistent read here.  Index query is not consistent read

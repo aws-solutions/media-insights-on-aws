@@ -85,14 +85,15 @@ Resources:
             DEFAULT_MAX_CONCURRENT_WORKFLOWS = os.environ["DEFAULT_MAX_CONCURRENT_WORKFLOWS"]
             system_table = DYNAMO_CLIENT.Table(SYSTEM_TABLE_NAME)
             config={"Name":"MaxConcurrentWorkflows", "Value":DEFAULT_MAX_CONCURRENT_WORKFLOWS}
-            system_table.put_item(Item=config)
+            return system_table.put_item(Item=config)
           def handler(event, context):
             print("We got the following event:\n", event)
             if event['ResourceProperties']['FunctionKey'] == 'get_short_uuid':
               response_data = {'Data': id_generator()}
               cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data, "CustomResourcePhysicalID")
             elif event['ResourceProperties']['FunctionKey'] == 'init_system_table':
-              init_system_table()
+              response_data = init_system_table()
+              cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data, "CustomResourcePhysicalID")
       Handler: index.handler
       Runtime: python3.6
       Role: !GetAtt MieHelperExecutionRole.Arn

@@ -64,14 +64,12 @@ mie_config = json.loads(os.environ['botoConfig'])
 config = config.Config(**mie_config)
 
 # DynamoDB
-DYNAMO_CLIENT = boto3.client("dynamodb", config=config)
-DYNAMO_RESOURCE = boto3.resource("dynamodb", config=config)
+DYNAMO_CLIENT = boto3.resource("dynamodb", config=config)
 
 # Step Functions
 SFN_CLIENT = boto3.client('stepfunctions', config=config)
 
 # Simple Queue Service
-SQS_RESOURCE = boto3.resource('sqs', config=config)
 SQS_CLIENT = boto3.client('sqs', config=config)
 
 # Lambda
@@ -79,7 +77,7 @@ LAMBDA_CLIENT = boto3.client("lambda", config=config)
 
 
 def list_workflow_executions_by_status(Status):
-    table = DYNAMO_RESOURCE.Table(WORKFLOW_EXECUTION_TABLE_NAME)
+    table = DYNAMO_CLIENT.Table(WORKFLOW_EXECUTION_TABLE_NAME)
     projection_expression = "Id, AssetId, CurrentStage, StateMachineExecutionArn, #workflow_status, Workflow.#workflow_name"
 
     response = table.query(
@@ -104,7 +102,7 @@ def list_workflow_executions_by_status(Status):
 
 def workflow_scheduler_lambda(event, context):
 
-    execution_table = DYNAMO_RESOURCE.Table(WORKFLOW_EXECUTION_TABLE_NAME)
+    execution_table = DYNAMO_CLIENT.Table(WORKFLOW_EXECUTION_TABLE_NAME)
     arn = ""
     workflow_execution = {}
     MaxConcurrentWorkflows = DEFAULT_MAX_CONCURRENT_WORKFLOWS
@@ -114,7 +112,7 @@ def workflow_scheduler_lambda(event, context):
         logger.info(json.dumps(event))
 
         # Get the MaxConcurrent configruation parameter, if it is not set, use the default
-        system_table = DYNAMO_RESOURCE.Table(SYSTEM_TABLE_NAME)
+        system_table = DYNAMO_CLIENT.Table(SYSTEM_TABLE_NAME)
 
         # Check if any configuration has been added yet
         response = system_table.get_item(
@@ -275,7 +273,7 @@ def check_wait_operation_lambda(event, context):
     logger.info(json.dumps(event))
 
     operator_object = MediaInsightsOperationHelper(event)
-    execution_table = DYNAMO_RESOURCE.Table(WORKFLOW_EXECUTION_TABLE_NAME)
+    execution_table = DYNAMO_CLIENT.Table(WORKFLOW_EXECUTION_TABLE_NAME)
 
     response = execution_table.get_item(
             Key={
@@ -321,7 +319,7 @@ def complete_stage_execution(trigger, stage_name, status, outputs, workflow_exec
 
     try:
 
-        execution_table = DYNAMO_RESOURCE.Table(WORKFLOW_EXECUTION_TABLE_NAME)
+        execution_table = DYNAMO_CLIENT.Table(WORKFLOW_EXECUTION_TABLE_NAME)
         # lookup the workflow
         response = execution_table.get_item(
             Key={
@@ -469,7 +467,7 @@ def start_next_stage_execution(trigger, stage_name, workflow_execution):
     try:
         logger.info("START NEXT STAGE: stage_name {}".format(stage_name))
 
-        execution_table = DYNAMO_RESOURCE.Table(WORKFLOW_EXECUTION_TABLE_NAME)
+        execution_table = DYNAMO_CLIENT.Table(WORKFLOW_EXECUTION_TABLE_NAME)
 
         current_stage = stage_name
 
@@ -588,7 +586,7 @@ def update_workflow_execution_status(id, status, message):
 
     """
     logger.info("Update workflow execution {} set status = {}".format(id, status))
-    execution_table = DYNAMO_RESOURCE.Table(WORKFLOW_EXECUTION_TABLE_NAME)
+    execution_table = DYNAMO_CLIENT.Table(WORKFLOW_EXECUTION_TABLE_NAME)
 
     if status == awsmie.WORKFLOW_STATUS_ERROR:
         response = execution_table.update_item(

@@ -82,7 +82,7 @@ Resources:
           def init_system_table():
             DYNAMO_CLIENT = boto3.resource("dynamodb")
             SYSTEM_TABLE_NAME = os.environ["SYSTEM_TABLE_NAME"]
-            DEFAULT_MAX_CONCURRENT_WORKFLOWS = os.environ["DEFAULT_MAX_CONCURRENT_WORKFLOWS"]
+            DEFAULT_MAX_CONCURRENT_WORKFLOWS = int(os.environ["DEFAULT_MAX_CONCURRENT_WORKFLOWS"])
             system_table = DYNAMO_CLIENT.Table(SYSTEM_TABLE_NAME)
             config={"Name":"MaxConcurrentWorkflows", "Value":DEFAULT_MAX_CONCURRENT_WORKFLOWS}
             return system_table.put_item(Item=config)

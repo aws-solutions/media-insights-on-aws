@@ -760,7 +760,7 @@ Resources:
     Properties:
       Handler: "mediainfo.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython38Layer
+        - !Ref MediaInsightsEnginePython37Layer
       Role: !GetAtt mediainfoLambdaRole.Arn
       TracingConfig:
         Mode: "PassThrough"
@@ -774,7 +774,7 @@ Resources:
               "mediainfo.zip",
             ],
           ]
-      Runtime: "python3.8"
+      Runtime: "python3.7"
       Timeout: 300
       Environment:
         Variables:

@@ -126,18 +126,18 @@
                   ],
                   "Resource": {"Fn::Sub": "arn:aws:s3:::${DataPlaneBucket}/*"},
                   "Effect": "Allow"
-              },
-              {
-                  "Action": "s3:ListBucket",
-                  "Resource": {"Fn::Sub": "arn:aws:s3:::${DataplaneBucket}"},
-                  "Effect": "Allow"
-              },
-              {
-                  "Effect": "Allow",
-                  "Action": [
-                    "sqs:*"
-                  ],
-                  "Resource": {"Ref": "SqsQueueArn"}
+                },
+                {
+                    "Action": "s3:ListBucket",
+                    "Resource": {"Fn::Sub": "arn:aws:s3:::${DataplaneBucket}"},
+                    "Effect": "Allow"
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                      "sqs:*"
+                    ],
+                    "Resource": {"Ref": "SqsQueueArn"}
                 },
                 {
                   "Effect": "Allow",

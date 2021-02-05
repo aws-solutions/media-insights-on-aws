@@ -124,12 +124,12 @@
                       "s3:GetObject",
                       "s3:DeleteObject"
                   ],
-                  "Resource": {"Ref": "DataPlaneBucket"},
+                  "Resource": {"Fn::Sub": "arn:aws:s3:::${DataPlaneBucket}/*"},
                   "Effect": "Allow"
               },
               {
                   "Action": "s3:ListBucket",
-                  "Resource": {"Ref": "DataPlaneBucket"},
+                  "Resource": {"Fn::Sub": "arn:aws:s3:::${DataplaneBucket}"},
                   "Effect": "Allow"
               },
               {

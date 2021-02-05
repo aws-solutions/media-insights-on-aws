@@ -22,9 +22,14 @@ Parameters:
     Type: String
     Description: "ARN of the Media insights custom resource that handles creating operations, stages and workflows"
 
+  MediaInsightsEnginePython38Layer:
+    Type: String
+    Description: "ARN of the Media insights lambda layer (python3.8) that contains basic python dependencies for boto3, chalice, control plane and dataplane"
+
   MediaInsightsEnginePython37Layer:
     Type: String
     Description: "ARN of the Media insights lambda layer (python3.7) that contains basic python dependencies for boto3, chalice, control plane and dataplane"
+
   MediaInsightsEnginePython36Layer:
     Type: String
     Description: "ARN of the Media insights lambda layer (python3.6) that contains basic python dependencies for boto3, chalice, control plane and dataplane"
@@ -722,7 +727,7 @@ Resources:
     Properties:
       Handler: "generic_data_lookup.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
+        - !Ref MediaInsightsEnginePython38Layer
       Role: !GetAtt genericDataLookupLambdaRole.Arn
       TracingConfig:
         Mode: "PassThrough"
@@ -736,7 +741,7 @@ Resources:
               "generic_data_lookup.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 300
       Environment:
         Variables:
@@ -755,7 +760,7 @@ Resources:
     Properties:
       Handler: "mediainfo.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
+        - !Ref MediaInsightsEnginePython38Layer
       Role: !GetAtt mediainfoLambdaRole.Arn
       TracingConfig:
         Mode: "PassThrough"
@@ -769,7 +774,7 @@ Resources:
               "mediainfo.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 300
       Environment:
         Variables:
@@ -789,7 +794,7 @@ Resources:
     Properties:
       Handler: "start_key_phrases.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
+        - !Ref MediaInsightsEnginePython38Layer
       Role: !GetAtt comprehendRole.Arn
       TracingConfig:
         Mode: "PassThrough"
@@ -803,7 +808,7 @@ Resources:
               "start_key_phrases.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 300
       Environment:
         Variables:
@@ -820,7 +825,7 @@ Resources:
     Properties:
       Handler: "get_key_phrases.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
+        - !Ref MediaInsightsEnginePython38Layer
       Role: !GetAtt comprehendRole.Arn
       TracingConfig:
         Mode: "PassThrough"
@@ -834,7 +839,7 @@ Resources:
               "get_key_phrases.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 300
       Environment:
         Variables:
@@ -851,7 +856,7 @@ Resources:
     Properties:
       Handler: "start_entity_detection.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
+        - !Ref MediaInsightsEnginePython38Layer
       Role: !GetAtt comprehendRole.Arn
       TracingConfig:
         Mode: "PassThrough"
@@ -865,7 +870,7 @@ Resources:
               "start_entity_detection.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 300
       Environment:
         Variables:
@@ -882,7 +887,7 @@ Resources:
     Properties:
       Handler: "get_entity_detection.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
+        - !Ref MediaInsightsEnginePython38Layer
       Role: !GetAtt comprehendRole.Arn
       TracingConfig:
         Mode: "PassThrough"
@@ -896,7 +901,7 @@ Resources:
               "get_entity_detection.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 300
       Environment:
         Variables:
@@ -915,7 +920,7 @@ Resources:
     Properties:
       Handler: "start_technical_cue_detection.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
+        - !Ref MediaInsightsEnginePython38Layer
       Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -929,7 +934,7 @@ Resources:
               "start_technical_cue_detection.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 120
       Environment:
         Variables:
@@ -948,7 +953,7 @@ Resources:
     Properties:
       Handler: "check_technical_cue_status.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
+        - !Ref MediaInsightsEnginePython38Layer
       Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -962,7 +967,7 @@ Resources:
               "check_technical_cue_status.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 120
       Environment:
         Variables:
@@ -981,7 +986,7 @@ Resources:
     Properties:
       Handler: "start_shot_detection.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
+        - !Ref MediaInsightsEnginePython38Layer
       Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -995,7 +1000,7 @@ Resources:
               "start_shot_detection.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 120
       Environment:
         Variables:
@@ -1014,7 +1019,7 @@ Resources:
     Properties:
       Handler: "check_shot_detection_status.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
+        - !Ref MediaInsightsEnginePython38Layer
       Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1028,7 +1033,7 @@ Resources:
               "check_shot_detection_status.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 120
       Environment:
         Variables:
@@ -1047,7 +1052,7 @@ Resources:
     Properties:
       Handler: "start_celebrity_recognition.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
+        - !Ref MediaInsightsEnginePython38Layer
       Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1061,7 +1066,7 @@ Resources:
               "start_celebrity_recognition.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 120
       Environment:
         Variables:
@@ -1080,7 +1085,7 @@ Resources:
     Properties:
       Handler: "check_celebrity_recognition_status.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
+        - !Ref MediaInsightsEnginePython38Layer
       Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1094,7 +1099,7 @@ Resources:
               "check_celebrity_recognition_status.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 120
       Environment:
         Variables:
@@ -1112,7 +1117,7 @@ Resources:
     Properties:
       Handler: "start_content_moderation.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
+        - !Ref MediaInsightsEnginePython38Layer
       Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1126,7 +1131,7 @@ Resources:
               "start_content_moderation.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 120
       Environment:
         Variables:
@@ -1145,7 +1150,7 @@ Resources:
     Properties:
       Handler: "check_content_moderation_status.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
+        - !Ref MediaInsightsEnginePython38Layer
       Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1159,7 +1164,7 @@ Resources:
               "check_content_moderation_status.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 120
       Environment:
         Variables:
@@ -1177,7 +1182,7 @@ Resources:
     Properties:
       Handler: "start_face_detection.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
+        - !Ref MediaInsightsEnginePython38Layer
       Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1191,7 +1196,7 @@ Resources:
               "start_face_detection.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 120
       MemorySize: 256
       Environment:
@@ -1211,7 +1216,7 @@ Resources:
     Properties:
       Handler: "check_face_detection_status.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
+        - !Ref MediaInsightsEnginePython38Layer
       Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1225,7 +1230,7 @@ Resources:
               "check_face_detection_status.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 300
       MemorySize: 512
       Environment:
@@ -1244,7 +1249,7 @@ Resources:
     Properties:
       Handler: "start_face_search.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
+        - !Ref MediaInsightsEnginePython38Layer
       Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1258,7 +1263,7 @@ Resources:
               "start_face_search.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 120
       MemorySize: 256
       Environment:
@@ -1278,7 +1283,7 @@ Resources:
     Properties:
       Handler: "check_face_search_status.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
+        - !Ref MediaInsightsEnginePython38Layer
       Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1292,7 +1297,7 @@ Resources:
               "check_face_search_status.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 120
       MemorySize: 256
       Environment:
@@ -1311,7 +1316,7 @@ Resources:
     Properties:
       Handler: "start_text_detection.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
+        - !Ref MediaInsightsEnginePython38Layer
       Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1325,7 +1330,7 @@ Resources:
               "start_text_detection.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
@@ -1343,7 +1348,7 @@ Resources:
     Properties:
       Handler: "check_text_detection_status.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
+        - !Ref MediaInsightsEnginePython38Layer
       Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1357,7 +1362,7 @@ Resources:
               "check_text_detection_status.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 240
       MemorySize: 256
       Environment:
@@ -1376,7 +1381,7 @@ Resources:
     Properties:
       Handler: "start_label_detection.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
+        - !Ref MediaInsightsEnginePython38Layer
       Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1390,7 +1395,7 @@ Resources:
               "start_label_detection.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
@@ -1408,7 +1413,7 @@ Resources:
     Properties:
       Handler: "check_label_detection_status.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
+        - !Ref MediaInsightsEnginePython38Layer
       Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1422,7 +1427,7 @@ Resources:
               "check_label_detection_status.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 240
       MemorySize: 256
       Environment:
@@ -1441,7 +1446,7 @@ Resources:
     Properties:
       Handler: "start_person_tracking.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
+        - !Ref MediaInsightsEnginePython38Layer
       Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1455,7 +1460,7 @@ Resources:
               "start_person_tracking.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
@@ -1471,7 +1476,7 @@ Resources:
     Properties:
       Handler: "check_person_tracking_status.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
+        - !Ref MediaInsightsEnginePython38Layer
       Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1485,7 +1490,7 @@ Resources:
               "check_person_tracking_status.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 120
       MemorySize: 256
       Environment:
@@ -1506,7 +1511,7 @@ Resources:
     Properties:
       Handler: "start_media_convert.lambda_handler"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Role: !GetAtt "mediaConvertLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1520,7 +1525,7 @@ Resources:
               "start_media_convert.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 60
       Environment:
         Variables:
@@ -1537,7 +1542,7 @@ Resources:
     Properties:
       Handler: "start_thumbnail.lambda_handler"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Role: !GetAtt "mediaConvertLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1551,7 +1556,7 @@ Resources:
               "start_thumbnail.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 60
       Environment:
         Variables:
@@ -1568,7 +1573,7 @@ Resources:
     Properties:
       Handler: "check_thumbnail.lambda_handler"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Role: !GetAtt "mediaConvertLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1582,7 +1587,7 @@ Resources:
               "check_thumbnail.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 60
       Environment:
         Variables:
@@ -1599,7 +1604,7 @@ Resources:
     Properties:
       Handler: "get_media_convert.lambda_handler"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Role: !GetAtt "mediaConvertLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1613,7 +1618,7 @@ Resources:
               "get_media_convert.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 60
       Environment:
         Variables:
@@ -1631,7 +1636,7 @@ Resources:
     Properties:
       Handler: "start_transcribe.lambda_handler"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Role: !GetAtt "transcribeRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1645,7 +1650,7 @@ Resources:
               "start_transcribe.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Environment:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
@@ -1660,7 +1665,7 @@ Resources:
     Properties:
       Handler: "get_transcribe.lambda_handler"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Role: !GetAtt "transcribeRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1674,7 +1679,7 @@ Resources:
               "get_transcribe.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 120
       MemorySize: 256
       Environment:
@@ -1693,7 +1698,7 @@ Resources:
     Properties:
       Handler: "webcaptions.web_captions"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Role: !GetAtt "captionsRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1707,7 +1712,7 @@ Resources:
               "webcaptions.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 300
       MemorySize: 256
       Environment:
@@ -1726,7 +1731,7 @@ Resources:
     Properties:
       Handler: "webcaptions.create_srt"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Role: !GetAtt "captionsRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1740,7 +1745,7 @@ Resources:
               "webcaptions.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 300
       Environment:
         Variables:
@@ -1756,7 +1761,7 @@ Resources:
     Properties:
       Handler: "webcaptions.create_vtt"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Role: !GetAtt "captionsRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1770,7 +1775,7 @@ Resources:
               "webcaptions.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 300
       Environment:
         Variables:
@@ -1786,7 +1791,7 @@ Resources:
     Properties:
       Handler: "webcaptions.create_srt"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Role: !GetAtt "captionsRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1800,7 +1805,7 @@ Resources:
               "webcaptions.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 300
       Environment:
         Variables:
@@ -1816,7 +1821,7 @@ Resources:
     Properties:
       Handler: "webcaptions.create_vtt"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Role: !GetAtt "captionsRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1830,7 +1835,7 @@ Resources:
               "webcaptions.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 300
       Environment:
         Variables:
@@ -1848,7 +1853,7 @@ Resources:
     Properties:
       Handler: "start_translate.lambda_handler"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Role: !GetAtt "translateRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1862,7 +1867,7 @@ Resources:
               "start_translate.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 300
       MemorySize: 256
       Environment:
@@ -1879,7 +1884,7 @@ Resources:
     Properties:
       Handler: "webcaptions.start_translate_webcaptions"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Role: !GetAtt "translateRole.Arn"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
@@ -1891,7 +1896,7 @@ Resources:
               "webcaptions.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 300
       Environment:
         Variables:
@@ -1908,7 +1913,7 @@ Resources:
     Properties:
       Handler: "webcaptions.check_translate_webcaptions"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Role: !GetAtt "translateRole.Arn"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
@@ -1920,7 +1925,7 @@ Resources:
               "webcaptions.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 300
       Environment:
         Variables:
@@ -1937,7 +1942,7 @@ Resources:
     Properties:
       Handler: "webcaptions.start_polly_webcaptions"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Role: !GetAtt "pollyRole.Arn"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
@@ -1949,7 +1954,7 @@ Resources:
               "webcaptions.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 300
       Environment:
         Variables:
@@ -1965,7 +1970,7 @@ Resources:
     Properties:
       Handler: "webcaptions.check_polly_webcaptions"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Role: !GetAtt "pollyRole.Arn"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
@@ -1977,7 +1982,7 @@ Resources:
               "webcaptions.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 300
       Environment:
         Variables:
@@ -1995,7 +2000,7 @@ Resources:
     Properties:
       Handler: "start_polly.lambda_handler"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Role: !GetAtt "pollyRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -2009,7 +2014,7 @@ Resources:
               "start_polly.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Environment:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
@@ -2024,7 +2029,7 @@ Resources:
     Properties:
       Handler: "get_polly.lambda_handler"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Role: !GetAtt "pollyRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -2038,7 +2043,7 @@ Resources:
               "get_polly.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Environment:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"

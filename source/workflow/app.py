@@ -122,7 +122,7 @@ def workflow_scheduler_lambda(event, context):
             ConsistentRead=True)
 
         if "Item" in response:
-            MaxConcurrentWorkflows = response["Item"]["Value"]
+            MaxConcurrentWorkflows = int(response["Item"]["Value"])
             logger.info("Got MaxConcurrentWorkflows = {}".format(response["Item"]["Value"]))
 
         # Check if there are slots to run a workflow

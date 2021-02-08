@@ -1,4 +1,4 @@
-![scheduled-workflow](https://github.com/awslabs/aws-media-insights-engine/workflows/scheduled-workflow/badge.svg)
+![scheduled-workflow](https://github.com/awslabs/aws-media-insights-engine/workflows/scheduled-workflow/badge.svg) ![release-workflow](https://github.com/awslabs/aws-media-insights-engine/workflows/release-workflow/badge.svg)
 
 ![MIE logo](docs/assets/images/MIE_logo.png)
 

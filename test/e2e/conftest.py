@@ -120,6 +120,10 @@ class WorkflowAPI:
         delete_workflow_response = requests.delete(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/'+workflow, verify=False, auth=self.auth, headers=headers)
         return delete_workflow_response
 
+    def get_workflow_request(self, workflow):
+        get_workflow_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/'+workflow, verify=False, auth=self.auth)
+        return get_workflow_response
+
     # Stage Methods
 
     def create_stage_request(self, body):
@@ -130,7 +134,7 @@ class WorkflowAPI:
         return create_stage_response
 
     def delete_stage_request(self, stage):
-        delete_stage_response = requests.delete(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/stage/'+stage, verify=False, auth=self.auth)
+        delete_stage_response = requests.delete(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/stage/'+stage+'?force=true', verify=False, auth=self.auth)
 
         return delete_stage_response
 

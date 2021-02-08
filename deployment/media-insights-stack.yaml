@@ -66,15 +66,33 @@ Resources:
   MieHelperFunction:
     Type: AWS::Lambda::Function
     Properties:
+      Environment:
+        Variables:
+          SYSTEM_TABLE_NAME: !Ref SystemTable
+          DEFAULT_MAX_CONCURRENT_WORKFLOWS: !Ref MaxConcurrentWorkflows
       Code:
         ZipFile: |
           import string
-          import random
           import cfnresponse
+          import random
+          import boto3
+          import os
           def id_generator(size=6, chars=string.ascii_lowercase + string.digits):
-              return "".join(random.choices(chars, k=size))
+            return "".join(random.choices(chars, k=size))
+          def init_system_table():
+            DYNAMO_CLIENT = boto3.resource("dynamodb")
+            SYSTEM_TABLE_NAME = os.environ["SYSTEM_TABLE_NAME"]
+            DEFAULT_MAX_CONCURRENT_WORKFLOWS = int(os.environ["DEFAULT_MAX_CONCURRENT_WORKFLOWS"])
+            system_table = DYNAMO_CLIENT.Table(SYSTEM_TABLE_NAME)
+            config={"Name":"MaxConcurrentWorkflows", "Value":DEFAULT_MAX_CONCURRENT_WORKFLOWS}
+            return system_table.put_item(Item=config)
           def handler(event, context):
+            print("We got the following event:\n", event)
+            if event['ResourceProperties']['FunctionKey'] == 'get_short_uuid':
               response_data = {'Data': id_generator()}
+              cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data, "CustomResourcePhysicalID")
+            elif event['ResourceProperties']['FunctionKey'] == 'init_system_table':
+              response_data = init_system_table()
               cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data, "CustomResourcePhysicalID")
       Handler: index.handler
       Runtime: python3.6
@@ -89,10 +107,20 @@ Resources:
       Action: 'lambda:InvokeFunction'
       FunctionName: !GetAtt MieHelperFunction.Arn
       Principal: 'cloudformation.amazonaws.com'
+
   GetShortUUID:
     Type: Custom::CustomResource
     Properties:
       ServiceToken: !GetAtt MieHelperFunction.Arn
+      FunctionKey: "get_short_uuid"
+
+  InitSystemTable:
+    Type: Custom::CustomResource
+    DependsOn:
+      - MediaInsightsDataplaneApiStack
+    Properties:
+      ServiceToken: !GetAtt MieHelperFunction.Arn
+      FunctionKey: "init_system_table"
 
   # Custom log group
   MieLogGroup:
@@ -122,6 +150,20 @@ Resources:
               - Effect: Allow
                 Action: ['logs:*']
                 Resource: 'arn:aws:logs:*:*:*'
+              - Effect: Allow
+                Action: ['dynamodb:PutItem']
+                Resource:
+                  - !Join [
+                    "",
+                    [
+                      "arn:aws:dynamodb:",
+                      Ref: "AWS::Region",
+                      ":",
+                      Ref: "AWS::AccountId",
+                      ":table/",
+                      Ref: "SystemTable",
+                    ]
+                  ]
       Tags:
         - Key: "environment"
           Value: "mie"

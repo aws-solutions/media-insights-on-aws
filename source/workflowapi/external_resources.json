@@ -120,11 +120,24 @@
               "Version": "2012-10-17",
               "Statement": [
                 {
-                  "Effect": "Allow",
                   "Action": [
-                    "sqs:*"
+                      "s3:GetObject",
+                      "s3:DeleteObject"
                   ],
-                  "Resource": {"Ref": "SqsQueueArn"}
+                  "Resource": {"Fn::Sub": "arn:aws:s3:::${DataPlaneBucket}/*"},
+                  "Effect": "Allow"
+                },
+                {
+                    "Action": "s3:ListBucket",
+                    "Resource": {"Fn::Sub": "arn:aws:s3:::${DataPlaneBucket}"},
+                    "Effect": "Allow"
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                      "sqs:*"
+                    ],
+                    "Resource": {"Ref": "SqsQueueArn"}
                 },
                 {
                   "Effect": "Allow",

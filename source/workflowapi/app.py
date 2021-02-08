@@ -1924,10 +1924,10 @@ def create_workflow_execution(trigger, workflow_execution):
     create_asset = None
 
     logger.info('create_workflow_execution workflow config: ' + str(workflow_execution))
-    if "AssetId" in workflow_execution["Input"]:
-        create_asset = False
-    else:
+    if "Input" in workflow_execution and "Media" in workflow_execution["Input"]:
         create_asset = True
+    else:
+        create_asset = False
     try:
         Name = workflow_execution["Name"]
 
@@ -1956,10 +1956,9 @@ def create_workflow_execution(trigger, workflow_execution):
                 }
                 asset_id = asset_creation["AssetId"]
         else:
+            
             try:
-                asset_id = workflow_execution["Input"]["AssetId"]
-                input = workflow_execution["Input"]["Media"]
-                media_type = list(input.keys())[0]
+                input = workflow_execution["Input"]["AssetId"]
             except KeyError as e:
                 logger.info("Exception {}".format(e))
                 raise ChaliceViewError("Exception '%s'" % e)
@@ -1973,9 +1972,9 @@ def create_workflow_execution(trigger, workflow_execution):
                             workflow_execution["Id"], asset_id))
 
                 retrieve_asset = dataplane.retrieve_asset_metadata(asset_id)
-
                 if "results" in retrieve_asset:
                     s3key = retrieve_asset["results"]["S3Key"]
+                    media_type = s3key.split('.')[-1]
                     s3bucket = retrieve_asset["results"]["S3Bucket"]
 
                     asset_input = {
@@ -1986,7 +1985,6 @@ def create_workflow_execution(trigger, workflow_execution):
                             }
                         }
                     }
-
                 else:
                     raise ChaliceViewError("Unable to retrieve asset: {e}".format(e=asset_id))
 
@@ -2016,6 +2014,7 @@ def create_workflow_execution(trigger, workflow_execution):
         raise ChaliceViewError("Exception '%s'" % e)
 
     return workflow_execution
+
 
 
 def initialize_workflow_execution(trigger, Name, input, Configuration, asset_id):

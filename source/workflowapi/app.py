@@ -1928,6 +1928,7 @@ def create_workflow_execution(trigger, workflow_execution):
         create_asset = False
     else:
         create_asset = True
+
     try:
         Name = workflow_execution["Name"]
 

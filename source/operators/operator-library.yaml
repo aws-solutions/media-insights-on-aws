@@ -22,9 +22,14 @@ Parameters:
     Type: String
     Description: "ARN of the Media insights custom resource that handles creating operations, stages and workflows"
 
+  MediaInsightsEnginePython38Layer:
+    Type: String
+    Description: "ARN of the Media insights lambda layer (python3.8) that contains basic python dependencies for boto3, chalice, control plane and dataplane"
+
   MediaInsightsEnginePython37Layer:
     Type: String
     Description: "ARN of the Media insights lambda layer (python3.7) that contains basic python dependencies for boto3, chalice, control plane and dataplane"
+
   MediaInsightsEnginePython36Layer:
     Type: String
     Description: "ARN of the Media insights lambda layer (python3.6) that contains basic python dependencies for boto3, chalice, control plane and dataplane"
@@ -179,10 +184,10 @@ Resources:
             Statement:
               - Action:
                   [
-                    "mediaconvert:GetJob",
-                    "mediaconvert:ListJobs",
-                    "mediaconvert:DescribeEndpoints",
-                    "mediaconvert:CreateJob"
+                      "mediaconvert:GetJob",
+                      "mediaconvert:ListJobs",
+                      "mediaconvert:DescribeEndpoints",
+                      "mediaconvert:CreateJob"
                   ]
                 Resource: "*"
                 Effect: "Allow"
@@ -235,15 +240,16 @@ Resources:
             Statement:
               - Action:
                   [
-                    "transcribe:GetVocabulary",
-                    "transcribe:GetTranscriptionJob",
-                    "transcribe:CreateVocabulary",
-                    "transcribe:StartStreamTranscription",
-                    "transcribe:StartTranscriptionJob",
-                    "transcribe:UpdateVocabulary",
-                    "transcribe:ListTranscriptionJobs",
-                    "transcribe:ListVocabularies"
+                      "transcribe:GetVocabulary",
+                      "transcribe:GetTranscriptionJob",
+                      "transcribe:CreateVocabulary",
+                      "transcribe:StartStreamTranscription",
+                      "transcribe:StartTranscriptionJob",
+                      "transcribe:UpdateVocabulary",
+                      "transcribe:ListTranscriptionJobs",
+                      "transcribe:ListVocabularies"
                   ]
+                # These actions only support Resource: “*”
                 Resource: "*"
                 Effect: "Allow"
               - Action:
@@ -364,13 +370,14 @@ Resources:
                 Resource: !GetAtt "translateS3Role.Arn"
                 Effect: "Allow"
               - Action: [
-                "translate:GetTerminology",
-                "translate:ListTerminologies",
-                "translate:ImportTerminology",
-                "translate:TranslateText",
-                "translate:DescribeTextTranslationJob",
-                "translate:StartTextTranslationJob"
+                  "translate:GetTerminology",
+                  "translate:ListTerminologies",
+                  "translate:ImportTerminology",
+                  "translate:TranslateText",
+                  "translate:DescribeTextTranslationJob",
+                  "translate:StartTextTranslationJob"
               ]
+                # These actions only support Resource: “*”
                 Resource: "*"
                 Effect: "Allow"
               - Action:
@@ -426,15 +433,16 @@ Resources:
             Statement:
               - Action:
                   [
-                    "polly:SynthesizeSpeech",
-                    "polly:StartSpeechSynthesisTask",
-                    "polly:ListLexicons",
-                    "polly:GetSpeechSynthesisTask",
-                    "polly:ListSpeechSynthesisTasks",
-                    "comprehend:DetectDominantLanguage",
-                    "polly:GetLexicon",
-                    "polly:DescribeVoices"
+                      "polly:SynthesizeSpeech",
+                      "polly:StartSpeechSynthesisTask",
+                      "polly:ListLexicons",
+                      "polly:GetSpeechSynthesisTask",
+                      "polly:ListSpeechSynthesisTasks",
+                      "comprehend:DetectDominantLanguage",
+                      "polly:GetLexicon",
+                      "polly:DescribeVoices"
                   ]
+                # These actions only support Resource: “*”
                 Resource: "*"
                 Effect: "Allow"
               - Action:
@@ -541,49 +549,50 @@ Resources:
                 Effect: "Allow"
               - Action:
                   [
-                    "comprehend:StartEntitiesDetectionJob",
-                    "comprehend:DetectSentiment",
-                    "comprehend:DescribeEntityRecognizer",
-                    "comprehend:ListTopicsDetectionJobs",
-                    "comprehend:DescribeDominantLanguageDetectionJob",
-                    "comprehend:StopTrainingEntityRecognizer",
-                    "comprehend:DescribeDocumentClassificationJob",
-                    "comprehend:StopSentimentDetectionJob",
-                    "comprehend:StartDominantLanguageDetectionJob",
-                    "comprehend:StartTopicsDetectionJob",
-                    "comprehend:DetectDominantLanguage",
-                    "comprehend:CreateDocumentClassifier",
-                    "comprehend:ListEntityRecognizers",
-                    "iam:PassRole",
-                    "comprehend:ListSentimentDetectionJobs",
-                    "comprehend:BatchDetectSyntax",
-                    "comprehend:StartSentimentDetectionJob",
-                    "comprehend:ListDominantLanguageDetectionJobs",
-                    "comprehend:ListDocumentClassifiers",
-                    "comprehend:DescribeKeyPhrasesDetectionJob",
-                    "comprehend:CreateEntityRecognizer",
-                    "comprehend:ListKeyPhrasesDetectionJobs",
-                    "comprehend:DescribeSentimentDetectionJob",
-                    "comprehend:DescribeTopicsDetectionJob",
-                    "comprehend:StopDominantLanguageDetectionJob",
-                    "comprehend:BatchDetectSentiment",
-                    "comprehend:StartKeyPhrasesDetectionJob",
-                    "comprehend:BatchDetectEntities",
-                    "comprehend:BatchDetectKeyPhrases",
-                    "comprehend:ListEntitiesDetectionJobs",
-                    "comprehend:StopKeyPhrasesDetectionJob",
-                    "comprehend:ListDocumentClassificationJobs",
-                    "comprehend:DetectSyntax",
-                    "comprehend:DescribeEntitiesDetectionJob",
-                    "comprehend:StopTrainingDocumentClassifier",
-                    "comprehend:ListTagsForResource",
-                    "comprehend:DescribeDocumentClassifier",
-                    "comprehend:StopEntitiesDetectionJob",
-                    "comprehend:BatchDetectDominantLanguage",
-                    "comprehend:StartDocumentClassificationJob",
-                    "comprehend:DetectEntities",
-                    "comprehend:DetectKeyPhrases"
+                      "comprehend:StartEntitiesDetectionJob",
+                      "comprehend:DetectSentiment",
+                      "comprehend:DescribeEntityRecognizer",
+                      "comprehend:ListTopicsDetectionJobs",
+                      "comprehend:DescribeDominantLanguageDetectionJob",
+                      "comprehend:StopTrainingEntityRecognizer",
+                      "comprehend:DescribeDocumentClassificationJob",
+                      "comprehend:StopSentimentDetectionJob",
+                      "comprehend:StartDominantLanguageDetectionJob",
+                      "comprehend:StartTopicsDetectionJob",
+                      "comprehend:DetectDominantLanguage",
+                      "comprehend:CreateDocumentClassifier",
+                      "comprehend:ListEntityRecognizers",
+                      "iam:PassRole",
+                      "comprehend:ListSentimentDetectionJobs",
+                      "comprehend:BatchDetectSyntax",
+                      "comprehend:StartSentimentDetectionJob",
+                      "comprehend:ListDominantLanguageDetectionJobs",
+                      "comprehend:ListDocumentClassifiers",
+                      "comprehend:DescribeKeyPhrasesDetectionJob",
+                      "comprehend:CreateEntityRecognizer",
+                      "comprehend:ListKeyPhrasesDetectionJobs",
+                      "comprehend:DescribeSentimentDetectionJob",
+                      "comprehend:DescribeTopicsDetectionJob",
+                      "comprehend:StopDominantLanguageDetectionJob",
+                      "comprehend:BatchDetectSentiment",
+                      "comprehend:StartKeyPhrasesDetectionJob",
+                      "comprehend:BatchDetectEntities",
+                      "comprehend:BatchDetectKeyPhrases",
+                      "comprehend:ListEntitiesDetectionJobs",
+                      "comprehend:StopKeyPhrasesDetectionJob",
+                      "comprehend:ListDocumentClassificationJobs",
+                      "comprehend:DetectSyntax",
+                      "comprehend:DescribeEntitiesDetectionJob",
+                      "comprehend:StopTrainingDocumentClassifier",
+                      "comprehend:ListTagsForResource",
+                      "comprehend:DescribeDocumentClassifier",
+                      "comprehend:StopEntitiesDetectionJob",
+                      "comprehend:BatchDetectDominantLanguage",
+                      "comprehend:StartDocumentClassificationJob",
+                      "comprehend:DetectEntities",
+                      "comprehend:DetectKeyPhrases"
                   ]
+                # These actions only support Resource: “*”
                 Resource: "*"
                 Effect: "Allow"
               - Action: "lambda:InvokeFunction"
@@ -598,21 +607,48 @@ Resources:
         - Key: "environment"
           Value: "mie"
 
-  rekognitionRole:
+  rekognitionSNSRole:
     Type: "AWS::IAM::Role"
     Metadata:
       cfn_nag:
         rules_to_suppress:
           - id: W11
-            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
+            reason: "the policy actions used in this role require * resource"
     Properties:
-      ManagedPolicyArns:
-        # TODO: Security - Scope this down
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/AmazonSNSFullAccess
-        - arn:aws:iam::aws:policy/AmazonRekognitionFullAccess
-        - arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
-        - arn:aws:iam::aws:policy/AmazonSQSFullAccess
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action:
+              - "sts:AssumeRole"
+            Effect: "Allow"
+            Principal:
+              Service: "rekognition.amazonaws.com"
+      Policies:
+        - PolicyName: "RekognitionSNSPublishPolicy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  - sns:Publish
+                Resource: !Ref "snsRekognitionTopic"
+                Effect: "Allow"
+              - Action:
+                  - "xray:PutTraceSegments"
+                  - "xray:PutTelemetryRecords"
+                Resource: "*"
+                Effect: "Allow"
+      Tags:
+        - Key: "environment"
+          Value: "mie"
+
+  rekognitionLambdaRole:
+    Type: "AWS::IAM::Role"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "the policy actions used in this role require * resource"
+    Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -622,31 +658,63 @@ Resources:
             Principal:
               Service: "lambda.amazonaws.com"
       Policies:
-        - PolicyName: "RekogPassRolePolicy"
+        - PolicyName: "rekognitionAccess"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              # TODO: Security - Scope this down
               - Action:
                   - iam:PassRole
-                Resource: "*"
+                Resource: !GetAtt "rekognitionSNSRole.Arn"
                 Effect: "Allow"
               - Action: "lambda:InvokeFunction"
                 Resource: !Ref DataPlaneHandlerArn
                 Effect: "Allow"
-        - PolicyName: "RekognitionSNSPublishPolicy"
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
               - Action:
-                  - sns:Publish
-                Resource: !Ref "snsRekognitionTopic"
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: "arn:aws:logs:*:*:*:*"
                 Effect: "Allow"
-              - Effect: "Allow"
-                Action:
+              - Action:
+                  - "s3:GetObject"
+                Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
+                Effect: "Allow"
+              - Action:
+                  - "rekognition:DetectFaces"
+                  - "rekognition:DetectLabels"
+                  - "rekognition:DetectModerationLabels"
+                  - "rekognition:GetCelebrityRecognition"
+                  - "rekognition:GetContentModeration"
+                  - "rekognition:GetFaceDetection"
+                  - "rekognition:GetFaceSearch"
+                  - "rekognition:GetLabelDetection"
+                  - "rekognition:GetPersonTracking"
+                  - "rekognition:RecognizeCelebrities"
+                  - "rekognition:StartCelebrityRecognition"
+                  - "rekognition:StartContentModeration"
+                  - "rekognition:StartFaceDetection"
+                  - "rekognition:StartFaceSearch"
+                  - "rekognition:StartLabelDetection"
+                  - "rekognition:StartPersonTracking"
+                  - "rekognition:StartTextDetection"
+                  - "rekognition:GetTextDetection"
+                  - "rekognition:StartSegmentDetection"
+                  - "rekognition:GetSegmentDetection"
+                # These Rekognition actions do not support resource-level permissions, so we must use Resource: *
+                Resource: "*"
+                Effect: "Allow"
+              - Action:
+                  - "rekognition:DescribeCollection"
+                  - "rekognition:SearchFaces"
+                  - "rekognition:SearchFacesByImage"
+                Resource:
+                  - !Sub "arn:aws:rekognition:${AWS::Region}:${AWS::AccountId}:collection/*"
+                Effect: "Allow"
+              - Action:
                   - "xray:PutTraceSegments"
                   - "xray:PutTelemetryRecords"
                 Resource: "*"
+                Effect: "Allow"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -659,7 +727,7 @@ Resources:
     Properties:
       Handler: "generic_data_lookup.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
+        - !Ref MediaInsightsEnginePython38Layer
       Role: !GetAtt genericDataLookupLambdaRole.Arn
       TracingConfig:
         Mode: "PassThrough"
@@ -667,13 +735,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "generic_data_lookup.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "generic_data_lookup.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 300
       Environment:
         Variables:
@@ -700,10 +768,10 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "mediainfo.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "mediainfo.zip",
             ],
           ]
       Runtime: "python3.7"
@@ -726,7 +794,7 @@ Resources:
     Properties:
       Handler: "start_key_phrases.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
+        - !Ref MediaInsightsEnginePython38Layer
       Role: !GetAtt comprehendRole.Arn
       TracingConfig:
         Mode: "PassThrough"
@@ -734,13 +802,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "start_key_phrases.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "start_key_phrases.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 300
       Environment:
         Variables:
@@ -757,7 +825,7 @@ Resources:
     Properties:
       Handler: "get_key_phrases.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
+        - !Ref MediaInsightsEnginePython38Layer
       Role: !GetAtt comprehendRole.Arn
       TracingConfig:
         Mode: "PassThrough"
@@ -765,13 +833,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "get_key_phrases.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "get_key_phrases.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 300
       Environment:
         Variables:
@@ -788,7 +856,7 @@ Resources:
     Properties:
       Handler: "start_entity_detection.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
+        - !Ref MediaInsightsEnginePython38Layer
       Role: !GetAtt comprehendRole.Arn
       TracingConfig:
         Mode: "PassThrough"
@@ -796,13 +864,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "start_entity_detection.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "start_entity_detection.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 300
       Environment:
         Variables:
@@ -819,7 +887,7 @@ Resources:
     Properties:
       Handler: "get_entity_detection.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
+        - !Ref MediaInsightsEnginePython38Layer
       Role: !GetAtt comprehendRole.Arn
       TracingConfig:
         Mode: "PassThrough"
@@ -827,13 +895,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "get_entity_detection.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "get_entity_detection.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 300
       Environment:
         Variables:
@@ -852,26 +920,26 @@ Resources:
     Properties:
       Handler: "start_technical_cue_detection.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+        - !Ref MediaInsightsEnginePython38Layer
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "start_technical_cue_detection.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "start_technical_cue_detection.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 120
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "technicalCueDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
@@ -885,26 +953,26 @@ Resources:
     Properties:
       Handler: "check_technical_cue_status.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+        - !Ref MediaInsightsEnginePython38Layer
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "check_technical_cue_status.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "check_technical_cue_status.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 120
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "technicalCueDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
@@ -918,26 +986,26 @@ Resources:
     Properties:
       Handler: "start_shot_detection.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+        - !Ref MediaInsightsEnginePython38Layer
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "start_shot_detection.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "start_shot_detection.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 120
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "shotDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
@@ -951,26 +1019,26 @@ Resources:
     Properties:
       Handler: "check_shot_detection_status.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+        - !Ref MediaInsightsEnginePython38Layer
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "check_shot_detection_status.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "check_shot_detection_status.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 120
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "shotDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
@@ -984,26 +1052,26 @@ Resources:
     Properties:
       Handler: "start_celebrity_recognition.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+        - !Ref MediaInsightsEnginePython38Layer
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "start_celebrity_recognition.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "start_celebrity_recognition.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 120
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "celebrityRecognition"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
@@ -1017,25 +1085,25 @@ Resources:
     Properties:
       Handler: "check_celebrity_recognition_status.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+        - !Ref MediaInsightsEnginePython38Layer
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "check_celebrity_recognition_status.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "check_celebrity_recognition_status.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 120
       Environment:
         Variables:
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "celebrityRecognition"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
@@ -1049,26 +1117,26 @@ Resources:
     Properties:
       Handler: "start_content_moderation.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+        - !Ref MediaInsightsEnginePython38Layer
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "start_content_moderation.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "start_content_moderation.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 120
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "contentModeration"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
@@ -1082,25 +1150,25 @@ Resources:
     Properties:
       Handler: "check_content_moderation_status.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+        - !Ref MediaInsightsEnginePython38Layer
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "check_content_moderation_status.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "check_content_moderation_status.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 120
       Environment:
         Variables:
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "contentModeration"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
@@ -1114,27 +1182,27 @@ Resources:
     Properties:
       Handler: "start_face_detection.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+        - !Ref MediaInsightsEnginePython38Layer
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "start_face_detection.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "start_face_detection.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 120
       MemorySize: 256
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "faceDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
@@ -1148,26 +1216,26 @@ Resources:
     Properties:
       Handler: "check_face_detection_status.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+        - !Ref MediaInsightsEnginePython38Layer
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "check_face_detection_status.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "check_face_detection_status.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 300
       MemorySize: 512
       Environment:
         Variables:
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "faceDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
@@ -1181,27 +1249,27 @@ Resources:
     Properties:
       Handler: "start_face_search.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+        - !Ref MediaInsightsEnginePython38Layer
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "start_face_search.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "start_face_search.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 120
       MemorySize: 256
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "faceSearch"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
@@ -1215,26 +1283,26 @@ Resources:
     Properties:
       Handler: "check_face_search_status.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+        - !Ref MediaInsightsEnginePython38Layer
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "check_face_search_status.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "check_face_search_status.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 120
       MemorySize: 256
       Environment:
         Variables:
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "faceSearch"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
@@ -1248,25 +1316,25 @@ Resources:
     Properties:
       Handler: "start_text_detection.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+        - !Ref MediaInsightsEnginePython38Layer
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "start_text_detection.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "start_text_detection.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "textDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
@@ -1280,26 +1348,26 @@ Resources:
     Properties:
       Handler: "check_text_detection_status.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+        - !Ref MediaInsightsEnginePython38Layer
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "check_text_detection_status.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "check_text_detection_status.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 240
       MemorySize: 256
       Environment:
         Variables:
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "textDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
@@ -1313,25 +1381,25 @@ Resources:
     Properties:
       Handler: "start_label_detection.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+        - !Ref MediaInsightsEnginePython38Layer
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "start_label_detection.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "start_label_detection.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "labelDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
@@ -1345,26 +1413,26 @@ Resources:
     Properties:
       Handler: "check_label_detection_status.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+        - !Ref MediaInsightsEnginePython38Layer
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "check_label_detection_status.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "check_label_detection_status.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 240
       MemorySize: 256
       Environment:
         Variables:
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "labelDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
@@ -1378,25 +1446,25 @@ Resources:
     Properties:
       Handler: "start_person_tracking.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+        - !Ref MediaInsightsEnginePython38Layer
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "start_person_tracking.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "start_person_tracking.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "personTracking"
           botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
       Tags:
@@ -1408,26 +1476,26 @@ Resources:
     Properties:
       Handler: "check_person_tracking_status.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+        - !Ref MediaInsightsEnginePython38Layer
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "check_person_tracking_status.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "check_person_tracking_status.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 120
       MemorySize: 256
       Environment:
         Variables:
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "personTracking"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
@@ -1443,7 +1511,7 @@ Resources:
     Properties:
       Handler: "start_media_convert.lambda_handler"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Role: !GetAtt "mediaConvertLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1451,13 +1519,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "start_media_convert.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "start_media_convert.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 60
       Environment:
         Variables:
@@ -1474,7 +1542,7 @@ Resources:
     Properties:
       Handler: "start_thumbnail.lambda_handler"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Role: !GetAtt "mediaConvertLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1482,13 +1550,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "start_thumbnail.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "start_thumbnail.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 60
       Environment:
         Variables:
@@ -1505,7 +1573,7 @@ Resources:
     Properties:
       Handler: "check_thumbnail.lambda_handler"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Role: !GetAtt "mediaConvertLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1513,13 +1581,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "check_thumbnail.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "check_thumbnail.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 60
       Environment:
         Variables:
@@ -1536,7 +1604,7 @@ Resources:
     Properties:
       Handler: "get_media_convert.lambda_handler"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Role: !GetAtt "mediaConvertLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1544,13 +1612,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "get_media_convert.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "get_media_convert.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 60
       Environment:
         Variables:
@@ -1568,7 +1636,7 @@ Resources:
     Properties:
       Handler: "start_transcribe.lambda_handler"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Role: !GetAtt "transcribeRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1576,13 +1644,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "start_transcribe.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "start_transcribe.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Environment:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
@@ -1597,7 +1665,7 @@ Resources:
     Properties:
       Handler: "get_transcribe.lambda_handler"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Role: !GetAtt "transcribeRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1605,13 +1673,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "get_transcribe.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "get_transcribe.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 120
       MemorySize: 256
       Environment:
@@ -1630,7 +1698,7 @@ Resources:
     Properties:
       Handler: "webcaptions.web_captions"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Role: !GetAtt "captionsRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1638,13 +1706,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "webcaptions.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "webcaptions.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 300
       MemorySize: 256
       Environment:
@@ -1663,7 +1731,7 @@ Resources:
     Properties:
       Handler: "webcaptions.create_srt"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Role: !GetAtt "captionsRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1671,13 +1739,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "webcaptions.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "webcaptions.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 300
       Environment:
         Variables:
@@ -1693,7 +1761,7 @@ Resources:
     Properties:
       Handler: "webcaptions.create_vtt"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Role: !GetAtt "captionsRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1701,13 +1769,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "webcaptions.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "webcaptions.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 300
       Environment:
         Variables:
@@ -1723,7 +1791,7 @@ Resources:
     Properties:
       Handler: "webcaptions.create_srt"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Role: !GetAtt "captionsRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1731,13 +1799,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "webcaptions.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "webcaptions.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 300
       Environment:
         Variables:
@@ -1753,7 +1821,7 @@ Resources:
     Properties:
       Handler: "webcaptions.create_vtt"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Role: !GetAtt "captionsRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1761,13 +1829,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "webcaptions.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "webcaptions.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 300
       Environment:
         Variables:
@@ -1785,7 +1853,7 @@ Resources:
     Properties:
       Handler: "start_translate.lambda_handler"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Role: !GetAtt "translateRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1793,13 +1861,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "start_translate.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "start_translate.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 300
       MemorySize: 256
       Environment:
@@ -1816,19 +1884,19 @@ Resources:
     Properties:
       Handler: "webcaptions.start_translate_webcaptions"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Role: !GetAtt "translateRole.Arn"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "webcaptions.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "webcaptions.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 300
       Environment:
         Variables:
@@ -1845,19 +1913,19 @@ Resources:
     Properties:
       Handler: "webcaptions.check_translate_webcaptions"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Role: !GetAtt "translateRole.Arn"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "webcaptions.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "webcaptions.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 300
       Environment:
         Variables:
@@ -1874,19 +1942,19 @@ Resources:
     Properties:
       Handler: "webcaptions.start_polly_webcaptions"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Role: !GetAtt "pollyRole.Arn"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "webcaptions.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "webcaptions.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 300
       Environment:
         Variables:
@@ -1902,19 +1970,19 @@ Resources:
     Properties:
       Handler: "webcaptions.check_polly_webcaptions"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Role: !GetAtt "pollyRole.Arn"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "webcaptions.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "webcaptions.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Timeout: 300
       Environment:
         Variables:
@@ -1932,7 +2000,7 @@ Resources:
     Properties:
       Handler: "start_polly.lambda_handler"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Role: !GetAtt "pollyRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1940,13 +2008,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "start_polly.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "start_polly.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Environment:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
@@ -1961,7 +2029,7 @@ Resources:
     Properties:
       Handler: "get_polly.lambda_handler"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Role: !GetAtt "pollyRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1969,13 +2037,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "get_polly.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "get_polly.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Environment:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"

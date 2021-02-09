@@ -80,9 +80,9 @@
       "Type": "String",
       "Description": "Arn of the MIE workflow queue"
     },
-    "MediaInsightsEnginePython37Layer": {
+    "MediaInsightsEnginePython38Layer": {
       "Type": "String",
-      "Description": "Arn of the MIE Python 3.7 lambda layer"
+      "Description": "Arn of the MIE Python 3.8 lambda layer"
     },
     "TracingConfigMode": {
       "Type": "String",
@@ -336,7 +336,7 @@
     },
     "WorkflowCustomResource": {
       "Properties": {
-        "Runtime": "python3.7",
+        "Runtime": "python3.8",
         "Environment": {
           "Variables": {
                 "botoConfig": {
@@ -391,7 +391,7 @@
         },
         "Layers": [
           {
-            "Ref": "MediaInsightsEnginePython37Layer"
+            "Ref": "MediaInsightsEnginePython38Layer"
             }
           ],
         "Tracing": {"Ref": "TracingConfigMode"},
@@ -400,7 +400,7 @@
     },
     "APIHandler": {
       "Properties": {
-        "Runtime": "python3.7",
+        "Runtime": "python3.8",
         "Environment": {
           "Variables": {
                 "botoConfig": {
@@ -459,7 +459,7 @@
         "Tracing": {"Ref": "TracingConfigMode"},
         "Layers": [
           {
-            "Ref": "MediaInsightsEnginePython37Layer"
+            "Ref": "MediaInsightsEnginePython38Layer"
             }
           ],
         "CodeUri": {"Bucket":  {"Ref": "DeploymentPackageBucket"}, "Key":  {"Ref": "DeploymentPackageKey"}}

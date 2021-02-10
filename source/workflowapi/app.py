@@ -1926,8 +1926,10 @@ def create_workflow_execution(trigger, workflow_execution):
     logger.info('create_workflow_execution workflow config: ' + str(workflow_execution))
     if "Input" in workflow_execution and "AssetId" in workflow_execution["Input"]:
         create_asset = False
-    else:
+    elif "Input" in workflow_execution and "Media" in workflow_execution["Input"]:
         create_asset = True
+    else:
+        raise BadRequestError('Input must contain either "AssetId" or "Media"')
 
     try:
         Name = workflow_execution["Name"]

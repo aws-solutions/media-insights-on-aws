@@ -66,18 +66,36 @@ Resources:
   MieHelperFunction:
     Type: AWS::Lambda::Function
     Properties:
+      Environment:
+        Variables:
+          SYSTEM_TABLE_NAME: !Ref SystemTable
+          DEFAULT_MAX_CONCURRENT_WORKFLOWS: !Ref MaxConcurrentWorkflows
       Code:
         ZipFile: |
           import string
-          import random
           import cfnresponse
+          import random
+          import boto3
+          import os
           def id_generator(size=6, chars=string.ascii_lowercase + string.digits):
-              return "".join(random.choices(chars, k=size))
+            return "".join(random.choices(chars, k=size))
+          def init_system_table():
+            DYNAMO_CLIENT = boto3.resource("dynamodb")
+            SYSTEM_TABLE_NAME = os.environ["SYSTEM_TABLE_NAME"]
+            DEFAULT_MAX_CONCURRENT_WORKFLOWS = int(os.environ["DEFAULT_MAX_CONCURRENT_WORKFLOWS"])
+            system_table = DYNAMO_CLIENT.Table(SYSTEM_TABLE_NAME)
+            config={"Name":"MaxConcurrentWorkflows", "Value":DEFAULT_MAX_CONCURRENT_WORKFLOWS}
+            return system_table.put_item(Item=config)
           def handler(event, context):
+            print("We got the following event:\n", event)
+            if event['ResourceProperties']['FunctionKey'] == 'get_short_uuid':
               response_data = {'Data': id_generator()}
               cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data, "CustomResourcePhysicalID")
+            elif event['ResourceProperties']['FunctionKey'] == 'init_system_table':
+              response_data = init_system_table()
+              cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data, "CustomResourcePhysicalID")
       Handler: index.handler
-      Runtime: python3.6
+      Runtime: python3.8
       Role: !GetAtt MieHelperExecutionRole.Arn
       Tags:
         - Key: "environment"
@@ -89,10 +107,20 @@ Resources:
       Action: 'lambda:InvokeFunction'
       FunctionName: !GetAtt MieHelperFunction.Arn
       Principal: 'cloudformation.amazonaws.com'
+
   GetShortUUID:
     Type: Custom::CustomResource
     Properties:
       ServiceToken: !GetAtt MieHelperFunction.Arn
+      FunctionKey: "get_short_uuid"
+
+  InitSystemTable:
+    Type: Custom::CustomResource
+    DependsOn:
+      - MediaInsightsDataplaneApiStack
+    Properties:
+      ServiceToken: !GetAtt MieHelperFunction.Arn
+      FunctionKey: "init_system_table"
 
   # Custom log group
   MieLogGroup:
@@ -122,6 +150,20 @@ Resources:
               - Effect: Allow
                 Action: ['logs:*']
                 Resource: 'arn:aws:logs:*:*:*'
+              - Effect: Allow
+                Action: ['dynamodb:PutItem']
+                Resource:
+                  - !Join [
+                    "",
+                    [
+                      "arn:aws:dynamodb:",
+                      Ref: "AWS::Region",
+                      ":",
+                      Ref: "AWS::AccountId",
+                      ":table/",
+                      Ref: "SystemTable",
+                    ]
+                  ]
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -866,6 +908,26 @@ Resources:
 
   # Lambda Layers:
 
+  MediaInsightsEnginePython38Layer:
+    Type: "AWS::Lambda::LayerVersion"
+    DeletionPolicy: Retain
+    Properties:
+      CompatibleRuntimes:
+        - python3.8
+      Content:
+        S3Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+            "media_insights_engine_lambda_layer_python3.8.zip",
+            ],
+          ]
+      Description: Boto3 and MediaInsightsEngineLambdaHelper packages for Python 3.8
+      LayerName: media-insights-engine-python38
+      LicenseInfo: Apache-2.0
+
   MediaInsightsEnginePython37Layer:
     Type: "AWS::Lambda::LayerVersion"
     DeletionPolicy: Retain
@@ -905,14 +967,6 @@ Resources:
       Description: Boto3 and MediaInsightsEngineLambdaHelper packages for Python 3.6
       LayerName: media-insights-engine-python36
       LicenseInfo: Apache-2.0
-
-  Boto3Python37LayerPermission:
-    Type: "AWS::Lambda::LayerVersionPermission"
-    DeletionPolicy: Retain
-    Properties:
-      Action: lambda:GetLayerVersion
-      LayerVersionArn: !Ref MediaInsightsEnginePython37Layer
-      Principal: !Ref AWS::AccountId
 
   # Services - Lambda
 
@@ -963,13 +1017,13 @@ Resources:
             ],
           ]
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
           - StageExecutionRole
           - Arn
-      Runtime: python3.7
+      Runtime: python3.8
       Timeout: 900
       ReservedConcurrentExecutions: 1
       DeadLetterConfig:
@@ -1013,13 +1067,13 @@ Resources:
             ],
           ]
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
           - OperationLambdaExecutionRole
           - Arn
-      Runtime: python3.7
+      Runtime: python3.8
       Timeout: 900
       ReservedConcurrentExecutions: 1
       DeadLetterConfig:
@@ -1092,13 +1146,13 @@ Resources:
             ],
           ]
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
           - OperationLambdaExecutionRole
           - Arn
-      Runtime: python3.7
+      Runtime: python3.8
       Timeout: 900
       Tags:
         - Key: "environment"
@@ -1129,13 +1183,13 @@ Resources:
             ],
           ]
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
           - OperationLambdaExecutionRole
           - Arn
-      Runtime: python3.7
+      Runtime: python3.8
       Timeout: 900
       Tags:
         - Key: "environment"
@@ -1146,7 +1200,7 @@ Resources:
     Properties:
       Handler: "operator_failed.lambda_handler"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Role: !GetAtt "operatorFailedRole.Arn"
       TracingConfig:
           Mode: "PassThrough"
@@ -1160,7 +1214,7 @@ Resources:
               "operator_failed.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1179,7 +1233,7 @@ Resources:
           WORKFLOW_TABLE_NAME: !Ref WorkflowTable
       Handler: app.start_wait_operation_lambda
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Code:
         S3Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
         S3Key:
@@ -1195,7 +1249,7 @@ Resources:
         Fn::GetAtt:
           - OperationLambdaExecutionRole
           - Arn
-      Runtime: python3.7
+      Runtime: python3.8
       Timeout: 900
       Tags:
         - Key: "environment"
@@ -1215,7 +1269,7 @@ Resources:
           WORKFLOW_TABLE_NAME: !Ref WorkflowTable
       Handler: app.check_wait_operation_lambda
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython38Layer"
       Code:
         S3Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
         S3Key:
@@ -1231,7 +1285,7 @@ Resources:
         Fn::GetAtt:
           - OperationLambdaExecutionRole
           - Arn
-      Runtime: python3.7
+      Runtime: python3.8
       Timeout: 900
       Tags:
         - Key: "environment"
@@ -1256,7 +1310,7 @@ Resources:
               "workflowstream.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.8"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1303,7 +1357,7 @@ Resources:
               "dataplaneapi.zip",
             ],
           ]
-        MediaInsightsEnginePython37Layer: !Ref MediaInsightsEnginePython37Layer
+        MediaInsightsEnginePython38Layer: !Ref MediaInsightsEnginePython38Layer
         FrameworkVersion: !FindInMap ["SourceCode", "General", "FrameworkVersion"]
 
   Analytics:
@@ -1359,7 +1413,7 @@ Resources:
         HistoryTableName: !Ref HistoryTable
         SystemTableName: !Ref SystemTable
         SqsQueueArn: !GetAtt StageExecutionQueue.Arn
-        MediaInsightsEnginePython37Layer: !Ref MediaInsightsEnginePython37Layer
+        MediaInsightsEnginePython38Layer: !Ref MediaInsightsEnginePython38Layer
         TracingConfigMode: !If [EnableTraceOnEntryPoints, "Active", "PassThrough"]
         CompleteStageLambdaArn:
           Fn::GetAtt:
@@ -1419,6 +1473,7 @@ Resources:
         DataPlaneEndpoint: !GetAtt MediaInsightsDataplaneApiStack.Outputs.APIHandlerName
         DataPlaneHandlerArn: !GetAtt MediaInsightsDataplaneApiStack.Outputs.APIHandlerArn
         DataPlaneBucket: !Ref Dataplane
+        MediaInsightsEnginePython38Layer: !Ref MediaInsightsEnginePython38Layer
         MediaInsightsEnginePython37Layer: !Ref MediaInsightsEnginePython37Layer
         MediaInsightsEnginePython36Layer: !Ref MediaInsightsEnginePython36Layer
         StartWaitOperationLambda: !GetAtt StartWaitOperationLambda.Arn
@@ -1453,7 +1508,7 @@ Resources:
             - MediaInsightsDataplaneApiStack
             - Outputs.APIHandlerName
         DataPlaneBucket: !Ref Dataplane
-        MediaInsightsEnginePython37Layer: !Ref MediaInsightsEnginePython37Layer
+        MediaInsightsEnginePython38Layer: !Ref MediaInsightsEnginePython38Layer
 
 Outputs:
   # TODO: Add outputs for rest api IDs of workflow/dataplane apis
@@ -1492,12 +1547,12 @@ Outputs:
     Value: !GetAtt MediaInsightsWorkflowApi.Outputs.RestAPIId
     Export:
       Name: !Join [":", [!Ref "AWS::StackName", WorkflowApiId]]
-  MediaInsightsEnginePython37Layer:
+  MediaInsightsEnginePython38Layer:
     Description: Lambda layer for Python libraries
-    Value: !Ref MediaInsightsEnginePython37Layer
+    Value: !Ref MediaInsightsEnginePython38Layer
     Export:
       Name:
-        !Join [":", [!Ref "AWS::StackName", MediaInsightsEnginePython37Layer]]
+        !Join [":", [!Ref "AWS::StackName", MediaInsightsEnginePython38Layer]]
   AnalyticsStreamArn:
     Description: Arn of the dataplane pipeline
     Value: !GetAtt Analytics.Outputs.analyticsStreamArn

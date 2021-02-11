@@ -64,14 +64,12 @@ mie_config = json.loads(os.environ['botoConfig'])
 config = config.Config(**mie_config)
 
 # DynamoDB
-DYNAMO_CLIENT = boto3.client("dynamodb", config=config)
-DYNAMO_RESOURCE = boto3.resource("dynamodb", config=config)
+DYNAMO_CLIENT = boto3.resource("dynamodb", config=config)
 
 # Step Functions
 SFN_CLIENT = boto3.client('stepfunctions', config=config)
 
 # Simple Queue Service
-SQS_RESOURCE = boto3.resource('sqs', config=config)
 SQS_CLIENT = boto3.client('sqs', config=config)
 
 # Lambda
@@ -79,11 +77,11 @@ LAMBDA_CLIENT = boto3.client("lambda", config=config)
 
 
 def list_workflow_executions_by_status(Status):
-    table = DYNAMO_RESOURCE.Table(WORKFLOW_EXECUTION_TABLE_NAME)
+    table = DYNAMO_CLIENT.Table(WORKFLOW_EXECUTION_TABLE_NAME)
     projection_expression = "Id, AssetId, CurrentStage, StateMachineExecutionArn, #workflow_status, Workflow.#workflow_name"
 
     response = table.query(
-        IndexName='WorkflowExecutionStatus', 
+        IndexName='WorkflowExecutionStatus',
         ExpressionAttributeNames={
             '#workflow_status': "Status",
             '#workflow_name': "Name"
@@ -94,7 +92,7 @@ def list_workflow_executions_by_status(Status):
         KeyConditionExpression='#workflow_status = :workflow_status',
         ProjectionExpression = projection_expression
         )
-    
+
     workflow_executions = response['Items']
     while 'LastEvaluatedKey' in response:
         response = table.query(ExclusiveStartKey=response['LastEvaluatedKey'])
@@ -104,7 +102,7 @@ def list_workflow_executions_by_status(Status):
 
 def workflow_scheduler_lambda(event, context):
 
-    execution_table = DYNAMO_RESOURCE.Table(WORKFLOW_EXECUTION_TABLE_NAME)
+    execution_table = DYNAMO_CLIENT.Table(WORKFLOW_EXECUTION_TABLE_NAME)
     arn = ""
     workflow_execution = {}
     MaxConcurrentWorkflows = DEFAULT_MAX_CONCURRENT_WORKFLOWS
@@ -114,7 +112,7 @@ def workflow_scheduler_lambda(event, context):
         logger.info(json.dumps(event))
 
         # Get the MaxConcurrent configruation parameter, if it is not set, use the default
-        system_table = DYNAMO_RESOURCE.Table(SYSTEM_TABLE_NAME)
+        system_table = DYNAMO_CLIENT.Table(SYSTEM_TABLE_NAME)
 
         # Check if any configuration has been added yet
         response = system_table.get_item(
@@ -124,14 +122,14 @@ def workflow_scheduler_lambda(event, context):
             ConsistentRead=True)
 
         if "Item" in response:
-            MaxConcurrentWorkflows = response["Item"]["Value"]
+            MaxConcurrentWorkflows = int(response["Item"]["Value"])
             logger.info("Got MaxConcurrentWorkflows = {}".format(response["Item"]["Value"]))
 
-        # Check if there are slots to run a workflow 
+        # Check if there are slots to run a workflow
         # FIXME - we really need consistent read here.  Index query is not consistent read
-        started_workflows = list_workflow_executions_by_status(awsmie.WORKFLOW_STATUS_STARTED) 
+        started_workflows = list_workflow_executions_by_status(awsmie.WORKFLOW_STATUS_STARTED)
         num_started_workflows = len(started_workflows)
-        
+
         if num_started_workflows >= MaxConcurrentWorkflows:
             logger.info("MaxConcurrentWorkflows has been reached {}/{} - nothing to do".format(num_started_workflows, MaxConcurrentWorkflows))
 
@@ -143,7 +141,7 @@ def workflow_scheduler_lambda(event, context):
                 capacity = min(int(MaxConcurrentWorkflows - num_started_workflows), 10)
 
                 logger.info("MaxConcurrentWorkflows has not been reached {}/{} - check if a workflow is available to run".format(num_started_workflows, MaxConcurrentWorkflows))
-                
+
                 # Check if there are workflows waiting to run on the STAGE_EXECUTION_QUEUE_URL
                 messages = SQS_CLIENT.receive_message(
                     QueueUrl=STAGE_EXECUTION_QUEUE_URL,
@@ -153,7 +151,7 @@ def workflow_scheduler_lambda(event, context):
                     for message in messages['Messages']: # 'Messages' is a list
                         # process the messages
                         logger.info(message['Body'])
-                        # next, we delete the message from the queue so no one else will process it again, 
+                        # next, we delete the message from the queue so no one else will process it again,
                         # once it is in our hands it is going run or fail, no reprocessing
                         # FIXME - we may want to delay deleting the message until complete_stage is called on the
                         # final stage so we can detect hung workflows and time them out.  For now, do the simple thing.
@@ -166,7 +164,7 @@ def workflow_scheduler_lambda(event, context):
                         # Update the workflow status now to indicate we have taken it off the queue
                         update_workflow_execution_status(workflow_execution["Id"], awsmie.WORKFLOW_STATUS_STARTED, "")
 
-                        # Resumed workflows state machines are already executing since they just paused 
+                        # Resumed workflows state machines are already executing since they just paused
                         # to wait for some external action
                         if queued_workflow_status != awsmie.WORKFLOW_STATUS_RESUMED:
                             # Kick off the state machine for the workflow
@@ -178,7 +176,7 @@ def workflow_scheduler_lambda(event, context):
 
                             workflow_execution["StateMachineExecutionArn"] = response["executionArn"]
 
-                            # Update the workflow with the state machine id 
+                            # Update the workflow with the state machine id
                             response = execution_table.update_item(
                                 Key={
                                     'Id': workflow_execution["Id"]
@@ -193,23 +191,23 @@ def workflow_scheduler_lambda(event, context):
                     logger.info('Queue is empty')
                     empty = True
 
-                started_workflows = list_workflow_executions_by_status(awsmie.WORKFLOW_STATUS_STARTED) 
+                started_workflows = list_workflow_executions_by_status(awsmie.WORKFLOW_STATUS_STARTED)
                 num_started_workflows = len(started_workflows)
-            
+
 
     except Exception as e:
 
         logger.info("Exception in scheduler {}".format(e))
         if "Id" in workflow_execution:
-            
-            update_workflow_execution_status(workflow_execution["Id"], awsmie.WORKFLOW_STATUS_ERROR, "Exception in workflow_scheduler_lambda {}".format(e))
-        raise 
 
-    return arn 
+            update_workflow_execution_status(workflow_execution["Id"], awsmie.WORKFLOW_STATUS_ERROR, "Exception in workflow_scheduler_lambda {}".format(e))
+        raise
+
+    return arn
 
 def filter_operation_lambda(event, context):
     '''
-    event is 
+    event is
     - Operation input
     - Operation configuration
 
@@ -231,15 +229,15 @@ def filter_operation_lambda(event, context):
 
     else:
 
-        operation_object.update_workflow_status(awsmie.OPERATION_STATUS_STARTED)       
-    
+        operation_object.update_workflow_status(awsmie.OPERATION_STATUS_STARTED)
+
     return operation_object.return_output_object()
 
 def start_wait_operation_lambda(event, context):
     '''
     Pause a workflow to wait for external processing
 
-    event is 
+    event is
     - Operation input
     - Operation configuration
 
@@ -264,7 +262,7 @@ def check_wait_operation_lambda(event, context):
     '''
     Check if a workflow is still in a Waiting state.
 
-    event is 
+    event is
     - Operation input
     - Operation configuration
 
@@ -275,7 +273,7 @@ def check_wait_operation_lambda(event, context):
     logger.info(json.dumps(event))
 
     operator_object = MediaInsightsOperationHelper(event)
-    execution_table = DYNAMO_RESOURCE.Table(WORKFLOW_EXECUTION_TABLE_NAME)
+    execution_table = DYNAMO_CLIENT.Table(WORKFLOW_EXECUTION_TABLE_NAME)
 
     response = execution_table.get_item(
             Key={
@@ -320,8 +318,8 @@ def complete_stage_execution_lambda(event, context):
 def complete_stage_execution(trigger, stage_name, status, outputs, workflow_execution_id):
 
     try:
-        
-        execution_table = DYNAMO_RESOURCE.Table(WORKFLOW_EXECUTION_TABLE_NAME)
+
+        execution_table = DYNAMO_CLIENT.Table(WORKFLOW_EXECUTION_TABLE_NAME)
         # lookup the workflow
         response = execution_table.get_item(
             Key={
@@ -415,9 +413,9 @@ def complete_stage_execution(trigger, stage_name, status, outputs, workflow_exec
             logger.info("Exception while rolling up stage status {}".format(e))
             update_workflow_execution_status(workflow_execution["Id"], awsmie.WORKFLOW_STATUS_ERROR, "Exception while rolling up stage status {}".format(e))
             status = awsmie.STAGE_STATUS_ERROR
-            
+
             raise ValueError("Error rolling up stage status: %s" % e)
-            
+
         logger.info("Updating the workflow status in dynamodb: current stage {}, globals {}".format(workflow_execution["Workflow"]["Stages"][stage_name],workflow_execution["Globals"]))
         # Save the new stage and workflow status
         response = execution_table.update_item(
@@ -447,7 +445,7 @@ def complete_stage_execution(trigger, stage_name, status, outputs, workflow_exec
 
     except Exception as e:
         logger.info("Exception {}".format(e))
-        
+
         # Need a try/catch here? Try to save the status
         execution_table.put_item(Item=workflow_execution)
         update_workflow_execution_status(workflow_execution["Id"], awsmie.WORKFLOW_STATUS_ERROR, "Exception while rolling up stage status {}".format(e))
@@ -457,7 +455,7 @@ def complete_stage_execution(trigger, stage_name, status, outputs, workflow_exec
         raise ValueError(
             "Exception: '%s'" % e)
 
-    # If it is not the end of the workflow, pass the next stage out to be consumed by the next stage.  
+    # If it is not the end of the workflow, pass the next stage out to be consumed by the next stage.
     if workflow_execution["CurrentStage"] == "End":
         return {}
     else:
@@ -469,7 +467,7 @@ def start_next_stage_execution(trigger, stage_name, workflow_execution):
     try:
         logger.info("START NEXT STAGE: stage_name {}".format(stage_name))
 
-        execution_table = DYNAMO_RESOURCE.Table(WORKFLOW_EXECUTION_TABLE_NAME)
+        execution_table = DYNAMO_CLIENT.Table(WORKFLOW_EXECUTION_TABLE_NAME)
 
         current_stage = stage_name
 
@@ -482,8 +480,8 @@ def start_next_stage_execution(trigger, stage_name, workflow_execution):
                 workflow_execution["CurrentStage"] = "End"
                 workflow_execution["Status"] = workflow_execution["Workflow"]["Stages"][current_stage]["Status"]
 
-            
-            # Save the new stage 
+
+            # Save the new stage
             response = execution_table.update_item(
                 Key={
                     'Id': workflow_execution["Id"]
@@ -493,12 +491,12 @@ def start_next_stage_execution(trigger, stage_name, workflow_execution):
                     ':current_stage': "End"
                 }
             )
-            
+
             update_workflow_execution_status(workflow_execution["Id"], workflow_execution["Status"], message)
 
         elif workflow_execution["Workflow"]["Stages"][current_stage]["Status"] == "Error":
             workflow_execution["Status"] = workflow_execution["Workflow"]["Stages"][current_stage]["Status"]
-            
+
             # Save the new stage and workflow status
             response = execution_table.update_item(
                 Key={
@@ -545,11 +543,11 @@ def start_next_stage_execution(trigger, stage_name, workflow_execution):
                     ExpressionAttributeValues={
                         ':stage': workflow_execution["Workflow"]["Stages"][current_stage],
                         ':current_stage': current_stage
-                        
+
 
                     }
                 )
-                
+
                 update_workflow_execution_status(workflow_execution["Id"], workflow_execution["Status"], message)
                 logger.info(json.dumps(workitem))
 
@@ -573,13 +571,13 @@ def start_next_stage_execution(trigger, stage_name, workflow_execution):
         # raise ChaliceViewError(
         raise ValueError(
             "Exception: '%s'" % e)
-        
+
 
     logger.info("workflow_execution: {}".format(
         json.dumps(workflow_execution)))
     return workflow_execution
 
-    
+
 def update_workflow_execution_status(id, status, message):
     """
     Get the workflow execution by id from dyanamo and assign to this object
@@ -588,8 +586,8 @@ def update_workflow_execution_status(id, status, message):
 
     """
     logger.info("Update workflow execution {} set status = {}".format(id, status))
-    execution_table = DYNAMO_RESOURCE.Table(WORKFLOW_EXECUTION_TABLE_NAME)
-    
+    execution_table = DYNAMO_CLIENT.Table(WORKFLOW_EXECUTION_TABLE_NAME)
+
     if status == awsmie.WORKFLOW_STATUS_ERROR:
         response = execution_table.update_item(
             Key={
@@ -628,15 +626,15 @@ def update_workflow_execution_status(id, status, message):
 
 # Find all of the execution error events for a state machine execution
 def get_execution_errors(arn):
-    
+
     try:
-        
+
         executions = []
         paginator = SFN_CLIENT.get_paginator('get_execution_history')
 
         # return all the history
-        page_iterator = paginator.paginate(executionArn=arn, 
-                maxResults= 20, 
+        page_iterator = paginator.paginate(executionArn=arn,
+                maxResults= 20,
                 reverseOrder=True)
 
         # return only the history with exceptions
@@ -647,13 +645,13 @@ def get_execution_errors(arn):
                   executions.append(event)
 
         return executions
-    
+
     except:
         logger.error("Unable to retrieve execution history for state machine termination")
         raise
 
 # Find the earliest error message in the executions and retrieve additonal info if available
-def parse_execution_error(arn, executions, status): 
+def parse_execution_error(arn, executions, status):
 
     message = "Caught Step Function Execution Status Change event for execution: "+ arn +", status:"+ status
 
@@ -662,37 +660,37 @@ def parse_execution_error(arn, executions, status):
       for key, value in execution.items():
         if (any(sub in key for sub in ['Failed', 'Aborted', 'TimedOut'])):
           if "cause" in value:
-              message = message+", cause: "+value["cause"] 
+              message = message+", cause: "+value["cause"]
               break
 
     return message
 
-# This lambda is invoked for Step Functions Execution Status Change events 
+# This lambda is invoked for Step Functions Execution Status Change events
 # that contain the status [ERROR, ABORTED, TIME_OUT].  Failures that occur
-# within the steps of a workflow state machine are handled by the 
-# OperotorFailed lambda function, but if the state machine service throws 
-# an exception that causes the state machine to terminate immediately, 
+# within the steps of a workflow state machine are handled by the
+# OperotorFailed lambda function, but if the state machine service throws
+# an exception that causes the state machine to terminate immediately,
 # it can't be handled within the state machine because the execution
 # is haulted.
-# 
-# Info on events handled here: 
-#     https://docs.aws.amazon.com/step-functions/latest/dg/cw-events.html 
+#
+# Info on events handled here:
+#     https://docs.aws.amazon.com/step-functions/latest/dg/cw-events.html
 #
 # Propagate the error and cause to the workflow control plane to close off
 # the workflow execution
-def workflow_error_handler_lambda (event, context): 
- 
-  try: 
-    
-    logger.info("workflow_error_handler_lambda: {}".format(json.dumps(event))) 
-    
+def workflow_error_handler_lambda (event, context):
+
+  try:
+
+    logger.info("workflow_error_handler_lambda: {}".format(json.dumps(event)))
+
     if not ShortUUID:
-        raise Exception('ShortUUID is not set in lambda environment.') 
-        
+        raise Exception('ShortUUID is not set in lambda environment.')
+
     logger.info("Process step function error event for stack with ShortUUID {}".format(ShortUUID))
-    
-    if not ("detail" in event): 
-        raise Exception('event.detail is missing.') 
+
+    if not ("detail" in event):
+        raise Exception('event.detail is missing.')
     if not "name" in event["detail"]:
         raise Exception('name is missing in event.detail.')
     if not "status" in event["detail"]:
@@ -707,27 +705,26 @@ def workflow_error_handler_lambda (event, context):
 
     executions = get_execution_errors(event["detail"]["executionArn"])
 
-    message = parse_execution_error(event["detail"]["executionArn"], executions, event["detail"]["status"]) 
- 
-    #input = event.detail.input 
+    message = parse_execution_error(event["detail"]["executionArn"], executions, event["detail"]["status"])
+
+    #input = event.detail.input
     stateMachineExecution = event["detail"]["executionArn"]
 
-    # Check the currently active workflows for this execution arn and set the 
-    # status to error if found.  
-    started_workflows = list_workflow_executions_by_status(awsmie.WORKFLOW_STATUS_STARTED) 
+    # Check the currently active workflows for this execution arn and set the
+    # status to error if found.
+    started_workflows = list_workflow_executions_by_status(awsmie.WORKFLOW_STATUS_STARTED)
     for workflow in started_workflows:
         if workflow["StateMachineExecutionArn"] == event["detail"]["executionArn"]:
             update_workflow_execution_status(workflow["Id"], awsmie.WORKFLOW_STATUS_ERROR, message)
- 
-    response = {  
-      "stateMachineExecution": stateMachineExecution, 
-      "errorMessage": message 
-    } 
+
+    response = {
+      "stateMachineExecution": stateMachineExecution,
+      "errorMessage": message
+    }
 
     logger.info("workflow_error_handler_lambda caught error: {}".format(json.dumps(response)))
- 
+
     return response
   except Exception as e:
     logger.error("Unable to handle workflow step function error: {}".format(e))
     raise(e)
- 

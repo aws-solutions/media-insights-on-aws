@@ -39,7 +39,7 @@ class WebCaptions:
         self.operator_object = operator_object
 
         try:
-            self.transcribe_operator_name = "Transcribe"
+            self.transcribe_operator_name = "TranscribeVideo"
             self.workflow_id = operator_object.workflow_execution_id
             self.asset_id = operator_object.asset_id
             self.marker = "<span>"
@@ -492,7 +492,7 @@ def web_captions(event, context):
 
     # Save the the original Transcribe generated captions to compare to any ground truth modifications
     # made later so we can calculate quality metrics of the machine translation
-    webcaptions_object.PutWebCaptions(webcaptions, source="Transcribe")
+    webcaptions_object.PutWebCaptions(webcaptions, source="TranscribeVideo")
 
     # if a vtt file was input, use that as the most recent version of the webcaptions file
     if webcaptions_object.existing_subtitles:

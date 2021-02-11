@@ -66,6 +66,18 @@ def test_workflow_execution(workflow_api, dataplane_api, stack_resources, testin
         }
     }
 
+    # clean up previously incomplete tests
+    print("Cleaning up previously incomplete tests")
+
+    delete_preprocess_stage_request = workflow_api.delete_stage_request(test_preprocess_stage["Name"])
+    delete_video_stage_request = workflow_api.delete_stage_request(test_video_stage["Name"])
+    delete_audio_stage_request = workflow_api.delete_stage_request(test_audio_stage["Name"])
+    delete_text_stage_request = workflow_api.delete_stage_request(test_text_stage["Name"])
+    if workflow_api.get_workflow_request(test_workflow["Name"]).status_code == 200:
+        workflow_api.delete_workflow_request(test_workflow["Name"])
+        # Wait for the workflow to delete. It can take several seconds.
+        time.sleep(30)
+
     # create stages
 
     preprocess_stage_request = workflow_api.create_stage_request(test_preprocess_stage)

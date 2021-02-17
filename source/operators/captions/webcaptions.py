@@ -387,7 +387,7 @@ class WebCaptions:
                     WebCaptionsError="Unable to store srt captions file {e}".format(e=response))
                 raise MasExecutionError(self.operator_object.return_output_object())
 
-    def TranslateWebCaptions(self, inputCaptions, sourceLanguageCode, targetLanguageCodes, terminology_names=[]):
+    def TranslateWebCaptions(self, inputCaptions, sourceLanguageCode, targetLanguageCodes, terminology_names=[], parallel_data_names=[]):
 
         marker = self.marker
 
@@ -452,6 +452,21 @@ class WebCaptions:
                     else:
                         print("Using custom terminology {}".format(terminology_name))
 
+                parallel_data_name = []
+                if len(parallel_data_names) > 0:
+                    # Find a terminology in the list of custom terminologies
+                    # that defines translations for targetLanguageCode.
+                    # If there happens to be more than one terminology matching targetLanguageCode
+                    # then just use the first one in the list.
+                    for item in parallel_data_names:
+                        if targetLanguageCode in item['TargetLanguageCodes']:
+                            parallel_data_name.append(item['Name'])
+                            break
+                    if len(parallel_data_name) == 0:
+                        print("No parallel data specified.")
+                    else:
+                        print("Using parallel data_names {}".format(parallel_data_name))
+
                 # Save the delimited transcript text to S3
                 response = translate_client.start_text_translation_job(
                     JobName=job_name,
@@ -465,7 +480,8 @@ class WebCaptions:
                     DataAccessRoleArn=translate_role,
                     SourceLanguageCode=sourceLanguageCode,
                     TargetLanguageCodes=singletonTargetList,
-                    TerminologyNames=terminology_name
+                    TerminologyNames=terminology_name,
+                    ParallelDataNames=parallel_data_name
                 )
                 jobinfo = {
                     "JobId": response["JobId"],
@@ -589,17 +605,21 @@ def start_translate_webcaptions(event, context):
         operator_object.update_workflow_status("Error")
         operator_object.add_workflow_metadata(TranslateError="Language codes are not defined")
         raise MasExecutionError(operator_object.return_output_object())
-    try:
-        terminology_names = json.loads(operator_object.configuration["TerminologyNames"].replace("'", '"'))['JsonList']
+    try: 
+        terminology_names = operator_object.configuration["TerminologyNames"]
     except KeyError:
         terminology_names = []
+    try: 
+        parallel_data_names = operator_object.configuration["ParallelDataNames"]
+    except KeyError:
+        parallel_data_names = []
 
     #webcaptions = get_webcaptions(operator_object, source_lang)
     webcaptions = webcaptions_object.GetWebCaptions(source_lang)
 
     # Translate takes a list of target languages, but it only allow one item in the list.  Too bad
     # life would be so much easier if it truely allowed many targets.
-    webcaptions_object.TranslateWebCaptions(webcaptions, source_lang, target_langs, terminology_names)
+    webcaptions_object.TranslateWebCaptions(webcaptions, source_lang, target_langs, terminology_names, parallel_data_names)
 
     return operator_object.return_output_object()
 
@@ -825,8 +845,16 @@ def start_polly_webcaptions (event, context):
             else:
                 # just take the fisrt voice in the list.  Maybe later we can extend to choose voice based on other criteria such
                 # as gender
-                voice_id = response["Voices"][0]["Id"]
-                caption["VoiceId"] = voice_id
+                if len(response["Voices"]) > 0 :
+                    voice_id = response["Voices"][0]["Id"]
+                    caption["VoiceId"] = voice_id
+                elif language_code == "hi-IN":
+                    # FIXME: Hindi is supported but polly.describe_voices() doesn't return any voices 
+                    voice_id = "Aditi"
+                    caption["VoiceId"] = voice_id
+                else:
+                    operator_object.add_workflow_metadata(PollyCollectionError="Unable to get a valid Polly voice for language: {code}".format(code=language_code))
+                    raise MasExecutionError(operator_object.return_output_object())
 
             caption["PollyAudio"] = {}
             caption["PollyAudio"]["S3Key"] = 'private/assets/' + operator_object.asset_id + "/workflows/" + operator_object.workflow_execution_id + "/" + "audio_only" + "_" + caption["TargetLanguageCode"]

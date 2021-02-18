@@ -454,9 +454,9 @@ class WebCaptions:
 
                 parallel_data_name = []
                 if len(parallel_data_names) > 0:
-                    # Find a terminology in the list of custom terminologies
+                    # Find a parallel data set in the list of 
                     # that defines translations for targetLanguageCode.
-                    # If there happens to be more than one terminology matching targetLanguageCode
+                    # If there happens to be more than one  matching targetLanguageCode
                     # then just use the first one in the list.
                     for item in parallel_data_names:
                         if targetLanguageCode in item['TargetLanguageCodes']:

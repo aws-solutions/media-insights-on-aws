@@ -2591,7 +2591,7 @@ def create_vocabulary():
 
 @app.route('/service/translate/get_terminology', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
 def get_terminology():
-    """ Get a link to the CSV formatted description for an Amazon Translate terminology.
+    """ Get a link to the CSV formatted description for an Amazon Translate parallel data.
 
     Body:
 
@@ -2659,7 +2659,7 @@ def download_terminology():
 
 @app.route('/service/translate/list_terminologies', cors=True, methods=['GET'], authorizer=authorizer)
 def list_terminologies():
-    """ Get the list of available Amazon Translate custom terminologies for this region
+    """ Get the list of available Amazon Translate Terminologies for this region
 
     Returns:
         This is a proxy for boto3 get_terminology and returns the output from that SDK method.  
@@ -2750,6 +2750,171 @@ def create_terminology():
     )
     response['TerminologyProperties']['CreatedAt'] = response['TerminologyProperties']['CreatedAt'].isoformat()
     response['TerminologyProperties']['LastUpdatedAt'] = response['TerminologyProperties']['LastUpdatedAt'].isoformat()
+    return response
+
+# ===== ACT
+@app.route('/service/translate/get_parallel_data', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
+def get_parallel_data():
+    """ Get a link to the CSV formatted description for an Amazon Translate Parallel Data Set.
+
+    Body:
+
+    .. code-block:: python
+
+        {
+            'parallel_data_name'='string'
+        }
+
+    Returns:
+        This is a proxy for boto3 get_parallel_data and returns the output from that SDK method.  
+        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/translate.html#Translate.Client.get_parallel_data>`_
+
+    Raises:
+        See the boto3 documentation for details 
+        500: ChaliceViewError - internal server error
+    """
+    print('get_parallel_data request: '+app.current_request.raw_body.decode())
+    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
+    parallel_data_name = json.loads(app.current_request.raw_body.decode())['parallel_data_name']
+    response = translate_client.get_parallel_data(Name=parallel_data_name, parallel_dataDataFormat='CSV')
+    # Remove response metadata since we don't need it
+    if 'RespnseMetadata' in response:
+        del response['ResponseMetadata']
+    # Convert time field to a format that is JSON serializable
+    response['TerminologyProperties']['CreatedAt'] = response['TerminologyProperties']['CreatedAt'].isoformat()
+    response['TerminologyProperties']['LastUpdatedAt'] = response['TerminologyProperties']['LastUpdatedAt'].isoformat()
+    return response
+
+
+@app.route('/service/translate/download_parallel_data', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
+def download_parallel_data():
+    """ Get the CSV formated contents of an Amazon Translate Parallel Data Set.
+
+    Body:
+
+    .. code-block:: python
+
+        {
+            'parallel_data_name'='string'
+        }
+
+
+    Returns:
+        A string contining the CSV formatted Amazon Transcribe parallel_data
+
+        .. code-block:: python
+
+            {
+                'parallel_data_csv': string  
+            }
+
+    Raises:
+        See the boto3 documentation for details
+        500: ChaliceViewError - internal server error
+    """
+    # This function returns the specified parallel_data in CSV format, wrapped in a JSON formatted response.
+    print('download_parallel_data request: '+app.current_request.raw_body.decode())
+    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
+    parallel_data_name = json.loads(app.current_request.raw_body.decode())['parallel_data_name']
+    url = translate_client.get_parallel_data(Name=parallel_data_name, ParallelDataFormat='CSV')['ParallelDataLocation']['Location']
+    import urllib.request
+    parallel_data_csv = urllib.request.urlopen(url).read().decode("utf-8")
+    return {"parallel_data_csv": parallel_data_csv}
+
+
+@app.route('/service/translate/list_parallel_data', cors=True, methods=['GET'], authorizer=authorizer)
+def list_parallel_data():
+    """ Get the list of available Amazon Translate Parallel Data Sets for this region
+
+    Returns:
+        This is a proxy for boto3 get_parallel_data and returns the output from that SDK method.  
+        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/translate.html#Translate.Client.list_parallel_data>`_
+
+    Raises:
+        See the boto3 documentation for details 
+        500: Internal server error
+    """
+    # This function returns a list of saved parallel_data
+    print('list_parallel_data request: '+app.current_request.raw_body.decode())
+    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
+    response = translate_client.list_parallel_data(MaxResults=100)
+    parallel_data = response['ParallelDataPropertiesList']
+    while ('NextToken' in response):
+        response = translate_client.list_parallel_data(MaxResults=100, NextToken=response['NextToken'])
+        parallel_data = parallel_data + response['ParallelDataPropertiesList']
+    # Convert time field to a format that is JSON serializable
+    for item in parallel_data:
+        item['CreatedAt'] = item['CreatedAt'].isoformat()
+        item['LastUpdatedAt'] = item['LastUpdatedAt'].isoformat()
+    return response
+
+
+@app.route('/service/translate/delete_parallel_data', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
+def delete_parallel_data():
+    """ Delete an Amazon Translate Parallel Data
+
+    Body:
+
+    .. code-block:: python
+
+        {
+            'parallel_data_name': 'string'
+        }
+
+
+    Returns:
+
+        This is a proxy for boto3 delete_parallel_data and returns the output from that SDK method.  
+        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/translate.html#Translate.Client.delete_parallel_data>`_
+
+
+    Raises:
+        See the boto3 documentation for details 
+        500: ChaliceViewError - internal server error
+    """
+    # Delete the specified parallel_data if it exists
+    print('delete_parallel_data request: '+app.current_request.raw_body.decode())
+    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
+    parallel_data_name = json.loads(app.current_request.raw_body.decode())['parallel_data_name']
+    response = translate_client.delete_parallel_data(Name=parallel_data_name)
+    return response
+
+
+@app.route('/service/translate/create_parallel_data', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
+def create_parallel_data():
+    """ Create an Amazon Translate Parallel Data.  If the parallel_data already exists, overwrite the parallel data
+        with this new content.
+
+    Body:
+
+    .. code-block:: python
+
+        {
+            'parallel_data_name'='string',
+            'parallel_data_csv='string'
+        }
+
+
+    Returns:
+        This is a proxy for boto3 create_vocabulary and returns the output from that SDK method.  
+        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/translate.html#TranslateService.Client.create_parallel_data>`_
+
+    Raises:
+        See the boto3 documentation for details
+        500: ChaliceViewError - internal server error
+    """
+    # Save the input parallel_data to a new parallel data
+    print('create_parallel_data request: '+app.current_request.raw_body.decode())
+    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
+    parallel_data_name = json.loads(app.current_request.raw_body.decode())['parallel_data_name']
+    parallel_data_csv = json.loads(app.current_request.raw_body.decode())['parallel_data_csv']
+    response = translate_client.import_parallel_data(
+        Name=parallel_data_name,
+        MergeStrategy='OVERWRITE',
+        ParallelData={'File': parallel_data_csv, 'Format':'CSV'}
+    )
+    response['ParallelDataProperties']['CreatedAt'] = response['ParallelDataProperties']['CreatedAt'].isoformat()
+    response['ParallelDataProperties']['LastUpdatedAt'] = response['ParallelDataProperties']['LastUpdatedAt'].isoformat()
     return response
 
 # ================================================================================================

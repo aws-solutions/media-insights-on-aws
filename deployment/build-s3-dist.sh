@@ -299,7 +299,6 @@ echo "--------------------------------------------------------------------------
 echo "Preparing template files:"
 cp "$source_dir/operators/operator-library.yaml" "$global_dist_dir/media-insights-operator-library.template"
 cp "$build_dir/media-insights-stack.yaml" "$global_dist_dir/media-insights-stack.template"
-cp "$build_dir/string.yaml" "$global_dist_dir/string.template"
 cp "$build_dir/media-insights-test-operations-stack.yaml" "$global_dist_dir/media-insights-test-operations-stack.template"
 cp "$build_dir/media-insights-dataplane-streaming-stack.template" "$global_dist_dir/media-insights-dataplane-streaming-stack.template"
 find "$global_dist_dir"

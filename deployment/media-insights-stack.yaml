@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Media Insights Engine - Base AWS CloudFormation template that provisions the core Media Insights Engine services and provides parameters for enabling additional functionality.
+Description: (SO0163) - media-insights-engine - v1.0.0.
 
 Parameters:
   DeployTestResources:

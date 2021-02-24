@@ -16,13 +16,11 @@ Parameters:
     AllowedValues:
       - Yes
       - No
-
   MaxConcurrentWorkflows:
     Type: Number
     Description: Maximum number of workflows to run concurrently.  When the maximum is reached, additional workflows are added to a wait queue.
     Default: 5
     MinValue: 1
-
   EnableXrayTrace:
     Description: Enable Active Xray tracing on all entry points to the stack
     Type: String
@@ -51,6 +49,7 @@ Conditions:
   DeployTestResourcesCondition: !Equals [!Ref DeployTestResources, Yes]
   DeployAnalyticsPipelineCondition: !Equals [!Ref DeployAnalyticsPipeline, Yes]
   EnableTraceOnEntryPoints: !Equals [!Ref EnableXrayTrace, Yes]
+  Metrics: !Equals [ !FindInMap [AnonymousData,SendAnonymousData,Data], Yes]
 
 Mappings:
   SourceCode:
@@ -60,6 +59,9 @@ Mappings:
       CodeKeyPrefix: "media_insights_engine/%%VERSION%%"
       TemplateKeyPrefix: "media_insights_engine/%%VERSION%%"
       FrameworkVersion: "%%VERSION%%"
+  AnonymousData:
+    SendAnonymousData:
+      Data: Yes
 
 Resources:
   # Helper function - create a short UUID to avoid name conflicts
@@ -1509,6 +1511,71 @@ Resources:
             - Outputs.APIHandlerName
         DataPlaneBucket: !Ref Dataplane
         MediaInsightsEnginePython38Layer: !Ref MediaInsightsEnginePython38Layer
+
+  AnonymousDataCustomResourceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+      Policies:
+        -
+          PolicyName: !Sub "${AWS::StackName}-anonymous-data-logger"
+          PolicyDocument:
+            Statement:
+              -
+                Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - !Join ["", ["arn:aws:logs:", Ref: "AWS::Region", ":", Ref: "AWS::AccountId", ":log-group:/aws/lambda/*"]]
+              -
+                Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                Resource:
+                  - !Join ["", ["arn:aws:ssm:", Ref: "AWS::Region", ":", Ref: "AWS::AccountId", ":parameter/*"]]
+
+  AnonymousDataCustomResource:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-anonymous-data
+      Description: Used to send anonymous data
+      Handler: anonymous-data-logger.handler
+      Role: !GetAtt AnonymousDataCustomResourceRole.Arn
+      Code:
+        S3Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
+        S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"], "anonymous-data-logger.zip"]]
+      Runtime:  python3.8
+      Timeout: 180
+
+  # Metrics
+  AnonymousDataUuid:
+    Condition: Metrics
+    Type: "Custom::UUID"
+    Properties:
+      ServiceToken: !GetAtt AnonymousDataCustomResource.Arn
+      Resource: UUID
+
+  AnonymousMetric:
+    Condition: Metrics
+    Type: "Custom::AnonymousMetric"
+    Properties:
+      ServiceToken: !GetAtt AnonymousDataCustomResource.Arn
+      Resource: AnonymousMetric
+      SolutionId: "SO0163"
+      UUID: !GetAtt AnonymousDataUuid.UUID
+      Version: "1.0"
 
 Outputs:
   # TODO: Add outputs for rest api IDs of workflow/dataplane apis

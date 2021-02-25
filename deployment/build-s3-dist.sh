@@ -185,6 +185,7 @@ if [ $? -ne 0 ]; then
 fi
 python3 -m venv "$VENV"
 source "$VENV"/bin/activate
+pip3 install wheel
 pip3 install --quiet boto3 chalice docopt pyyaml jsonschema aws_xray_sdk
 export PYTHONPATH="$PYTHONPATH:$source_dir/lib/MediaInsightsEngineLambdaHelper/"
 if [ $? -ne 0 ]; then

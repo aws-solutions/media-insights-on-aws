@@ -1527,6 +1527,11 @@ Outputs:
     Value: !GetAtt MediaInsightsDataplaneApiStack.Outputs.EndpointURL
     Export:
       Name: !Join [":", [!Ref "AWS::StackName", DataplaneApiEndpoint]]
+  DataPlaneHandlerArn: 
+    Description: API Handler Lambda ARN for dataplane.  
+    Value: !GetAtt MediaInsightsDataplaneApiStack.Outputs.APIHandlerArn
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", DataPlaneHandlerArn]]
   DataplaneApiRestID:
     Description: REST API ID for dataplane API
     Value: !GetAtt MediaInsightsDataplaneApiStack.Outputs.RestAPIId

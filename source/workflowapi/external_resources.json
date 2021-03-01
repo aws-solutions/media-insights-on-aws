@@ -326,6 +326,7 @@
                   {
                       "Effect": "Allow",
                       "Action": [
+                        "iam:ListRolePolicies",
                         "iam:PutRolePolicy",
                         "iam:DeleteRolePolicy"
                       ],

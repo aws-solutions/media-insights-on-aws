@@ -28,6 +28,13 @@ Parameters:
     AllowedValues:
       - Yes
       - No
+  SendAnonymousData:
+    Description: Send anonymous data about MIE performance to AWS to help improve the quality of this solution.
+    Type: String
+    Default: Yes
+    AllowedValues:
+      - Yes
+      - No
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -49,7 +56,7 @@ Conditions:
   DeployTestResourcesCondition: !Equals [!Ref DeployTestResources, Yes]
   DeployAnalyticsPipelineCondition: !Equals [!Ref DeployAnalyticsPipeline, Yes]
   EnableTraceOnEntryPoints: !Equals [!Ref EnableXrayTrace, Yes]
-  Metrics: !Equals [ !FindInMap [AnonymousData,SendAnonymousData,Data], Yes]
+  EnableAnonymousData: !Equals [ !Ref SendAnonymousData, Yes]
 
 Mappings:
   SourceCode:
@@ -59,9 +66,6 @@ Mappings:
       CodeKeyPrefix: "media_insights_engine/%%VERSION%%"
       TemplateKeyPrefix: "media_insights_engine/%%VERSION%%"
       FrameworkVersion: "%%VERSION%%"
-  AnonymousData:
-    SendAnonymousData:
-      Data: Yes
 
 Resources:
   # Helper function - create a short UUID to avoid name conflicts
@@ -1559,23 +1563,23 @@ Resources:
       Runtime:  python3.8
       Timeout: 180
 
-  # Metrics
+  # SendAnonymousData
   AnonymousDataUuid:
-    Condition: Metrics
+    Condition: EnableAnonymousData
     Type: "Custom::UUID"
     Properties:
       ServiceToken: !GetAtt AnonymousDataCustomResource.Arn
       Resource: UUID
 
   AnonymousMetric:
-    Condition: Metrics
+    Condition: EnableAnonymousData
     Type: "Custom::AnonymousMetric"
     Properties:
       ServiceToken: !GetAtt AnonymousDataCustomResource.Arn
       Resource: AnonymousMetric
       SolutionId: "SO0163"
       UUID: !GetAtt AnonymousDataUuid.UUID
-      Version: "1.0"
+      Version: !FindInMap ["SourceCode", "General", "FrameworkVersion"]
 
 Outputs:
   # TODO: Add outputs for rest api IDs of workflow/dataplane apis

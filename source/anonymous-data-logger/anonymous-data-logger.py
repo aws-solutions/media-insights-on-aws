@@ -14,22 +14,32 @@
 #  express or implied. See the License for the specific language governing   #
 #  permissions and limitations under the License.                            #
 ##############################################################################
+#
+# PURPOSE:
+# This function sends anonymous performance data to the AWS
+# Solutions metrics API. This information is anonymous and helps improve the
+# quality of the solution.
+#
+##############################################################################
 
-import json
-import urllib
-import boto3
 import uuid
-import logging
 import lib.cfnresponse as cfn
 import lib.metrics as Metrics
 
 def handler(event, context):
-
-    #Each resource returns a promise with a json object to return cloudformation.
+    print("We got this event:\n", event)
+    # Each resource returns a promise with a json object to return cloudformation.
     try:
         request = event['RequestType']
         resource = event['ResourceProperties']['Resource']
         config = event['ResourceProperties']
+        # Remove ServiceToken (lambda arn) to avoid sending AccountId
+        config.pop("ServiceToken", None)
+        config.pop("Resource", None)
+        # Add some useful fields related to stack change
+        config["CFTemplate"] = (
+                event["RequestType"] + "d"
+        )  # Created, Updated, or Deleted
         responseData = {}
         print('Request::{} Resource:: {}'.format(request,resource))
 
@@ -50,7 +60,7 @@ def handler(event, context):
 
         elif request == 'Delete':
 
-            print('RESPONSE:: {} : delte not required, sending success response'.format(resource))
+            print('RESPONSE:: {} : delete not required, sending success response'.format(resource))
 
             cfn.send(event, context, 'SUCCESS',{})
 

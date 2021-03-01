@@ -21,8 +21,9 @@ import urllib.request
 
 def send_metrics(config):
     metrics = {}
-    metrics['Solution'] = config['SolutionId']
-    metrics['UUID'] = config['UUID']
+    # move Solution ID and UUID to the root JSON level
+    metrics['Solution'] = config.pop("SolutionId", None)
+    metrics['UUID'] = config.pop("UUID", None)
     metrics['TimeStamp'] = str(datetime.datetime.utcnow().isoformat())
     metrics['Data'] = config
     url = 'https://metrics.awssolutionsbuilder.com/generic'

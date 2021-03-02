@@ -1094,7 +1094,7 @@ Resources:
   StateMachineErrorCloudWatchEvent:
     Type: AWS::Events::Rule
     Properties:
-        Name: !Sub "${AWS::StackName}-error-handler"
+        Name: !Sub "${AWS::StackName}-state-error-handler"
         Description: "state machine error handler"
         EventPattern:
             source:

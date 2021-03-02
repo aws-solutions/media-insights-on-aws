@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Media Insights Engine - Base AWS CloudFormation template that provisions the core Media Insights Engine services and provides parameters for enabling additional functionality.
+Description: (SO0163) - aws-media-insights-engine. This is the base AWS CloudFormation template that provisions Media Insights Engine services and provides parameters for user configurable MIE settings.
 
 Parameters:
   DeployTestResources:
@@ -16,17 +16,22 @@ Parameters:
     AllowedValues:
       - Yes
       - No
-
   MaxConcurrentWorkflows:
     Type: Number
     Description: Maximum number of workflows to run concurrently.  When the maximum is reached, additional workflows are added to a wait queue.
     Default: 5
     MinValue: 1
-
   EnableXrayTrace:
     Description: Enable Active Xray tracing on all entry points to the stack
     Type: String
     Default: No
+    AllowedValues:
+      - Yes
+      - No
+  SendAnonymousData:
+    Description: Send anonymous data about MIE performance to AWS to help improve the quality of this solution.
+    Type: String
+    Default: Yes
     AllowedValues:
       - Yes
       - No
@@ -51,6 +56,7 @@ Conditions:
   DeployTestResourcesCondition: !Equals [!Ref DeployTestResources, Yes]
   DeployAnalyticsPipelineCondition: !Equals [!Ref DeployAnalyticsPipeline, Yes]
   EnableTraceOnEntryPoints: !Equals [!Ref EnableXrayTrace, Yes]
+  EnableAnonymousData: !Equals [ !Ref SendAnonymousData, Yes]
 
 Mappings:
   SourceCode:
@@ -1510,6 +1516,71 @@ Resources:
         DataPlaneBucket: !Ref Dataplane
         MediaInsightsEnginePython38Layer: !Ref MediaInsightsEnginePython38Layer
 
+  AnonymousDataCustomResourceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+      Policies:
+        -
+          PolicyName: !Sub "${AWS::StackName}-anonymous-data-logger"
+          PolicyDocument:
+            Statement:
+              -
+                Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - !Join ["", ["arn:aws:logs:", Ref: "AWS::Region", ":", Ref: "AWS::AccountId", ":log-group:/aws/lambda/*"]]
+              -
+                Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                Resource:
+                  - !Join ["", ["arn:aws:ssm:", Ref: "AWS::Region", ":", Ref: "AWS::AccountId", ":parameter/*"]]
+
+  AnonymousDataCustomResource:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-anonymous-data
+      Description: Used to send anonymous data
+      Handler: anonymous-data-logger.handler
+      Role: !GetAtt AnonymousDataCustomResourceRole.Arn
+      Code:
+        S3Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
+        S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"], "anonymous-data-logger.zip"]]
+      Runtime:  python3.8
+      Timeout: 180
+
+  # SendAnonymousData
+  AnonymousDataUuid:
+    Condition: EnableAnonymousData
+    Type: "Custom::UUID"
+    Properties:
+      ServiceToken: !GetAtt AnonymousDataCustomResource.Arn
+      Resource: UUID
+
+  AnonymousMetric:
+    Condition: EnableAnonymousData
+    Type: "Custom::AnonymousMetric"
+    Properties:
+      ServiceToken: !GetAtt AnonymousDataCustomResource.Arn
+      Resource: AnonymousMetric
+      SolutionId: "SO0163"
+      UUID: !GetAtt AnonymousDataUuid.UUID
+      Version: !FindInMap ["SourceCode", "General", "FrameworkVersion"]
+
 Outputs:
   # TODO: Add outputs for rest api IDs of workflow/dataplane apis
   OperatorLibraryStack:
@@ -1527,6 +1598,11 @@ Outputs:
     Value: !GetAtt MediaInsightsDataplaneApiStack.Outputs.EndpointURL
     Export:
       Name: !Join [":", [!Ref "AWS::StackName", DataplaneApiEndpoint]]
+  DataPlaneHandlerArn: 
+    Description: API Handler Lambda ARN for dataplane.  
+    Value: !GetAtt MediaInsightsDataplaneApiStack.Outputs.APIHandlerArn
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", DataPlaneHandlerArn]]
   DataplaneApiRestID:
     Description: REST API ID for dataplane API
     Value: !GetAtt MediaInsightsDataplaneApiStack.Outputs.RestAPIId

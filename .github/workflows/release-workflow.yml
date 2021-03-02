@@ -47,7 +47,7 @@ jobs:
       - name: Run build script
         run: |
           cd deployment
-          MIE_STACK_NAME=release-v${{ github.event.inputs.version }}
+          MIE_STACK_NAME=v${{ github.event.inputs.version }}
           # Convert periods to dashes in MIE_STACK_NAME
           MIE_STACK_NAME=${MIE_STACK_NAME//./-}
           REGION=us-west-2
@@ -81,7 +81,7 @@ jobs:
       - name: Run build script
         run: |
           cd deployment
-          MIE_STACK_NAME=release-v${{ github.event.inputs.version }}
+          MIE_STACK_NAME=v${{ github.event.inputs.version }}
           # Convert periods to dashes in MIE_STACK_NAME
           MIE_STACK_NAME=${MIE_STACK_NAME//./-}
           REGION=us-east-1
@@ -101,7 +101,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       MIE_REGION: 'us-west-2'
-      MIE_STACK_NAME: release-v${{ github.event.inputs.version }}
+      MIE_STACK_NAME: v${{ github.event.inputs.version }}
     steps:
       - name: Check out release branch
         uses: actions/checkout@v2.3.4
@@ -150,7 +150,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       MIE_REGION: 'us-east-1'
-      MIE_STACK_NAME: release-v${{ github.event.inputs.version }}
+      MIE_STACK_NAME: v${{ github.event.inputs.version }}
     steps:
       - name: Check out release branch
         uses: actions/checkout@v2.3.4

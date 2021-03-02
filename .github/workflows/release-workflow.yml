@@ -6,9 +6,7 @@ on:
         version:
           description: 'Version number of release (e.g. 2.1.0)'
           required: true
-        releaseName:
-          description: 'Name of the release (e.g. Nautilus)'
-          required: true
+
 
 jobs:
   create-release-branch:
@@ -49,7 +47,9 @@ jobs:
       - name: Run build script
         run: |
           cd deployment
-          MIE_STACK_NAME=${{ github.event.inputs.releaseName }}
+          MIE_STACK_NAME=release-v${{ github.event.inputs.version }}
+          # Convert periods to dashes in MIE_STACK_NAME
+          MIE_STACK_NAME=${MIE_STACK_NAME//./-}
           REGION=us-west-2
           VERSION=v${{ github.event.inputs.version }}
           DIST_OUTPUT_BUCKET=mie-dev
@@ -81,7 +81,9 @@ jobs:
       - name: Run build script
         run: |
           cd deployment
-          MIE_STACK_NAME=${{ github.event.inputs.releaseName }}
+          MIE_STACK_NAME=release-v${{ github.event.inputs.version }}
+          # Convert periods to dashes in MIE_STACK_NAME
+          MIE_STACK_NAME=${MIE_STACK_NAME//./-}
           REGION=us-east-1
           VERSION=v${{ github.event.inputs.version }}
           DIST_OUTPUT_BUCKET=mie-dev
@@ -99,7 +101,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       MIE_REGION: 'us-west-2'
-      MIE_STACK_NAME: ${{ github.event.inputs.releaseName }}
+      MIE_STACK_NAME: release-v${{ github.event.inputs.version }}
     steps:
       - name: Check out release branch
         uses: actions/checkout@v2.3.4
@@ -121,6 +123,8 @@ jobs:
 
       - name: Run unit tests
         run: |
+          # Convert periods to dashes in MIE_STACK_NAME
+          MIE_STACK_NAME=${MIE_STACK_NAME//./-}
           cd $GITHUB_WORKSPACE
           cd test/unit
           ./run_unit.sh workflowapi
@@ -128,11 +132,15 @@ jobs:
 
       - name: Run integ tests
         run: |
+          # Convert periods to dashes in MIE_STACK_NAME
+          MIE_STACK_NAME=${MIE_STACK_NAME//./-}
           cd $GITHUB_WORKSPACE
           cd test/integ
           ./run_integ.sh
       - name: Run E2E tests
         run: |
+          # Convert periods to dashes in MIE_STACK_NAME
+          MIE_STACK_NAME=${MIE_STACK_NAME//./-}
           cd $GITHUB_WORKSPACE
           cd test/e2e
           ./run_e2e.sh
@@ -142,7 +150,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       MIE_REGION: 'us-east-1'
-      MIE_STACK_NAME: ${{ github.event.inputs.releaseName }}
+      MIE_STACK_NAME: release-v${{ github.event.inputs.version }}
     steps:
       - name: Check out release branch
         uses: actions/checkout@v2.3.4
@@ -164,6 +172,8 @@ jobs:
 
       - name: Run unit tests
         run: |
+          # Convert periods to dashes in MIE_STACK_NAME
+          MIE_STACK_NAME=${MIE_STACK_NAME//./-}
           cd $GITHUB_WORKSPACE
           cd test/unit
           ./run_unit.sh workflowapi
@@ -171,11 +181,15 @@ jobs:
 
       - name: Run integ tests
         run: |
+          # Convert periods to dashes in MIE_STACK_NAME
+          MIE_STACK_NAME=${MIE_STACK_NAME//./-}
           cd $GITHUB_WORKSPACE
           cd test/integ
           ./run_integ.sh
       - name: Run E2E tests
         run: |
+          # Convert periods to dashes in MIE_STACK_NAME
+          MIE_STACK_NAME=${MIE_STACK_NAME//./-}
           cd $GITHUB_WORKSPACE
           cd test/e2e
           ./run_e2e.sh

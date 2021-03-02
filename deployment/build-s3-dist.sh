@@ -185,6 +185,7 @@ if [ $? -ne 0 ]; then
 fi
 python3 -m venv "$VENV"
 source "$VENV"/bin/activate
+pip3 install wheel
 pip3 install --quiet boto3 chalice docopt pyyaml jsonschema aws_xray_sdk
 export PYTHONPATH="$PYTHONPATH:$source_dir/lib/MediaInsightsEngineLambdaHelper/"
 if [ $? -ne 0 ]; then
@@ -721,12 +722,41 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 rm -rf ./dist
-cd "$build_dir"/ || exit 1
+
+echo "------------------------------------------------------------------------------"
+echo "Creating deployment package for anonymous data logger"
+echo "------------------------------------------------------------------------------"
+
+echo "Building anonymous data logger"
+cd "$source_dir/anonymous-data-logger" || exit 1
+[ -e dist ] && rm -rf dist
+mkdir -p dist
+[ -e package ] && rm -rf package
+mkdir -p package
+echo "create requirements for lambda"
+# Make lambda package
+pushd package || exit 1
+echo "create lambda package"
+# Handle distutils install errors
+touch ./setup.cfg
+echo "[install]" > ./setup.cfg
+echo "prefix= " >> ./setup.cfg
+pip3 install --quiet -r ../requirements.txt --target .
+cp -R ../lib .
+if ! [ -d ../dist/anonymous-data-logger.zip ]; then
+  zip -q -r9 ../dist/anonymous-data-logger.zip .
+elif [ -d ../dist/anonymous-data-logger.zip ]; then
+  echo "Package already present"
+fi
+popd || exit 1
+zip -q -g ./dist/anonymous-data-logger.zip ./anonymous-data-logger.py
+cp "./dist/anonymous-data-logger.zip" "$regional_dist_dir/anonymous-data-logger.zip"
+#rm -rf ./dist ./package
 
 echo "------------------------------------------------------------------------------"
 echo "Copy dist to S3"
 echo "------------------------------------------------------------------------------"
-
+cd "$build_dir"/ || exit 1
 echo "Copying the prepared distribution to:"
 echo "s3://$global_bucket/media_insights_engine/$version/"
 echo "s3://${regional_bucket}-${region}/media_insights_engine/$version/"

@@ -117,7 +117,7 @@ MIE can be extended in the following ways:
 * Create new workflows using the existing or new operators.
 * Stream data to new data storage services, such as Elasticsearch or Amazon Redshift.
 
-For instructions on how to extend MIE, read the API reference and builder's guide in the [Implementation Guide](https://github.com/awslabs/aws-media-insights/blob/master/IMPLEMENTATION_GUIDE.md).
+For instructions on how to extend MIE, read the API reference and builder's guide in the [Implementation Guide](IMPLEMENTATION_GUIDE.md).
 
 ## Security
 
@@ -125,7 +125,7 @@ MIE uses AWS_IAM to authorize REST API requests. The following screenshot shows 
 
 <img src="docs/assets/images/sample_postman.png" width=600>
 
-For more information, see the [Implementation Guide](IMPLEMENTATION_GUIDE.md).
+For more information, see the [Implementation Guide](IMPLEMENTATION_GUIDE.md#step-6-test-your-new-workflow-and-operator).
 
 ## Privacy
 

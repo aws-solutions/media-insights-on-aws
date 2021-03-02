@@ -682,6 +682,7 @@ Resources:
               - Action:
                   - "rekognition:DetectFaces"
                   - "rekognition:DetectLabels"
+                  - "rekognition:DetectText"
                   - "rekognition:DetectModerationLabels"
                   - "rekognition:GetCelebrityRecognition"
                   - "rekognition:GetContentModeration"

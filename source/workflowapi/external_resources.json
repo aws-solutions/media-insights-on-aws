@@ -211,7 +211,11 @@
                     "translate:DeleteTerminology",
                     "translate:GetTerminology",
                     "translate:ImportTerminology",
-                    "translate:ListTerminologies"
+                    "translate:ListTerminologies",
+                    "translate:DeleteParallelData",
+                    "translate:GetParallelData",
+                    "translate:ImportParallelData",
+                    "translate:ListParallelData"
                   ],
                   "Resource": "*"
                 },
@@ -322,6 +326,7 @@
                   {
                       "Effect": "Allow",
                       "Action": [
+                        "iam:ListRolePolicies",
                         "iam:PutRolePolicy",
                         "iam:DeleteRolePolicy"
                       ],

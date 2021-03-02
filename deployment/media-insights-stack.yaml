@@ -128,11 +128,6 @@ Resources:
       ServiceToken: !GetAtt MieHelperFunction.Arn
       FunctionKey: "init_system_table"
 
-  # Custom log group
-  MieLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      RetentionInDays: 14
 
   # IAM Roles
   MieHelperExecutionRole:
@@ -154,8 +149,21 @@ Resources:
             Version: 2012-10-17
             Statement:
               - Effect: Allow
-                Action: ['logs:*']
-                Resource: 'arn:aws:logs:*:*:*'
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - !Join [
+                    "",
+                    [
+                      "arn:aws:logs:",
+                      Ref: "AWS::Region",
+                      ":",
+                      Ref: "AWS::AccountId",
+                      ":log-group:/aws/lambda/*",
+                    ],
+                  ]
               - Effect: Allow
                 Action: ['dynamodb:PutItem']
                 Resource:
@@ -587,9 +595,16 @@ Resources:
 
   SystemTable:
     Type: AWS::DynamoDB::Table
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W28
+            reason: "Table name is constructed with stack name. On update, we need to keep the existing table name."
     Properties:
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: Name
@@ -604,9 +619,16 @@ Resources:
 
   WorkflowTable:
     Type: AWS::DynamoDB::Table
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W28
+            reason: "Table name is constructed with stack name. On update, we need to keep the existing table name."
     Properties:
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: Name
@@ -621,9 +643,16 @@ Resources:
 
   StageTable:
     Type: AWS::DynamoDB::Table
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W28
+            reason: "Table name is constructed with stack name. On update, we need to keep the existing table name."
     Properties:
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: Name
@@ -638,9 +667,16 @@ Resources:
 
   OperationTable:
     Type: AWS::DynamoDB::Table
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W28
+            reason: "Table name is constructed with stack name. On update, we need to keep the existing table name."
     Properties:
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: Name
@@ -655,9 +691,16 @@ Resources:
 
   HistoryTable:
     Type: AWS::DynamoDB::Table
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W28
+            reason: "Table name is constructed with stack name. On update, we need to keep the existing table name."
     Properties:
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: Id
@@ -676,9 +719,16 @@ Resources:
 
   WorkflowExecutionTable:
     Type: AWS::DynamoDB::Table
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W28
+            reason: "Table name is constructed with stack name. On update, we need to keep the existing table name."
     Properties:
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: Id
@@ -712,9 +762,16 @@ Resources:
 
   DataplaneTable:
     Type: AWS::DynamoDB::Table
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W28
+            reason: "Table name is constructed with stack name. On update, we need to keep the existing table name."
     Properties:
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: AssetId
@@ -818,7 +875,9 @@ Resources:
 
   WorkflowExecutionEventTopic:
     Type: 'AWS::SNS::Topic'
-    Properties: {}
+    Properties:
+      KmsMasterKeyId: "alias/aws/sns"
+
   WorkflowExecutionEventTopicPolicy:
     Type: 'AWS::SNS::TopicPolicy'
     Metadata:
@@ -845,6 +904,9 @@ Resources:
 
   WorkflowExecutionEventQueue:
     Type: AWS::SQS::Queue
+    Properties:
+      KmsMasterKeyId: "alias/aws/sqs"
+
   SqsQueuePolicy:
     Type: AWS::SQS::QueuePolicy
     Metadata:
@@ -883,6 +945,7 @@ Resources:
     Properties:
       QueueName: !Sub "${AWS::StackName}-WorkflowExecLambdaDLQ"
       MessageRetentionPeriod: 43200 # #Maximum, 12 hours in seconds.
+      KmsMasterKeyId: "alias/aws/sqs"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -892,6 +955,7 @@ Resources:
     Properties:
       QueueName: !Sub "${AWS::StackName}-StageExecDLQ"
       MessageRetentionPeriod: 43200 # #Maximum, 12 hours in seconds.
+      KmsMasterKeyId: "alias/aws/sqs"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -908,6 +972,7 @@ Resources:
             - StageExecutionDeadLetterQueue
             - Arn
         maxReceiveCount: 1 # Don't retry if stage times out
+      KmsMasterKeyId: "alias/aws/sqs"
       Tags:
         - Key: "environment"
           Value: "mie"

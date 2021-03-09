@@ -100,6 +100,6 @@ jobs:
         with:
           title: Nightly test for $SHORT_SHA Failed
           token: ${{secrets.GITHUB_TOKEN}}
-          assignees: [brandold, ianwow, aburkleaux-amazon]
+          assignees: ianwow
           labels: bug
           body: Nightly test failed for commit ${{github.sha}}

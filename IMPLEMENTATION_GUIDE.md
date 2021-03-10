@@ -393,17 +393,18 @@ For more information about how to implement Kinesis Data Stream consumers in MIE
 
   `POST /create`
 
-    ```
-    Body:
-    
-    {
-        "Input": {
-            "S3Bucket": "{somenbucket}",
-            "S3Key": "{somekey}"
-        }
+  Body:
+  ```
+  {
+    "Input": {
+      "S3Bucket": "{somenbucket}",
+      "S3Key": "{somekey}"
     }
-    ```
-  Returns: A dict mapping of the asset id and the new location of the media object
+  }
+  ```
+  
+  Returns: 
+  A dict mapping of the asset id and the new location of the media object
 
 * Retrieve metadata for an asset:
 
@@ -417,18 +418,31 @@ For more information about how to implement Kinesis Data Stream consumers in MIE
 
   `POST /metadata/{asset_id}`
 
-    ```
-    Body:
-    
-    {
-        "OperatorName": "{some_operator}",
-        "Results": "{json_formatted_results}"
-    }
-    ```
+  Body:
+  ```
+  {
+    "OperatorName": "{some_operator}",
+    "Results": "{json_formatted_results}"
+  }
+  ```
 
 * Retrieve the metadata that a specific operator created from an asset:
 
   `GET /metadata/{asset_id}/{operator_name}`
+
+* Get version information
+
+  `GET /version`
+
+  Returns:
+  * A dictionary containing the version of the MIE framework and the version of the dataplane API. Since it is possible for the MIE framework to be released without any API changes, these two versions can be different. The MIE framework and its APIs are versioned according to [Semantic Versioning](https://semver.org) rules. Under this scheme, version numbers and the way they change convey meaning about backwards compatibility.
+
+  For example, if the MIE framework was version [v2.0.4](https://github.com/awslabs/aws-media-insights-engine/releases/tag/v2.0.4) and the workflow API was version 2.0.0, then this would return the following response:
+
+  ```
+  b'{"ApiVersion":"2.0.0","FrameworkVersion":"v2.0.4"}'
+  ```
+
 
 ## Workflow API
 
@@ -436,14 +450,13 @@ For more information about how to implement Kinesis Data Stream consumers in MIE
 
   `POST /system/configuration`
 
-    ```
-    Body:
-    
-    {
-        "Name": "ParameterName",
-        "Value": "ParameterValue"
-    }
-    ```
+  Body:
+  ```
+  {
+    "Name": "ParameterName",
+    "Value": "ParameterValue"
+  }
+  ```
 
   Supported parameters:
   * ***MaxConcurrentWorkflows*** - Sets the maximum number of workflows that are allowed to run concurrently. Any new workflows that are added after MaxConcurrentWorkflows is reached are placed on a queue until capacity is freed by completing workflows. Use this to help avoid throttling in service API calls from workflow operators. This setting is checked each time the WorkflowSchedulerLambda is run and may take up to 60 seconds to take effect.
@@ -469,23 +482,24 @@ For more information about how to implement Kinesis Data Stream consumers in MIE
 * Create a workflow from a list of existing stages. A workflow is a pipeline of stages that are executed sequentially to transform and extract metadata for a set of MediaType objects. Each stage must contain either a “Next” key indicating the next stage to execute or and “End” key indicating it is the last stage.
 
   `POST /workflow`
-    ```
-    Body:
-    
-    {
-        "Name": string,
-        "StartAt": string - name of starting stage,
-        "Stages": {
-            "stage-name": {
-                "Next": "string - name of next stage"
-            },
-            ...,
-            "stage-name": {
-                "End": true
-            }
-        }
+  
+  Body:
+  ```
+  {
+    "Name": string,
+    "StartAt": string - name of starting stage,
+    "Stages": {
+      "stage-name": {
+          "Next": "string - name of next stage"
+      },
+      ...,
+      "stage-name": {
+          "End": true
+      }
     }
-    ```
+  }
+  ```
+
   Returns:
   * A dict mapping keys to the corresponding workflow created including the AWS resources used to execute each stage.
 
@@ -520,30 +534,29 @@ For more information about how to implement Kinesis Data Stream consumers in MIE
 * Execute a workflow. The Body contains the name of the workflow to execute, at least one input media type within the media object. A dictionary of stage configuration objects can be passed in to override the default configuration of the operations within the stages.
 
   `POST /workflow/execution`
-    ```
-    Body:
-    
-    {
-    "Name":"Default",
-    "Input": media-object
-    "Configuration": {
-        {
-        "stage-name": {
-            "Operations": {
-                "SplitAudio": {
-                   "Enabled": True,
-                   "MediaTypes": {
-                       "Video": True/False,
-                       "Audio": True/False,
-                       "Frame": True/False
-                   }
-               },
-           },
-       }
-       ...
-       }
-    }
-    ```
+  
+  Body:  
+  ```
+  {
+  "Name":"Default",
+  "Input": media-object
+  "Configuration": {
+    "stage-name": {
+      "Operations": {
+        "SplitAudio": {
+          "Enabled": True,
+          "MediaTypes": {
+            "Video": True/False,
+            "Audio": True/False,
+            "Frame": True/False
+          }
+       },
+     },
+   }
+   ...
+  }
+  ```
+  
   Returns:
   * A dict mapping keys to the corresponding workflow execution created including the WorkflowExecutionId, the AWS queue and state machine resources associated with the workflow execution and the current execution status of the workflow.
 
@@ -620,44 +633,45 @@ For more information about how to implement Kinesis Data Stream consumers in MIE
 
   For more information on how to implement lambdas to be used in MIE operators, see [4. Implementing a new Operator in MIE](#4-implementing-a-new-operator-in-mie)
 
-    ```
-    Body:
-    
-    {
-        "Name":"operation-name",
-        "Type": ["Async"|"Sync"],
-        "Configuration" : {
-                "MediaType": "Video",
-                "Enabled:": True,
-                "configuration1": "value1",
-                "configuration2": "value2",
-                ...
-            }
-        "StartLambdaArn":arn,
-        "MonitorLambdaArn":arn,
-        "SfnExecutionRole": arn
-        }
-    ```
+  Body:
+  ```
+  {
+    "Name":"operation-name",
+    "Type": ["Async"|"Sync"],
+    "Configuration" : {
+      "MediaType": "Video",
+      "Enabled:": True,
+      "configuration1": "value1",
+      "configuration2": "value2",
+      ...
+    }
+    "StartLambdaArn":arn,
+    "MonitorLambdaArn":arn,
+    "SfnExecutionRole": arn
+  }
+  ```
+  
   Returns:
   * A dict mapping keys to the corresponding operation.
-    ```
-    {
-        "Name": string,
-        "Type": ["Async"|"Sync"],
-        "Configuration" : {
-            "MediaType": "Video|Frame|Audio|Text|...",
-            "Enabled:": boolean,
-            "configuration1": "value1",
-            "configuration2": "value2",
-            ...
-        }
-        "StartLambdaArn":arn,
-        "MonitorLambdaArn":arn,
-        "StateMachineExecutionRoleArn": arn,
-        "StateMachineAsl": ASL-string
-        "StageName": string
+  ```
+  {
+    "Name": string,
+    "Type": ["Async"|"Sync"],
+    "Configuration" : {
+        "MediaType": "Video|Frame|Audio|Text|...",
+        "Enabled:": boolean,
+        "configuration1": "value1",
+        "configuration2": "value2",
+        ...
     }
-    ```
+    "StartLambdaArn":arn,
+    "MonitorLambdaArn":arn,
+    "StateMachineExecutionRoleArn": arn,
+    "StateMachineAsl": ASL-string
+    "StageName": string
+  }
+  ```
+  
   Raises:
   * 200: The operation and stage was created successfully.
   * 400: Bad Request
@@ -678,8 +692,8 @@ For more information about how to implement Kinesis Data Stream consumers in MIE
   ```
   OPERATOR_NAME="op1"
   WORKFLOW_API_ENDPOINT="https://tvplry8vn3.execute-api.us-west-2.amazonaws.com/api/"
-  START_ARN="arn:aws:lambda:us-west-2:773074507832:function:mie03d-OperatorFailedLambda-11W1LAY0CWCUZ"
-  MONITOR_ARN="arn:aws:lambda:us-west-2:773074507832:function:mie03d-OperatorFailedLambda-11W1LAY0CWCUZ"
+  START_ARN="arn:aws:lambda:us-west-2:__redacted__:function:mie03d-OperatorFailedLambda-11W1LAY0CWCUZ"
+  MONITOR_ARN="arn:aws:lambda:us-west-2:__redacted__:function:mie03d-OperatorFailedLambda-11W1LAY0CWCUZ"
   REGION="us-west-2"
   awscurl --region ${REGION} -X POST -H "Content-Type: application/json" -d '{"StartLambdaArn": "'${START_ARN}'", "Configuration": {"MediaType": "Video", "Enabled": true}, "Type": "Async", "Name": "'${OPERATOR_NAME}'", "MonitorLambdaArn": "'${MONITOR_ARN}}'"' ${WORKFLOW_API_ENDPOINT}workflow/operation;
   ```
@@ -720,36 +734,38 @@ For more information about how to implement Kinesis Data Stream consumers in MIE
   An optional Configuration for each operator in the stage can be input to override the default configuration for the stage.
 
   `POST /workflow/stage`
-    ```
-    Body:
-    
-    {
+
+  Body:
+  
+  ```
+  {
     "Name":"stage-name",
     "Operations": ["operation-name1", "operation-name2", ...]
-    }
-    Returns:
-    A dict mapping keys to the corresponding stage created including the ARN of the state machine created.
-    
-    {
-    “Name”: string, “Operations”: [
-    
-    “operation-name1”, “operation-name2”, …
-    ], “Configuration”: {
-    
-    “operation-name1”: operation-configuration-object1, “operation-name2”: operation-configuration-object1, …
-    } “StateMachineArn”: ARN-string
-    
-    “Name”: “TestStage”, “Operations”: [
-    
-    “TestOperator”
-    ], “Configuration”: {
-    
-    “TestOperator”: {
-    “MediaType”: “Video”, “Enabled”: true
-    }
-    }, “StateMachineArn”: “arn:aws:states:us-west-2:526662735483:stateMachine:TestStage”
-    }
-    ```
+  }
+  ```
+  
+  Returns:
+  * A dict mapping keys to the corresponding stage created including the ARN of the state machine created.
+  
+  ```
+  {
+    “Name”: string, 
+    “Operations”: [“operation-name1”, “operation-name2”, ...], 
+    “Configuration”: {
+      “operation-name1”: operation-configuration-object1, “operation-name2”: operation-configuration-object1, ...
+    }, 
+    “StateMachineArn”: ARN-string,    
+    “Name”: “TestStage”, 
+    “Operations”: [“TestOperator”], 
+    “Configuration”: {
+      “TestOperator”: {
+      “MediaType”: “Video”, 
+      “Enabled”: true
+      }
+    }, 
+    “StateMachineArn”: “arn:aws:states:us-west-2:__redacted__:stateMachine:TestStage”
+  }
+  ```
 
   Raises:
   * 200: The stage was created successfully.
@@ -813,6 +829,19 @@ For more information about how to implement Kinesis Data Stream consumers in MIE
   * 200: All workflows returned successfully.
   * 404: Not found
   * 500: Internal server error
+
+* Get version information 
+
+  `GET /version`
+
+  Returns:
+  * A dictionary containing the version of the MIE framework and the version of the workflow API. Since it is possible for the MIE framework to be released without any API changes, these two versions can be different. The MIE framework and its APIs are versioned according to [Semantic Versioning](https://semver.org) rules. Under this scheme, version numbers and the way they change convey meaning about backwards compatibility.
+
+  For example, if the MIE framework was version [v2.0.4](https://github.com/awslabs/aws-media-insights-engine/releases/tag/v2.0.4) and the workflow API was version 2.0.0, then this would return the following response: 
+  
+  ```
+  b'{"ApiVersion":"2.0.0","FrameworkVersion":"v2.0.4"}'
+  ```
 
 # 7. Troubleshooting
 

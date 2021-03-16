@@ -47,6 +47,7 @@ Resources:
     Type: "AWS::SNS::Topic"
     Properties:
       DisplayName: "SNS Role for Rekognition"
+      KmsMasterKeyId: "alias/aws/sns"
       Tags:
         - Key: "environment"
           Value: "mie"

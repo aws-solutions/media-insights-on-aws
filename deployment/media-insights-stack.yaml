@@ -920,6 +920,7 @@ Resources:
           "Fn::GetAtt":
             - WorkflowExecutionLambdaDeadLetterQueue
             - Arn
+        maxReceiveCount: 1 # Don't retry if stage times out
       KmsMasterKeyId: "alias/aws/sqs"
 
   SqsQueuePolicy:

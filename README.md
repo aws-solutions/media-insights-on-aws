@@ -164,7 +164,7 @@ When deploying MIE cloud formation templates, anonymous data, such as that shown
 
 # Uninstall
 
-
+To uninstall MIE, delete the CloudFormation stack. This will delete all the resources created by the MIE template except the Dataplane S3 bucket and the DataplaneLogs bucket. These two buckets are retained when the solution stack is deleted in order to help prevent accidental data loss. You can use either the AWS Management Console or the AWS Command Line Interface (AWS CLI) to empty, then delete those S3 buckets after deleting the CloudFormation stack.
 
 # Known Issues
 

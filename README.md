@@ -51,23 +51,24 @@ If you're building applications on MIE then you will need to understand the foll
 
 # Cost
 
-You are responsible for the cost of the AWS services used while running this solution. As of February 2021 the cost for running this solution with the default settings in the us-east-1 (N. Virginia) region is approximately $24 per month without free tiers, or $13 per month with free tiers for 100 workflow executions. This is based on workflows processing live action videos 10 minutes in duration. Each additional 100 workflow executions will cost roughly $2, or higher for videos longer than 10 minutes and lower for videos shorter than 10 minutes. 
+You are responsible for the cost of the AWS services used while running this solution. As of February 2021 the cost for running this solution with the default settings in the us-east-1 (N. Virginia) region is approximately $24 per month without free tiers, or $13 per month with free tiers for 100 workflow executions. This is based on workflows processing live action videos 10 minutes in duration. 
 
-It is expected that most MIE use-cases will be completely covered by the free tier for all services except Amazon Kinesis and AWS Lambda. The costs for the Amazon Kinesis data stream ($12.56/mo) and the Workflow Scheduler lambda ($3.73/mo) will remain relatively unchanged, regardless of how many workflows execute. 
-
-### Cost breakdown excluding all free tiers:
+### Approximate cost, excluding all free tiers:
 
 | AWS Service | Quantity | Cost |
 | --- | --- | --- |
-| AWS Lambda | 100 workflows | $4.75 |
-| API Gateway | 1 million workflows | $3.50 |
-| Kinesis Data Stream | 100 workflows | $12.56 |
-| SQS | 1 million workflows | $0.40 |
+| AWS Lambda | 100 workflows | $4.75 / mo |
+| API Gateway | 1 million workflows | $3.50 / mo |
+| Kinesis Data Stream | 100 workflows | $12.56 / mo |
+| SQS | 1 million workflows | $0.40 / mo |
 | SNS | n/a | No charge |
-| Xray | 100 workflows | $.0005 |
-| S3 | 100 workflows | $2.3 |
-| Dynamo DB | 1 million workflows | $.025 |
+| Xray | 100 workflows | $.0005 / mo |
+| S3 | 100 workflows | $2.3 / mo |
+| Dynamo DB | 1 million workflows | $.025 / mo |
 
+Each additional 100 workflow executions will cost roughly $2, or higher for videos longer than 10 minutes and lower for videos shorter than 10 minutes.
+
+It is expected that most MIE use-cases will be completely covered by the free tier for all services except Amazon Kinesis and AWS Lambda. The costs for the Amazon Kinesis data stream ($12.56/mo) and the Workflow Scheduler lambda ($3.73/mo) will remain relatively unchanged, regardless of how many workflows execute.
 
 # Limits
 

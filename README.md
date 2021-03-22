@@ -53,7 +53,7 @@ If you're building applications on MIE then you will need to understand the foll
 
 You are responsible for the cost of the AWS services used while running this solution. As of February 2021 the cost for running this solution with the default settings in the us-east-1 (N. Virginia) region is approximately $24 per month without free tiers, or $13 per month with free tiers for 100 workflow executions. This is based on workflows processing live action videos 10 minutes in duration. 
 
-### Approximate cost, excluding all free tiers:
+### Approximate monthly cost, excluding all free tiers:
 
 | AWS Service | Quantity | Cost |
 | --- | --- | --- |

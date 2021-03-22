@@ -6,7 +6,7 @@ Media Insights Engine (MIE) is a development framework for building serverless a
 
 For a high level summary of MIE and its use cases, please read, [How to Rapidly Prototype Multimedia Applications on AWS with the Media Insights Engine](https://aws.amazon.com/blogs/media/how-to-rapidly-prototype-multimedia-applications-on-aws-with-the-media-insights-engine/) on the AWS Media blog.
 
-# Installation
+# Install
 
 You can deploy MIE in your AWS account with the following Cloud Formation templates. The Cloud Formation stack name must be 12 or fewer characters long.
 
@@ -51,7 +51,23 @@ If you're building applications on MIE then you will need to understand the foll
 
 # Cost
 
-MIE itself does not have a significant cost footprint. The MIE control plane and data plane generally cost less than $1 per month. However, when people talk about the cost of MIE they're generally talking about the cost of running some specific application that was built on top of MIE. Because those costs can vary widely you will need to get pricing information from the documentation for those applications. As a point of reference, read the cost breakdown for the [Content Analysis solution](https://docs.aws.amazon.com/solutions/latest/aws-content-analysis/overview.html#cost).
+You are responsible for the cost of the AWS services used while running this solution. As of February 2021 the cost for running this solution with the default settings in the us-east-1 (N. Virginia) region is approximately $24 per month without free tiers, or $13 per month with free tiers for 100 workflow executions. This is based on workflows processing live action videos 10 minutes in duration. Each additional 100 workflow executions will cost roughly $2, or higher for videos longer than 10 minutes and lower for videos shorter than 10 minutes. 
+
+It is expected that most MIE use-cases will be completely covered by the free tier for all services except Amazon Kinesis and AWS Lambda. The costs for the Amazon Kinesis data stream ($12.56/mo) and the Workflow Scheduler lambda ($3.73/mo) will remain relatively unchanged, regardless of how many workflows execute. 
+
+### Cost breakdown excluding all free tiers:
+
+| AWS Service | Quantity | Cost |
+| --- | --- | --- |
+| AWS Lambda | 100 workflows | $4.75 |
+| API Gateway | 1 million workflows | $3.50 |
+| Kinesis Data Stream | 100 workflows | $12.56 |
+| SQS | 1 million workflows | $0.40 |
+| SNS | n/a | No charge |
+| Xray | 100 workflows | $.0005 |
+| S3 | 100 workflows | $2.3 |
+| Dynamo DB | 1 million workflows | $.025 |
+
 
 # Limits
 
@@ -145,6 +161,10 @@ When deploying MIE cloud formation templates, anonymous data, such as that shown
     }
 }
 ```
+
+# Uninstall
+
+
 
 # Known Issues
 

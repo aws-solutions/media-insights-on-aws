@@ -47,6 +47,7 @@ Resources:
     Type: "AWS::SNS::Topic"
     Properties:
       DisplayName: "SNS Role for Rekognition"
+      KmsMasterKeyId: "alias/aws/sns"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1332,6 +1333,7 @@ Resources:
             ],
           ]
       Runtime: "python3.8"
+      Timeout: 120
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
@@ -1397,6 +1399,7 @@ Resources:
             ],
           ]
       Runtime: "python3.8"
+      Timeout: 120
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
@@ -1462,6 +1465,7 @@ Resources:
             ],
           ]
       Runtime: "python3.8"
+      Timeout: 120
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
@@ -1652,6 +1656,7 @@ Resources:
             ],
           ]
       Runtime: "python3.8"
+      Timeout: 120
       Environment:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
@@ -2016,6 +2021,7 @@ Resources:
             ],
           ]
       Runtime: "python3.8"
+      Timeout: 120
       Environment:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
@@ -2045,6 +2051,7 @@ Resources:
             ],
           ]
       Runtime: "python3.8"
+      Timeout: 120
       Environment:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"

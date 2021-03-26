@@ -42,7 +42,7 @@ You must have the following build tools in order to build MIE and the Media Insi
 
 ## 3. Building the MIE framework from source code
 
-Run the following commands to build and deploy MIE cloud formation templates from scratch. Be sure to define values for `MIE_STACK_NAME` and `REGION` first.
+Run the following commands to build and deploy MIE Cloud Formation templates from scratch. Be sure to define values for `MIE_STACK_NAME` and `REGION` first.
 
 ```
 MIE_STACK_NAME=[YOUR STACK NAME]
@@ -62,11 +62,7 @@ rm -f template
 aws cloudformation create-stack --stack-name $MIE_STACK_NAME --template-url $TEMPLATE --region $REGION --parameters ParameterKey=DeployTestResources,ParameterValue=true ParameterKey=EnableXrayTrace,ParameterValue=true ParameterKey=MaxConcurrentWorkflows,ParameterValue=10 ParameterKey=DeployAnalyticsPipeline,ParameterValue=true --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --profile default --disable-rollback
 ```
 
-After the stack finished deploying then you should see the following 6 nested stacks (with slightly different names than shown below):
-
-<img src="docs/assets/images/stack_resources.png" width=300>
-
-After the stack finishes deploying then remove the temporary build bucket like this:
+After the stack deploys then remove the temporary build bucket like this:
 
 ```
 aws s3 rb s3://$DIST_OUTPUT_BUCKET-$REGION --region $REGION --profile default --force
@@ -81,22 +77,20 @@ Operators are Lambda functions that:
 
 Operators run as part of an MIE workflow. Workflows are [AWS Step Functions](https://aws.amazon.com/step-functions/) that define the order in which operators run.
 
-Operators can be _synchronous_ or _asynchronous_.  Synchronous operators start an  analysis (or transformation) job and get its result in a single Lambda function. Async operators use separate Lambda functions to start jobs and get their results. Typically, async operators run for several minutes.
+Operators can be _synchronous_ or _asynchronous_.  Synchronous operators start an  analysis (or transformation) job and get its result in a single Lambda function. Asynchronous operators use separate Lambda functions to start jobs and get their results. Typically, asynchronous operators run for several minutes.
 
 Operator inputs can include a list of media, metadata and the user-defined workflow and/or operator configurations.
 
-Operator outputs include the execution status, and S3 locators for the newly derived media and metadata objects saved in S3. These outputs get passed to other operators in downstream workflow stages.
+Operator outputs include the run status, and S3 locations for the newly derived media and metadata objects saved in S3. These outputs get passed to other operators in downstream workflow stages.
 
 Operators should interact with the MIE data persistence layer via the `MediaInsightsEngineLambdaHelper`, which is located under [source/lib/MediaInsightsEngineLambdaHelper/](source/lib/MediaInsightsEngineLambdaHelper/MediaInsightsEngineLambdaHelper/__init__.py).
 
 ### Step 1: Write operator Lambda functions
-***(Difficulty: >1 hour)***
+***(Time to complete: >1 hour)***
 
-*TL;DR - Copy `source/operators/rekognition/generic_data_lookup.py` to a new directory and change it to do what you want.*
+Operators live under `source/operators`.  Create a new folder there for your new operator. Copy `source/operators/rekognition/generic_data_lookup.py` to a new directory and change it to do what you want.
 
-Operators live under `source/operators`.  Create a new folder there for your new operator.
-
-The MIE Helper library should be used inside an operator to interact with the control plane and data plane. This library lives under `lib/MediaInsightsEngineLambdaHelper/`.
+The MIE Helper library must be used inside an operator to interact with the control plane and data plane. This library lives under `lib/MediaInsightsEngineLambdaHelper/`.
 
 #### Using the MIE Helper library
 
@@ -107,9 +101,9 @@ from MediaInsightsEngineLambdaHelper import OutputHelper
 output_object = OutputHelper("my_operator_name")
 ```
 
-#### How to get Asset and Workflow IDs
+#### Get Asset and Workflow IDs
 
-Get the Workflow and Asset ID from the Lambda's entrypoint event object:
+In order to make it easier to find results and know the provenance of data, operators should save the files that they generate to a directory path that is unique to the workflow execution ID and asset ID (e.g. `‘s3//’ + dataplane_bucket + ’/private/assets/' + asset_id + "/workflows/" + workflow_id + "/"`). The workflow and asset IDs can be obtained from the Lambda's entry point event object, like this:
 
 ```
 # Lambda function entrypoint:
@@ -118,7 +112,7 @@ def lambda_handler(event, context):
     asset_id = event['AssetId']
 ```
 
-#### How to get input Media Objects
+#### Get input Media Objects
 
 Media objects are passed using their location in S3.  Use the `boto3` S3 client access them from S3 using the locations specified in the Lambda's entrypoint event object:
 
@@ -132,7 +126,7 @@ def lambda_handler(event, context):
         s3key = event["Input"]["Media"]["Image"]["S3Key"]
 ```
 
-#### How to get operator configuration input
+#### Get operator configuration input
 
 Operator configurations can be accessed from the "Configuration" attribute in the Lambda's entrypoint event object. For example, here's how the face search operator gets the user-specified face collection id:
 
@@ -140,9 +134,9 @@ Operator configurations can be accessed from the "Configuration" attribute in th
 collection_id = event["Configuration"]["CollectionId"]
 ```
 
-#### How to write data to downstream operators
+#### Write data to downstream operators
 
-Metadata derived by an operator can be passed as input to the next stage in a workflow by adding said data to the operator's `output_object`. Do this with the `add_workflow_metadata` function in the OutputHelper, as shown below:
+Metadata derived by an operator can be passed as input to the next stage in a workflow by adding specified data to the operator's `output_object`. Do this with the `add_workflow_metadata` function in the OutputHelper, as shown below:
 
 ***The values for attributes must be strings.***
 ***The values for attributes must not be empty strings.***
@@ -162,7 +156,7 @@ def lambda_handler(event, context):
     return output_object.return_output_object()
 ```        
 
-#### How to read data from upstream operators
+#### Read data from upstream operators
 
 Metadata that was output by upstream operators can be accessed from the Lambda's entrypoint event object, like this:
 
@@ -170,7 +164,7 @@ Metadata that was output by upstream operators can be accessed from the Lambda's
 my_data_1 = event["Input"]["MetaData"]["MyData1"]
 ```
 
-#### How to store media metadata to the data plane
+#### Store media metadata to the data plane
 
 Use `store_asset_metadata()` to store results. For paged results, call that function for each page.
 
@@ -180,7 +174,7 @@ dataplane = DataPlane()
 metadata_upload = dataplane.store_asset_metadata(asset_id, operator_name, workflow_id, response)
 ```
 
-#### Store media objects to the data plane S3 bucket
+#### Store media objects to the data plane
 
 Operators can derive new media objects. For example, the Transcribe operator derives a new text object from an input audio object. Save new media objects with `add_media_object()`, like this:
 
@@ -205,14 +199,14 @@ s3_response = s3.get_object(Bucket=bucket, Key=key)
 Again, the `my_media_type` variable should be "Video", "Audio", or "Text".
 
 ### Step 2: Add your operator to the MIE operator library
-***(Difficulty: 30 minutes)***
+***(Time to complete: 30 minutes)***
 
-*TL;DR - Edit `source/operators/operator-library.yaml` and add new entries for your operator under the following sections:*
+This step involves editing the CloudFormation script for deploying the MIE operator library, located at `source/operators/operator-library.yaml`. You need to add new entries for your operator under the following sections:
 
-* `# Lambda Functions`
-* `# IAM Roles`
-* `# Register as operators in the control plane`
-* `# Export operator names as outputs`
+* `Lambda Functions`
+* `IAM Roles`
+* `Register as operators in the control plane`
+* `Export operator names as outputs`
 
 This step involves editing the CloudFormation script for deploying the MIE operator library, located at [`source/operators/operator-library.yaml`](source/operators/operator-library.yaml).
 
@@ -222,7 +216,7 @@ Create a CloudFormation IAM resource that will be used to give your Lambda funct
 
 #### Create Lambda Function resource
 
-Create a CloudFormation `Lambda::Function` resource for your Operator Lambda function.  If your Operator is _Async_, make sure to also register your monitoring Lambda function.
+Create a CloudFormation `Lambda::Function` resource for your Operator Lambda function.  If your Operator is asynchronous, make sure to also register your monitoring Lambda function.
 
 #### Create the MIE Operator resource using your Lambda function(s)
 
@@ -269,7 +263,7 @@ Properties:
 
 ***MonitorLambdaArn***
 
-* If your operator is _Async_, specify the ARN of the monitoring Lambda function
+* If your operator is asynchronous, specify the ARN of the monitoring Lambda function
 
 #### Export your Operator name as an output
 
@@ -283,19 +277,22 @@ Export your operator as an output like this:
 ```
 
 ### Step 3: Add your operator to a workflow
-***(Difficulty: 10 minutes)***
+***(Time to complete: 10 minutes)***
 
-*TL;DR - Edit `cloudformation/aws-content-analysis-video-workflow.yaml` and add your operator under `Resources --> defaultVideoStage --> Operations`*
+It's easiest to create a new workflow by copying end editing one of the existing workflows in the `cloudformation/` directory. Edit `cloudformation/aws-content-analysis-video-workflow.yaml` and add your operator under `Resources --> defaultVideoStage --> Operations`*
 
-It's easiest to create a new workflow by copying end editing on of the existing workflows in the `cloudformation/` directory. A workflow consists of one or more stages. Operators in the same stage will run at the same time (i.e. "in parallel") and stages will run one at a time. The workflow defines the order in which stages sequentially run.
+A workflow consists of one or more stages. Operators in the same stage will run at the same time. Stages will run sequentially, one at a time. The workflow defines the order in which stages sequentially run.
 
 ### Step 4: Update the build script to deploy your operator to AWS Lambda
-***(Difficulty: 5 minutes)***
+***(Time to complete: 5 minutes)***
 
-Update the "`Make lambda package`" section in [`build-s3-dist.sh`](deployment/build-s3-dist.sh) to zip your operator's Lambda function(s) into the `deployment/dist` directory, like this:
+Update the "`Make lambda package`" section in [`build-s3-dist.sh`](deployment/build-s3-dist.sh) to zip your operator's Lambda function(s) into the regional distribution directory, like this:
 
 ```
-zip -r9 my_operator.zip my_operator.py
+# Add operator code to a zip package for AWS Lambda
+zip my_operator.zip my_operator.py
+# Copy that zip to the regional distribution directory.
+cp "./dist/my_operator.zip" "$regional_dist_dir/ "
 ```
 
 ### Step 5: Deploy your custom build
@@ -304,20 +301,23 @@ Run the build script to generate cloud formation templates then deploy them as d
 
 ### Step 6: Test your new workflow and operator
 
-To test workflows and operators, you will submit requests to the workflow API endpoint using AWS_IAM authorization. Tools like [Postman](README.md#Security) (as described in the [README](README.md#Security)) and [awscurl](https://github.com/okigan/awscurl) make AWS_IAM authorization easy. The following examples assume your AWS access key and secret key are set up as required by awscurl:
+To test workflows and operators, you will submit requests to the workflow API endpoint using AWS_IAM authorization. Tools like [Postman](README.md#Security) (described in the [README](README.md#Security)) and [awscurl](https://github.com/okigan/awscurl) simplify AWS_IAM authorization. The following examples assume your AWS access key and secret key are set up as required by `awscurl`:
 
 *Sample command to list all available workflows:*
+
 ```
 awscurl "$WORKFLOW_API_ENDPOINT"/workflow | cut -f 2 -d "'" | jq '.[].Name'
 ```
 
 *Sample command to list all stages in a workflow:*
+
 ```
 WORKFLOW_NAME="CasImageWorkflow"
 awscurl "$WORKFLOW_API_ENDPOINT"/workflow/"$WORKFLOW_NAME" | cut -f 2 -d "'" | jq -c '.Stages | .[].Name'
 ```
 
 *Sample command to get the workflow configuration for a stage:*
+
 ```
 WORKFLOW_NAME="CasImageWorkflow"
 STAGE_NAME="RekognitionStage"
@@ -325,6 +325,7 @@ awscurl "$WORKFLOW_API_ENDPOINT"/workflow/"$WORKFLOW_NAME" | cut -f 2 -d "'" | j
 ```
 
 *Sample command to run a workflow with the default configuration:*
+
 ```
 WORKFLOW_NAME="CasImageWorkflow"
 aws s3 cp test_image.jpg s3://"$DATAPLANE_BUCKET"/ 
@@ -332,6 +333,7 @@ awscurl -X POST --data '{"Name":"$WORKFLOW_NAME", "Input":{"Media":{"Image":{"S3
 ```
 
 *Sample command to run a workflow with a non-default configuration:*
+
 ```
 WORKFLOW_NAME="CasImageWorkflow"
 CONFIGURATION='{"RekognitionStage":{"faceDetectionImage":{"MediaType":"Image","Enabled":false},"celebrityRecognitionImage":{"MediaType":"Image","Enabled":false},"faceSearchImage":{"MediaType":"Image","Enabled":false},"contentModerationImage":{"MediaType":"Image","Enabled":false},"labelDetectionImage":{"MediaType":"Image","Enabled":false}}}'
@@ -348,17 +350,17 @@ You can monitor workflows with the following logs:
 
 #### Validate metadata in the data plane
 
-When your operator finishes successfully then you can see data saved from the `Dataplane.store_asset_metadata()` function in the following DynamoDB table:
+When your operator finishes successfully, then you can refer to data saved from the `Dataplane.store_asset_metadata()` function in the `DataplaneTable` in Amazon DynamoDB.
 
 # 5. Implementing a new data stream consumer
 
-The data plane stores each item as an object in S3 and stores their S3 object identifier in DynamoDB. However, many application scenarios involve data access patterns that require capabilities beyond those provided by DynamoDB and S3. For example, Elasticsearch may be needed to support interactive analytics, Amazon SNS may be needed to provide real-time messaging and notifications, or Amazon Quicksight may be need to support analytical reporting over big data sets.
+The data plane stores each item as an object in Amazon S3 and stores their S3 object identifier in DynamoDB. However, many application scenarios involve data access patterns that require capabilities beyond those provided by DynamoDB and S3. For example, you might need Amazon Elasticsearch Service (Amazon ES) to support interactive analytics, Amazon SNS may be needed to provide real-time messaging and notifications, or Amazon Quicksight to support analytical reporting over big datasets.
 
 The data plane provides a change-data-capture (CDC) stream from DynamoDB to communicate media analysis data to stream consumers where ETL tasks can transform and load raw data to the downstream data stores that support end-user applications. This CDC stream is provided as a Kinesis Data Stream. The ARN for this is provided as an output called `AnalyticsStreamArn` in the base MIE CloudFormation stack, as shown below:
 
 <img src="docs/assets/images/analytics_stream_output.png" width=400>
 
-For more information about how to implement Kinesis Data Stream consumers in MIE, check out the [MIE demo application](https://github.com/awslabs/aws-media-insights/blob/master/README.md#advanced-usage), which includes a data stream consumer that feeds Elasticsearch.
+For more information about how to implement Kinesis Data Stream consumers in MIE, refer to the [MIE demo application](https://github.com/awslabs/aws-media-insights/blob/master/README.md#advanced-usage), which includes a data stream consumer that feeds Amazon ES.
 
 # 6. API Documentation
 
@@ -381,6 +383,7 @@ For more information about how to implement Kinesis Data Stream consumers in MIE
   * GET /workflow/execution/asset/{AssetId}
   * GET /workflow/execution/status/{Status}
   * DELETE /workflow/execution/{Id}
+  * GET /workflow/execution/{Id}
   * POST /workflow/operation
   * DELETE /workflow/operation/{Name}
   * POST /workflow/stage
@@ -393,23 +396,28 @@ For more information about how to implement Kinesis Data Stream consumers in MIE
 
   `POST /create`
 
-    ```
-    Body:
-    
-    {
-        "Input": {
-            "S3Bucket": "{somenbucket}",
-            "S3Key": "{somekey}"
-        }
+  Body:
+  
+  ```
+  {
+    "Input": {
+      "S3Bucket": "{somenbucket}",
+      "S3Key": "{somekey}"
     }
-    ```
-  Returns: A dict mapping of the asset id and the new location of the media object
+  }
+  ```
+  
+  Returns:
+  
+  * A dictionary mapping of the asset id and the new location of the media object
 
 * Retrieve metadata for an asset:
 
   `GET /metadata/{asset_id}`
 
-  Returns: All asset metadata. If the result provides a cursor then you can get the next page by specifying the cursor like this:
+  Returns:
+  
+  * All asset metadata. If the result provides a cursor then you can get the next page by specifying the cursor like this:
 
   `GET /metadata/{asset_id}?cursor={cursor}`
 
@@ -417,18 +425,33 @@ For more information about how to implement Kinesis Data Stream consumers in MIE
 
   `POST /metadata/{asset_id}`
 
-    ```
-    Body:
-    
-    {
-        "OperatorName": "{some_operator}",
-        "Results": "{json_formatted_results}"
-    }
-    ```
+  Body:
+  
+  ```
+  {
+    "OperatorName": "{some_operator}",
+    "Results": "{json_formatted_results}"
+  }
+  ```
 
 * Retrieve the metadata that a specific operator created from an asset:
 
   `GET /metadata/{asset_id}/{operator_name}`
+
+* Get version information:
+
+  `GET /version`
+
+  Returns:
+  
+  * A dictionary containing the version of the MIE framework and the version of the dataplane API. Since it is possible for the MIE framework to be released without any API changes, these two versions can be different. The MIE framework and its APIs are versioned according to [Semantic Versioning](https://semver.org) rules. Under this scheme, version numbers and the way they change convey meaning about backwards compatibility.
+
+    For example, if the MIE framework was version [v2.0.4](https://github.com/awslabs/aws-media-insights-engine/releases/tag/v2.0.4) and the workflow API was version 2.0.0, then this would return the following response:
+  
+    ```
+    b'{"ApiVersion":"2.0.0","FrameworkVersion":"v2.0.4"}'
+    ```
+
 
 ## Workflow API
 
@@ -436,73 +459,86 @@ For more information about how to implement Kinesis Data Stream consumers in MIE
 
   `POST /system/configuration`
 
-    ```
-    Body:
-    
-    {
-        "Name": "ParameterName",
-        "Value": "ParameterValue"
-    }
-    ```
+  Body:
+  
+  ```
+  {
+    "Name": "ParameterName",
+    "Value": "ParameterValue"
+  }
+  ```
 
   Supported parameters:
+  
   * ***MaxConcurrentWorkflows*** - Sets the maximum number of workflows that are allowed to run concurrently. Any new workflows that are added after MaxConcurrentWorkflows is reached are placed on a queue until capacity is freed by completing workflows. Use this to help avoid throttling in service API calls from workflow operators. This setting is checked each time the WorkflowSchedulerLambda is run and may take up to 60 seconds to take effect.
 
-  Returns: None
+  Returns: 
+  
+  * Nothing
 
   Raises:
-  * 200: The system configuration was set successfully.
+  
+  * 200: The system configuration was set successfully
   * 400: Bad Request
-  * 500: Internal server error - an input value is invalid
+  * 500: Internal server error - an input value is not valid
 
-* Get the current MIE system configuration
+* Get the current MIE system configuration:
 
   `GET /system/configuration`
 
   Returns:
-  * A list of dict containing the current MIE system configuration key-value pairs.
+  
+  * A list of dictionary containing the current MIE system configuration key-value pairs.
 
   Raises:
-  * 200: The system configuration was returned successfully.
+  
+  * 200: The system configuration was returned successfully
   * 500: Internal server error
 
-* Create a workflow from a list of existing stages. A workflow is a pipeline of stages that are executed sequentially to transform and extract metadata for a set of MediaType objects. Each stage must contain either a “Next” key indicating the next stage to execute or and “End” key indicating it is the last stage.
+* Create a workflow from a list of existing stages:
+  
+  A workflow is a pipeline of stages that are started sequentially to transform and extract metadata for a set of MediaType objects. Each stage must contain either a “Next” key indicating the next stage to run or and “End” key indicating it is the last stage.
 
   `POST /workflow`
-    ```
-    Body:
-    
-    {
-        "Name": string,
-        "StartAt": string - name of starting stage,
-        "Stages": {
-            "stage-name": {
-                "Next": "string - name of next stage"
-            },
-            ...,
-            "stage-name": {
-                "End": true
-            }
-        }
+  
+  Body:
+  
+  ```
+  {
+    "Name": string,
+    "StartAt": string - name of starting stage,
+    "Stages": {
+      "stage-name": {
+          "Next": "string - name of next stage"
+      },
+      ...,
+      "stage-name": {
+          "End": true
+      }
     }
-    ```
+  }
+  ```
+
   Returns:
-  * A dict mapping keys to the corresponding workflow created including the AWS resources used to execute each stage.
+  
+  * A dictionary mapping keys to the corresponding workflow created including the AWS resources used to run each stage.
 
   Raises:
-  * 200: The workflow was created successfully.
+  
+  * 200: The workflow was created successfully
   * 400: Bad Request - one of the input stages was not found or was invalid
   * 500: Internal server error
 
-* List all workflow definitions
+* List all workflow definitions:
 
   `GET /workflow`
 
   Returns:
+  
   * A list of workflow definitions.
 
   Raises:
-  * 200: All workflows returned successfully.
+  * 200: All workflows returned successfully
   * 500: Internal server error
 
 * Get a workflow configuration object by name
@@ -510,46 +546,51 @@ For more information about how to implement Kinesis Data Stream consumers in MIE
   `GET /workflow/configuration/{Name}`
 
   Returns:
+  
   * A dictionary containing the workflow configuration.
 
   Raises:
-  * 200: All workflows returned successfully.
+  * 200: All workflows returned successfully
   * 404: Not found
   * 500: Internal server error
 
-* Execute a workflow. The Body contains the name of the workflow to execute, at least one input media type within the media object. A dictionary of stage configuration objects can be passed in to override the default configuration of the operations within the stages.
+* Run a workflow: 
+  
+  The Body contains the name of the workflow to run, at least one input media type within the media object. A dictionary of stage configuration objects can be passed in to override the default configuration of the operations within the stages.
 
   `POST /workflow/execution`
-    ```
-    Body:
-    
-    {
-    "Name":"Default",
-    "Input": media-object
-    "Configuration": {
-        {
-        "stage-name": {
-            "Operations": {
-                "SplitAudio": {
-                   "Enabled": True,
-                   "MediaTypes": {
-                       "Video": True/False,
-                       "Audio": True/False,
-                       "Frame": True/False
-                   }
-               },
-           },
-       }
-       ...
-       }
-    }
-    ```
+  
+  Body:  
+  
+  ```
+  {
+  "Name":"Default",
+  "Input": media-object
+  "Configuration": {
+    "stage-name": {
+      "Operations": {
+        "SplitAudio": {
+          "Enabled": True,
+          "MediaTypes": {
+            "Video": True/False,
+            "Audio": True/False,
+            "Frame": True/False
+          }
+       },
+     },
+   }
+   ...
+  }
+  ```
+  
   Returns:
-  * A dict mapping keys to the corresponding workflow execution created including the WorkflowExecutionId, the AWS queue and state machine resources associated with the workflow execution and the current execution status of the workflow.
+  
+  * A dictionary describing the workflow execution properties and the `WorkflowExecutionId` that can be used as the `Id` in `/workflow/execution/{Id}` API requests.
 
   Raises:
-  * 200: The workflow execution was created successfully.
-  * 400: Bad Request - the input workflow was not found or was invalid
+  
+  * 200: The workflow run was created successfully
+  * 400: Bad Request - the input workflow was not found or was not valid
   * 500: Internal server error
 
 * List all workflow executions:
@@ -557,10 +598,12 @@ For more information about how to implement Kinesis Data Stream consumers in MIE
   `GET /workflow/execution`
 
   Returns:
-  * A list of workflow executions.
+  
+  * A list of workflow runs
 
   Raises:
-  * 200: All workflow executions returned successfully.
+  
+  * 200: List returned successfully
   * 500: Internal server error
 
 * Get workflow executions by AssetId:
@@ -568,10 +611,12 @@ For more information about how to implement Kinesis Data Stream consumers in MIE
   `GET /workflow/execution/asset/{AssetId}`
 
   Returns:
-  * A list of dictionaries containing the workflow executions matching the AssetId.
+  
+  * A list of dictionaries containing the workflow runs matching the AssetId
 
   Raises:
-  * 200: Workflow executions returned successfully.
+  
+  * 200: List returned successfully
   * 404: Not found
   * 500: Internal server error
 
@@ -580,35 +625,43 @@ For more information about how to implement Kinesis Data Stream consumers in MIE
   `GET /workflow/execution/status/{Status}`
 
   Returns:
+  
   * A list of dictionaries containing the workflow executions with the requested status
 
   Raises:
-  * 200: All workflows returned successfully.
+  * 200: All workflows returned successfully
   * 404: Not found
   * 500: Internal server error
 
-* Delete a workflow executions:
+* Delete a workflow execution:
 
   `DELETE /workflow/execution/{Id}`
 
+  Returns:
+
+  * Nothing
+
   Raises:
-  * 200: Workflow execution deleted successfully.
+  
+  * 200: Workflow execution deleted successfully
   * 404: Not found
   * 500: Internal server error
 
-* Get a workflow execution by id
+* Get a workflow execution by id:
 
   `GET /workflow/execution/{Id}`
 
   Returns:
-  * A dictionary containing the workflow execution.
+  
+  * A dictionary containing the workflow execution
 
   Raises:
-  * 200: Workflow executions returned successfully.
+
+  *	200: The workflow execution details returned successfully
   * 404: Not found
   * 500: Internal server error
 
-* Create a new operation
+* Create a new operation:
 
   `POST /workflow/operation`
 
@@ -616,225 +669,267 @@ For more information about how to implement Kinesis Data Stream consumers in MIE
 
   Creates a singleton operator stage that can be used to run the operator as a single-operator stage in a workflow.
 
-  Operators can be synchronous (Sync) or asynchronous (Async). Synchronous operators complete before returning control to the invoker, while asynchronous operators return control to the invoker immediately after the operation is successfully initiated. Asynchronous operators require an additional monitoring task to check the status of the operation.
+  Operators can be synchronous or asynchronous. Synchronous operators complete before returning control to the invoker, while asynchronous operators return control to the invoker immediately after the operation is successfully initiated. Asynchronous operators require an additional monitoring task to check the status of the operation.
 
-  For more information on how to implement lambdas to be used in MIE operators, see [4. Implementing a new Operator in MIE](#4-implementing-a-new-operator-in-mie)
+  For more information on how to implement lambdas to be used in MIE operators, refer to [4. Implementing a new Operator in MIE](#4-implementing-a-new-operator-in-mie)
 
-    ```
-    Body:
-    
-    {
-        "Name":"operation-name",
-        "Type": ["Async"|"Sync"],
-        "Configuration" : {
-                "MediaType": "Video",
-                "Enabled:": True,
-                "configuration1": "value1",
-                "configuration2": "value2",
-                ...
-            }
-        "StartLambdaArn":arn,
-        "MonitorLambdaArn":arn,
-        "SfnExecutionRole": arn
-        }
-    ```
-  Returns:
-  * A dict mapping keys to the corresponding operation.
-    ```
-    {
-        "Name": string,
-        "Type": ["Async"|"Sync"],
-        "Configuration" : {
-            "MediaType": "Video|Frame|Audio|Text|...",
-            "Enabled:": boolean,
-            "configuration1": "value1",
-            "configuration2": "value2",
-            ...
-        }
-        "StartLambdaArn":arn,
-        "MonitorLambdaArn":arn,
-        "StateMachineExecutionRoleArn": arn,
-        "StateMachineAsl": ASL-string
-        "StageName": string
+  Body:
+  
+  ```
+  {
+    "Name":"operation-name",
+    "Type": ["Async"|"Sync"],
+    "Configuration" : {
+      "MediaType": "Video",
+      "Enabled:": True,
+      "configuration1": "value1",
+      "configuration2": "value2",
+      ...
     }
-    ```
+    "StartLambdaArn":arn,
+    "MonitorLambdaArn":arn,
+    "SfnExecutionRole": arn
+  }
+  ```
+  
+  Returns:
+  
+  * A dictionary mapping keys to the corresponding operation
+  
+  ```
+  {
+    "Name": string,
+    "Type": ["Async"|"Sync"],
+    "Configuration" : {
+        "MediaType": "Video|Frame|Audio|Text|...",
+        "Enabled:": boolean,
+        "configuration1": "value1",
+        "configuration2": "value2",
+        ...
+    }
+    "StartLambdaArn":arn,
+    "MonitorLambdaArn":arn,
+    "StateMachineExecutionRoleArn": arn,
+    "StateMachineAsl": ASL-string
+    "StageName": string
+  }
+  ```
+  
   Raises:
-  * 200: The operation and stage was created successfully.
+  
+  * 200: The operation and stage was created successfully
   * 400: Bad Request
     * one of the input lambdas was not found
     * one or more of the required input keys is missing
-    * an input value is invalid
+    * an input value is not valid
   * 409: Conflict
   * 500: Internal server error
 
 
-  ***Update (January 29, 2021):*** Do not try to create more than 35 new operators via `/workflow/operation`. The IAM inline policy used in `media-insights-stack.yaml` to grant `InvokeFunction` permission to the `StepFunctionRole` for new operators will exceed the maximum length allowed by IAM if users create more than 35 operators (+/- 1).
+  ***IMPORTANT:*** Do not try to create more than 35 new operators via `/workflow/operation`. The IAM inline policy used in `media-insights-stack.yaml` to grant `InvokeFunction` permission to the `StepFunctionRole` for new operators will exceed the maximum length allowed by IAM if users create more than 35 operators (+/- 1).
   
-  For more information, see the comments in this commit:
+  For more information, refer to the comments in this commit:
   [awslabs/aws-media-insights-engine@451ec2e](https://github.com/awslabs/aws-media-insights-engine/commit/451ec2edc04881dd8947d5855e9145f51056465f)
   
-  Here is a sample command that shows how to create an operator from `/workflow/operation` on the command line:
+  Sample command that shows how to create an operator from `/workflow/operation` on the command line:
   
   ```
   OPERATOR_NAME="op1"
   WORKFLOW_API_ENDPOINT="https://tvplry8vn3.execute-api.us-west-2.amazonaws.com/api/"
-  START_ARN="arn:aws:lambda:us-west-2:773074507832:function:mie03d-OperatorFailedLambda-11W1LAY0CWCUZ"
-  MONITOR_ARN="arn:aws:lambda:us-west-2:773074507832:function:mie03d-OperatorFailedLambda-11W1LAY0CWCUZ"
+  START_ARN="arn:aws:lambda:us-west-2:__redacted__:function:mie03d-OperatorFailedLambda-11W1LAY0CWCUZ"
+  MONITOR_ARN="arn:aws:lambda:us-west-2:__redacted__:function:mie03d-OperatorFailedLambda-11W1LAY0CWCUZ"
   REGION="us-west-2"
   awscurl --region ${REGION} -X POST -H "Content-Type: application/json" -d '{"StartLambdaArn": "'${START_ARN}'", "Configuration": {"MediaType": "Video", "Enabled": true}, "Type": "Async", "Name": "'${OPERATOR_NAME}'", "MonitorLambdaArn": "'${MONITOR_ARN}}'"' ${WORKFLOW_API_ENDPOINT}workflow/operation;
   ```
 
-* List all defined operators
+* List all defined operators:
 
   `GET /workflow/operation`
 
   Returns:
-  * A list of operation definitions.
+  
+  * A list of operation definitions
 
   Raises:
-  * 200: All operations returned successfully.
+  
+  * 200: All operations returned successfully
   * 500: Internal server error
 
-* Delete an operation
+* Delete an operation:
 
   `DELETE /workflow/operation/{Name}`
 
   Raises:
-  * 200: Operation deleted successfully.
+  
+  * 200: Operation deleted successfully
   * 500: Internal server error
 
-* Get an operation definition by name
+* Get an operation definition by name:
 
   `GET /workflow/operation/{Name}`
 
   Returns:
-  * A dictionary containing the operation definition.
+  
+  * A dictionary containing the operation definition
 
   Raises:
-  * 200: All operations returned successfully.
+  
+  * 200: All operations returned successfully
   * 404: Not found
   * 500: Internal server error
 
-* Create a stage state machine from a list of existing operations. A stage is a set of operations that are grouped so they can be executed in parallel. When the stage is executed as part of a workflow, operations within a stage are executed as branches in a parallel Step Functions state. The generated state machines status is tracked by the workflow engine control plane during execution.
+* Create a stage state machine from a list of existing operations:
+  
+  A stage is a set of operations that are grouped so they can be run in parallel. When the stage is run as part of a workflow, operations within a stage are run as branches in a parallel Step Functions state. The generated state machines status is tracked by the workflow engine control plane during the run.
 
   An optional Configuration for each operator in the stage can be input to override the default configuration for the stage.
 
   `POST /workflow/stage`
-    ```
-    Body:
-    
-    {
+
+  Body:
+  
+  ```
+  {
     "Name":"stage-name",
     "Operations": ["operation-name1", "operation-name2", ...]
-    }
-    Returns:
-    A dict mapping keys to the corresponding stage created including the ARN of the state machine created.
-    
-    {
-    “Name”: string, “Operations”: [
-    
-    “operation-name1”, “operation-name2”, …
-    ], “Configuration”: {
-    
-    “operation-name1”: operation-configuration-object1, “operation-name2”: operation-configuration-object1, …
-    } “StateMachineArn”: ARN-string
-    
-    “Name”: “TestStage”, “Operations”: [
-    
-    “TestOperator”
-    ], “Configuration”: {
-    
-    “TestOperator”: {
-    “MediaType”: “Video”, “Enabled”: true
-    }
-    }, “StateMachineArn”: “arn:aws:states:us-west-2:526662735483:stateMachine:TestStage”
-    }
-    ```
+  }
+  ```
+  
+  Returns:
+  
+  * A dictionary mapping keys to the corresponding stage created including the ARN of the state machine created
+  
+  ```
+  {
+    “Name”: string, 
+    “Operations”: [“operation-name1”, “operation-name2”, ...], 
+    “Configuration”: {
+      “operation-name1”: operation-configuration-object1, “operation-name2”: operation-configuration-object1, ...
+    }, 
+    “StateMachineArn”: ARN-string,    
+    “Name”: “TestStage”, 
+    “Operations”: [“TestOperator”], 
+    “Configuration”: {
+      “TestOperator”: {
+      “MediaType”: “Video”, 
+      “Enabled”: true
+      }
+    }, 
+    “StateMachineArn”: “arn:aws:states:us-west-2:__redacted__:stateMachine:TestStage”
+  }
+  ```
 
   Raises:
-  * 200: The stage was created successfully.
-  * 400: Bad Request - one of the input state machines was not found or was invalid
+  
+  * 200: The stage was created successfully
+  * 400: Bad Request - one of the input state machines was not found or was not valid
   * 409: Conflict
   * 500: Internal server error
 
-* List all stage definitions
+* List all stage definitions:
 
   `GET /workflow/stage`
 
   Returns:
-  * A list of operation definitions.
+  
+  * A list of operation definitions
 
   Raises:
-  * 200: All operations returned successfully.
+  
+  * 200: All operations returned successfully
   * 500: Internal server error
 
-* Delete a stage
+* Delete a stage:
 
   `DELETE /workflow/stage/{Name}`
 
   Returns:
-
+  
+  * Nothing
+  
   Raises:
-  * 200: Stage deleted successfully.
+  
+  * 200: Stage deleted successfully
   * 404: Not found
   * 500: Internal server error
 
-* Get a stage definition by name
+* Get a stage definition by name:
 
   `GET /workflow/stage/{Name}`
 
   Returns:
-  A dictionary containing the stage definition.
+  
+  * A dictionary containing the stage definition
 
   Raises:
-  * 200: All stages returned successfully.
+  
+  * 200: Stage definition was returned successfully
   * 404: Not found
   * 500: Internal server error
 
-* Delete a workflow
+* Delete a workflow:
 
   `DELETE /workflow/{Name}`
 
   Returns:
 
+  * Nothing
+
   Raises:
-  * 200: Workflow deleted successfully.
+  
+  * 200: Workflow deleted successfully
   * 404: Not found
   * 500: Internal server error
 
-* Get a workflow definition by name
+* Get a workflow definition by name:
 
   `GET /workflow/{Name}`
 
   Returns:
-  * A dictionary containing the workflow definition.
+  
+  * A dictionary containing the workflow definition
 
   Raises:
-  * 200: All workflows returned successfully.
+  
+  * 200: Workflow definition returned successfully
   * 404: Not found
   * 500: Internal server error
 
+* Get version information :
+
+  `GET /version`
+
+  Returns:
+  
+  * A dictionary containing the version of the MIE framework and the version of the workflow API. Since it is possible for the MIE framework to be released without any API changes, these two versions can be different. The MIE framework and its APIs are versioned according to [Semantic Versioning](https://semver.org) rules. Under this scheme, version numbers and the way they change convey meaning about backwards compatibility.
+
+  For example, if the MIE framework was version [v2.0.4](https://github.com/awslabs/aws-media-insights-engine/releases/tag/v2.0.4) and the workflow API was version 2.0.0, then this would return the following response: 
+  
+  ```
+  b'{"ApiVersion":"2.0.0","FrameworkVersion":"v2.0.4"}'
+  ```
+
 # 7. Troubleshooting
 
-## How to enable AWS X-Ray request tracing for MIE
+## How to activate AWS X-Ray request tracing for MIE
 
-AWS X-Ray traces requests through the AWS platform.  It is especially useful for performance debugging, but also helps with other types of debugging by making it easy to follow what happened with a request end to end across AWS services, even when the request triggered execution across multiple AWS accounts.
+AWS X-Ray traces requests through the AWS platform.  It is especially useful for performance debugging, but also helps with other types of debugging by making it easy to follow what happened with a request end to end across AWS services, even when the invoked request runs across multiple AWS accounts.
 
 The AWS X-Ray service has a perpetual free tier.  When free tier limits are exceeded X-Ray tracing incurs charges as outlined by the [X-Ray pricing](https://aws.amazon.com/xray/pricing/) page.
 
 
-### Enable tracing from Lambda entry points
+### Activate tracing from Lambda entry points
 
-By default, tracing for MIE is disabled.  You can enable AWS X-Ray tracing for MIE requests by updating the MIE stack with the **EnableXrayTrace** CloudFormation parameter to `true` .  When tracing is enabled,  all supported services that are invoked for the request will be traced starting from MIE Lambda entry points. These entry point Lambdas are as follows:
+By default, tracing for MIE is deactivated. You can activate AWS X-Ray tracing for MIE requests by updating the MIE stack with the **EnableXrayTrace** CloudFormation parameter to `true` .  When tracing is activated,  all supported services that are invoked for the request will be traced starting from MIE Lambda entry points. These entry point Lambdas are as follows:
 
 * WorkflowAPIHandler
 * WorkflowCustomResource
 * WorkflowScheduler
 * DataplaneAPIHandler
 
-### Enable tracing from API Gateway entry points
+### Activate tracing from API Gateway entry points
 
-Additionally, you can enable tracing for API Gateway requests in the AWS Console by checking  the *Enable tracing* option for the deployed API Gateway stages for both the Workflow API and the Data plane API.  See the [AWS console documentation](https://docs.aws.amazon.com/xray/latest/devguide/xray-services-apigateway.html) for more info.
+Additionally, you can activate tracing for API Gateway requests in the AWS Management Console by checking  the *Enable tracing* option for the deployed API Gateway stages for both the Workflow API and the Data plane API. For details, refer to "Amazon API Gateway active tracing support for AWS X-Ray" section in the [AWS X-Ray Developer Guide](https://docs.aws.amazon.com/xray/latest/devguide/xray-services-apigateway.html).
 
 ### Developing custom tracing in MIE lambda functions
 
@@ -867,11 +962,11 @@ except Exception as e:
     raise MasExecutionError(operator_object.return_output_object())
 ```
 
-This code updates the outputs of the operator within the workflow_execution results with the error status, specific error information for this failure then raises an exception.  The exception will trigger the `Catch` and `Retry` error handling within the state machine (see next section).
+This code updates the outputs of the operator within the workflow_execution results with the error status, specific error information for this failure then raises an exception.  The exception will invoke the `Catch` and `Retry` error handling within the state machine (refer to the next section).
 
 #### Operator state machine ASL error handling
 
-Operators use `Catch` and `Retry` to handle errors that occur in the steps of the operator state machine tasks.  If a step returns an error, the operator is retried.  If retry attempts fail, then the **OperatorFailed** lambda resource is invoked to handle the error by making sure the workflow_execution object contains the error status, specific information about the failure and the workflow execution error status is propagated to the control plane. The following is an example of the `Catch` and `Retry` states using Amazon States Language (ASL) for MIE state machine error handling:
+Operators use `Catch` and `Retry` to handle errors that occur in the steps of the operator state machine tasks.  If a step returns an error, the operator is retried.  If retry attempts fail, then the **OperatorFailed** lambda resource is invoked to handle the error by making sure the workflow_execution object contains the error status, specific information about the failure and the workflow run error status is propagated to the control plane. The following is an example of the `Catch` and `Retry` states using Amazon States Language (ASL) for MIE state machine error handling:
 
 ``` json
 {
@@ -893,36 +988,37 @@ Operators use `Catch` and `Retry` to handle errors that occur in the steps of th
 
 #### Workflow state machine error handling
 
-If an error occurs in the Step Function service that causes the state machine execution for an MIE workflow to be terminated immediately, then the `Catch` and `Retry` and **OperatorFailed** lambda will not be able to handle the error.  These types of errors can occur in a number of circumstances.  For example, when the Step Function history limit is exceeded, or the execution is Stopped (aborted) from the AWS console.  Failure to handle these errors will the workflow in a perpetually `Started` status in the MIE control plane.
+If you need to perform certain actions in response to workflow errors, then edit the **WorkflowErrorHandlerLambda:** lambda function. This function is invoked when the Step Functions service emits `Step Functions Execution Status Change` EventBridge events that have an error status (`FAILED, TIMED_OUT, ABORTED`).  The error handler propagates the error to the MIE control plane if the workflow is not already completed.
 
-The **WorkflowErrorHandlerLambda:** lambda resource is triggered when the Step Functions service emits `Step Functions Execution Status Change` EventBridge events that have an error status (`FAILED, TIMED_OUT, ABORTED`).  The error handler propagates the error to the MIE control plane if the workflow is not already completed.
+If an error occurs in the Step Function service that causes the state machine for an MIE workflow to be terminated immediately, then the `Catch` and `Retry` and **OperatorFailed** lambda will not be able to handle the error.  These types of errors can occur in a number of circumstances, such as when the Step Function history limit is exceeded, or the step function has been manually stopped.  Failure to handle these errors will put the workflow in a perpetually `Started` status in the MIE control plane. If this happens then you will need to manually remove the workflow from the `WorkflowExecution` DynamoDB table.
+
 
 # 8. Glossary
 
 ## Workflow API
-Triggers the execution of a workflow. Also triggers create, update and delete workflows and operators.  Monitors the status of workflows.
+Provides a REST interface to start workflow, create, update and delete workflows and operators, and check the status of executed workflows.
 
 ## Control plane
-Executes the AWS Step Functions state machine for the workflow against the provided input.  Workflow state machines are generated from MIE operators.  As operators within the state machine are executed, they interact with the MIE data plane to store and retrieve media objects and data files.
+Runs the AWS Step Functions state machine for the workflow against the provided input.  Workflow state machines are generated from MIE operators.  As operators within the state machine are executed, they interact with the MIE data plane to store and retrieve media objects and data files.
 
 ## Operators
 Generated state machines that perform media analysis or transformation operation.
 
 ## Workflows
-Generated state machines that execute a number of operators in sequence.
+Generated state machines that run a number of operators in sequence.
 
 ## Data plane
 Stores media assets and their associated metadata that are generated by workflows.
 
 ## Data plane API
 
-Trigger create, update, delete and retrieval of media assets and their associated metadata.
+A REST interface to create, update, delete and retrieve media assets and their associated metadata.
 
 ## Data plane pipeline
 
-Stores metadata for an asset that can be retrieved as a single block or pages of data using the objects AssetId and Metadata type.  Writing data to the pipeline triggers a copy of the data to be stored in a **Kinesis Stream**.
+Stores metadata for an asset that can be retrieved as a single block or pages of data using the objects AssetId and Metadata type.  Writing data to the pipeline causes a copy of the data to be stored in a **Kinesis Stream**.
 
 ### **Data plane pipeline consumer**
 
-A lambda function that consumes data from the data plane pipeline and stores it (or acts on it) in another downstream data store.  Data can be stored in different kinds of data stores to fit the data management and query needs of the application. There may be 0 or more pipeline consumers in a MIE application.
+A lambda function that consumes data from the data plane pipeline and stores it (or acts on it) in another downstream data store.  Data can be stored in different kinds of data stores to fit the data management and query needs of the application.
 

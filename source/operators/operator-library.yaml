@@ -1332,6 +1332,7 @@ Resources:
             ],
           ]
       Runtime: "python3.8"
+      Timeout: 120
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
@@ -1397,6 +1398,7 @@ Resources:
             ],
           ]
       Runtime: "python3.8"
+      Timeout: 120
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
@@ -1462,6 +1464,7 @@ Resources:
             ],
           ]
       Runtime: "python3.8"
+      Timeout: 120
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
@@ -1652,6 +1655,7 @@ Resources:
             ],
           ]
       Runtime: "python3.8"
+      Timeout: 120
       Environment:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
@@ -2016,6 +2020,7 @@ Resources:
             ],
           ]
       Runtime: "python3.8"
+      Timeout: 120
       Environment:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
@@ -2045,6 +2050,7 @@ Resources:
             ],
           ]
       Runtime: "python3.8"
+      Timeout: 120
       Environment:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"

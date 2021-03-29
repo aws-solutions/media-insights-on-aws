@@ -1089,7 +1089,7 @@ Resources:
           WORKFLOW_TABLE_NAME: !Ref WorkflowTable
           SYSTEM_TABLE_NAME: !Ref SystemTable
           DEFAULT_MAX_CONCURRENT_WORKFLOWS: !Ref MaxConcurrentWorkflows
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Handler: app.workflow_scheduler_lambda
       TracingConfig:
           Mode: !If [EnableTraceOnEntryPoints, "Active", "PassThrough"]
@@ -1208,7 +1208,7 @@ Resources:
     Properties:
       Environment:
         Variables:
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
           STAGE_EXECUTION_QUEUE_URL: !Ref StageExecutionQueue
           STAGE_TABLE_NAME: !Ref StageTable
           OPERATION_TABLE_NAME: !Ref OperationTable
@@ -1250,7 +1250,7 @@ Resources:
     Properties:
       Environment:
         Variables:
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
           STAGE_EXECUTION_QUEUE_URL: !Ref StageExecutionQueue
           STAGE_TABLE_NAME: !Ref StageTable
           OPERATION_TABLE_NAME: !Ref OperationTable
@@ -1312,7 +1312,7 @@ Resources:
       FunctionName: !Sub "${AWS::StackName}-start-wait-operation"
       Environment:
         Variables:
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
           STAGE_EXECUTION_QUEUE_URL: !Ref StageExecutionQueue
           STAGE_TABLE_NAME: !Ref StageTable
           OPERATION_TABLE_NAME: !Ref OperationTable
@@ -1348,7 +1348,7 @@ Resources:
       FunctionName: !Sub "${AWS::StackName}-check-wait-operation"
       Environment:
         Variables:
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
           STAGE_EXECUTION_QUEUE_URL: !Ref StageExecutionQueue
           STAGE_TABLE_NAME: !Ref StageTable
           OPERATION_TABLE_NAME: !Ref OperationTable
@@ -1386,7 +1386,7 @@ Resources:
       Environment:
         Variables:
           TOPIC_ARN: !Ref WorkflowExecutionEventTopic
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Code:
         S3Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
         S3Key:
@@ -1431,7 +1431,7 @@ Resources:
           ],
         ]
       Parameters:
-        botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+        botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
         DataplaneTableName: !Ref DataplaneTable
         DataplaneBucketName: !Ref Dataplane
         DeploymentPackageBucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
@@ -1471,7 +1471,7 @@ Resources:
             - DataplaneTable
             - StreamArn
         DynamoTableArn: !GetAtt DataplaneTable.Arn
-        botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+        botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
 
   # Workflow creation and execution API
   MediaInsightsWorkflowApi:
@@ -1489,7 +1489,7 @@ Resources:
           ],
         ]
       Parameters:
-        botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+        botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
         ShortUUID: !GetAtt GetShortUUID.Data
         StageExecutionQueueUrl: !Ref StageExecutionQueue
         StageExecutionRole: !GetAtt StepFunctionRole.Arn

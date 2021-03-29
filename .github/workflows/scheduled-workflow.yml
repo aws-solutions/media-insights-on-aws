@@ -3,6 +3,7 @@ name: scheduled-workflow
 on:
   schedule:
     - cron: '0 4 * * *'
+  workflow_dispatch:
 
 jobs:
   build-us-west-2:

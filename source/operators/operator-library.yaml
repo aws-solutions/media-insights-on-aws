@@ -759,7 +759,7 @@ Resources:
           OPERATOR_NAME: "GenericDataLookup"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DataLookupRole: !GetAtt genericDataLookupLambdaRole.Arn
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -793,7 +793,7 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DataLookupRole: !GetAtt mediainfoLambdaRole.Arn
           LD_LIBRARY_PATH: "/opt/python/"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -826,7 +826,7 @@ Resources:
           OPERATOR_NAME: "comprehendStartKeyPhrases"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           comprehendRole: !GetAtt comprehendS3Role.Arn
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -857,7 +857,7 @@ Resources:
           OPERATOR_NAME: "comprehendGetKeyPhrases"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           comprehendRole: !GetAtt comprehendS3Role.Arn
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -888,7 +888,7 @@ Resources:
           OPERATOR_NAME: "comprehendStartEntityDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           comprehendRole: !GetAtt comprehendS3Role.Arn
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -919,7 +919,7 @@ Resources:
           OPERATOR_NAME: "comprehendEntityDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           comprehendRole: !GetAtt comprehendS3Role.Arn
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -954,7 +954,7 @@ Resources:
           OPERATOR_NAME: "technicalCueDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -987,7 +987,7 @@ Resources:
           OPERATOR_NAME: "technicalCueDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1020,7 +1020,7 @@ Resources:
           OPERATOR_NAME: "shotDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1053,7 +1053,7 @@ Resources:
           OPERATOR_NAME: "shotDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1086,7 +1086,7 @@ Resources:
           OPERATOR_NAME: "celebrityRecognition"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1118,7 +1118,7 @@ Resources:
           OPERATOR_NAME: "celebrityRecognition"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1151,7 +1151,7 @@ Resources:
           OPERATOR_NAME: "contentModeration"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1183,7 +1183,7 @@ Resources:
           OPERATOR_NAME: "contentModeration"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1217,7 +1217,7 @@ Resources:
           OPERATOR_NAME: "faceDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1250,7 +1250,7 @@ Resources:
           OPERATOR_NAME: "faceDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1284,7 +1284,7 @@ Resources:
           OPERATOR_NAME: "faceSearch"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1317,7 +1317,7 @@ Resources:
           OPERATOR_NAME: "faceSearch"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1350,7 +1350,7 @@ Resources:
           OPERATOR_NAME: "textDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1383,7 +1383,7 @@ Resources:
           OPERATOR_NAME: "textDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1416,7 +1416,7 @@ Resources:
           OPERATOR_NAME: "labelDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1449,7 +1449,7 @@ Resources:
           OPERATOR_NAME: "labelDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1480,7 +1480,7 @@ Resources:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
           REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "personTracking"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1513,7 +1513,7 @@ Resources:
           OPERATOR_NAME: "personTracking"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1546,7 +1546,7 @@ Resources:
           mediaconvertRole: !GetAtt "mediaConvertS3Role.Arn"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1577,7 +1577,7 @@ Resources:
           mediaconvertRole: !GetAtt "mediaConvertS3Role.Arn"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1608,7 +1608,7 @@ Resources:
           mediaconvertRole: !GetAtt "mediaConvertS3Role.Arn"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1638,7 +1638,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1670,7 +1670,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1701,7 +1701,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1734,7 +1734,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1766,7 +1766,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1796,7 +1796,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1826,7 +1826,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1856,7 +1856,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1889,7 +1889,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1918,7 +1918,7 @@ Resources:
           translateRole: !GetAtt translateS3Role.Arn
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1946,7 +1946,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1975,7 +1975,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -2003,7 +2003,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -2035,7 +2035,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -2065,7 +2065,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"

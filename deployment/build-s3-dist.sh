@@ -569,6 +569,7 @@ zip -q -r9 start_technical_cue_detection.zip start_technical_cue_detection.py
 zip -q -r9 check_technical_cue_status.zip check_technical_cue_status.py
 zip -q -r9 start_shot_detection.zip start_shot_detection.py
 zip -q -r9 check_shot_detection_status.zip check_shot_detection_status.py
+zip -q -r9 custom_labels.zip custom_labels.py
 mv -f ./*.zip "$regional_dist_dir"
 
 # ------------------------------------------------------------------------------"

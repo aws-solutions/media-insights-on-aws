@@ -41,6 +41,10 @@
             {
               "id": "W11",
               "reason": "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
+            },
+            {
+              "id": "F3",
+              "reason": "This is scoped down to just the dataplane table, which the api handler role needs full permission on"
             }
           ]
         }

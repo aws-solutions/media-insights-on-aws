@@ -1436,6 +1436,34 @@ Resources:
         - Key: "environment"
           Value: "mie"
 
+  customLabels:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "custom_labels.lambda_handler"
+      Layers:
+        - !Ref MediaInsightsEnginePython37Layer
+      Role: !GetAtt "rekognitionRole.Arn"
+      Code:
+        S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+            "custom_labels.zip",
+            ],
+          ]
+      Runtime: "python3.7"
+      Timeout: 120
+      MemorySize: 256
+      Environment:
+        Variables:
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          OPERATOR_NAME: "customLabels"
+          DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          botoConfig: '{"user_agent": "aws-tm-mie/python3.7/lambda"}'
+
   # Mediaconvert Lambdas
 
   StartMediaConvertFunction:
@@ -2286,6 +2314,16 @@ Resources:
       Configuration: { "MediaType": "Image", "Enabled": true }
       StartLambdaArn: !GetAtt startFaceSearch.Arn
 
+  customLabelsOperation:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !Ref WorkflowCustomResourceArn
+      ResourceType: "Operation"
+      Name: "customLabels"
+      Type: "Sync"
+      Configuration: { "MediaType": "Image", "Enabled": true }
+      StartLambdaArn: !GetAtt customLabels.Arn
+
   labelDetectionOperation:
     Type: Custom::CustomResource
     Properties:
@@ -2534,6 +2572,11 @@ Outputs:
     Value: !GetAtt faceSearchOperationImage.Name
     Export:
       Name: !Join [":", [!Ref "AWS::StackName", FaceSearchImage]]
+  CustomLabelsOperation:
+    Description: "Custom Labels operator"
+    Value: !GetAtt customLabelsOperation.Name
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", CustomLabels]]
   LabelDetectionOperationImage:
     Description: "CelebRecognition image operator"
     Value: !GetAtt labelDetectionOperationImage.Name

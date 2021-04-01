@@ -30,7 +30,7 @@ def handler(event, context):
     print("We got this event:\n", event)
     # Each resource returns a promise with a json object to return cloudformation.
     try:
-        request = event['RequestType']
+        requestType = event['RequestType']
         resource = event['ResourceProperties']['Resource']
         config = event['ResourceProperties']
         # Remove ServiceToken (lambda arn) to avoid sending AccountId
@@ -38,36 +38,28 @@ def handler(event, context):
         config.pop("Resource", None)
         # Add some useful fields related to stack change
         config["CFTemplate"] = (
-                event["RequestType"] + "d"
+                requestType + "d"
         )  # Created, Updated, or Deleted
         responseData = {}
-        print('Request::{} Resource:: {}'.format(request,resource))
-
-        if request == 'Create':
+        print('Request::{} Resource::{}'.format(requestType, resource))
+        if requestType == 'Create' or requestType == 'Update':
             if resource == 'UUID':
                 responseData = {'UUID':str(uuid.uuid4())}
                 id = responseData['UUID']
-
+                cfn.send(event, context, 'SUCCESS', responseData, id)
             elif resource == 'AnonymousMetric':
                 Metrics.send_metrics(config)
                 id = 'Metrics Sent'
-
+                cfn.send(event, context, 'SUCCESS', responseData, id)
             else:
                 print('Create failed, {} not defined in the Custom Resource'.format(resource))
-                cfn.send(event, context, 'FAILED',{},context.log_stream_name)
-
-            cfn.send(event, context, 'SUCCESS', responseData, id)
-
-        elif request == 'Delete':
-
-            print('RESPONSE:: {} : delete not required, sending success response'.format(resource))
-
-            cfn.send(event, context, 'SUCCESS',{})
-
+                cfn.send(event, context, 'FAILED', {}, context.log_stream_name)
+        elif requestType == 'Delete':
+            print('RESPONSE:: {}: Not required to report data for delete request.'.format(resource))
+            cfn.send(event, context, 'SUCCESS', {})
         else:
-            print('RESPONSE:: {} Not supported'.format(request))
-
+            print('RESPONSE:: {} Not supported'.format(requestType))
     except Exception as e:
         print('Exception: {}'.format(e))
-        cfn.send(event, context, 'FAILED',{},context.log_stream_name)
-        print (e)
+        cfn.send(event, context, 'FAILED', {}, context.log_stream_name)
+        print(e)

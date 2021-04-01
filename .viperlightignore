@@ -15,6 +15,7 @@ CONTRIBUTING.md
 .github/workflows/release-workflow.yml:46
 .github/workflows/scheduled-workflow.yml:19
 .github/workflows/scheduled-workflow.yml:20
+.github/workflows/scheduled-workflow.yml:21
 README.md:143
 deployment/media-insights-stack.yaml:310
 deployment/media-insights-stack.yaml:321

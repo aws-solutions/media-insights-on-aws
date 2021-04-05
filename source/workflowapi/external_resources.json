@@ -102,6 +102,10 @@
             {
               "id": "W11",
               "reason": "The X-Ray, Transcribe, and Translate policies cannot be scoped to a specific resource."
+            },
+            {
+              "id": "W76",
+              "reason": "The complexity of this policy document is necessary in order to avoid wildcards."
             }
           ]
         }
@@ -308,6 +312,17 @@
                     "states:UntagResource"
                   ],
                   "Resource": {"Fn::Sub": "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine/*-${ShortUUID}"}
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "iam:ListRolePolicies",
+                    "iam:PutRolePolicy",
+                    "iam:DeleteRolePolicy"
+                  ],
+                  "Resource": {
+                    "Ref": "StageExecutionRole"
+                  }
                 }
               ]
             }

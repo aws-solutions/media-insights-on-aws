@@ -22,7 +22,7 @@ Parameters:
     Default: 5
     MinValue: 1
   EnableXrayTrace:
-    Description: Enable Active Xray tracing on all entry points to the stack
+    Description: Turn on Xray tracing on all entry points to the stack
     Type: String
     Default: No
     AllowedValues:
@@ -63,8 +63,8 @@ Mappings:
     General:
       GlobalS3Bucket: "%%GLOBAL_BUCKET_NAME%%"
       RegionalS3Bucket: "%%REGIONAL_BUCKET_NAME%%"
-      CodeKeyPrefix: "media_insights_engine/%%VERSION%%"
-      TemplateKeyPrefix: "media_insights_engine/%%VERSION%%"
+      CodeKeyPrefix: "aws-media-insights-engine/%%VERSION%%"
+      TemplateKeyPrefix: "aws-media-insights-engine/%%VERSION%%"
       FrameworkVersion: "%%VERSION%%"
 
 Resources:
@@ -822,7 +822,6 @@ Resources:
           - id: W51
             reason: "Bucket is private and does not need a bucket policy"
 
-  # TODO: Update cors config per: https://docs.amplify.aws/lib/storage/getting-started/q/platform/js#using-amazon-s3
   Dataplane:
     Type: "AWS::S3::Bucket"
     DependsOn: DataplaneLogsBucket
@@ -1663,7 +1662,6 @@ Resources:
       Version: !FindInMap ["SourceCode", "General", "FrameworkVersion"]
 
 Outputs:
-  # TODO: Add outputs for rest api IDs of workflow/dataplane apis
   OperatorLibraryStack:
     Description: Nested cloudformation stack that contains the MIE operator library
     Value: !GetAtt OperatorLibrary.Outputs.StackName

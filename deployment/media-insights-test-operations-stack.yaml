@@ -20,7 +20,7 @@ Mappings:
     SourceCode:
         General:
             RegionalS3Bucket: "%%REGIONAL_BUCKET_NAME%%"
-            CodeKeyPrefix: "media_insights_engine/%%VERSION%%"
+            CodeKeyPrefix: "aws-media-insights-engine/%%VERSION%%"
 
 Resources:
 

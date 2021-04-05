@@ -568,7 +568,6 @@ Resources:
                       "comprehend:DetectDominantLanguage",
                       "comprehend:CreateDocumentClassifier",
                       "comprehend:ListEntityRecognizers",
-                      "iam:PassRole",
                       "comprehend:ListSentimentDetectionJobs",
                       "comprehend:BatchDetectSyntax",
                       "comprehend:StartSentimentDetectionJob",

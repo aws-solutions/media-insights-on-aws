@@ -75,7 +75,13 @@
                 },
                 {
                   "Effect": "Allow",
-                  "Action": "dynamodb:*",
+                  "Action": [
+                    "dynamodb:GetItem",
+                    "dynamodb:PutItem",
+                    "dynamodb:DeleteItem",
+                    "dynamodb:UpdateItem",
+                    "dynamodb:Scan"
+                  ],
                   "Resource": {"Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${DataplaneTableName}"}
                 },
                 {
@@ -94,7 +100,7 @@
                     "logs:CreateLogStream",
                     "logs:PutLogEvents"
                   ],
-                  "Resource": "*",
+                  "Resource": {"Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*-APIHandler-*"},
                   "Effect": "Allow",
                   "Sid": "Logging"
                 }

@@ -35,7 +35,7 @@ This guide describes how to build MIE from source code and how to build applicat
 
 ## 2. Prerequisites
 
-You must have the following build tools in order to build MIE and the Media Insights front-end application:
+You must have the following build tools in order to build MIE:
 
 * AWS CLI - configured
 * Docker - installed and running
@@ -98,7 +98,7 @@ Instantiate the helper like this:
 
 ```
 from MediaInsightsEngineLambdaHelper import OutputHelper
-output_object = OutputHelper("my_operator_name")
+output_object = OutputHelper("<OPERATOR_NAME>")
 ```
 
 #### Get Asset and Workflow IDs
@@ -143,7 +143,7 @@ Metadata derived by an operator can be passed as input to the next stage in a wo
 
 ```
 from MediaInsightsEngineLambdaHelper import OutputHelper
-output_object = OutputHelper(operator_name)
+output_object = OutputHelper(<OPERATOR_NAME>)
 
 def lambda_handler(event, context):
     ...
@@ -962,7 +962,7 @@ except Exception as e:
     raise MasExecutionError(operator_object.return_output_object())
 ```
 
-This code updates the outputs of the operator within the workflow_execution results with the error status, specific error information for this failure then raises an exception.  The exception will invoke the `Catch` and `Retry` error handling within the state machine (refer to the next section).
+This code updates the outputs of the operator within the `workflow_execution` results with the error status, specific error information for this failure then raises an exception.  The exception will invoke the `Catch` and `Retry` error handling within the state machine (refer to the next section).
 
 #### Operator state machine ASL error handling
 

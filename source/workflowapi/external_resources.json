@@ -331,6 +331,16 @@
       }
     },
     "WorkflowCustomResource": {
+      "Metadata": {
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W89",
+              "reason": "This Lambda function does not need to access any resource provisioned within a VPC."
+            }
+          ]
+        }
+      },
       "Properties": {
         "Runtime": "python3.8",
         "Environment": {
@@ -395,6 +405,16 @@
       }
     },
     "APIHandler": {
+      "Metadata": {
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W89",
+              "reason": "This Lambda function does not need to access any resource provisioned within a VPC."
+            }
+          ]
+        }
+      },
       "Properties": {
         "Runtime": "python3.8",
         "Environment": {

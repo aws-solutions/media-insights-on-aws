@@ -71,6 +71,11 @@ Resources:
   # Helper function - create a short UUID to avoid name conflicts
   MieHelperFunction:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Environment:
         Variables:
@@ -1078,6 +1083,11 @@ Resources:
 
   WorkflowSchedulerLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Environment:
         Variables:
@@ -1124,6 +1134,11 @@ Resources:
   # Workflow state machine error handler
   WorkflowErrorHandlerLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Environment:
         Variables:
@@ -1202,6 +1217,11 @@ Resources:
 
   CompleteStageLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     DependsOn:
       - WorkflowSchedulerLambda
     Properties:
@@ -1246,6 +1266,11 @@ Resources:
 
   FilterOperationLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Environment:
         Variables:
@@ -1283,6 +1308,11 @@ Resources:
 
   OperatorFailedLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "operator_failed.lambda_handler"
       Layers:
@@ -1307,6 +1337,11 @@ Resources:
 
   StartWaitOperationLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       FunctionName: !Sub "${AWS::StackName}-start-wait-operation"
       Environment:
@@ -1343,6 +1378,11 @@ Resources:
 
   CheckWaitOperationLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       FunctionName: !Sub "${AWS::StackName}-check-wait-operation"
       Environment:
@@ -1378,7 +1418,12 @@ Resources:
           Value: "mie"
 
   WorkflowExecutionStreamingFunction:
-    Type: "AWS::Lambda::Function"
+    Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "workflowstream.lambda_handler"
       Role: !GetAtt WorkflowExecutionStreamLambdaRole.Arn
@@ -1632,6 +1677,11 @@ Resources:
 
   AnonymousDataCustomResource:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       FunctionName: !Sub ${AWS::StackName}-anonymous-data
       Description: Used to send anonymous data

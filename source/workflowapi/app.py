@@ -133,9 +133,9 @@ def index():
     """ Test the API endpoint
 
     Returns:
-        
+
     .. code-block:: python
-        
+
         {"hello":"world"}
 
     Raises:
@@ -220,7 +220,7 @@ def create_system_configuration_api():
 
         system_table.put_item(Item=config)
     except Exception as e:
-        logger.info("Exception {}".format(e))
+        logger.error("Exception {}".format(e))
         raise ChaliceViewError("Exception '%s'" % e)
 
     return {}
@@ -256,7 +256,7 @@ def get_system_configuration_api():
             ConsistentRead=True)
 
     except Exception as e:
-        logger.info("Exception {}".format(e))
+        logger.error("Exception {}".format(e))
         operation = None
         raise ChaliceViewError("Exception '%s'" % e)
     return response["Items"]
@@ -483,13 +483,13 @@ def create_operation(operation):
             )
 
     except ConflictError as e:
-        logger.error ("got CoonflictError: {}".format (e))
+        logger.error ("got ConflictError: {}".format (e))
         raise
     except ValidationError as e:
         logger.error("got bad request error: {}".format(e))
         raise BadRequestError(e)
     except Exception as e:
-        logger.info("Exception {}".format(e))
+        logger.error("Exception {}".format(e))
         operation = None
         raise ChaliceViewError("Exception '%s'" % e)
 
@@ -897,7 +897,7 @@ def delete_operation(Name, Force):
     except Exception as e:
 
         operation = None
-        logger.info("Exception {}".format(e))
+        logger.error("Exception {}".format(e))
         raise ChaliceViewError("Exception: '%s'" % e)
 
     return operation
@@ -923,7 +923,7 @@ def flag_operation_dependent_workflows(OperationName):
     except Exception as e:
 
 
-        logger.info("Exception flagging workflows dependent on dropped operations {}".format(e))
+        logger.error("Exception flagging workflows dependent on dropped operations {}".format(e))
         raise ChaliceViewError("Exception: '%s'" % e)
 
     return OperationName
@@ -1098,7 +1098,7 @@ def create_stage(stage):
         logger.error("got bad request error: {}".format(e))
         raise BadRequestError(e)
     except Exception as e:
-        logger.info("Exception {}".format(e))
+        logger.error("Exception {}".format(e))
         stage = None
         raise ChaliceViewError("Exception '%s'" % e)
 
@@ -1238,7 +1238,7 @@ def delete_stage(Name, Force):
     except Exception as e:
 
         stage = None
-        logger.info("Exception {}".format(e))
+        logger.error("Exception {}".format(e))
         raise ChaliceViewError("Exception: '%s'" % e)
 
     return stage
@@ -1263,7 +1263,7 @@ def flag_stage_dependent_workflows(StageName):
 
     except Exception as e:
 
-        logger.info("Exception flagging workflows dependent on dropped stage {}".format(e))
+        logger.error("Exception flagging workflows dependent on dropped stage {}".format(e))
         raise ChaliceViewError("Exception: '%s'" % e)
 
     return StageName
@@ -1407,7 +1407,7 @@ def create_workflow(trigger, workflow):
             response = SFN_CLIENT.delete_state_machine(
             workflow["StateMachineArn"]
         )
-        logger.info("Exception {}".format(e))
+        logger.error("Exception {}".format(e))
         workflow = None
         raise ChaliceViewError("Exception '%s'" % e)
 
@@ -1636,7 +1636,7 @@ def update_workflow(trigger, new_workflow):
 
     except Exception as e:
 
-        logger.info("Exception {}".format(e))
+        logger.error("Exception {}".format(e))
         workflow = None
         raise ChaliceViewError("Exception '%s'" % e)
 
@@ -1824,7 +1824,7 @@ def delete_workflow(Name):
     except Exception as e:
 
         workflow = None
-        logger.info("Exception {}".format(e))
+        logger.error("Exception {}".format(e))
         raise ChaliceViewError("Exception: '%s'" % e)
 
     return workflow
@@ -1945,7 +1945,7 @@ def create_workflow_execution(trigger, workflow_execution):
                 s3bucket = input[media_type]["S3Bucket"]
                 s3key = input[media_type]["S3Key"]
             except KeyError as e:
-                logger.info("Exception {}".format(e))
+                logger.error("Exception {}".format(e))
                 raise ChaliceViewError("Exception '%s'" % e)
             else:
                 asset_creation = dataplane.create_asset(s3bucket, s3key)
@@ -1959,11 +1959,11 @@ def create_workflow_execution(trigger, workflow_execution):
                 }
                 asset_id = asset_creation["AssetId"]
         else:
-            
+
             try:
                 input = workflow_execution["Input"]["AssetId"]
             except KeyError as e:
-                logger.info("Exception {}".format(e))
+                logger.error("Exception {}".format(e))
                 raise ChaliceViewError("Exception '%s'" % e)
             else:
                 asset_id = input
@@ -2009,7 +2009,7 @@ def create_workflow_execution(trigger, workflow_execution):
         )
 
     except Exception as e:
-        logger.info("Exception {}".format(e))
+        logger.error("Exception {}".format(e))
 
         if dynamo_status_queued:
             update_workflow_execution_status(workflow_execution["Id"], awsmie.WORKFLOW_STATUS_ERROR, "Exception {}".format(e))
@@ -2366,7 +2366,7 @@ def delete_workflow_execution(Id):
     except Exception as e:
 
         workflow_execution = None
-        logger.info("Exception {}".format(e))
+        logger.error("Exception {}".format(e))
         raise ChaliceViewError("Exception: '%s'" % e)
 
     return workflow_execution
@@ -2418,12 +2418,12 @@ def update_workflow_execution_status(id, status, message):
         )
 
 # ================================================================================================
-#      ___        ______    ____                  _            ____                _           
-#     / \ \      / / ___|  / ___|  ___ _ ____   _(_) ___ ___  |  _ \ _ __ _____  _(_) ___ ___  
-#    / _ \ \ /\ / /\___ \  \___ \ / _ | '__\ \ / | |/ __/ _ \ | |_) | '__/ _ \ \/ | |/ _ / __| 
-#   / ___ \ V  V /  ___) |  ___) |  __| |   \ V /| | (_|  __/ |  __/| | | (_) >  <| |  __\__ \ 
-#  /_/   \_\_/\_/  |____/  |____/ \___|_|    \_/ |_|\___\___| |_|   |_|  \___/_/\_|_|\___|___/                                                                                          
-# 
+#      ___        ______    ____                  _            ____                _
+#     / \ \      / / ___|  / ___|  ___ _ ____   _(_) ___ ___  |  _ \ _ __ _____  _(_) ___ ___
+#    / _ \ \ /\ / /\___ \  \___ \ / _ | '__\ \ / | |/ __/ _ \ | |_) | '__/ _ \ \/ | |/ _ / __|
+#   / ___ \ V  V /  ___) |  ___) |  __| |   \ V /| | (_|  __/ |  __/| | | (_) >  <| |  __\__ \
+#  /_/   \_\_/\_/  |____/  |____/ \___|_|    \_/ |_|\___\___| |_|   |_|  \___/_/\_|_|\___|___/
+#
 # ================================================================================================
 
 @app.route('/service/transcribe/get_vocabulary', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
@@ -2431,7 +2431,7 @@ def get_vocabulary():
     """ Get the description for an Amazon Transcribe custom vocabulary.
 
     Returns:
-        This is a proxy for boto3 get_vocabulary and returns the output from that SDK method.  
+        This is a proxy for boto3 get_vocabulary and returns the output from that SDK method.
         See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.get_vocabulary>`_
 
     Raises:
@@ -2460,7 +2460,7 @@ def download_vocabulary():
 
 
     Returns:
-        A list of vocabulary terms.  
+        A list of vocabulary terms.
 
         .. code-block:: python
 
@@ -2503,7 +2503,7 @@ def list_vocabularies():
     """ List all the available Amazon Transcribe custom vocabularies in this region.
 
     Returns:
-        This is a proxy for boto3 list_vocabularies and returns the output from that SDK method.  
+        This is a proxy for boto3 list_vocabularies and returns the output from that SDK method.
         See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.list_vocabularies>`_
 
     Raises:
@@ -2538,7 +2538,7 @@ def delete_vocabulary():
 
     Returns:
 
-        This is a proxy for boto3 delete_vocabulary and returns the output from that SDK method.  
+        This is a proxy for boto3 delete_vocabulary and returns the output from that SDK method.
         See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.delete_vocabulary>`_
 
     Raises:
@@ -2569,7 +2569,7 @@ def create_vocabulary():
 
 
     Returns:
-        This is a proxy for boto3 create_vocabulary and returns the output from that SDK method.  
+        This is a proxy for boto3 create_vocabulary and returns the output from that SDK method.
         See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.create_vocabulary>`_
 
     Raises:
@@ -2602,11 +2602,11 @@ def get_terminology():
         }
 
     Returns:
-        This is a proxy for boto3 get_terminology and returns the output from that SDK method.  
+        This is a proxy for boto3 get_terminology and returns the output from that SDK method.
         See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/translate.html#Translate.Client.get_terminology>`_
 
     Raises:
-        See the boto3 documentation for details 
+        See the boto3 documentation for details
         500: ChaliceViewError - internal server error
     """
     print('get_terminology request: '+app.current_request.raw_body.decode())
@@ -2640,7 +2640,7 @@ def download_terminology():
         .. code-block:: python
 
             {
-                'terminology_csv': string  
+                'terminology_csv': string
             }
 
     Raises:
@@ -2662,11 +2662,11 @@ def list_terminologies():
     """ Get the list of available Amazon Translate Terminologies for this region
 
     Returns:
-        This is a proxy for boto3 get_terminology and returns the output from that SDK method.  
+        This is a proxy for boto3 get_terminology and returns the output from that SDK method.
         See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/translate.html#Translate.Client.list_terminologies>`_
 
     Raises:
-        See the boto3 documentation for details 
+        See the boto3 documentation for details
         500: Internal server error
     """
     # This function returns a list of saved terminologies
@@ -2699,12 +2699,12 @@ def delete_terminology():
 
     Returns:
 
-        This is a proxy for boto3 delete_terminology and returns the output from that SDK method.  
+        This is a proxy for boto3 delete_terminology and returns the output from that SDK method.
         See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/translate.html#Translate.Client.delete_terminology>`_
 
 
     Raises:
-        See the boto3 documentation for details 
+        See the boto3 documentation for details
         500: ChaliceViewError - internal server error
     """
     # Delete the specified terminology if it exists
@@ -2731,7 +2731,7 @@ def create_terminology():
 
 
     Returns:
-        This is a proxy for boto3 create_vocabulary and returns the output from that SDK method.  
+        This is a proxy for boto3 create_vocabulary and returns the output from that SDK method.
         See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/translate.html#TranslateService.Client.create_terminology>`_
 
     Raises:
@@ -2766,11 +2766,11 @@ def get_parallel_data():
         }
 
     Returns:
-        This is a proxy for boto3 get_parallel_data and returns the output from that SDK method.  
+        This is a proxy for boto3 get_parallel_data and returns the output from that SDK method.
         See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/translate.html#Translate.Client.get_parallel_data>`_
 
     Raises:
-        See the boto3 documentation for details 
+        See the boto3 documentation for details
         500: ChaliceViewError - internal server error
     """
     print('get_parallel_data request: '+app.current_request.raw_body.decode())
@@ -2805,7 +2805,7 @@ def download_parallel_data():
         .. code-block:: python
 
             {
-                'parallel_data_csv': string  
+                'parallel_data_csv': string
             }
 
     Raises:
@@ -2827,11 +2827,11 @@ def list_parallel_data():
     """ Get the list of available Amazon Translate Parallel Data Sets for this region
 
     Returns:
-        This is a proxy for boto3 get_parallel_data and returns the output from that SDK method.  
+        This is a proxy for boto3 get_parallel_data and returns the output from that SDK method.
         See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/translate.html#Translate.Client.list_parallel_data>`_
 
     Raises:
-        See the boto3 documentation for details 
+        See the boto3 documentation for details
         500: Internal server error
     """
     # This function returns a list of saved parallel_data
@@ -2864,12 +2864,12 @@ def delete_parallel_data():
 
     Returns:
 
-        This is a proxy for boto3 delete_parallel_data and returns the output from that SDK method.  
+        This is a proxy for boto3 delete_parallel_data and returns the output from that SDK method.
         See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/translate.html#Translate.Client.delete_parallel_data>`_
 
 
     Raises:
-        See the boto3 documentation for details 
+        See the boto3 documentation for details
         500: ChaliceViewError - internal server error
     """
     # Delete the specified parallel_data if it exists
@@ -2896,7 +2896,7 @@ def create_parallel_data():
 
 
     Returns:
-        This is a proxy for boto3 create_vocabulary and returns the output from that SDK method.  
+        This is a proxy for boto3 create_vocabulary and returns the output from that SDK method.
         See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/translate.html#TranslateService.Client.create_parallel_data>`_
 
     Raises:

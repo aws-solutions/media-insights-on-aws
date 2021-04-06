@@ -95,20 +95,17 @@
   },
   "Resources": {
     "ApiHandlerRole": {
+      "Description": "This role is used by the workflow api lambda when invoked by API Gateway",
       "Metadata": {
         "cfn_nag": {
           "rules_to_suppress": [
             {
               "id": "W11",
-              "reason": "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
+              "reason": "The X-Ray, Transcribe, and Translate policies cannot be scoped to a specific resource."
             },
             {
-              "id": "W11",
-              "reason": "The Transcribe Vocabularies policy applies to all resources  - can't be scoped to a specific resource"
-            },
-            {
-              "id": "W11",
-              "reason": "The Translate Terminologies policy applies to all resources  - can't be scoped to a specific resource"
+              "id": "W76",
+              "reason": "The complexity of this policy document is necessary in order to avoid wildcards."
             }
           ]
         }
@@ -120,22 +117,9 @@
               "Version": "2012-10-17",
               "Statement": [
                 {
-                  "Action": [
-                      "s3:GetObject",
-                      "s3:DeleteObject"
-                  ],
-                  "Resource": {"Fn::Sub": "arn:aws:s3:::${DataPlaneBucket}/*"},
-                  "Effect": "Allow"
-                },
-                {
-                    "Action": "s3:ListBucket",
-                    "Resource": {"Fn::Sub": "arn:aws:s3:::${DataPlaneBucket}"},
-                    "Effect": "Allow"
-                },
-                {
                     "Effect": "Allow",
                     "Action": [
-                      "sqs:*"
+                      "sqs:SendMessage"
                     ],
                     "Resource": {"Ref": "SqsQueueArn"}
                 },
@@ -150,7 +134,7 @@
                     "states:DeleteStateMachine",
                     "states:UntagResource"
                   ],
-                  "Resource": "*"
+                  "Resource": {"Fn::Sub": "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:*-${ShortUUID}"}
                 },
                 {
                   "Effect": "Allow",
@@ -174,7 +158,13 @@
                 },
                 {
                   "Effect": "Allow",
-                  "Action": "dynamodb:*",
+                  "Action": [
+                    "dynamodb:GetItem",
+                    "dynamodb:PutItem",
+                    "dynamodb:DeleteItem",
+                    "dynamodb:Scan",
+                    "dynamodb:Query"
+                  ],
                   "Resource": [
                     {"Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${SystemTableName}"},
                     {"Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${WorkflowTableName}"},
@@ -225,7 +215,7 @@
                     "logs:CreateLogStream",
                     "logs:PutLogEvents"
                   ],
-                  "Resource": "*",
+                  "Resource": {"Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*-APIHandler-*"},
                   "Effect": "Allow",
                   "Sid": "Logging"
                 },
@@ -236,9 +226,9 @@
                     "iam:PutRolePolicy",
                     "iam:DeleteRolePolicy"
                   ],
-                  "Resource": [
-                    "*"
-                  ]
+                  "Resource": {
+                    "Ref": "StageExecutionRole"
+                  }
                 }
               ]
             },
@@ -248,6 +238,7 @@
       }
     },
     "WorkflowCustomResourceRole": {
+      "Description": "This role is used by the workflow api lambda when invoked by CloudFormation",
       "Metadata": {
         "cfn_nag": {
           "rules_to_suppress": [
@@ -261,80 +252,80 @@
       "Properties": {
         "Policies": [
           {
+            "PolicyName": "MieWorkflowCustomResourceRolePolicy",
             "PolicyDocument": {
               "Version": "2012-10-17",
               "Statement": [
-                  {
-                      "Action": [
-                          "logs:CreateLogGroup",
-                          "logs:CreateLogStream",
-                          "logs:PutLogEvents"
-                      ],
-                      "Resource": "*",
-                      "Effect": "Allow",
-                      "Sid": "Logging"
-                  },
-                  {
-                      "Action": [
-                          "dynamodb:*"
-                      ],
-                      "Resource": [
-                          "*"
-                      ],
-                      "Effect": "Allow",
-                      "Sid": "DynamoTables"
-                  },
-                  {
-                      "Effect": "Allow",
-                      "Action": "states:*",
-                      "Resource": "*"
-                  },
-                  {
-                      "Effect": "Allow",
-                      "Action": "lambda:InvokeFunction",
-                      "Resource": "*"
-                  },
-                  {
-                      "Action": [
-                          "sqs:*"
-                      ],
-                      "Resource": [
-                          "*"
-                      ],
-                      "Effect": "Allow",
-                      "Sid": "SQS"
-                  },
-                  {
-                      "Effect": "Allow",
-                      "Action": [
-                          "xray:PutTraceSegments",
-                          "xray:PutTelemetryRecords"
-                      ],
-                      "Resource": [
-                          "*"
-                      ]
-                  },
-                  {
-                      "Effect": "Allow",
-                      "Action": [
-                        "iam:PassRole"
-                      ],
-                      "Resource": [
-                        "*"
-                      ]
-                  },
-                  {
-                      "Effect": "Allow",
-                      "Action": [
-                        "iam:ListRolePolicies",
-                        "iam:PutRolePolicy",
-                        "iam:DeleteRolePolicy"
-                      ],
-                      "Resource": {"Ref": "StageExecutionRole"}
+                {
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": {"Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*-WorkflowCustomResource-*"},
+                  "Effect": "Allow",
+                  "Sid": "Logging"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "iam:PassRole"
+                  ],
+                  "Resource": {"Ref": "StageExecutionRole"}
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "sqs:CreateQueue",
+                    "sqs:ListQueues"
+                  ],
+                  "Resource": {"Ref": "SqsQueueArn"}
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "dynamodb:GetItem",
+                    "dynamodb:PutItem",
+                    "dynamodb:DeleteItem",
+                    "dynamodb:UpdateItem",
+                    "dynamodb:Scan"
+                  ],
+                  "Resource": [
+                    {"Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${SystemTableName}"},
+                    {"Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${WorkflowTableName}"},
+                    {"Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${WorkflowExecutionTableName}"},
+                    {"Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${WorkflowExecutionTableName}/*"},
+                    {"Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${HistoryTableName}"},
+                    {"Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${OperationTableName}"},
+                    {"Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${StageTableName}"}
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "states:ListStateMachines",
+                    "states:DescribeStateMachine",
+                    "states:CreateStateMachine",
+                    "states:UpdateStateMachine",
+                    "states:DeleteStateMachine",
+                    "states:TagResource",
+                    "states:UntagResource"
+                  ],
+                  "Resource": {"Fn::Sub": "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine/*-${ShortUUID}"}
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "iam:ListRolePolicies",
+                    "iam:PutRolePolicy",
+                    "iam:DeleteRolePolicy"
+                  ],
+                  "Resource": {
+                    "Ref": "StageExecutionRole"
                   }
+                }
               ]
-            },
-            "PolicyName": "MieWorkflowCustomResourceRolePolicy"
+            }
           }
         ]
       }

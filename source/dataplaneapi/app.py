@@ -94,7 +94,7 @@ def write_metadata_to_s3(bucket, key, data):
         s3_client.put_object(Bucket=bucket, Key=key, Body=encoded)
     except ClientError as e:
         error = e.response['Error']['Message']
-        logger.info("Exception occurred while writing asset metadata to s3: {e}".format(e=error))
+        logger.error("Exception occurred while writing asset metadata to s3: {e}".format(e=error))
         return {"Status": "Error", "Message": error}
     except Exception as e:
         logger.error("Exception occurred while writing asset metadata to s3")
@@ -112,7 +112,7 @@ def read_metadata_from_s3(bucket, key):
         )
     except ClientError as e:
         error = e.response['Error']['Message']
-        logger.info("Exception occurred while reading asset metadata from s3: {e}".format(e=error))
+        logger.error("Exception occurred while reading asset metadata from s3: {e}".format(e=error))
         return {"Status": "Error", "Message": error}
     except Exception as e:
         logger.error("Exception occurred while reading asset metadata from s3")
@@ -135,7 +135,7 @@ def delete_s3_objects(keys):
         )
     except ClientError as e:
         error = e.response['Error']['Message']
-        logger.info("Exception occurred while deleting asset metadata from s3: {e}".format(e=error))
+        logger.error("Exception occurred while deleting asset metadata from s3: {e}".format(e=error))
         return {"Status": "Error", "Message": error}
     except Exception as e:
         logger.error("Exception occurred while deleting asset metadata from s3")
@@ -187,9 +187,9 @@ def index():
     """ Test the API endpoint
 
     Returns:
-        
+
     .. code-block:: python
-        
+
         {"hello":"world"}
 
     Raises:

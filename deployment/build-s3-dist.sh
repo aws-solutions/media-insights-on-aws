@@ -753,29 +753,33 @@ zip -q -g ./dist/anonymous-data-logger.zip ./anonymous-data-logger.py
 cp "./dist/anonymous-data-logger.zip" "$regional_dist_dir/anonymous-data-logger.zip"
 #rm -rf ./dist ./package
 
-echo "------------------------------------------------------------------------------"
-echo "Copy dist to S3"
-echo "------------------------------------------------------------------------------"
-cd "$build_dir"/ || exit 1
-echo "Copying the prepared distribution to:"
-echo "s3://$global_bucket/aws-media-insights-engine/$version/"
-echo "s3://${regional_bucket}-${region}/aws-media-insights-engine/$version/"
-set -x
-aws s3 sync $global_dist_dir s3://$global_bucket/aws-media-insights-engine/$version/
-aws s3 sync $regional_dist_dir s3://${regional_bucket}-${region}/aws-media-insights-engine/$version/
-set +x
+# Skip copy dist to S3 if building for solution builder because
+# that pipeline takes care of copying the dist in another script.
+if [ "$TEMPLATE_OUTPUT_BUCKET" != "solutions-reference" ] && [ "$TEMPLATE_OUTPUT_BUCKET" != "solutions-test-reference" ]; then
+  echo "------------------------------------------------------------------------------"
+  echo "Copy dist to S3"
+  echo "------------------------------------------------------------------------------"
+  cd "$build_dir"/ || exit 1
+  echo "Copying the prepared distribution to:"
+  echo "s3://$global_bucket/aws-media-insights-engine/$version/"
+  echo "s3://${regional_bucket}-${region}/aws-media-insights-engine/$version/"
+  set -x
+  aws s3 sync $global_dist_dir s3://$global_bucket/aws-media-insights-engine/$version/
+  aws s3 sync $regional_dist_dir s3://${regional_bucket}-${region}/aws-media-insights-engine/$version/
+  set +x
 
-echo "------------------------------------------------------------------------------"
-echo "S3 packaging complete"
-echo "------------------------------------------------------------------------------"
+  echo "------------------------------------------------------------------------------"
+  echo "S3 packaging complete"
+  echo "------------------------------------------------------------------------------"
 
-echo ""
-echo "Template to deploy:"
-echo "TEMPLATE='"https://"$global_bucket"."$s3domain"/aws-media-insights-engine/"$version"/media-insights-stack.template"'"
+  echo ""
+  echo "Template to deploy:"
+  echo "TEMPLATE='"https://"$global_bucket"."$s3domain"/aws-media-insights-engine/"$version"/media-insights-stack.template"'"
 
-# Save the template URI for test automation scripts:
-touch templateUrl.txt
-echo "https://"$global_bucket"."$s3domain"/aws-media-insights-engine/"$version"/media-insights-stack.template" > templateUrl.txt
+  # Save the template URI for test automation scripts:
+  touch templateUrl.txt
+  echo "https://"$global_bucket"."$s3domain"/aws-media-insights-engine/"$version"/media-insights-stack.template" > templateUrl.txt
+fi
 
 cleanup
 echo "Done"

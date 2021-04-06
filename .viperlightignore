@@ -8,6 +8,7 @@ node_modules/
 package-lock.json
 CODE_OF_CONDUCT.md
 CONTRIBUTING.md
+docs/assets/images/MIE-architecture-diagram.pptx
 .github/workflows/pr-workflow.yml:21
 .github/workflows/pr-workflow.yml:22
 .github/workflows/release-workflow.yml:28
@@ -16,9 +17,9 @@ CONTRIBUTING.md
 .github/workflows/scheduled-workflow.yml:19
 .github/workflows/scheduled-workflow.yml:20
 .github/workflows/scheduled-workflow.yml:21
-README.md:143
-deployment/media-insights-stack.yaml:310
-deployment/media-insights-stack.yaml:321
+README.md:195
+deployment/media-insights-stack.yaml:315
+deployment/media-insights-stack.yaml:326
 docs/assets/images/Cognito3-set_password.png
 docs/source/theme/smithy/layout.html
 docs/source/theme/smithy/static/asciinema-player.js

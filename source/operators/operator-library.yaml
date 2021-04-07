@@ -734,6 +734,11 @@ Resources:
   # This is a generic Lambda function for getting metadata from JSON file in S3:
   startGenericDataLookup:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "generic_data_lookup.lambda_handler"
       Layers:
@@ -767,6 +772,11 @@ Resources:
 
   Mediainfo:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "mediainfo.lambda_handler"
       Layers:
@@ -801,6 +811,11 @@ Resources:
 
   startKeyPhrases:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "start_key_phrases.lambda_handler"
       Layers:
@@ -832,6 +847,11 @@ Resources:
 
   getKeyPhrases:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "get_key_phrases.lambda_handler"
       Layers:
@@ -863,6 +883,11 @@ Resources:
 
   startEntityDetection:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "start_entity_detection.lambda_handler"
       Layers:
@@ -894,6 +919,11 @@ Resources:
 
   getEntityDetection:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "get_entity_detection.lambda_handler"
       Layers:
@@ -927,6 +957,11 @@ Resources:
 
   startTechnicalCueDetection:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "start_technical_cue_detection.lambda_handler"
       Layers:
@@ -960,6 +995,11 @@ Resources:
 
   checkTechnicalCueDetection:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "check_technical_cue_status.lambda_handler"
       Layers:
@@ -993,6 +1033,11 @@ Resources:
 
   startShotDetection:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "start_shot_detection.lambda_handler"
       Layers:
@@ -1026,6 +1071,11 @@ Resources:
 
   checkShotDetection:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "check_shot_detection_status.lambda_handler"
       Layers:
@@ -1059,6 +1109,11 @@ Resources:
 
   startCelebrityRecognition:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "start_celebrity_recognition.lambda_handler"
       Layers:
@@ -1092,6 +1147,11 @@ Resources:
 
   checkCelebrityRecognition:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "check_celebrity_recognition_status.lambda_handler"
       Layers:
@@ -1124,6 +1184,11 @@ Resources:
 
   startContentModeration:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "start_content_moderation.lambda_handler"
       Layers:
@@ -1157,6 +1222,11 @@ Resources:
 
   checkContentModeration:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "check_content_moderation_status.lambda_handler"
       Layers:
@@ -1189,6 +1259,11 @@ Resources:
 
   startFaceDetection:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "start_face_detection.lambda_handler"
       Layers:
@@ -1223,6 +1298,11 @@ Resources:
 
   checkFaceDetection:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "check_face_detection_status.lambda_handler"
       Layers:
@@ -1256,6 +1336,11 @@ Resources:
 
   startFaceSearch:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "start_face_search.lambda_handler"
       Layers:
@@ -1290,6 +1375,11 @@ Resources:
 
   checkFaceSearch:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "check_face_search_status.lambda_handler"
       Layers:
@@ -1323,6 +1413,11 @@ Resources:
 
   startTextDetection:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "start_text_detection.lambda_handler"
       Layers:
@@ -1356,6 +1451,11 @@ Resources:
 
   checkTextDetection:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "check_text_detection_status.lambda_handler"
       Layers:
@@ -1389,6 +1489,11 @@ Resources:
 
   startLabelDetection:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "start_label_detection.lambda_handler"
       Layers:
@@ -1422,6 +1527,11 @@ Resources:
 
   checkLabelDetection:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "check_label_detection_status.lambda_handler"
       Layers:
@@ -1455,6 +1565,11 @@ Resources:
 
   startPersonTracking:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "start_person_tracking.lambda_handler"
       Layers:
@@ -1486,6 +1601,11 @@ Resources:
 
   checkPersonTracking:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "check_person_tracking_status.lambda_handler"
       Layers:
@@ -1521,6 +1641,11 @@ Resources:
 
   StartMediaConvertFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "start_media_convert.lambda_handler"
       Layers:
@@ -1552,6 +1677,11 @@ Resources:
 
   StartThumbnailFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "start_thumbnail.lambda_handler"
       Layers:
@@ -1583,6 +1713,11 @@ Resources:
 
   CheckThumbnailFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "check_thumbnail.lambda_handler"
       Layers:
@@ -1614,6 +1749,11 @@ Resources:
 
   CheckMediaConvertFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "get_media_convert.lambda_handler"
       Layers:
@@ -1646,6 +1786,11 @@ Resources:
 
   StartTranscribeFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "start_transcribe.lambda_handler"
       Layers:
@@ -1676,6 +1821,11 @@ Resources:
 
   CheckTranscribeFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "get_transcribe.lambda_handler"
       Layers:
@@ -1709,6 +1859,11 @@ Resources:
 
   WebCaptionsFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "webcaptions.web_captions"
       Layers:
@@ -1742,6 +1897,11 @@ Resources:
 
   CreateSRTCaptionsFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "webcaptions.create_srt"
       Layers:
@@ -1772,6 +1932,11 @@ Resources:
 
   CreateVTTCaptionsFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "webcaptions.create_vtt"
       Layers:
@@ -1802,6 +1967,11 @@ Resources:
 
   WebToSRTCaptionsFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "webcaptions.create_srt"
       Layers:
@@ -1832,6 +2002,11 @@ Resources:
 
   WebToVTTCaptionsFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "webcaptions.create_vtt"
       Layers:
@@ -1864,6 +2039,11 @@ Resources:
 
   TranslateFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "start_translate.lambda_handler"
       Layers:
@@ -1895,6 +2075,11 @@ Resources:
 
   StartTranslateWebcaptionsFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "webcaptions.start_translate_webcaptions"
       Layers:
@@ -1924,6 +2109,11 @@ Resources:
 
   CheckTranslateWebcaptionsFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "webcaptions.check_translate_webcaptions"
       Layers:
@@ -1953,6 +2143,11 @@ Resources:
   # WebCaptions Polly tracks
   StartPollyWebCaptionsFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "webcaptions.start_polly_webcaptions"
       Layers:
@@ -1981,6 +2176,11 @@ Resources:
 
   CheckPollyWebCaptionsFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "webcaptions.check_polly_webcaptions"
       Layers:
@@ -2011,6 +2211,11 @@ Resources:
 
   StartPollyFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "start_polly.lambda_handler"
       Layers:
@@ -2041,6 +2246,11 @@ Resources:
 
   CheckPollyFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "get_polly.lambda_handler"
       Layers:

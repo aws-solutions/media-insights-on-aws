@@ -39,6 +39,11 @@ Resources:
 
   DynamoDBStreamingFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "stream.lambda_handler"
       Role: !GetAtt LambdaStreamRole.Arn

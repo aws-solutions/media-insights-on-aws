@@ -148,6 +148,8 @@ def test_workflow_execution(workflow_api, dataplane_api, stack_resources, testin
 
     delete_workflow_request = workflow_api.delete_workflow_request(test_workflow["Name"])
     assert delete_workflow_request.status_code == 200
+    # Wait for the workflow to delete. It can take several seconds.
+    time.sleep(30)
 
     # Delete stages
 

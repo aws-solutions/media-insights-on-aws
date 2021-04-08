@@ -7,7 +7,7 @@ setuptools.setup(
     name="Media Insights Engine API Helper",
     version="0.0.1",
     author="Brandon Dold",
-    author_email="brandold@amazon.com",
+    author_email="redacted@example.com",
     description="Helper classes for interacting with the Media Insights Engine APIs.",
     long_description=long_description,
     long_description_content_type="text/markdown",

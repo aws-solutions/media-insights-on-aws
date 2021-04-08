@@ -20,7 +20,7 @@ Mappings:
     SourceCode:
         General:
             RegionalS3Bucket: "%%REGIONAL_BUCKET_NAME%%"
-            CodeKeyPrefix: "media_insights_engine/%%VERSION%%"
+            CodeKeyPrefix: "aws-media-insights-engine/%%VERSION%%"
 
 Resources:
 
@@ -69,6 +69,11 @@ Resources:
 
   VideoSyncOKLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       FunctionName: !Sub "${AWS::StackName}-video-sync-ok"
       Handler: test.video_sync_ok_lambda_handler
@@ -94,6 +99,11 @@ Resources:
 
   VideoSyncFailLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       FunctionName: !Sub "${AWS::StackName}-video-sync-fail"
       Handler: test.video_sync_fail_lambda_handler
@@ -119,6 +129,11 @@ Resources:
 
   VideoAsyncOKLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       FunctionName: !Sub "${AWS::StackName}-video-async-ok"
       Handler: test.video_async_ok_lambda_handler
@@ -144,6 +159,11 @@ Resources:
 
   VideoAsyncOKMonitorLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       FunctionName: !Sub "${AWS::StackName}-video-async-ok-monitor"
       Handler: test.video_async_ok_monitor_lambda_handler
@@ -169,6 +189,11 @@ Resources:
 
   VideoAsyncFailMonitorLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       FunctionName: !Sub "${AWS::StackName}-video-async-fail-monitor"
       Handler: test.video_async_fail_monitor_lambda_handler
@@ -194,6 +219,11 @@ Resources:
 
   AudioSyncOKLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       FunctionName: !Sub "${AWS::StackName}-audio-sync-ok"
       Handler: test.audio_sync_ok_lambda_handler
@@ -219,6 +249,11 @@ Resources:
 
   AudioAsyncOKLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       FunctionName: !Sub "${AWS::StackName}-audio-async-ok"
       Handler: test.audio_async_ok_lambda_handler
@@ -244,6 +279,11 @@ Resources:
 
   AudioAsyncOKMonitorLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       FunctionName: !Sub "${AWS::StackName}-audio-async-ok-monitor"
       Handler: test.audio_async_ok_monitor_lambda_handler
@@ -269,6 +309,11 @@ Resources:
 
   ImageSyncOKLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       FunctionName: !Sub "${AWS::StackName}-image-sync-ok"
       Handler: test.image_sync_ok_lambda_handler
@@ -294,6 +339,11 @@ Resources:
 
   ImageAsyncOKLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       FunctionName: !Sub "${AWS::StackName}-image-async-ok"
       Handler: test.image_async_ok_lambda_handler
@@ -319,6 +369,11 @@ Resources:
 
   ImageAsyncOKMonitorLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       FunctionName: !Sub "${AWS::StackName}-image-async-ok-monitor"
       Handler: test.image_async_ok_monitor_lambda_handler
@@ -344,6 +399,11 @@ Resources:
 
   TextSyncOKLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       FunctionName: !Sub "${AWS::StackName}-text-sync-ok"
       Handler: test.text_sync_ok_lambda_handler
@@ -369,6 +429,11 @@ Resources:
 
   TextAsyncOKLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       FunctionName: !Sub "${AWS::StackName}-text-async-ok"
       Handler: test.text_async_ok_lambda_handler
@@ -394,6 +459,11 @@ Resources:
 
   TextAsyncOKMonitorLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       FunctionName: !Sub "${AWS::StackName}-text-async-ok-monitor"
       Handler: test.text_async_ok_monitor_lambda_handler

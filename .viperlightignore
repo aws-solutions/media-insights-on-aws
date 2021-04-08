@@ -18,8 +18,8 @@ docs/assets/images/MIE-architecture-diagram.pptx
 .github/workflows/scheduled-workflow.yml:20
 .github/workflows/scheduled-workflow.yml:21
 README.md:195
-deployment/media-insights-stack.yaml:315
-deployment/media-insights-stack.yaml:326
+deployment/media-insights-stack.yaml:311
+deployment/media-insights-stack.yaml:322
 docs/assets/images/Cognito3-set_password.png
 docs/source/theme/smithy/layout.html
 docs/source/theme/smithy/static/asciinema-player.js

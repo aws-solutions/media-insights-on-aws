@@ -18,8 +18,6 @@ deployment/lambda_layer_factory/lambda_layer-python-*
 *~staging*
 *~release*
 test/unit/.coverage
-# these are not checked in to o.g. git project
-package-lock.json
 
 scratch/
 deployment/build.sh

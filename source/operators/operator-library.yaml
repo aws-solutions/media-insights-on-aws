@@ -5,7 +5,7 @@ Mappings:
   SourceCode:
     General:
       RegionalS3Bucket: "%%REGIONAL_BUCKET_NAME%%"
-      CodeKeyPrefix: "media_insights_engine/%%VERSION%%"
+      CodeKeyPrefix: "aws-media-insights-engine/%%VERSION%%"
 
 Parameters:
   DataPlaneEndpoint:
@@ -47,6 +47,7 @@ Resources:
     Type: "AWS::SNS::Topic"
     Properties:
       DisplayName: "SNS Role for Rekognition"
+      KmsMasterKeyId: "alias/aws/sns"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -478,7 +479,7 @@ Resources:
       cfn_nag:
         rules_to_suppress:
           - id: W11
-            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
+            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource. Furthermore, the KMS policy must also apply to all resources because it relates to user-defined KMS keys which cannot be known beforehand."
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -508,6 +509,11 @@ Resources:
                   - "xray:PutTraceSegments"
                   - "xray:PutTelemetryRecords"
                 Resource: "*"
+              - Effect: "Allow"
+                Action:
+                  - "kms:CreateGrant"
+                  - "kms:GenerateDataKey"
+                Resource: "*"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -518,7 +524,7 @@ Resources:
       cfn_nag:
         rules_to_suppress:
           - id: W11
-            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
+            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource. Furthermore, the KMS policy must also apply to all resources because it relates to user-defined KMS keys which cannot be known beforehand."
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -562,7 +568,6 @@ Resources:
                       "comprehend:DetectDominantLanguage",
                       "comprehend:CreateDocumentClassifier",
                       "comprehend:ListEntityRecognizers",
-                      "iam:PassRole",
                       "comprehend:ListSentimentDetectionJobs",
                       "comprehend:BatchDetectSyntax",
                       "comprehend:StartSentimentDetectionJob",
@@ -602,6 +607,10 @@ Resources:
                 Action:
                   - "xray:PutTraceSegments"
                   - "xray:PutTelemetryRecords"
+                Resource: "*"
+              - Effect: "Allow"
+                Action:
+                  - "kms:Decrypt"
                 Resource: "*"
       Tags:
         - Key: "environment"
@@ -725,6 +734,11 @@ Resources:
   # This is a generic Lambda function for getting metadata from JSON file in S3:
   startGenericDataLookup:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "generic_data_lookup.lambda_handler"
       Layers:
@@ -749,7 +763,7 @@ Resources:
           OPERATOR_NAME: "GenericDataLookup"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DataLookupRole: !GetAtt genericDataLookupLambdaRole.Arn
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -758,6 +772,11 @@ Resources:
 
   Mediainfo:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "mediainfo.lambda_handler"
       Layers:
@@ -783,7 +802,7 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DataLookupRole: !GetAtt mediainfoLambdaRole.Arn
           LD_LIBRARY_PATH: "/opt/python/"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -792,6 +811,11 @@ Resources:
 
   startKeyPhrases:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "start_key_phrases.lambda_handler"
       Layers:
@@ -816,13 +840,18 @@ Resources:
           OPERATOR_NAME: "comprehendStartKeyPhrases"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           comprehendRole: !GetAtt comprehendS3Role.Arn
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
 
   getKeyPhrases:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "get_key_phrases.lambda_handler"
       Layers:
@@ -847,13 +876,18 @@ Resources:
           OPERATOR_NAME: "comprehendGetKeyPhrases"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           comprehendRole: !GetAtt comprehendS3Role.Arn
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
 
   startEntityDetection:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "start_entity_detection.lambda_handler"
       Layers:
@@ -878,13 +912,18 @@ Resources:
           OPERATOR_NAME: "comprehendStartEntityDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           comprehendRole: !GetAtt comprehendS3Role.Arn
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
 
   getEntityDetection:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "get_entity_detection.lambda_handler"
       Layers:
@@ -909,7 +948,7 @@ Resources:
           OPERATOR_NAME: "comprehendEntityDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           comprehendRole: !GetAtt comprehendS3Role.Arn
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -918,6 +957,11 @@ Resources:
 
   startTechnicalCueDetection:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "start_technical_cue_detection.lambda_handler"
       Layers:
@@ -944,13 +988,18 @@ Resources:
           OPERATOR_NAME: "technicalCueDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
 
   checkTechnicalCueDetection:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "check_technical_cue_status.lambda_handler"
       Layers:
@@ -977,13 +1026,18 @@ Resources:
           OPERATOR_NAME: "technicalCueDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
 
   startShotDetection:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "start_shot_detection.lambda_handler"
       Layers:
@@ -1010,13 +1064,18 @@ Resources:
           OPERATOR_NAME: "shotDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
 
   checkShotDetection:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "check_shot_detection_status.lambda_handler"
       Layers:
@@ -1043,13 +1102,18 @@ Resources:
           OPERATOR_NAME: "shotDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
 
   startCelebrityRecognition:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "start_celebrity_recognition.lambda_handler"
       Layers:
@@ -1076,13 +1140,18 @@ Resources:
           OPERATOR_NAME: "celebrityRecognition"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
 
   checkCelebrityRecognition:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "check_celebrity_recognition_status.lambda_handler"
       Layers:
@@ -1108,13 +1177,18 @@ Resources:
           OPERATOR_NAME: "celebrityRecognition"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
 
   startContentModeration:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "start_content_moderation.lambda_handler"
       Layers:
@@ -1141,13 +1215,18 @@ Resources:
           OPERATOR_NAME: "contentModeration"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
 
   checkContentModeration:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "check_content_moderation_status.lambda_handler"
       Layers:
@@ -1173,13 +1252,18 @@ Resources:
           OPERATOR_NAME: "contentModeration"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
 
   startFaceDetection:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "start_face_detection.lambda_handler"
       Layers:
@@ -1207,13 +1291,18 @@ Resources:
           OPERATOR_NAME: "faceDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
 
   checkFaceDetection:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "check_face_detection_status.lambda_handler"
       Layers:
@@ -1240,13 +1329,18 @@ Resources:
           OPERATOR_NAME: "faceDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
 
   startFaceSearch:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "start_face_search.lambda_handler"
       Layers:
@@ -1274,13 +1368,18 @@ Resources:
           OPERATOR_NAME: "faceSearch"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
 
   checkFaceSearch:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "check_face_search_status.lambda_handler"
       Layers:
@@ -1307,13 +1406,18 @@ Resources:
           OPERATOR_NAME: "faceSearch"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
 
   startTextDetection:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "start_text_detection.lambda_handler"
       Layers:
@@ -1332,6 +1436,7 @@ Resources:
             ],
           ]
       Runtime: "python3.8"
+      Timeout: 120
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
@@ -1339,13 +1444,18 @@ Resources:
           OPERATOR_NAME: "textDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
 
   checkTextDetection:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "check_text_detection_status.lambda_handler"
       Layers:
@@ -1372,13 +1482,18 @@ Resources:
           OPERATOR_NAME: "textDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
 
   startLabelDetection:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "start_label_detection.lambda_handler"
       Layers:
@@ -1397,6 +1512,7 @@ Resources:
             ],
           ]
       Runtime: "python3.8"
+      Timeout: 120
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
@@ -1404,13 +1520,18 @@ Resources:
           OPERATOR_NAME: "labelDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
 
   checkLabelDetection:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "check_label_detection_status.lambda_handler"
       Layers:
@@ -1437,13 +1558,18 @@ Resources:
           OPERATOR_NAME: "labelDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
 
   startPersonTracking:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "start_person_tracking.lambda_handler"
       Layers:
@@ -1462,18 +1588,24 @@ Resources:
             ],
           ]
       Runtime: "python3.8"
+      Timeout: 120
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
           REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "personTracking"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
 
   checkPersonTracking:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "check_person_tracking_status.lambda_handler"
       Layers:
@@ -1500,7 +1632,7 @@ Resources:
           OPERATOR_NAME: "personTracking"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1509,6 +1641,11 @@ Resources:
 
   StartMediaConvertFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "start_media_convert.lambda_handler"
       Layers:
@@ -1533,13 +1670,18 @@ Resources:
           mediaconvertRole: !GetAtt "mediaConvertS3Role.Arn"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
 
   StartThumbnailFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "start_thumbnail.lambda_handler"
       Layers:
@@ -1564,13 +1706,18 @@ Resources:
           mediaconvertRole: !GetAtt "mediaConvertS3Role.Arn"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
 
   CheckThumbnailFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "check_thumbnail.lambda_handler"
       Layers:
@@ -1595,13 +1742,18 @@ Resources:
           mediaconvertRole: !GetAtt "mediaConvertS3Role.Arn"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
 
   CheckMediaConvertFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "get_media_convert.lambda_handler"
       Layers:
@@ -1625,7 +1777,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1634,6 +1786,11 @@ Resources:
 
   StartTranscribeFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "start_transcribe.lambda_handler"
       Layers:
@@ -1652,17 +1809,23 @@ Resources:
             ],
           ]
       Runtime: "python3.8"
+      Timeout: 120
       Environment:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
 
   CheckTranscribeFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "get_transcribe.lambda_handler"
       Layers:
@@ -1687,7 +1850,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1696,6 +1859,11 @@ Resources:
 
   WebCaptionsFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "webcaptions.web_captions"
       Layers:
@@ -1720,7 +1888,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1729,6 +1897,11 @@ Resources:
 
   CreateSRTCaptionsFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "webcaptions.create_srt"
       Layers:
@@ -1752,13 +1925,18 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
 
   CreateVTTCaptionsFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "webcaptions.create_vtt"
       Layers:
@@ -1782,13 +1960,18 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
 
   WebToSRTCaptionsFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "webcaptions.create_srt"
       Layers:
@@ -1812,13 +1995,18 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
 
   WebToVTTCaptionsFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "webcaptions.create_vtt"
       Layers:
@@ -1842,7 +2030,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1851,6 +2039,11 @@ Resources:
 
   TranslateFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "start_translate.lambda_handler"
       Layers:
@@ -1875,13 +2068,18 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
 
   StartTranslateWebcaptionsFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "webcaptions.start_translate_webcaptions"
       Layers:
@@ -1904,13 +2102,18 @@ Resources:
           translateRole: !GetAtt translateS3Role.Arn
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
 
   CheckTranslateWebcaptionsFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "webcaptions.check_translate_webcaptions"
       Layers:
@@ -1932,7 +2135,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1940,6 +2143,11 @@ Resources:
   # WebCaptions Polly tracks
   StartPollyWebCaptionsFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "webcaptions.start_polly_webcaptions"
       Layers:
@@ -1961,13 +2169,18 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
 
   CheckPollyWebCaptionsFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "webcaptions.check_polly_webcaptions"
       Layers:
@@ -1989,7 +2202,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1998,6 +2211,11 @@ Resources:
 
   StartPollyFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "start_polly.lambda_handler"
       Layers:
@@ -2016,17 +2234,23 @@ Resources:
             ],
           ]
       Runtime: "python3.8"
+      Timeout: 120
       Environment:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"
 
   CheckPollyFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
     Properties:
       Handler: "get_polly.lambda_handler"
       Layers:
@@ -2045,11 +2269,12 @@ Resources:
             ],
           ]
       Runtime: "python3.8"
+      Timeout: 120
       Environment:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:
         - Key: "environment"
           Value: "mie"

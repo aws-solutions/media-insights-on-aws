@@ -501,7 +501,7 @@ TASK_PARAMETERS_ASL = {
     "StageName.$": "$.Name",
     "Name":"%%OPERATION_NAME%%",
     "Input.$":"$.Input",
-    "Configuration.$":"$.Configuration.%%OPERATION_NAME%%",
+    "g.$":"$.Configuration.%%OPERATION_NAME%%",
     "AssetId.$":"$.AssetId",
     "WorkflowExecutionId.$":"$.WorkflowExecutionId"
 }
@@ -2970,7 +2970,7 @@ def operation_resource(event, context):
         operation = event["ResourceProperties"]
 
         # boolean type comes in as text from cloudformation - must decode string or take string for anabled parameter
-        operation["Configuration"]["Enabled"] = bool(operation["Configuration"]["Enabled"])
+        operation["Configuration"]["Enabled"] = True if operation["Configuration"]["Enabled"] == 'true' else False
         operation = create_operation(operation)
         send_response(event, context, "SUCCESS",
                       {"Message": "Resource creation successful!", "Name": event["ResourceProperties"]["Name"],

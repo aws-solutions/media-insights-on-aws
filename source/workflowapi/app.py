@@ -496,16 +496,6 @@ def create_operation(operation):
     logger.info("end create_operation: {}".format(json.dumps(operation, cls=DecimalEncoder)))
     return operation
 
-# FIXME - dead code?
-TASK_PARAMETERS_ASL = {
-    "StageName.$": "$.Name",
-    "Name":"%%OPERATION_NAME%%",
-    "Input.$":"$.Input",
-    "g.$":"$.Configuration.%%OPERATION_NAME%%",
-    "AssetId.$":"$.AssetId",
-    "WorkflowExecutionId.$":"$.WorkflowExecutionId"
-}
-
 ASYNC_OPERATION_ASL =         {
     "StartAt": "Filter %%OPERATION_NAME%% Media Type? (%%STAGE_NAME%%)",
     "States": {

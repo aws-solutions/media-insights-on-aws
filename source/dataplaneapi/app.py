@@ -392,11 +392,6 @@ def create_asset():
             Key=new_key,
             CopySource={'Bucket': source_bucket, 'Key': source_key}
         )
-        # remove input media from upload/
-        s3_client.delete_object(
-            Bucket=source_bucket,
-            Key=source_key
-        )
     except ClientError as e:
         error = e.response['Error']['Message']
         logger.error("Exception occurred during asset creation: {e}".format(e=error))

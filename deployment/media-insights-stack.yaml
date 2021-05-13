@@ -28,6 +28,10 @@ Parameters:
     AllowedValues:
       - Yes
       - No
+  ExternalBucketArn:
+    Description: The ARN for Amazon S3 resources that exist outside the MIE stack which may need to be used as inputs to MIE workflows.
+    Type: String
+    Default: ""
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -1473,6 +1477,7 @@ Resources:
       Parameters:
         botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
         DataplaneTableName: !Ref DataplaneTable
+        ExternalBucketArn: !Ref ExternalBucketArn
         DataplaneBucketName: !Ref Dataplane
         DeploymentPackageBucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
         TracingConfigMode: !If [EnableTraceOnEntryPoints, "Active", "PassThrough"]

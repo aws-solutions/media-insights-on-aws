@@ -8,6 +8,10 @@
       "Type": "String",
       "Description": "Table used for storing asset metadata"
     },
+    "ExternalBucketArn": {
+      "Type": "String",
+      "Description": "The ARN for Amazon S3 resources that exist outside the MIE stack which may need to be used as inputs to MIE workflows."
+    },
     "DataplaneBucketName": {
       "Type": "String",
       "Description": "Bucket used to store asset media"
@@ -33,6 +37,16 @@
       "Description": "Version of the Media Insights Engine Framework"
     }
   },
+  "Conditions": {
+    "AllowAccessToExternalBucket": {
+      "Fn::Not" : [{
+        "Fn::Equals": [
+          {"Ref": "ExternalBucketArn"},
+          ""
+        ]
+      }]
+    }
+  },
   "Resources": {
     "ApiHandlerRole": {
       "Metadata": {
@@ -43,7 +57,8 @@
               "reason": "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
             }
           ]
-        }
+        },
+        "Comment" : "There are two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty."
       },
       "Properties": {
         "Policies": [
@@ -51,6 +66,20 @@
             "PolicyDocument": {
               "Version": "2012-10-17",
               "Statement": [
+                {
+                  "Effect": "Allow",
+
+                  "Action": [
+                    "s3:GetObject"
+                  ],
+                  "Resource": {
+                    "Fn::If": [
+                      "AllowAccessToExternalBucket",
+                      {"Fn::Sub": "${ExternalBucketArn}"},
+                      {"Fn::Sub": "arn:aws:s3:::${DataplaneBucketName}/*"}
+                    ]
+                  }
+                },
                 {
                   "Effect": "Allow",
                   "Action": [

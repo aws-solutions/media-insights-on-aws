@@ -42,21 +42,45 @@ You must have the following build tools in order to build MIE:
 
 ## 3. Building the MIE framework from source code
 
-Run the following commands to build and deploy MIE Cloud Formation templates from scratch. Be sure to define values for `MIE_STACK_NAME` and `REGION` first.
+Run the following commands to build and deploy MIE Cloud Formation templates from scratch. 
+Define values for `MIE_STACK_NAME` and `REGION` first.
 
 ```
 MIE_STACK_NAME=[YOUR STACK NAME]
 REGION=[YOUR REGION]
+```
+
+Clone the remote repository and go to the deployment directory
+
+```
 git clone https://github.com/awslabs/aws-media-insights-engine
-cd aws-media-insights-engine (https://github.com/awslabs/aws-media-insights-engine)
-git checkout development_merge_isolated (https://github.com/awslabs/aws-media-insights-engine/tree/development_merge_isolated) 
+cd aws-media-insights-engine
 cd deployment
+```
+
+Define values for `VERSION`, `DATETIME`, `DIST_OUTPUT_BUCKET` and `TEMPLATE_OUTPUT_BUCKET`
+
+```
 VERSION=1.0.0
 DATETIME=$(date '+%s')
 DIST_OUTPUT_BUCKET=media-insights-engine-$DATETIME-dist
 TEMPLATE_OUTPUT_BUCKET=media-insights-engine-$DATETIME
+```
+Create the S3 buckets that will be used by the build script
+
+```
 aws s3 mb s3://$DIST_OUTPUT_BUCKET-$REGION --region $REGION
+aws s3 mb s3://$TEMPLATE_OUTPUT_BUCKET --region $REGION
+```
+
+Execute the build script
+
+```
 ./build-s3-dist.sh --template-bucket $TEMPLATE_OUTPUT_BUCKET --code-bucket $DIST_OUTPUT_BUCKET --version $VERSION --region $REGION | tee >( grep TEMPLATE >template )
+```
+
+Create the Cloudformation stack
+```
 TEMPLATE=$(cat template | cut -f 2 -d "'")
 rm -f template 
 aws cloudformation create-stack --stack-name $MIE_STACK_NAME --template-url $TEMPLATE --region $REGION --parameters ParameterKey=DeployTestResources,ParameterValue=true ParameterKey=EnableXrayTrace,ParameterValue=true ParameterKey=MaxConcurrentWorkflows,ParameterValue=10 ParameterKey=DeployAnalyticsPipeline,ParameterValue=true --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --profile default --disable-rollback

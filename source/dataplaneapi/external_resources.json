@@ -58,7 +58,7 @@
             }
           ]
         },
-        "Comment" : "There are two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty."
+        "Comment" : "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty."
       },
       "Properties": {
         "Policies": [

@@ -15,6 +15,7 @@ patch_all()
 
 region = os.environ['AWS_REGION']
 mie_config = json.loads(os.environ['botoConfig'])
+dataplane_bucket = json.loads(os.environ['DATAPLANE_BUCKET'])
 config = config.Config(**mie_config)
 
 mediaconvert_role = os.environ['mediaconvertRole']
@@ -27,7 +28,7 @@ def lambda_handler(event, context):
 
     try:
         workflow_id = str(operator_object.workflow_execution_id)
-        bucket = operator_object.input["Media"]["Video"]["S3Bucket"]
+        source_bucket = operator_object.input["Media"]["Video"]["S3Bucket"]
         key = operator_object.input["Media"]["Video"]["S3Key"]
     except KeyError as e:
         operator_object.update_workflow_status("Error")
@@ -41,8 +42,8 @@ def lambda_handler(event, context):
         print("No asset id passed in with this workflow", e)
         asset_id = ''
 
-    file_input = "s3://" + bucket + "/" + key
-    destination = "s3://" + bucket + "/" + 'private/assets/' + asset_id + "/workflows/" + workflow_id + "/"
+    file_input = "s3://" + source_bucket + "/" + key
+    destination = "s3://" + dataplane_bucket + "/" + 'private/assets/' + asset_id + "/workflows/" + workflow_id + "/"
 
     # Get mediaconvert endpoint from cache if available
     if ("MEDIACONVERT_ENDPOINT" in os.environ):

@@ -14,6 +14,9 @@ Parameters:
   DataPlaneBucket:
     Type: "String"
     Description: "Bucket for the dataplane"
+  ExternalBucketArn:
+    Type: "String"
+    Description: "The ARN for Amazon S3 resources that exist outside the MIE stack which may need to be used as inputs to MIE workflows"
   DataPlaneHandlerArn:
     Type: "String"
     Description: "Arn of dataplane lambda handler"
@@ -40,6 +43,10 @@ Parameters:
   CheckWaitOperationLambda:
     Type: String
     Description: "ARN of control plane lambda function to if a workflow is in Waiting state"
+
+Conditions:
+  AllowAccessToExternalBucket: !Not
+    - !Equals [!Ref "ExternalBucketArn", ""]
 
 Resources:
   # SNS topic for storing the output of async Rekognition jobs:
@@ -139,6 +146,8 @@ Resources:
 
   mediaConvertS3Role:
     Type: "AWS::IAM::Role"
+    Metadata:
+      Comment: "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty."
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -158,6 +167,10 @@ Resources:
                   - "s3:GetObject"
                   - "s3:PutObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
+                Effect: "Allow"
+              - Action:
+                  - "s3:GetObject"
+                Resource: !If ["AllowAccessToExternalBucket", !Sub "${ExternalBucketArn}", !Sub "arn:aws:s3:::${DataPlaneBucket}/*"]
                 Effect: "Allow"
       Tags:
         - Key: "environment"
@@ -2318,7 +2331,7 @@ Resources:
       ResourceType: "Operation"
       Name: "Mediaconvert"
       Type: "Async"
-      Configuration: { "MediaType": "Video", "Enabled": false }
+      Configuration: { "MediaType": "Video", "Enabled": true }
       StartLambdaArn: !GetAtt StartMediaConvertFunction.Arn
       MonitorLambdaArn: !GetAtt CheckMediaConvertFunction.Arn
 

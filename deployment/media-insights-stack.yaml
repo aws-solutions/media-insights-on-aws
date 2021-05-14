@@ -1605,6 +1605,7 @@ Resources:
         DataPlaneEndpoint: !GetAtt MediaInsightsDataplaneApiStack.Outputs.APIHandlerName
         DataPlaneHandlerArn: !GetAtt MediaInsightsDataplaneApiStack.Outputs.APIHandlerArn
         DataPlaneBucket: !Ref Dataplane
+        ExternalBucketArn: !Ref ExternalBucketArn
         MediaInsightsEnginePython38Layer: !Ref MediaInsightsEnginePython38Layer
         MediaInsightsEnginePython37Layer: !Ref MediaInsightsEnginePython37Layer
         MediaInsightsEnginePython36Layer: !Ref MediaInsightsEnginePython36Layer

@@ -42,17 +42,6 @@ def test_create_asset(test_client, s3_client_stub, ddb_resource_stub):
         expected_params={'Bucket': 'testDataplaneBucketName', 'Key': botocore.stub.ANY},
         service_response={}
     )
-    s3_client_stub.add_response(
-        'copy_object',
-        expected_params={'Bucket': 'testDataplaneBucketName', 'Key': botocore.stub.ANY,
-                         'CopySource': {'Bucket': 'InputBucketName', 'Key': 'InputKeyName'}},
-        service_response={}
-    )
-    s3_client_stub.add_response(
-        'delete_object',
-        expected_params={'Bucket': 'InputBucketName', 'Key': 'InputKeyName'},
-        service_response={}
-    )
     ddb_resource_stub.add_response(
         'put_item',
         expected_params={
@@ -61,6 +50,8 @@ def test_create_asset(test_client, s3_client_stub, ddb_resource_stub):
                     'AssetId': botocore.stub.ANY,
                     'S3Bucket': 'testDataplaneBucketName',
                     'S3Key': botocore.stub.ANY,
+                    'SourceS3Bucket': 'InputBucketName',
+                    'SourceS3Key': 'InputKeyName',
                     'Created': botocore.stub.ANY
                 },
             'TableName': 'testDataplaneTableName'
@@ -71,7 +62,7 @@ def test_create_asset(test_client, s3_client_stub, ddb_resource_stub):
                                      body=b'{"Input": {"S3Bucket": "InputBucketName", "S3Key": "InputKeyName"}}')
 
     formatted_response = json.loads(response.body)
-    expected_response_keys = ['AssetId', 'S3Bucket', 'S3Key']
+    expected_response_keys = ['AssetId', 'S3Bucket', 'S3Key', 'SourceS3Bucket', 'SourceS3Key']
 
     assert all(item in formatted_response.keys() for item in expected_response_keys)
 

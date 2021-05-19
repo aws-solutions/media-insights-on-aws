@@ -1952,8 +1952,8 @@ def create_workflow_execution(trigger, workflow_execution):
                 asset_input = {
                     "Media": {
                         media_type: {
-                            "S3Bucket": asset_creation["S3Bucket"],
-                            "S3Key": asset_creation["S3Key"]
+                            "S3Bucket": s3bucket,
+                            "S3Key": s3key
                         }
                     }
                 }

@@ -129,7 +129,6 @@ Resources:
               - Action:
                   - "s3:GetObject"
                   - "s3:PutObject"
-                  - "s3:DeleteObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
                 Effect: "Allow"
               - Action: "lambda:InvokeFunction"
@@ -666,6 +665,7 @@ Resources:
   rekognitionLambdaRole:
     Type: "AWS::IAM::Role"
     Metadata:
+      Comment: "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty."
       cfn_nag:
         rules_to_suppress:
           - id: W11
@@ -700,6 +700,10 @@ Resources:
               - Action:
                   - "s3:GetObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
+                Effect: "Allow"
+              - Action:
+                  - "s3:GetObject"
+                Resource: !If ["AllowAccessToExternalBucket", !Sub "${ExternalBucketArn}", !Sub "arn:aws:s3:::${DataPlaneBucket}/*"]
                 Effect: "Allow"
               - Action:
                   - "rekognition:DetectFaces"

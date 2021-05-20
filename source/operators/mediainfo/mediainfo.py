@@ -17,8 +17,8 @@
 #         "Input": {
 #             "Media": {
 #                 "Video": {
-#                     "SourceS3Bucket": "my_bucket",
-#                     "SourceS3Key": "my_video.mp4"
+#                     "S3Bucket": "my_bucket",
+#                     "S3Key": "my_video.mp4"
 #                 }
 #             },
 #             "MetaData": {}
@@ -63,11 +63,11 @@ def lambda_handler(event, context):
     key = ''
     try:
         if "Video" in event["Input"]["Media"]:
-            bucket = event["Input"]["Media"]["Video"]["SourceS3Bucket"]
-            key = event["Input"]["Media"]["Video"]["SourceS3Key"]
+            bucket = event["Input"]["Media"]["ProxyEncode"]["S3Bucket"]
+            key = event["Input"]["Media"]["ProxyEncode"]["S3Key"]
         elif "Image" in event["Input"]["Media"]:
-            bucket = event["Input"]["Media"]["Image"]["SourceS3Bucket"]
-            key = event["Input"]["Media"]["Image"]["SourceS3Key"]
+            bucket = event["Input"]["Media"]["Image"]["S3Bucket"]
+            key = event["Input"]["Media"]["Image"]["S3Key"]
         workflow_id = str(operator_object.workflow_execution_id)
     except KeyError as e:
         operator_object.update_workflow_status("Error")

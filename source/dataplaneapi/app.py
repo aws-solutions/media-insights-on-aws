@@ -1065,7 +1065,7 @@ def delete_asset(asset_id):
             raise ChaliceViewError("Unable to delete asset: {e}".format(e=e))
         else:
             global_attributes = ['S3Key', 'S3Bucket', 'SourceS3Key', 'SourceS3Bucket', 'AssetId', 'Created']
-        remaining_attributes = list(set(attributes_to_delete.keys()) - set(global_attributes))
+            remaining_attributes = list(set(attributes_to_delete.keys()) - set(global_attributes))
 
             # Build list of all s3 objects that the asset had pointers to
             keys = []

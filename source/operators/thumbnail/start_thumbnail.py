@@ -48,6 +48,7 @@ mie_config = json.loads(os.environ['botoConfig'])
 config = config.Config(**mie_config)
 
 mediaconvert_role = os.environ['mediaconvertRole']
+dataplane_bucket = os.environ['DATAPLANE_BUCKET']
 mediaconvert = boto3.client("mediaconvert", config=config, region_name=region)
 
 
@@ -57,8 +58,8 @@ def lambda_handler(event, context):
 
     try:
         workflow_id = str(operator_object.workflow_execution_id)
-        bucket = operator_object.input["Media"]["Video"]["S3Bucket"]
-        key = operator_object.input["Media"]["Video"]["S3Key"]
+        input_bucket = operator_object.input["Media"]["Video"]["S3Bucket"]
+        input_key = operator_object.input["Media"]["Video"]["S3Key"]
     except KeyError as e:
         operator_object.update_workflow_status("Error")
         operator_object.add_workflow_metadata(ThumbnailError="Missing a required metadata key {e}".format(e=e))
@@ -70,10 +71,10 @@ def lambda_handler(event, context):
     except KeyError as e:
         print("No asset id passed in with this workflow", e)
         asset_id = ''
-    file_input = "s3://" + bucket + "/" + key
-    audio_destination = "s3://" + bucket + "/" + 'private/assets/' + asset_id + "/workflows/" + workflow_id + "/"
-    thumbnail_destination = "s3://" + bucket + "/" + 'private/assets/' + asset_id + "/"
-    proxy_destination = "s3://" + bucket + "/" + 'private/assets/' + asset_id + "/"
+    file_input = "s3://" + input_bucket + "/" + input_key
+    audio_destination = "s3://" + dataplane_bucket + "/" + 'private/assets/' + asset_id + "/workflows/" + workflow_id + "/"
+    thumbnail_destination = "s3://" + dataplane_bucket + "/" + 'private/assets/' + asset_id + "/"
+    proxy_destination = "s3://" + dataplane_bucket + "/" + 'private/assets/' + asset_id + "/"
 
     # Get user-defined location for generic data file
     if "ThumbnailPosition" in operator_object.configuration:

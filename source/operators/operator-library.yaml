@@ -147,7 +147,7 @@ Resources:
     Type: "AWS::IAM::Role"
     Metadata:
       Comment: "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty."
-    Properties: 
+    Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:

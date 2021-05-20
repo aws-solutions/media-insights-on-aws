@@ -332,8 +332,10 @@ def create_asset():
 
             {
                 "AssetId": asset_id,
-                "S3Bucket": dataplane_s3_bucket,
-                "S3Key": key
+                "AssetMetadataBucket": dataplane_s3_bucket,
+                "AssetMetadataFolder": dataplane_s3_key,
+                "S3Bucket": source_bucket,
+                "S3Key": source_key
             }
     Raises:
         ChaliceViewError - 500
@@ -379,32 +381,6 @@ def create_asset():
     else:
         logger.info("Created asset directory structure: {directory}".format(directory=directory))
 
-    # build key for new s3 object
-
-    new_key = directory + 'input' + '/' + source_key
-
-    # TODO: If tests show that this copy_object is not necessary, then delete this commented out code block. Also double check that the table.put_item that inserts new_key below is necessary.
-
-    # Copy input media into newly created dataplane s3 directory.
-    # try:
-    #     # copy input media from upload/ to private/assets/[asset_id]/input/
-    #     s3_client.copy_object(
-    #         Bucket=dataplane_s3_bucket,
-    #         Key=new_key,
-    #         CopySource={'Bucket': source_bucket, 'Key': source_key}
-    #     )
-    # except ClientError as e:
-    #     error = e.response['Error']['Message']
-    #     logger.error("Exception occurred during asset creation: {e}".format(e=error))
-    #     raise ChaliceViewError("Unable to move uploaded media to the dataplane bucket: {e}".format(e=error))
-    # except Exception as e:
-    #     logger.error("Exception occurred during asset creation: {e}".format(e=e))
-    #     raise ChaliceViewError("Exception when moving s3 object for asset: {e}".format(e=e))
-    # else:
-    #     logger.info("Copied input media into dataplane bucket: {key}".format(key=new_key))
-
-    # build ddb item of the asset
-
     ts = str(datetime.datetime.now().timestamp())
 
     try:
@@ -412,10 +388,10 @@ def create_asset():
         table.put_item(
             Item={
                 "AssetId": asset_id,
-                "S3Bucket": dataplane_s3_bucket,
-                "S3Key": directory,
-                "SourceS3Bucket": source_bucket,
-                "SourceS3Key": source_key,
+                "AssetMetadataBucket": dataplane_s3_bucket,
+                "AssetMetadataFolder": directory,
+                "S3Bucket": source_bucket,
+                "S3Key": source_key,
                 "Created": ts
             }
         )
@@ -428,7 +404,7 @@ def create_asset():
         raise ChaliceViewError("Exception when creating dynamo item for asset: {e}".format(e=e))
     else:
         logger.info("Completed asset creation for asset: {asset}".format(asset=asset_id))
-        return {"AssetId": asset_id, "S3Bucket": dataplane_s3_bucket, "S3Key": directory, "SourceS3Bucket": source_bucket, "SourceS3Key": source_key}
+        return {"AssetId": asset_id, "AssetMetadataBucket": dataplane_s3_bucket, "AssetMetadataFolder": directory, "S3Bucket": source_bucket, "S3Key": source_key}
 
 
 @app.route('/metadata/{asset_id}', cors=True, methods=['POST'], authorizer=authorizer)
@@ -712,7 +688,7 @@ def get_asset_metadata(asset_id):
             #  entire request vs. a page for a specific operator
             if "Item" in asset_item:
                 asset_attributes = asset_item["Item"]
-                global_attributes = ['S3Key', 'S3Bucket', 'SourceS3Key', 'SourceS3Bucket', 'AssetId', 'Created']
+                global_attributes = ['AssetMetadataFolder', 'AssetMetadataBucket', 'S3Key', 'S3Bucket', 'AssetId', 'Created']
                 remaining_attributes = list(set(asset_attributes.keys()) - set(global_attributes))
                 remaining = []
 
@@ -1064,7 +1040,7 @@ def delete_asset(asset_id):
             logger.error("Exception occurred during request to delete asset: {e}".format(e=e))
             raise ChaliceViewError("Unable to delete asset: {e}".format(e=e))
         else:
-            global_attributes = ['S3Key', 'S3Bucket', 'SourceS3Key', 'SourceS3Bucket', 'AssetId', 'Created']
+            global_attributes = ['AssetMetadataFolder', 'AssetMetadataBucket', 'S3Key', 'S3Bucket', 'AssetId', 'Created']
             remaining_attributes = list(set(attributes_to_delete.keys()) - set(global_attributes))
 
             # Build list of all s3 objects that the asset had pointers to

@@ -2,9 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 ###############################################################################
 # PURPOSE:
-#   Get MediaInfo output for a media file in S3. If the media file does not
-#   contain video, audio, image, or text data, or if the Mediainfo fails to
-#   process the file, then remove the file from S3.
+#   Get MediaInfo output for a media file in S3.
 # USAGE:
 #   Make sure the LD_LIBRARY_PATH environment variable points to a directory
 #   holding MediaInfo ".so" library files
@@ -62,9 +60,12 @@ def lambda_handler(event, context):
     bucket = ''
     key = ''
     try:
-        if "Video" in event["Input"]["Media"]:
+        if "ProxyEncode" in event["Input"]["Media"]:
             bucket = event["Input"]["Media"]["ProxyEncode"]["S3Bucket"]
             key = event["Input"]["Media"]["ProxyEncode"]["S3Key"]
+        elif "Video" in event["Input"]["Media"]:
+            bucket = event["Input"]["Media"]["Video"]["S3Bucket"]
+            key = event["Input"]["Media"]["Video"]["S3Key"]
         elif "Image" in event["Input"]["Media"]:
             bucket = event["Input"]["Media"]["Image"]["S3Bucket"]
             key = event["Input"]["Media"]["Image"]["S3Key"]
@@ -93,25 +94,21 @@ def lambda_handler(event, context):
         media_info = MediaInfo.parse(signed_url)
         # Save the result
         metadata_json = json.loads(media_info.to_json())
-        # If there's no Video, Audio, Image, or Text data then delete the file.
+        # If there's no Video, Audio, Image, or Text data then print an error.
         track_types = [track['track_type'] for track in metadata_json['tracks']]
         if ('Video' not in track_types and
                 'Audio' not in track_types and
                 'Image' not in track_types and
                 'Text' not in track_types):
             print("ERROR: File does not contain valid video, audio, image, or text content")
-            print("Deleting file s3://" + bucket + "/" + key)
-            s3_cli.delete_object(Bucket=bucket, Key=key)
             operator_object.update_workflow_status("Error")
             operator_object.add_workflow_metadata(MediainfoError="File does not contain valid video, audio, image, or text content")
             raise MasExecutionError(operator_object.return_output_object())
     except RuntimeError as e:
         # If MediaInfo could not run then we assume it is not a valid
-        # media file and delete it
+        # media file and print an error.
         print("Exception:\n", e)
         print("ERROR: File does not contain valid video, audio, image, or text content")
-        print("Deleting file s3://" + bucket + "/" + key)
-        s3_cli.delete_object(Bucket=bucket, Key=key)
         operator_object.update_workflow_status("Error")
         operator_object.add_workflow_metadata(MediainfoError="File does not contain valid video, audio, image, or text content")
         raise MasExecutionError(operator_object.return_output_object())

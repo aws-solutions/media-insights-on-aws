@@ -67,9 +67,12 @@ def start_text_detection(bucket, key):
 # Lambda function entrypoint:
 def lambda_handler(event, context):
     try:
-        if "Video" in event["Input"]["Media"]:
+        if "ProxyEncode" in event["Input"]["Media"]:
             s3bucket = event["Input"]["Media"]["ProxyEncode"]["S3Bucket"]
             s3key = event["Input"]["Media"]["ProxyEncode"]["S3Key"]
+        elif "Video" in event["Input"]["Media"]:
+            s3bucket = event["Input"]["Media"]["Video"]["S3Bucket"]
+            s3key = event["Input"]["Media"]["Video"]["S3Key"]
         elif "Image" in event["Input"]["Media"]:
             s3bucket = event["Input"]["Media"]["Image"]["S3Bucket"]
             s3key = event["Input"]["Media"]["Image"]["S3Key"]

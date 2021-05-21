@@ -48,8 +48,6 @@ def test_create_asset(test_client, s3_client_stub, ddb_resource_stub):
             'Item':
                 {
                     'AssetId': botocore.stub.ANY,
-                    'AssetMetadataBucket': 'testDataplaneBucketName',
-                    'AssetMetadataFolder': botocore.stub.ANY,
                     'S3Bucket': 'InputBucketName',
                     'S3Key': 'InputKeyName',
                     'Created': botocore.stub.ANY
@@ -62,15 +60,13 @@ def test_create_asset(test_client, s3_client_stub, ddb_resource_stub):
                                      body=b'{"Input": {"S3Bucket": "InputBucketName", "S3Key": "InputKeyName"}}')
 
     formatted_response = json.loads(response.body)
-    expected_response_keys = ['AssetId', 'S3Bucket', 'S3Key', 'AssetMetadataBucket', 'AssetMetadataFolder']
+    expected_response_keys = ['AssetId', 'S3Bucket', 'S3Key']
 
     assert all(item in formatted_response.keys() for item in expected_response_keys)
 
     asset_id = formatted_response['AssetId']
     assert is_valid_uuid(asset_id)
 
-    asset_metadata_folder = formatted_response['AssetMetadataFolder']
-    assert '/'.join(asset_metadata_folder.split('/')[0:2]) == 'private/assets'
     print("Pass")
 
 

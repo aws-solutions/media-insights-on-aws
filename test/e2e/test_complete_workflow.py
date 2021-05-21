@@ -27,9 +27,9 @@ def test_workflow_execution(workflow_api, dataplane_api, stack_resources, testin
 
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-    test_preprocess_stage = {"Name": "TestPreprocess", "Operations": ["Thumbnail"]}
+    test_preprocess_stage = {"Name": "TestPreprocess", "Operations": ["Thumbnail", "Mediainfo"]}
     test_video_stage = {"Name": "TestVideo",
-                        "Operations": ["Mediainfo", "celebrityRecognition", "contentModeration", "faceDetection", "labelDetection",
+                        "Operations": ["celebrityRecognition", "contentModeration", "faceDetection", "labelDetection",
                                        "personTracking", "shotDetection", "textDetection", "Mediaconvert",
                                        "technicalCueDetection"]}
     test_audio_stage = {"Name": "TestAudio", "Operations": ["TranscribeAudio"]}

@@ -60,10 +60,7 @@ def lambda_handler(event, context):
     bucket = ''
     key = ''
     try:
-        if "ProxyEncode" in event["Input"]["Media"]:
-            bucket = event["Input"]["Media"]["ProxyEncode"]["S3Bucket"]
-            key = event["Input"]["Media"]["ProxyEncode"]["S3Key"]
-        elif "Video" in event["Input"]["Media"]:
+        if "Video" in event["Input"]["Media"]:
             bucket = event["Input"]["Media"]["Video"]["S3Bucket"]
             key = event["Input"]["Media"]["Video"]["S3Key"]
         elif "Image" in event["Input"]["Media"]:

@@ -28,8 +28,8 @@ def lambda_handler(event, context):
 
     try:
         workflow_id = str(operator_object.workflow_execution_id)
-        source_bucket = operator_object.input["Media"]["ProxyEncode"]["S3Bucket"]
-        source_key = operator_object.input["Media"]["ProxyEncode"]["S3Key"]
+        source_bucket = operator_object.input["Media"]["Video"]["S3Bucket"]
+        source_key = operator_object.input["Media"]["Video"]["S3Key"]
     except KeyError as e:
         operator_object.update_workflow_status("Error")
         operator_object.add_workflow_metadata(MediaconvertError="Missing a required metadata key {e}".format(e=e))

@@ -64,6 +64,7 @@ Resources:
   genericDataLookupLambdaRole:
     Type: "AWS::IAM::Role"
     Metadata:
+      Comment: "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty."
       cfn_nag:
         rules_to_suppress:
           - id: W11
@@ -90,6 +91,10 @@ Resources:
                   - "s3:PutObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
                 Effect: "Allow"
+              - Action:
+                  - "s3:GetObject"
+                Resource: !If ["AllowAccessToExternalBucket", !Sub "${ExternalBucketArn}", !Sub "arn:aws:s3:::${DataPlaneBucket}/*"]
+                Effect: "Allow"
               - Action: "lambda:InvokeFunction"
                 Resource: !Ref DataPlaneHandlerArn
                 Effect: "Allow"
@@ -105,6 +110,7 @@ Resources:
   mediainfoLambdaRole:
     Type: "AWS::IAM::Role"
     Metadata:
+      Comment: "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty."
       cfn_nag:
         rules_to_suppress:
           - id: W11
@@ -130,6 +136,10 @@ Resources:
                   - "s3:GetObject"
                   - "s3:PutObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
+                Effect: "Allow"
+              - Action:
+                  - "s3:GetObject"
+                Resource: !If ["AllowAccessToExternalBucket", !Sub "${ExternalBucketArn}", !Sub "arn:aws:s3:::${DataPlaneBucket}/*"]
                 Effect: "Allow"
               - Action: "lambda:InvokeFunction"
                 Resource: !Ref DataPlaneHandlerArn
@@ -178,6 +188,7 @@ Resources:
   mediaConvertLambdaRole:
     Type: "AWS::IAM::Role"
     Metadata:
+      Comment: "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty."
       cfn_nag:
         rules_to_suppress:
           - id: W11
@@ -219,6 +230,10 @@ Resources:
                   - "s3:PutObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
                 Effect: "Allow"
+              - Action:
+                  - "s3:GetObject"
+                Resource: !If ["AllowAccessToExternalBucket", !Sub "${ExternalBucketArn}", !Sub "arn:aws:s3:::${DataPlaneBucket}/*"]
+                Effect: "Allow"
               - Action: "lambda:InvokeFunction"
                 Resource: !Ref DataPlaneHandlerArn
                 Effect: "Allow"
@@ -234,6 +249,7 @@ Resources:
   transcribeRole:
     Type: "AWS::IAM::Role"
     Metadata:
+      Comment: "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty."
       cfn_nag:
         rules_to_suppress:
           - id: W11
@@ -276,6 +292,10 @@ Resources:
                   - "s3:PutObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
                 Effect: "Allow"
+              - Action:
+                  - "s3:GetObject"
+                Resource: !If ["AllowAccessToExternalBucket", !Sub "${ExternalBucketArn}", !Sub "arn:aws:s3:::${DataPlaneBucket}/*"]
+                Effect: "Allow"
               - Action: "lambda:InvokeFunction"
                 Resource: !Ref DataPlaneHandlerArn
                 Effect: "Allow"
@@ -291,6 +311,7 @@ Resources:
   captionsRole:
     Type: "AWS::IAM::Role"
     Metadata:
+      Comment: "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty."
       cfn_nag:
         rules_to_suppress:
           - id: W11
@@ -318,6 +339,10 @@ Resources:
                   - "s3:GetObject"
                   - "s3:PutObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
+                Effect: "Allow"
+              - Action:
+                  - "s3:GetObject"
+                Resource: !If ["AllowAccessToExternalBucket", !Sub "${ExternalBucketArn}", !Sub "arn:aws:s3:::${DataPlaneBucket}/*"]
                 Effect: "Allow"
               - Action: "lambda:InvokeFunction"
                 Resource: !Ref DataPlaneHandlerArn
@@ -354,6 +379,10 @@ Resources:
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
                 Effect: "Allow"
               - Action:
+                  - "s3:GetObject"
+                Resource: !If ["AllowAccessToExternalBucket", !Sub "${ExternalBucketArn}", !Sub "arn:aws:s3:::${DataPlaneBucket}/*"]
+                Effect: "Allow"
+              - Action:
                   - "s3:ListBucket"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}"
                 Effect: "Allow"
@@ -361,6 +390,7 @@ Resources:
   translateRole:
     Type: "AWS::IAM::Role"
     Metadata:
+      Comment: "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty."
       cfn_nag:
         rules_to_suppress:
           - id: W11
@@ -405,6 +435,10 @@ Resources:
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
                 Effect: "Allow"
               - Action:
+                  - "s3:GetObject"
+                Resource: !If ["AllowAccessToExternalBucket", !Sub "${ExternalBucketArn}", !Sub "arn:aws:s3:::${DataPlaneBucket}/*"]
+                Effect: "Allow"
+              - Action:
                   - "s3:ListBucket"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}"
                 Effect: "Allow"
@@ -423,6 +457,7 @@ Resources:
   pollyRole:
     Type: "AWS::IAM::Role"
     Metadata:
+      Comment: "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty."
       cfn_nag:
         rules_to_suppress:
           - id: W11
@@ -470,6 +505,10 @@ Resources:
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
                 Effect: "Allow"
               - Action:
+                  - "s3:GetObject"
+                Resource: !If ["AllowAccessToExternalBucket", !Sub "${ExternalBucketArn}", !Sub "arn:aws:s3:::${DataPlaneBucket}/*"]
+                Effect: "Allow"
+              - Action:
                   - "comprehend:DetectDominantLanguage"
                 Resource: "*"
                 Effect: "Allow"
@@ -488,6 +527,7 @@ Resources:
   comprehendS3Role:
     Type: "AWS::IAM::Role"
     Metadata:
+      Comment: "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty."
       cfn_nag:
         rules_to_suppress:
           - id: W11
@@ -513,6 +553,10 @@ Resources:
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
                 Effect: "Allow"
               - Action:
+                  - "s3:GetObject"
+                Resource: !If ["AllowAccessToExternalBucket", !Sub "${ExternalBucketArn}", !Sub "arn:aws:s3:::${DataPlaneBucket}/*"]
+                Effect: "Allow"
+              - Action:
                   - "s3:ListBucket"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}"
                 Effect: "Allow"
@@ -533,6 +577,7 @@ Resources:
   comprehendRole:
     Type: "AWS::IAM::Role"
     Metadata:
+      Comment: "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty."
       cfn_nag:
         rules_to_suppress:
           - id: W11
@@ -564,6 +609,10 @@ Resources:
                   - "s3:GetObject"
                   - "s3:PutObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
+                Effect: "Allow"
+              - Action:
+                  - "s3:GetObject"
+                Resource: !If ["AllowAccessToExternalBucket", !Sub "${ExternalBucketArn}", !Sub "arn:aws:s3:::${DataPlaneBucket}/*"]
                 Effect: "Allow"
               - Action:
                   [

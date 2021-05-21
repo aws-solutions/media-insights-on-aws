@@ -327,7 +327,7 @@ def create_asset():
         }
 
     Returns:
-        A dict containing the asset id and its designated location for metadata in the dataplane.
+        A dict containing the asset id and the Amazon S3 bucket and key describing where its media file was sourced from.
          .. code-block:: python
 
             {

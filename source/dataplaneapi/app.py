@@ -332,8 +332,6 @@ def create_asset():
 
             {
                 "AssetId": asset_id,
-                "AssetMetadataBucket": dataplane_s3_bucket,
-                "AssetMetadataFolder": dataplane_s3_key,
                 "S3Bucket": source_bucket,
                 "S3Key": source_key
             }
@@ -388,8 +386,6 @@ def create_asset():
         table.put_item(
             Item={
                 "AssetId": asset_id,
-                "AssetMetadataBucket": dataplane_s3_bucket,
-                "AssetMetadataFolder": directory,
                 "S3Bucket": source_bucket,
                 "S3Key": source_key,
                 "Created": ts
@@ -404,7 +400,7 @@ def create_asset():
         raise ChaliceViewError("Exception when creating dynamo item for asset: {e}".format(e=e))
     else:
         logger.info("Completed asset creation for asset: {asset}".format(asset=asset_id))
-        return {"AssetId": asset_id, "AssetMetadataBucket": dataplane_s3_bucket, "AssetMetadataFolder": directory, "S3Bucket": source_bucket, "S3Key": source_key}
+        return {"AssetId": asset_id, "S3Bucket": source_bucket, "S3Key": source_key}
 
 
 @app.route('/metadata/{asset_id}', cors=True, methods=['POST'], authorizer=authorizer)
@@ -688,7 +684,7 @@ def get_asset_metadata(asset_id):
             #  entire request vs. a page for a specific operator
             if "Item" in asset_item:
                 asset_attributes = asset_item["Item"]
-                global_attributes = ['AssetMetadataFolder', 'AssetMetadataBucket', 'S3Key', 'S3Bucket', 'AssetId', 'Created']
+                global_attributes = ['S3Key', 'S3Bucket', 'AssetId', 'Created']
                 remaining_attributes = list(set(asset_attributes.keys()) - set(global_attributes))
                 remaining = []
 
@@ -1040,7 +1036,7 @@ def delete_asset(asset_id):
             logger.error("Exception occurred during request to delete asset: {e}".format(e=e))
             raise ChaliceViewError("Unable to delete asset: {e}".format(e=e))
         else:
-            global_attributes = ['AssetMetadataFolder', 'AssetMetadataBucket', 'S3Key', 'S3Bucket', 'AssetId', 'Created']
+            global_attributes = ['S3Key', 'S3Bucket', 'AssetId', 'Created']
             remaining_attributes = list(set(attributes_to_delete.keys()) - set(global_attributes))
 
             # Build list of all s3 objects that the asset had pointers to

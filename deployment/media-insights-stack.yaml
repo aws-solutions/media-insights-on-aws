@@ -29,7 +29,7 @@ Parameters:
       - Yes
       - No
   ExternalBucketArn:
-    Description: The ARN for Amazon S3 resources that exist outside the MIE stack which may need to be used as inputs to MIE workflows.
+    Description: (Optional) If you intend to input media files from a bucket outside the MIE stack into MIE workflows, then specify the Amazon S3 ARN for those files here.
     Type: String
     Default: ""
 

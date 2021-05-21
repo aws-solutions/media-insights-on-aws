@@ -562,7 +562,7 @@ sample_workflow_execution = {
         'Media': {
             'Video': {
                 'S3Bucket': 'testBucket',
-                'S3Key': 'testFile.mp4'
+                'S3Key': 'private/assets/abcd-1234-efgh/input/testFile.mp4'
             }
         },
         'MetaData': {}
@@ -640,7 +640,7 @@ sample_workflow_execution = {
                     'Media': {
                         'Video': {
                             'S3Bucket': 'testBucket',
-                            'S3Key': 'testFile.mp4'
+                            'S3Key': 'private/assets/abcd-1234-efgh/input/testFile.mp4'
                         }
                     },
                     'MetaData': {}

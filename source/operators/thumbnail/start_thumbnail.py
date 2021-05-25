@@ -20,15 +20,8 @@
 #   then a thumbnail will be created at time 0 and have a filename ending
 #   with end with "_thumbnail.0000000.jpg".
 #
-# USAGE:
-#   To run this operator add
+#   Thumbnail position can be controlled in the workflow configuration, like this:
 #   '"Thumbnail":{"Position":7, "Enabled":true}'
-#   to the workflow configuration, like this:
-#
-#   curl -k -X POST -H "Authorization: $MIE_ACCESS_TOKEN" -H "Content-Type: application/json" --data '{"Name":"MieCompleteWorkflow","Configuration":{"defaultVideoStage":{"Thumbnail":{"ThumbnailPosition":7, Enabled":true}}}},"Input":{"Media":{"Video":{"S3Bucket":"'$DATAPLANE_BUCKET'","S3Key":"My Video.mp4"}}}}'  $WORKFLOW_API_ENDPOINT/workflow/execution
-#
-#  For instructions on getting $MIE_ACCESS_TOKEN, see:
-#  https://github.com/awslabs/aws-media-insights-engine/blob/master/IMPLEMENTATION_GUIDE.md#step-6-test-your-operator
 #
 ###############################################################################
 
@@ -48,6 +41,7 @@ mie_config = json.loads(os.environ['botoConfig'])
 config = config.Config(**mie_config)
 
 mediaconvert_role = os.environ['mediaconvertRole']
+dataplane_bucket = os.environ['DATAPLANE_BUCKET']
 mediaconvert = boto3.client("mediaconvert", config=config, region_name=region)
 
 
@@ -57,8 +51,8 @@ def lambda_handler(event, context):
 
     try:
         workflow_id = str(operator_object.workflow_execution_id)
-        bucket = operator_object.input["Media"]["Video"]["S3Bucket"]
-        key = operator_object.input["Media"]["Video"]["S3Key"]
+        input_bucket = operator_object.input["Media"]["Video"]["S3Bucket"]
+        input_key = operator_object.input["Media"]["Video"]["S3Key"]
     except KeyError as e:
         operator_object.update_workflow_status("Error")
         operator_object.add_workflow_metadata(ThumbnailError="Missing a required metadata key {e}".format(e=e))
@@ -70,10 +64,10 @@ def lambda_handler(event, context):
     except KeyError as e:
         print("No asset id passed in with this workflow", e)
         asset_id = ''
-    file_input = "s3://" + bucket + "/" + key
-    audio_destination = "s3://" + bucket + "/" + 'private/assets/' + asset_id + "/workflows/" + workflow_id + "/"
-    thumbnail_destination = "s3://" + bucket + "/" + 'private/assets/' + asset_id + "/"
-    proxy_destination = "s3://" + bucket + "/" + 'private/assets/' + asset_id + "/"
+    file_input = "s3://" + input_bucket + "/" + input_key
+    audio_destination = "s3://" + dataplane_bucket + "/" + 'private/assets/' + asset_id + "/workflows/" + workflow_id + "/"
+    thumbnail_destination = "s3://" + dataplane_bucket + "/" + 'private/assets/' + asset_id + "/"
+    proxy_destination = "s3://" + dataplane_bucket + "/" + 'private/assets/' + asset_id + "/"
 
     # Get user-defined location for generic data file
     if "ThumbnailPosition" in operator_object.configuration:

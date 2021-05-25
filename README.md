@@ -181,6 +181,7 @@ You can deploy MIE in your AWS account with the [one-click deploy buttons](#inst
 | `DeployAnalyticsPipeline` | `true` | Determines whether to deploy a data streaming pipeline that can be consumed by external applications. By default, this capability is activated when the solution is deployed. Set to `false` to deactivate this capability. |
 | `DeployTestWorkflow` | `false` | Determines whether to deploy test resources that contain Lambda functions required for integration and end-to-end testing. By default, this capability is deactivated. Set to `true` to activate this capability. |
 | `EnableXrayTrace` | `false` | Determines whether to activate Active Xray tracing on all entry points to the stack. By default, this capability is deactivated when the solution is deployed. Set to true to activate this capability. |
+| `ExternalBucketArn` | `` | The ARN for Amazon S3 resources that exist outside the MIE stack which may need to be used as inputs to MIE workflows. Values must be a valid [Amazon S3 ARN](https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-arn-format.html). By default, this option will be blank, meaning workflows will only be able to input media files from the MIE data plane bucket. |
 
 # Developers
 

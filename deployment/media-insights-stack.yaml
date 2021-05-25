@@ -28,6 +28,10 @@ Parameters:
     AllowedValues:
       - Yes
       - No
+  ExternalBucketArn:
+    Description: (Optional) If you intend to input media files from a bucket outside the MIE stack into MIE workflows, then specify the Amazon S3 ARN for those files here.
+    Type: String
+    Default: ""
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -1473,6 +1477,7 @@ Resources:
       Parameters:
         botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
         DataplaneTableName: !Ref DataplaneTable
+        ExternalBucketArn: !Ref ExternalBucketArn
         DataplaneBucketName: !Ref Dataplane
         DeploymentPackageBucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
         TracingConfigMode: !If [EnableTraceOnEntryPoints, "Active", "PassThrough"]
@@ -1600,6 +1605,7 @@ Resources:
         DataPlaneEndpoint: !GetAtt MediaInsightsDataplaneApiStack.Outputs.APIHandlerName
         DataPlaneHandlerArn: !GetAtt MediaInsightsDataplaneApiStack.Outputs.APIHandlerArn
         DataPlaneBucket: !Ref Dataplane
+        ExternalBucketArn: !Ref ExternalBucketArn
         MediaInsightsEnginePython38Layer: !Ref MediaInsightsEnginePython38Layer
         MediaInsightsEnginePython37Layer: !Ref MediaInsightsEnginePython37Layer
         MediaInsightsEnginePython36Layer: !Ref MediaInsightsEnginePython36Layer

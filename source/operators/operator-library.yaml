@@ -1878,6 +1878,7 @@ Resources:
       Timeout: 120
       Environment:
         Variables:
+          OPERATOR_NAME: "transcribe"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'

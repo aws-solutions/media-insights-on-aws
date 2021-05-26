@@ -2364,7 +2364,7 @@ Resources:
       ResourceType: "Operation"
       Name: "Mediainfo"
       Type: "Sync"
-      Configuration: { "MediaType": "Video", "Enabled": false }
+      Configuration: { "MediaType": "Video", "Enabled": true }
       StartLambdaArn: !GetAtt Mediainfo.Arn
 
   MediainfoOperationImage:

@@ -1879,6 +1879,7 @@ Resources:
       Environment:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
+          OPERATOR_NAME: "transcribe"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
       Tags:

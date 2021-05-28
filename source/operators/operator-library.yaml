@@ -2354,7 +2354,7 @@ Resources:
       ResourceType: "Operation"
       Name: "GenericDataLookup"
       Type: "Sync"
-      Configuration: { "MediaType": "Video", "Enabled": true }
+      Configuration: { "MediaType": "Video", "Enabled": false }
       StartLambdaArn: !GetAtt startGenericDataLookup.Arn
 
   MediainfoOperation:
@@ -2632,7 +2632,7 @@ Resources:
       ResourceType: "Operation"
       Name: "faceSearch"
       Type: "Async"
-      Configuration: { "MediaType": "Video", "Enabled": true }
+      Configuration: { "MediaType": "Video", "Enabled": false, "CollectionId": "" }
       StartLambdaArn: !GetAtt startFaceSearch.Arn
       MonitorLambdaArn: !GetAtt checkFaceSearch.Arn
 
@@ -2643,7 +2643,7 @@ Resources:
       ResourceType: "Operation"
       Name: "faceSearchImage"
       Type: "Sync"
-      Configuration: { "MediaType": "Image", "Enabled": true }
+      Configuration: { "MediaType": "Image", "Enabled": false, "CollectionId": "" }
       StartLambdaArn: !GetAtt startFaceSearch.Arn
 
   labelDetectionOperation:

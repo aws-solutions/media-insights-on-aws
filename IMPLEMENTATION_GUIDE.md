@@ -589,7 +589,14 @@ For more information about how to implement Kinesis Data Stream consumers in MIE
   ```
   {
   "Name":"Default",
-  "Input": media-object
+  "Input":{
+    "Media":{
+      "Video":{  <-- This can also be "Image"
+        "S3Bucket":"___",
+        "S3Key":"___"
+      }
+    }
+  },
   "Configuration": {
     "stage-name": {
       "Operations": {

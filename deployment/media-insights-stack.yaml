@@ -32,6 +32,13 @@ Parameters:
     Description: (Optional) If you intend to input media files from a bucket outside the MIE stack into MIE workflows, then specify the Amazon S3 ARN for those files here.
     Type: String
     Default: ""
+  SendAnonymousData:
+    Description: Send anonymous data about MIE performance to AWS to help improve the quality of this solution.
+    Type: String
+    Default: Yes
+    AllowedValues:
+      - Yes
+      - No
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -53,7 +60,7 @@ Conditions:
   DeployTestResourcesCondition: !Equals [!Ref DeployTestResources, Yes]
   DeployAnalyticsPipelineCondition: !Equals [!Ref DeployAnalyticsPipeline, Yes]
   EnableTraceOnEntryPoints: !Equals [!Ref EnableXrayTrace, Yes]
-  EnableAnonymousData: !Equals [ !FindInMap [AnonymousData,SendAnonymousData,Data], Yes]
+  EnableAnonymousData: !Equals [ !Ref SendAnonymousData, Yes]
 
 Mappings:
   SourceCode:
@@ -63,9 +70,6 @@ Mappings:
       CodeKeyPrefix: "aws-media-insights-engine/%%VERSION%%"
       TemplateKeyPrefix: "aws-media-insights-engine/%%VERSION%%"
       FrameworkVersion: "%%VERSION%%"
-  AnonymousData:
-    SendAnonymousData:
-      Data: Yes
 
 Resources:
   # Helper function - create a short UUID to avoid name conflicts

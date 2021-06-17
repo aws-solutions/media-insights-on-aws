@@ -752,7 +752,7 @@ cp "./dist/anonymous-data-logger.zip" "$regional_dist_dir/anonymous-data-logger.
 
 # Skip copy dist to S3 if building for solution builder because
 # that pipeline takes care of copying the dist in another script.
-if [ "$TEMPLATE_OUTPUT_BUCKET" != "solutions-reference" ] && [ "$TEMPLATE_OUTPUT_BUCKET" != "solutions-test-reference" ]; then
+if [ "$global_bucket" != "solutions-reference" ] && [ "$global_bucket" != "solutions-test-reference" ]; then
   echo "------------------------------------------------------------------------------"
   echo "Copy dist to S3"
   echo "------------------------------------------------------------------------------"

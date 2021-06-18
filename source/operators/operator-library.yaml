@@ -805,6 +805,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "generic_data_lookup.lambda_handler"
       Layers:
@@ -843,6 +845,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "mediainfo.lambda_handler"
       Layers:
@@ -882,6 +886,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_key_phrases.lambda_handler"
       Layers:
@@ -918,6 +924,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "get_key_phrases.lambda_handler"
       Layers:
@@ -954,6 +962,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_entity_detection.lambda_handler"
       Layers:
@@ -990,6 +1000,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "get_entity_detection.lambda_handler"
       Layers:
@@ -1028,6 +1040,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_technical_cue_detection.lambda_handler"
       Layers:
@@ -1066,6 +1080,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "check_technical_cue_status.lambda_handler"
       Layers:
@@ -1104,6 +1120,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_shot_detection.lambda_handler"
       Layers:
@@ -1142,6 +1160,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "check_shot_detection_status.lambda_handler"
       Layers:
@@ -1180,6 +1200,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_celebrity_recognition.lambda_handler"
       Layers:
@@ -1218,6 +1240,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "check_celebrity_recognition_status.lambda_handler"
       Layers:
@@ -1255,6 +1279,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_content_moderation.lambda_handler"
       Layers:
@@ -1293,6 +1319,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "check_content_moderation_status.lambda_handler"
       Layers:
@@ -1330,6 +1358,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_face_detection.lambda_handler"
       Layers:
@@ -1369,6 +1399,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "check_face_detection_status.lambda_handler"
       Layers:
@@ -1407,6 +1439,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_face_search.lambda_handler"
       Layers:
@@ -1446,6 +1480,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "check_face_search_status.lambda_handler"
       Layers:
@@ -1484,6 +1520,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_text_detection.lambda_handler"
       Layers:
@@ -1522,6 +1560,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "check_text_detection_status.lambda_handler"
       Layers:
@@ -1560,6 +1600,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_label_detection.lambda_handler"
       Layers:
@@ -1598,6 +1640,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "check_label_detection_status.lambda_handler"
       Layers:
@@ -1636,6 +1680,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_person_tracking.lambda_handler"
       Layers:
@@ -1672,6 +1718,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "check_person_tracking_status.lambda_handler"
       Layers:
@@ -1712,6 +1760,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_media_convert.lambda_handler"
       Layers:
@@ -1748,6 +1798,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_thumbnail.lambda_handler"
       Layers:
@@ -1784,6 +1836,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "check_thumbnail.lambda_handler"
       Layers:
@@ -1820,6 +1874,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "get_media_convert.lambda_handler"
       Layers:
@@ -1857,6 +1913,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_transcribe.lambda_handler"
       Layers:
@@ -1892,6 +1950,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "get_transcribe.lambda_handler"
       Layers:
@@ -1930,6 +1990,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "webcaptions.web_captions"
       Layers:
@@ -1968,6 +2030,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "webcaptions.create_srt"
       Layers:
@@ -2003,6 +2067,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "webcaptions.create_vtt"
       Layers:
@@ -2038,6 +2104,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "webcaptions.create_srt"
       Layers:
@@ -2073,6 +2141,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "webcaptions.create_vtt"
       Layers:
@@ -2110,6 +2180,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_translate.lambda_handler"
       Layers:
@@ -2146,6 +2218,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "webcaptions.start_translate_webcaptions"
       Layers:
@@ -2180,6 +2254,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "webcaptions.check_translate_webcaptions"
       Layers:
@@ -2214,6 +2290,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "webcaptions.start_polly_webcaptions"
       Layers:
@@ -2247,6 +2325,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "webcaptions.check_polly_webcaptions"
       Layers:
@@ -2282,6 +2362,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_polly.lambda_handler"
       Layers:
@@ -2317,6 +2399,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "get_polly.lambda_handler"
       Layers:

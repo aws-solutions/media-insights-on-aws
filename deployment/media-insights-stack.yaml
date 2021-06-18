@@ -80,6 +80,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Environment:
         Variables:
@@ -1092,6 +1094,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Environment:
         Variables:
@@ -1143,6 +1147,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Environment:
         Variables:
@@ -1226,6 +1232,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     DependsOn:
       - WorkflowSchedulerLambda
     Properties:
@@ -1275,6 +1283,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Environment:
         Variables:
@@ -1317,6 +1327,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "operator_failed.lambda_handler"
       Layers:
@@ -1346,6 +1358,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       FunctionName: !Sub "${AWS::StackName}-start-wait-operation"
       Environment:
@@ -1387,6 +1401,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       FunctionName: !Sub "${AWS::StackName}-check-wait-operation"
       Environment:
@@ -1428,6 +1444,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "workflowstream.lambda_handler"
       Role: !GetAtt WorkflowExecutionStreamLambdaRole.Arn
@@ -1688,6 +1706,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       FunctionName: !Sub ${AWS::StackName}-anonymous-data
       Description: Used to send anonymous data

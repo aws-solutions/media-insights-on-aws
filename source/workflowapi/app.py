@@ -1939,15 +1939,22 @@ def create_workflow_execution(trigger, workflow_execution):
                 raise ChaliceViewError("Exception '%s'" % e)
             else:
                 asset_creation = dataplane.create_asset(s3bucket, s3key)
-                asset_input = {
-                    "Media": {
-                        media_type: {
-                            "S3Bucket": asset_creation["S3Bucket"],
-                            "S3Key": asset_creation["S3Key"]
+                # If create_asset fails, then asset_creation will contain the error
+                # string instead of the expected dict. So, we'll raise that error
+                # if we get a KeyError in the following try block:
+                try:
+                    asset_input = {
+                        "Media": {
+                            media_type: {
+                                "S3Bucket": asset_creation["S3Bucket"],
+                                "S3Key": asset_creation["S3Key"]
+                            }
                         }
                     }
-                }
-                asset_id = asset_creation["AssetId"]
+                    asset_id = asset_creation["AssetId"]
+                except KeyError as e:
+                    logger.error("Error creating asset {}".format(asset_creation))
+                    raise ChaliceViewError("Error creating asset '%s'" % asset_creation)
         else:
 
             try:

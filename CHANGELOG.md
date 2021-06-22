@@ -10,7 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Workflows can now use media files from any S3 bucket as inputs. Prior to this release workflows required input media files to reside within the MIE data plane bucket. In order to use this capability the ARN for the external S3 bucket must be specified in the ExternalBucketArn parameter in the MIE base template for Cloud Formation (#489)
 
-* Provide a parameter in the MIE base template for Cloud Formation that allows users and parent stacks to opt-out from anonymous data collection (#509)
+* Added a new parameter in the MIE Cloud Formation template that allows users and parent stacks to opt-out from anonymous data collection (#509)
+
+* Added a new parameter in the MIE Cloud Formation template that allows parent stacks to associate their AWS solution id with MIE's boto3 calls. This helps the AWS Solution Builder team improve the quality of published solutions.  
 
 ### Changes:
 

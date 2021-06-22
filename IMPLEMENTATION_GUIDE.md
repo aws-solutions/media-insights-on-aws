@@ -24,11 +24,13 @@ Join our Gitter chat at [https://gitter.im/awslabs/aws-media-insights-engine](ht
 
 [5. Implementing a new data stream consumer](#5-implementing-a-new-data-stream-consumer)
 
-[6. API Documentation](#6-api-documentation)
+[6. Signing API Requests](#6-signing-api-requests)
 
-[7. Troubleshooting](#7-troubleshooting)
+[7. API Documentation](#7-api-documentation)
 
-[8. Glossary](#8-glossary)
+[8. Troubleshooting](#8-troubleshooting)
+
+[9. Glossary](#9-glossary)
 
 ## 1. Overview
 This guide describes how to build MIE from source code and how to build applications that use MIE as a back-end for executing multimedia workflows. This guide is intended for software developers who have experience working with the AWS Cloud.
@@ -42,21 +44,45 @@ You must have the following build tools in order to build MIE:
 
 ## 3. Building the MIE framework from source code
 
-Run the following commands to build and deploy MIE Cloud Formation templates from scratch. Be sure to define values for `MIE_STACK_NAME` and `REGION` first.
+Run the following commands to build and deploy MIE Cloud Formation templates from scratch. 
+Define values for `MIE_STACK_NAME` and `REGION` first.
 
 ```
 MIE_STACK_NAME=[YOUR STACK NAME]
 REGION=[YOUR REGION]
+```
+
+Clone the remote repository and go to the deployment directory
+
+```
 git clone https://github.com/awslabs/aws-media-insights-engine
-cd aws-media-insights-engine (https://github.com/awslabs/aws-media-insights-engine)
-git checkout development_merge_isolated (https://github.com/awslabs/aws-media-insights-engine/tree/development_merge_isolated) 
+cd aws-media-insights-engine
 cd deployment
+```
+
+Define values for `VERSION`, `DATETIME`, `DIST_OUTPUT_BUCKET` and `TEMPLATE_OUTPUT_BUCKET`
+
+```
 VERSION=1.0.0
 DATETIME=$(date '+%s')
 DIST_OUTPUT_BUCKET=media-insights-engine-$DATETIME-dist
 TEMPLATE_OUTPUT_BUCKET=media-insights-engine-$DATETIME
+```
+Create the S3 buckets that will be used by the build script
+
+```
 aws s3 mb s3://$DIST_OUTPUT_BUCKET-$REGION --region $REGION
+aws s3 mb s3://$TEMPLATE_OUTPUT_BUCKET --region $REGION
+```
+
+Execute the build script
+
+```
 ./build-s3-dist.sh --template-bucket $TEMPLATE_OUTPUT_BUCKET --code-bucket $DIST_OUTPUT_BUCKET --version $VERSION --region $REGION | tee >( grep TEMPLATE >template )
+```
+
+Create the Cloudformation stack
+```
 TEMPLATE=$(cat template | cut -f 2 -d "'")
 rm -f template 
 aws cloudformation create-stack --stack-name $MIE_STACK_NAME --template-url $TEMPLATE --region $REGION --parameters ParameterKey=DeployTestResources,ParameterValue=true ParameterKey=EnableXrayTrace,ParameterValue=true ParameterKey=MaxConcurrentWorkflows,ParameterValue=10 ParameterKey=DeployAnalyticsPipeline,ParameterValue=true --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --profile default --disable-rollback
@@ -362,7 +388,14 @@ The data plane provides a change-data-capture (CDC) stream from DynamoDB to comm
 
 For more information about how to implement Kinesis Data Stream consumers in MIE, refer to the [MIE demo application](https://github.com/awslabs/aws-media-insights/blob/master/README.md#advanced-usage), which includes a data stream consumer that feeds Amazon ES.
 
-# 6. API Documentation
+# 6. Signing API Requests
+
+The MIE APIs in Amazon API Gateway require that you authenticate every request with the Signature Version 4 signing process. The following two example programs written in Python illustrate how to submit GET and POST requests to the MIE workflow API with Signature Version 4 signing:
+
+* [sigv4_post_sample.py](docs/sigv4_post_sample.py) shows how to start the `CasImageWorkflow` using a Sigv4 signed request to the workflow execution API
+* [sigv4_get_sample.py](docs/sigv4_get_sample.py) shows how to list all workflows using a Sigv4 signed request to the workflow execution API
+
+# 7. API Documentation
 
 ## Summary:
 * Data plane API
@@ -565,7 +598,14 @@ For more information about how to implement Kinesis Data Stream consumers in MIE
   ```
   {
   "Name":"Default",
-  "Input": media-object
+  "Input":{
+    "Media":{
+      "Video":{  <-- This can also be "Image"
+        "S3Bucket":"___",
+        "S3Key":"___"
+      }
+    }
+  },
   "Configuration": {
     "stage-name": {
       "Operations": {
@@ -909,7 +949,7 @@ For more information about how to implement Kinesis Data Stream consumers in MIE
   b'{"ApiVersion":"2.0.0","FrameworkVersion":"v2.0.4"}'
   ```
 
-# 7. Troubleshooting
+# 8. Troubleshooting
 
 ## How to activate AWS X-Ray request tracing for MIE
 
@@ -993,7 +1033,7 @@ If you need to perform certain actions in response to workflow errors, then edit
 If an error occurs in the Step Function service that causes the state machine for an MIE workflow to be terminated immediately, then the `Catch` and `Retry` and **OperatorFailed** lambda will not be able to handle the error.  These types of errors can occur in a number of circumstances, such as when the Step Function history limit is exceeded, or the step function has been manually stopped.  Failure to handle these errors will put the workflow in a perpetually `Started` status in the MIE control plane. If this happens then you will need to manually remove the workflow from the `WorkflowExecution` DynamoDB table.
 
 
-# 8. Glossary
+# 9. Glossary
 
 ## Workflow API
 Provides a REST interface to start workflow, create, update and delete workflows and operators, and check the status of executed workflows.

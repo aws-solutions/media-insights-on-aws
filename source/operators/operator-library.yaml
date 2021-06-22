@@ -14,32 +14,37 @@ Parameters:
   DataPlaneBucket:
     Type: "String"
     Description: "Bucket for the dataplane"
+  ExternalBucketArn:
+    Type: "String"
+    Description: "The ARN for Amazon S3 resources that exist outside the MIE stack which may need to be used as inputs to MIE workflows"
   DataPlaneHandlerArn:
     Type: "String"
     Description: "Arn of dataplane lambda handler"
-
   WorkflowCustomResourceArn:
     Type: String
     Description: "ARN of the Media insights custom resource that handles creating operations, stages and workflows"
-
   MediaInsightsEnginePython38Layer:
     Type: String
     Description: "ARN of the Media insights lambda layer (python3.8) that contains basic python dependencies for boto3, chalice, control plane and dataplane"
-
   MediaInsightsEnginePython37Layer:
     Type: String
     Description: "ARN of the Media insights lambda layer (python3.7) that contains basic python dependencies for boto3, chalice, control plane and dataplane"
-
   MediaInsightsEnginePython36Layer:
     Type: String
     Description: "ARN of the Media insights lambda layer (python3.6) that contains basic python dependencies for boto3, chalice, control plane and dataplane"
-
   StartWaitOperationLambda:
     Type: String
     Description: "ARN of control plane lambda function to set a workflow to Waiting state"
   CheckWaitOperationLambda:
     Type: String
     Description: "ARN of control plane lambda function to if a workflow is in Waiting state"
+  Boto3UserAgent:
+    Type: String
+    Description: "Boto3 user agent string"
+
+Conditions:
+  AllowAccessToExternalBucket: !Not
+    - !Equals [!Ref "ExternalBucketArn", ""]
 
 Resources:
   # SNS topic for storing the output of async Rekognition jobs:
@@ -57,6 +62,7 @@ Resources:
   genericDataLookupLambdaRole:
     Type: "AWS::IAM::Role"
     Metadata:
+      Comment: "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty."
       cfn_nag:
         rules_to_suppress:
           - id: W11
@@ -83,6 +89,10 @@ Resources:
                   - "s3:PutObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
                 Effect: "Allow"
+              - Action:
+                  - "s3:GetObject"
+                Resource: !If ["AllowAccessToExternalBucket", !Sub "${ExternalBucketArn}", !Sub "arn:aws:s3:::${DataPlaneBucket}/*"]
+                Effect: "Allow"
               - Action: "lambda:InvokeFunction"
                 Resource: !Ref DataPlaneHandlerArn
                 Effect: "Allow"
@@ -98,6 +108,7 @@ Resources:
   mediainfoLambdaRole:
     Type: "AWS::IAM::Role"
     Metadata:
+      Comment: "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty."
       cfn_nag:
         rules_to_suppress:
           - id: W11
@@ -122,8 +133,11 @@ Resources:
               - Action:
                   - "s3:GetObject"
                   - "s3:PutObject"
-                  - "s3:DeleteObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
+                Effect: "Allow"
+              - Action:
+                  - "s3:GetObject"
+                Resource: !If ["AllowAccessToExternalBucket", !Sub "${ExternalBucketArn}", !Sub "arn:aws:s3:::${DataPlaneBucket}/*"]
                 Effect: "Allow"
               - Action: "lambda:InvokeFunction"
                 Resource: !Ref DataPlaneHandlerArn
@@ -139,6 +153,8 @@ Resources:
 
   mediaConvertS3Role:
     Type: "AWS::IAM::Role"
+    Metadata:
+      Comment: "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty."
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -159,6 +175,10 @@ Resources:
                   - "s3:PutObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
                 Effect: "Allow"
+              - Action:
+                  - "s3:GetObject"
+                Resource: !If ["AllowAccessToExternalBucket", !Sub "${ExternalBucketArn}", !Sub "arn:aws:s3:::${DataPlaneBucket}/*"]
+                Effect: "Allow"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -166,6 +186,7 @@ Resources:
   mediaConvertLambdaRole:
     Type: "AWS::IAM::Role"
     Metadata:
+      Comment: "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty."
       cfn_nag:
         rules_to_suppress:
           - id: W11
@@ -207,6 +228,10 @@ Resources:
                   - "s3:PutObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
                 Effect: "Allow"
+              - Action:
+                  - "s3:GetObject"
+                Resource: !If ["AllowAccessToExternalBucket", !Sub "${ExternalBucketArn}", !Sub "arn:aws:s3:::${DataPlaneBucket}/*"]
+                Effect: "Allow"
               - Action: "lambda:InvokeFunction"
                 Resource: !Ref DataPlaneHandlerArn
                 Effect: "Allow"
@@ -222,6 +247,7 @@ Resources:
   transcribeRole:
     Type: "AWS::IAM::Role"
     Metadata:
+      Comment: "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty."
       cfn_nag:
         rules_to_suppress:
           - id: W11
@@ -264,6 +290,10 @@ Resources:
                   - "s3:PutObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
                 Effect: "Allow"
+              - Action:
+                  - "s3:GetObject"
+                Resource: !If ["AllowAccessToExternalBucket", !Sub "${ExternalBucketArn}", !Sub "arn:aws:s3:::${DataPlaneBucket}/*"]
+                Effect: "Allow"
               - Action: "lambda:InvokeFunction"
                 Resource: !Ref DataPlaneHandlerArn
                 Effect: "Allow"
@@ -279,6 +309,7 @@ Resources:
   captionsRole:
     Type: "AWS::IAM::Role"
     Metadata:
+      Comment: "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty."
       cfn_nag:
         rules_to_suppress:
           - id: W11
@@ -306,6 +337,10 @@ Resources:
                   - "s3:GetObject"
                   - "s3:PutObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
+                Effect: "Allow"
+              - Action:
+                  - "s3:GetObject"
+                Resource: !If ["AllowAccessToExternalBucket", !Sub "${ExternalBucketArn}", !Sub "arn:aws:s3:::${DataPlaneBucket}/*"]
                 Effect: "Allow"
               - Action: "lambda:InvokeFunction"
                 Resource: !Ref DataPlaneHandlerArn
@@ -342,6 +377,10 @@ Resources:
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
                 Effect: "Allow"
               - Action:
+                  - "s3:GetObject"
+                Resource: !If ["AllowAccessToExternalBucket", !Sub "${ExternalBucketArn}", !Sub "arn:aws:s3:::${DataPlaneBucket}/*"]
+                Effect: "Allow"
+              - Action:
                   - "s3:ListBucket"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}"
                 Effect: "Allow"
@@ -349,6 +388,7 @@ Resources:
   translateRole:
     Type: "AWS::IAM::Role"
     Metadata:
+      Comment: "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty."
       cfn_nag:
         rules_to_suppress:
           - id: W11
@@ -393,6 +433,10 @@ Resources:
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
                 Effect: "Allow"
               - Action:
+                  - "s3:GetObject"
+                Resource: !If ["AllowAccessToExternalBucket", !Sub "${ExternalBucketArn}", !Sub "arn:aws:s3:::${DataPlaneBucket}/*"]
+                Effect: "Allow"
+              - Action:
                   - "s3:ListBucket"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}"
                 Effect: "Allow"
@@ -411,6 +455,7 @@ Resources:
   pollyRole:
     Type: "AWS::IAM::Role"
     Metadata:
+      Comment: "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty."
       cfn_nag:
         rules_to_suppress:
           - id: W11
@@ -458,6 +503,10 @@ Resources:
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
                 Effect: "Allow"
               - Action:
+                  - "s3:GetObject"
+                Resource: !If ["AllowAccessToExternalBucket", !Sub "${ExternalBucketArn}", !Sub "arn:aws:s3:::${DataPlaneBucket}/*"]
+                Effect: "Allow"
+              - Action:
                   - "comprehend:DetectDominantLanguage"
                 Resource: "*"
                 Effect: "Allow"
@@ -476,6 +525,7 @@ Resources:
   comprehendS3Role:
     Type: "AWS::IAM::Role"
     Metadata:
+      Comment: "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty."
       cfn_nag:
         rules_to_suppress:
           - id: W11
@@ -501,6 +551,10 @@ Resources:
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
                 Effect: "Allow"
               - Action:
+                  - "s3:GetObject"
+                Resource: !If ["AllowAccessToExternalBucket", !Sub "${ExternalBucketArn}", !Sub "arn:aws:s3:::${DataPlaneBucket}/*"]
+                Effect: "Allow"
+              - Action:
                   - "s3:ListBucket"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}"
                 Effect: "Allow"
@@ -521,6 +575,7 @@ Resources:
   comprehendRole:
     Type: "AWS::IAM::Role"
     Metadata:
+      Comment: "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty."
       cfn_nag:
         rules_to_suppress:
           - id: W11
@@ -552,6 +607,10 @@ Resources:
                   - "s3:GetObject"
                   - "s3:PutObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
+                Effect: "Allow"
+              - Action:
+                  - "s3:GetObject"
+                Resource: !If ["AllowAccessToExternalBucket", !Sub "${ExternalBucketArn}", !Sub "arn:aws:s3:::${DataPlaneBucket}/*"]
                 Effect: "Allow"
               - Action:
                   [
@@ -653,6 +712,7 @@ Resources:
   rekognitionLambdaRole:
     Type: "AWS::IAM::Role"
     Metadata:
+      Comment: "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty."
       cfn_nag:
         rules_to_suppress:
           - id: W11
@@ -687,6 +747,10 @@ Resources:
               - Action:
                   - "s3:GetObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
+                Effect: "Allow"
+              - Action:
+                  - "s3:GetObject"
+                Resource: !If ["AllowAccessToExternalBucket", !Sub "${ExternalBucketArn}", !Sub "arn:aws:s3:::${DataPlaneBucket}/*"]
                 Effect: "Allow"
               - Action:
                   - "rekognition:DetectFaces"
@@ -739,6 +803,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "generic_data_lookup.lambda_handler"
       Layers:
@@ -763,7 +829,7 @@ Resources:
           OPERATOR_NAME: "GenericDataLookup"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DataLookupRole: !GetAtt genericDataLookupLambdaRole.Arn
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -777,6 +843,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "mediainfo.lambda_handler"
       Layers:
@@ -802,7 +870,7 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DataLookupRole: !GetAtt mediainfoLambdaRole.Arn
           LD_LIBRARY_PATH: "/opt/python/"
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -816,6 +884,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_key_phrases.lambda_handler"
       Layers:
@@ -840,7 +910,7 @@ Resources:
           OPERATOR_NAME: "comprehendStartKeyPhrases"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           comprehendRole: !GetAtt comprehendS3Role.Arn
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -852,6 +922,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "get_key_phrases.lambda_handler"
       Layers:
@@ -876,7 +948,7 @@ Resources:
           OPERATOR_NAME: "comprehendGetKeyPhrases"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           comprehendRole: !GetAtt comprehendS3Role.Arn
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -888,6 +960,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_entity_detection.lambda_handler"
       Layers:
@@ -912,7 +986,7 @@ Resources:
           OPERATOR_NAME: "comprehendStartEntityDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           comprehendRole: !GetAtt comprehendS3Role.Arn
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -924,6 +998,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "get_entity_detection.lambda_handler"
       Layers:
@@ -948,7 +1024,7 @@ Resources:
           OPERATOR_NAME: "comprehendEntityDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           comprehendRole: !GetAtt comprehendS3Role.Arn
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -962,6 +1038,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_technical_cue_detection.lambda_handler"
       Layers:
@@ -988,7 +1066,7 @@ Resources:
           OPERATOR_NAME: "technicalCueDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1000,6 +1078,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "check_technical_cue_status.lambda_handler"
       Layers:
@@ -1026,7 +1106,7 @@ Resources:
           OPERATOR_NAME: "technicalCueDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1038,6 +1118,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_shot_detection.lambda_handler"
       Layers:
@@ -1064,7 +1146,7 @@ Resources:
           OPERATOR_NAME: "shotDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1076,6 +1158,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "check_shot_detection_status.lambda_handler"
       Layers:
@@ -1102,7 +1186,7 @@ Resources:
           OPERATOR_NAME: "shotDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1114,6 +1198,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_celebrity_recognition.lambda_handler"
       Layers:
@@ -1140,7 +1226,7 @@ Resources:
           OPERATOR_NAME: "celebrityRecognition"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1152,6 +1238,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "check_celebrity_recognition_status.lambda_handler"
       Layers:
@@ -1177,7 +1265,7 @@ Resources:
           OPERATOR_NAME: "celebrityRecognition"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1189,6 +1277,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_content_moderation.lambda_handler"
       Layers:
@@ -1215,7 +1305,7 @@ Resources:
           OPERATOR_NAME: "contentModeration"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1227,6 +1317,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "check_content_moderation_status.lambda_handler"
       Layers:
@@ -1252,7 +1344,7 @@ Resources:
           OPERATOR_NAME: "contentModeration"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1264,6 +1356,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_face_detection.lambda_handler"
       Layers:
@@ -1291,7 +1385,7 @@ Resources:
           OPERATOR_NAME: "faceDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1303,6 +1397,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "check_face_detection_status.lambda_handler"
       Layers:
@@ -1329,7 +1425,7 @@ Resources:
           OPERATOR_NAME: "faceDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1341,6 +1437,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_face_search.lambda_handler"
       Layers:
@@ -1368,7 +1466,7 @@ Resources:
           OPERATOR_NAME: "faceSearch"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1380,6 +1478,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "check_face_search_status.lambda_handler"
       Layers:
@@ -1406,7 +1506,7 @@ Resources:
           OPERATOR_NAME: "faceSearch"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1418,6 +1518,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_text_detection.lambda_handler"
       Layers:
@@ -1444,7 +1546,7 @@ Resources:
           OPERATOR_NAME: "textDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1456,6 +1558,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "check_text_detection_status.lambda_handler"
       Layers:
@@ -1482,7 +1586,7 @@ Resources:
           OPERATOR_NAME: "textDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1494,6 +1598,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_label_detection.lambda_handler"
       Layers:
@@ -1520,7 +1626,7 @@ Resources:
           OPERATOR_NAME: "labelDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1532,6 +1638,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "check_label_detection_status.lambda_handler"
       Layers:
@@ -1558,7 +1666,7 @@ Resources:
           OPERATOR_NAME: "labelDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1570,6 +1678,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_person_tracking.lambda_handler"
       Layers:
@@ -1594,7 +1704,7 @@ Resources:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
           REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "personTracking"
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1606,6 +1716,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "check_person_tracking_status.lambda_handler"
       Layers:
@@ -1632,7 +1744,7 @@ Resources:
           OPERATOR_NAME: "personTracking"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1646,6 +1758,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_media_convert.lambda_handler"
       Layers:
@@ -1670,7 +1784,7 @@ Resources:
           mediaconvertRole: !GetAtt "mediaConvertS3Role.Arn"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1682,6 +1796,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_thumbnail.lambda_handler"
       Layers:
@@ -1706,7 +1822,7 @@ Resources:
           mediaconvertRole: !GetAtt "mediaConvertS3Role.Arn"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1718,6 +1834,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "check_thumbnail.lambda_handler"
       Layers:
@@ -1742,7 +1860,7 @@ Resources:
           mediaconvertRole: !GetAtt "mediaConvertS3Role.Arn"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1754,6 +1872,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "get_media_convert.lambda_handler"
       Layers:
@@ -1777,7 +1897,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1791,6 +1911,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_transcribe.lambda_handler"
       Layers:
@@ -1814,7 +1936,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1826,6 +1948,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "get_transcribe.lambda_handler"
       Layers:
@@ -1850,7 +1974,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1864,6 +1988,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "webcaptions.web_captions"
       Layers:
@@ -1888,7 +2014,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1902,6 +2028,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "webcaptions.create_srt"
       Layers:
@@ -1925,7 +2053,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1937,6 +2065,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "webcaptions.create_vtt"
       Layers:
@@ -1960,7 +2090,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1972,6 +2102,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "webcaptions.create_srt"
       Layers:
@@ -1995,7 +2127,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -2007,6 +2139,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "webcaptions.create_vtt"
       Layers:
@@ -2030,7 +2164,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -2044,6 +2178,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_translate.lambda_handler"
       Layers:
@@ -2068,7 +2204,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -2080,6 +2216,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "webcaptions.start_translate_webcaptions"
       Layers:
@@ -2102,7 +2240,7 @@ Resources:
           translateRole: !GetAtt translateS3Role.Arn
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -2114,6 +2252,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "webcaptions.check_translate_webcaptions"
       Layers:
@@ -2135,7 +2275,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -2148,6 +2288,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "webcaptions.start_polly_webcaptions"
       Layers:
@@ -2169,7 +2311,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -2181,6 +2323,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "webcaptions.check_polly_webcaptions"
       Layers:
@@ -2202,7 +2346,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -2216,6 +2360,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_polly.lambda_handler"
       Layers:
@@ -2239,7 +2385,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -2251,6 +2397,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "get_polly.lambda_handler"
       Layers:
@@ -2274,7 +2422,7 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -2288,7 +2436,7 @@ Resources:
       ResourceType: "Operation"
       Name: "GenericDataLookup"
       Type: "Sync"
-      Configuration: { "MediaType": "Video", "Enabled": true }
+      Configuration: { "MediaType": "Video", "Enabled": false }
       StartLambdaArn: !GetAtt startGenericDataLookup.Arn
 
   MediainfoOperation:
@@ -2318,7 +2466,7 @@ Resources:
       ResourceType: "Operation"
       Name: "Mediaconvert"
       Type: "Async"
-      Configuration: { "MediaType": "Video", "Enabled": false }
+      Configuration: { "MediaType": "Video", "Enabled": true }
       StartLambdaArn: !GetAtt StartMediaConvertFunction.Arn
       MonitorLambdaArn: !GetAtt CheckMediaConvertFunction.Arn
 
@@ -2566,7 +2714,7 @@ Resources:
       ResourceType: "Operation"
       Name: "faceSearch"
       Type: "Async"
-      Configuration: { "MediaType": "Video", "Enabled": true }
+      Configuration: { "MediaType": "Video", "Enabled": false, "CollectionId": "" }
       StartLambdaArn: !GetAtt startFaceSearch.Arn
       MonitorLambdaArn: !GetAtt checkFaceSearch.Arn
 
@@ -2577,7 +2725,7 @@ Resources:
       ResourceType: "Operation"
       Name: "faceSearchImage"
       Type: "Sync"
-      Configuration: { "MediaType": "Image", "Enabled": true }
+      Configuration: { "MediaType": "Image", "Enabled": false, "CollectionId": "" }
       StartLambdaArn: !GetAtt startFaceSearch.Arn
 
   labelDetectionOperation:

@@ -4,6 +4,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2021-06-25
+
+### New:
+
+* Workflows can now use media files from any S3 bucket as inputs. Prior to this release workflows required input media files to reside within the MIE data plane bucket. In order to use this capability the ARN for the external S3 bucket must be specified in the ExternalBucketArn parameter in the MIE base template for Cloud Formation (#489)
+
+* Added a new parameter in the MIE Cloud Formation template that allows users and parent stacks to opt-out from anonymous data collection (#509)
+
+* Added a new parameter in the MIE Cloud Formation template that allows parent stacks to associate their AWS solution id with MIE's boto3 calls. This helps the AWS Solution Builder team improve the quality of published solutions.  
+
+### Changes:
+
+* Media files are no longer copied to the data plane S3 bucket when recording new assets. This change will break backwards compatibility for applications that assume the S3Bucket property for assets is always the data plane bucket. This change is also the only change that caused MIE's major release number to bump from v2.5.0 to v3.0.0. (#489)
+
+* If input media files cannot be found at the S3 location specified within workflow execution requests then return an error to the HTTP client indicating that the file could not be found. (#507)
+
+### Security:
+
+* Upgrade urllib version (#490, 491)
+
+### CI/CD Automation:
+
+* Validate S3 bucket ownership before uploading build artifacts (#499)
+
+### Documentation:
+
+* The implementation guide now explains about how to start workflows programmatically and provides Python code samples for doing so. These examples can be used to set up an S3 trigger for workflow execution. (#489)
+
 ## [2.0.5] - 2021-04-09
 
 ### New:

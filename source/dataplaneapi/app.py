@@ -327,13 +327,13 @@ def create_asset():
         }
 
     Returns:
-        A dict containing the asset id and the location of the media object in the dataplane.
+        A dict containing the asset id and the Amazon S3 bucket and key describing where its media file was sourced from.
          .. code-block:: python
 
             {
                 "AssetId": asset_id,
-                "S3Bucket": dataplane_s3_bucket,
-                "S3Key": key
+                "S3Bucket": source_bucket,
+                "S3Key": source_key
             }
     Raises:
         ChaliceViewError - 500
@@ -379,36 +379,6 @@ def create_asset():
     else:
         logger.info("Created asset directory structure: {directory}".format(directory=directory))
 
-    # build key for new s3 object
-
-    new_key = directory + 'input' + '/' + source_key
-
-    # Move input media into newly created dataplane s3 directory.
-
-    try:
-        # copy input media from upload/ to private/assets/[asset_id]/input/
-        s3_client.copy_object(
-            Bucket=dataplane_s3_bucket,
-            Key=new_key,
-            CopySource={'Bucket': source_bucket, 'Key': source_key}
-        )
-        # remove input media from upload/
-        s3_client.delete_object(
-            Bucket=source_bucket,
-            Key=source_key
-        )
-    except ClientError as e:
-        error = e.response['Error']['Message']
-        logger.error("Exception occurred during asset creation: {e}".format(e=error))
-        raise ChaliceViewError("Unable to move uploaded media to the dataplane bucket: {e}".format(e=error))
-    except Exception as e:
-        logger.error("Exception occurred during asset creation: {e}".format(e=e))
-        raise ChaliceViewError("Exception when moving s3 object for asset: {e}".format(e=e))
-    else:
-        logger.info("Moved input media into dataplane bucket: {key}".format(key=new_key))
-
-    # build ddb item of the asset
-
     ts = str(datetime.datetime.now().timestamp())
 
     try:
@@ -416,8 +386,8 @@ def create_asset():
         table.put_item(
             Item={
                 "AssetId": asset_id,
-                "S3Bucket": dataplane_s3_bucket,
-                "S3Key": new_key,
+                "S3Bucket": source_bucket,
+                "S3Key": source_key,
                 "Created": ts
             }
         )
@@ -430,7 +400,7 @@ def create_asset():
         raise ChaliceViewError("Exception when creating dynamo item for asset: {e}".format(e=e))
     else:
         logger.info("Completed asset creation for asset: {asset}".format(asset=asset_id))
-        return {"AssetId": asset_id, "S3Bucket": dataplane_s3_bucket, "S3Key": new_key}
+        return {"AssetId": asset_id, "S3Bucket": source_bucket, "S3Key": source_key}
 
 
 @app.route('/metadata/{asset_id}', cors=True, methods=['POST'], authorizer=authorizer)

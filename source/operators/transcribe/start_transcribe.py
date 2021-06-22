@@ -9,6 +9,7 @@ from aws_xray_sdk.core import xray_recorder
 from aws_xray_sdk.core import patch_all
 from MediaInsightsEngineLambdaHelper import MediaInsightsOperationHelper
 from MediaInsightsEngineLambdaHelper import MasExecutionError
+from MediaInsightsEngineLambdaHelper import OutputHelper
 
 patch_all()
 
@@ -26,29 +27,26 @@ def lambda_handler(event, context):
     valid_types = ["mp3", "mp4", "wav", "flac"]
     optional_settings = {}
     operator_object = MediaInsightsOperationHelper(event)
-    workflow_id = str(operator_object.workflow_execution_id)
+    workflow_id = str(event["WorkflowExecutionId"])
+    asset_id = event['AssetId']
     job_id = "transcribe" + "-" + workflow_id
 
-    # Adding in exception block for now since we aren't guaranteed an asset id will be present, should remove later
     try:
-        asset_id = operator_object.asset_id
-    except KeyError as e:
-        print("No asset id passed in with this workflow", e)
-        asset_id = ''
-
-    try:
-        bucket = operator_object.input["Media"]["Audio"]["S3Bucket"]
-        key = operator_object.input["Media"]["Audio"]["S3Key"]
-        file_type = key.split('.')[-1]
-    # TODO: Do we want to add support for video?
-    except KeyError:
-        bucket = operator_object.input["Media"]["Video"]["S3Bucket"]
-        key = operator_object.input["Media"]["Video"]["S3Key"]
+        if "ProxyEncode" in event["Input"]["Media"]:
+            bucket = event["Input"]["Media"]["ProxyEncode"]["S3Bucket"]
+            key = event["Input"]["Media"]["ProxyEncode"]["S3Key"]
+        elif "Video" in event["Input"]["Media"]:
+            bucket = event["Input"]["Media"]["Video"]["S3Bucket"]
+            key = event["Input"]["Media"]["Video"]["S3Key"]
+        elif "Audio" in event["Input"]["Media"]:
+            bucket = event["Input"]["Media"]["Audio"]["S3Bucket"]
+            key = event["Input"]["Media"]["Audio"]["S3Key"]
         file_type = key.split('.')[-1]
     except Exception:
         operator_object.update_workflow_status("Error")
         operator_object.add_workflow_metadata(TranscribeError="No valid inputs")
         raise MasExecutionError(operator_object.return_output_object())
+
     if file_type not in valid_types:
         operator_object.update_workflow_status("Error")
         operator_object.add_workflow_metadata(TranscribeError="Not a valid file type")

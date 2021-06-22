@@ -36,7 +36,7 @@ jobs:
           TEMPLATE_OUTPUT_BUCKET=mie-dev-us-west-2
           ./build-s3-dist.sh --no-layer --template-bucket $TEMPLATE_OUTPUT_BUCKET --code-bucket $DIST_OUTPUT_BUCKET --version $VERSION --region $REGION
           read -r TEMPLATE < templateUrl.txt
-          aws cloudformation deploy --stack-name $MIE_STACK_NAME --region $REGION --template-file global-s3-assets/media-insights-stack.template --s3-bucket $DIST_OUTPUT_BUCKET-$REGION --s3-prefix aws-media-insights-engine/$VERSION --parameter-overrides DeployTestResources=true MaxConcurrentWorkflows=10 DeployAnalyticsPipeline=true EnableXrayTrace=true --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --force-upload
+          aws cloudformation deploy --stack-name $MIE_STACK_NAME --region $REGION --template-file global-s3-assets/media-insights-stack.template --s3-bucket $DIST_OUTPUT_BUCKET-$REGION --s3-prefix aws-media-insights-engine/$VERSION --parameter-overrides DeployTestResources=true MaxConcurrentWorkflows=10 DeployAnalyticsPipeline=true EnableXrayTrace=true ParameterKey=SendAnonymousData,ParameterValue=false --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --force-upload
 
   test-us-west-2:
     needs: build-us-west-2

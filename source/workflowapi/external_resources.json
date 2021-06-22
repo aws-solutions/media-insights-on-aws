@@ -337,6 +337,10 @@
             {
               "id": "W89",
               "reason": "This Lambda function does not need to access any resource provisioned within a VPC."
+            },
+            {
+              "id": "W92",
+              "reason": "This function does not require performance optimization, so the default concurrency limits suffice."
             }
           ]
         }
@@ -411,6 +415,10 @@
             {
               "id": "W89",
               "reason": "This Lambda function does not need to access any resource provisioned within a VPC."
+            },
+            {
+              "id": "W92",
+              "reason": "This function does not require performance optimization, so the default concurrency limits suffice."
             }
           ]
         }

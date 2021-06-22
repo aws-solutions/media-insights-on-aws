@@ -55,7 +55,6 @@ cleanup() {
   if [[ "$VIRTUAL_ENV" != "" ]];
   then
     deactivate
-    #rm -rf "$VENV"
     echo "------------------------------------------------------------------------------"
     echo "Cleaning up complete"
     echo "------------------------------------------------------------------------------"
@@ -202,8 +201,6 @@ echo "rm -rf $global_dist_dir"
 rm -rf "$global_dist_dir"
 echo "mkdir -p $global_dist_dir"
 mkdir -p "$global_dist_dir"
-echo "mkdir -p $global_dist_dir/website"
-mkdir -p "$global_dist_dir"/website
 echo "rm -rf $regional_dist_dir"
 rm -rf "$regional_dist_dir"
 echo "mkdir -p $regional_dist_dir"
@@ -755,10 +752,30 @@ cp "./dist/anonymous-data-logger.zip" "$regional_dist_dir/anonymous-data-logger.
 
 # Skip copy dist to S3 if building for solution builder because
 # that pipeline takes care of copying the dist in another script.
-if [ "$TEMPLATE_OUTPUT_BUCKET" != "solutions-reference" ] && [ "$TEMPLATE_OUTPUT_BUCKET" != "solutions-test-reference" ]; then
+if [ "$global_bucket" != "solutions-reference" ] && [ "$global_bucket" != "solutions-test-reference" ]; then
   echo "------------------------------------------------------------------------------"
   echo "Copy dist to S3"
   echo "------------------------------------------------------------------------------"
+  echo "Validating ownership of distribution buckets before copying deployment assets to them..."
+  # Get account id
+  account_id=$(aws sts get-caller-identity --query Account --output text)
+  if [ $? -ne 0 ]; then
+    msg "ERROR: Failed to get AWS account ID"
+    die 1
+  fi
+  # Validate ownership of $global_dist_dir
+  aws s3api head-bucket --bucket $global_bucket --expected-bucket-owner $account_id
+  if [ $? -ne 0 ]; then
+    msg "ERROR: Your AWS account does not own s3://$global_bucket/"
+    die 1
+  fi
+  # Validate ownership of ${regional_bucket}-${region}
+  aws s3api head-bucket --bucket ${regional_bucket}-${region} --expected-bucket-owner $account_id
+  if [ $? -ne 0 ]; then
+    msg "ERROR: Your AWS account does not own s3://${regional_bucket}-${region} "
+    die 1
+  fi
+  # Copy deployment assets to distribution buckets
   cd "$build_dir"/ || exit 1
   echo "Copying the prepared distribution to:"
   echo "s3://$global_bucket/aws-media-insights-engine/$version/"

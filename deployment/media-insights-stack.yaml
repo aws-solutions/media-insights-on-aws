@@ -28,6 +28,21 @@ Parameters:
     AllowedValues:
       - Yes
       - No
+  ExternalBucketArn:
+    Description: (Optional) If you intend to input media files from a bucket outside the MIE stack into MIE workflows, then specify the Amazon S3 ARN for those files here.
+    Type: String
+    Default: ""
+  SolutionId:
+    Description: (Optional) AWS Solution Id used for reporting purposes
+    Type: String
+    Default: SO0163
+  SendAnonymousData:
+    Description: (Optional) Send anonymous data about MIE performance to AWS to help improve the quality of this solution.
+    Type: String
+    Default: Yes
+    AllowedValues:
+      - Yes
+      - No
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -49,7 +64,7 @@ Conditions:
   DeployTestResourcesCondition: !Equals [!Ref DeployTestResources, Yes]
   DeployAnalyticsPipelineCondition: !Equals [!Ref DeployAnalyticsPipeline, Yes]
   EnableTraceOnEntryPoints: !Equals [!Ref EnableXrayTrace, Yes]
-  EnableAnonymousData: !Equals [ !FindInMap [AnonymousData,SendAnonymousData,Data], Yes]
+  EnableAnonymousData: !Equals [ !Ref SendAnonymousData, Yes]
 
 Mappings:
   SourceCode:
@@ -59,9 +74,6 @@ Mappings:
       CodeKeyPrefix: "aws-media-insights-engine/%%VERSION%%"
       TemplateKeyPrefix: "aws-media-insights-engine/%%VERSION%%"
       FrameworkVersion: "%%VERSION%%"
-  AnonymousData:
-    SendAnonymousData:
-      Data: Yes
 
 Resources:
   # Helper function - create a short UUID to avoid name conflicts
@@ -72,6 +84,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Environment:
         Variables:
@@ -1084,6 +1098,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Environment:
         Variables:
@@ -1094,7 +1110,7 @@ Resources:
           WORKFLOW_TABLE_NAME: !Ref WorkflowTable
           SYSTEM_TABLE_NAME: !Ref SystemTable
           DEFAULT_MAX_CONCURRENT_WORKFLOWS: !Ref MaxConcurrentWorkflows
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"}']]
       Handler: app.workflow_scheduler_lambda
       TracingConfig:
           Mode: !If [EnableTraceOnEntryPoints, "Active", "PassThrough"]
@@ -1135,6 +1151,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Environment:
         Variables:
@@ -1218,12 +1236,14 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     DependsOn:
       - WorkflowSchedulerLambda
     Properties:
       Environment:
         Variables:
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"}']]
           STAGE_EXECUTION_QUEUE_URL: !Ref StageExecutionQueue
           STAGE_TABLE_NAME: !Ref StageTable
           OPERATION_TABLE_NAME: !Ref OperationTable
@@ -1267,10 +1287,12 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Environment:
         Variables:
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"}']]
           STAGE_EXECUTION_QUEUE_URL: !Ref StageExecutionQueue
           STAGE_TABLE_NAME: !Ref StageTable
           OPERATION_TABLE_NAME: !Ref OperationTable
@@ -1309,6 +1331,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "operator_failed.lambda_handler"
       Layers:
@@ -1338,11 +1362,13 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       FunctionName: !Sub "${AWS::StackName}-start-wait-operation"
       Environment:
         Variables:
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"}']]
           STAGE_EXECUTION_QUEUE_URL: !Ref StageExecutionQueue
           STAGE_TABLE_NAME: !Ref StageTable
           OPERATION_TABLE_NAME: !Ref OperationTable
@@ -1379,11 +1405,13 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       FunctionName: !Sub "${AWS::StackName}-check-wait-operation"
       Environment:
         Variables:
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"}']]
           STAGE_EXECUTION_QUEUE_URL: !Ref StageExecutionQueue
           STAGE_TABLE_NAME: !Ref StageTable
           OPERATION_TABLE_NAME: !Ref OperationTable
@@ -1420,13 +1448,15 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "workflowstream.lambda_handler"
       Role: !GetAtt WorkflowExecutionStreamLambdaRole.Arn
       Environment:
         Variables:
           TOPIC_ARN: !Ref WorkflowExecutionEventTopic
-          botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+          botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"}']]
       Code:
         S3Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
         S3Key:
@@ -1471,8 +1501,9 @@ Resources:
           ],
         ]
       Parameters:
-        botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+        botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"}']]
         DataplaneTableName: !Ref DataplaneTable
+        ExternalBucketArn: !Ref ExternalBucketArn
         DataplaneBucketName: !Ref Dataplane
         DeploymentPackageBucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
         TracingConfigMode: !If [EnableTraceOnEntryPoints, "Active", "PassThrough"]
@@ -1511,7 +1542,7 @@ Resources:
             - DataplaneTable
             - StreamArn
         DynamoTableArn: !GetAtt DataplaneTable.Arn
-        botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+        botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"}']]
 
   # Workflow creation and execution API
   MediaInsightsWorkflowApi:
@@ -1529,7 +1560,7 @@ Resources:
           ],
         ]
       Parameters:
-        botoConfig: '{"user_agent_extra": "AwsSolution/SO0163/%%VERSION%%"}'
+        botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"}']]
         ShortUUID: !GetAtt GetShortUUID.Data
         StageExecutionQueueUrl: !Ref StageExecutionQueue
         StageExecutionRole: !GetAtt StepFunctionRole.Arn
@@ -1600,11 +1631,13 @@ Resources:
         DataPlaneEndpoint: !GetAtt MediaInsightsDataplaneApiStack.Outputs.APIHandlerName
         DataPlaneHandlerArn: !GetAtt MediaInsightsDataplaneApiStack.Outputs.APIHandlerArn
         DataPlaneBucket: !Ref Dataplane
+        ExternalBucketArn: !Ref ExternalBucketArn
         MediaInsightsEnginePython38Layer: !Ref MediaInsightsEnginePython38Layer
         MediaInsightsEnginePython37Layer: !Ref MediaInsightsEnginePython37Layer
         MediaInsightsEnginePython36Layer: !Ref MediaInsightsEnginePython36Layer
         StartWaitOperationLambda: !GetAtt StartWaitOperationLambda.Arn
         CheckWaitOperationLambda: !GetAtt CheckWaitOperationLambda.Arn
+        Boto3UserAgent: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"}']]
 
   TestResources:
     Condition: DeployTestResourcesCondition
@@ -1678,6 +1711,8 @@ Resources:
         rules_to_suppress:
           - id: W89
             reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       FunctionName: !Sub ${AWS::StackName}-anonymous-data
       Description: Used to send anonymous data

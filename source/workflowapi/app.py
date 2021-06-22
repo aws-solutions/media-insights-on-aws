@@ -496,16 +496,6 @@ def create_operation(operation):
     logger.info("end create_operation: {}".format(json.dumps(operation, cls=DecimalEncoder)))
     return operation
 
-# FIXME - dead code?
-TASK_PARAMETERS_ASL = {
-    "StageName.$": "$.Name",
-    "Name":"%%OPERATION_NAME%%",
-    "Input.$":"$.Input",
-    "Configuration.$":"$.Configuration.%%OPERATION_NAME%%",
-    "AssetId.$":"$.AssetId",
-    "WorkflowExecutionId.$":"$.WorkflowExecutionId"
-}
-
 ASYNC_OPERATION_ASL =         {
     "StartAt": "Filter %%OPERATION_NAME%% Media Type? (%%STAGE_NAME%%)",
     "States": {
@@ -1949,15 +1939,22 @@ def create_workflow_execution(trigger, workflow_execution):
                 raise ChaliceViewError("Exception '%s'" % e)
             else:
                 asset_creation = dataplane.create_asset(s3bucket, s3key)
-                asset_input = {
-                    "Media": {
-                        media_type: {
-                            "S3Bucket": asset_creation["S3Bucket"],
-                            "S3Key": asset_creation["S3Key"]
+                # If create_asset fails, then asset_creation will contain the error
+                # string instead of the expected dict. So, we'll raise that error
+                # if we get a KeyError in the following try block:
+                try:
+                    asset_input = {
+                        "Media": {
+                            media_type: {
+                                "S3Bucket": asset_creation["S3Bucket"],
+                                "S3Key": asset_creation["S3Key"]
+                            }
                         }
                     }
-                }
-                asset_id = asset_creation["AssetId"]
+                    asset_id = asset_creation["AssetId"]
+                except KeyError as e:
+                    logger.error("Error creating asset {}".format(asset_creation))
+                    raise ChaliceViewError("Error creating asset '%s'" % asset_creation)
         else:
 
             try:
@@ -2970,7 +2967,7 @@ def operation_resource(event, context):
         operation = event["ResourceProperties"]
 
         # boolean type comes in as text from cloudformation - must decode string or take string for anabled parameter
-        operation["Configuration"]["Enabled"] = bool(operation["Configuration"]["Enabled"])
+        operation["Configuration"]["Enabled"] = True if operation["Configuration"]["Enabled"] == 'true' else False
         operation = create_operation(operation)
         send_response(event, context, "SUCCESS",
                       {"Message": "Resource creation successful!", "Name": event["ResourceProperties"]["Name"],

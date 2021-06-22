@@ -15,6 +15,7 @@ patch_all()
 
 region = os.environ['AWS_REGION']
 mie_config = json.loads(os.environ['botoConfig'])
+dataplane_bucket = os.environ['DATAPLANE_BUCKET']
 config = config.Config(**mie_config)
 
 mediaconvert_role = os.environ['mediaconvertRole']
@@ -27,8 +28,8 @@ def lambda_handler(event, context):
 
     try:
         workflow_id = str(operator_object.workflow_execution_id)
-        bucket = operator_object.input["Media"]["Video"]["S3Bucket"]
-        key = operator_object.input["Media"]["Video"]["S3Key"]
+        source_bucket = operator_object.input["Media"]["Video"]["S3Bucket"]
+        source_key = operator_object.input["Media"]["Video"]["S3Key"]
     except KeyError as e:
         operator_object.update_workflow_status("Error")
         operator_object.add_workflow_metadata(MediaconvertError="Missing a required metadata key {e}".format(e=e))
@@ -41,8 +42,8 @@ def lambda_handler(event, context):
         print("No asset id passed in with this workflow", e)
         asset_id = ''
 
-    file_input = "s3://" + bucket + "/" + key
-    destination = "s3://" + bucket + "/" + 'private/assets/' + asset_id + "/workflows/" + workflow_id + "/"
+    file_input = "s3://" + source_bucket + "/" + source_key
+    destination = "s3://" + dataplane_bucket + "/" + 'private/assets/' + asset_id + "/workflows/" + workflow_id + "/"
 
     # Get mediaconvert endpoint from cache if available
     if ("MEDIACONVERT_ENDPOINT" in os.environ):
@@ -137,7 +138,7 @@ def lambda_handler(event, context):
     else:
         job_id = response['Job']['Id']
         operator_object.update_workflow_status("Executing")
-        operator_object.add_workflow_metadata(MediaconvertJobId=job_id, MediaconvertInputFile=key, AssetId=asset_id,
+        operator_object.add_workflow_metadata(MediaconvertJobId=job_id, MediaconvertInputFile=source_key, AssetId=asset_id,
                                       WorkflowExecutionId=workflow_id)
         return operator_object.return_output_object()
 

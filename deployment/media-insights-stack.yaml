@@ -1243,7 +1243,7 @@ Resources:
     Properties:
       Environment:
         Variables:
-          botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"']]
+          botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"}']]
           STAGE_EXECUTION_QUEUE_URL: !Ref StageExecutionQueue
           STAGE_TABLE_NAME: !Ref StageTable
           OPERATION_TABLE_NAME: !Ref OperationTable
@@ -1292,7 +1292,7 @@ Resources:
     Properties:
       Environment:
         Variables:
-          botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"']]
+          botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"}']]
           STAGE_EXECUTION_QUEUE_URL: !Ref StageExecutionQueue
           STAGE_TABLE_NAME: !Ref StageTable
           OPERATION_TABLE_NAME: !Ref OperationTable
@@ -1368,7 +1368,7 @@ Resources:
       FunctionName: !Sub "${AWS::StackName}-start-wait-operation"
       Environment:
         Variables:
-          botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"']]
+          botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"}']]
           STAGE_EXECUTION_QUEUE_URL: !Ref StageExecutionQueue
           STAGE_TABLE_NAME: !Ref StageTable
           OPERATION_TABLE_NAME: !Ref OperationTable
@@ -1411,7 +1411,7 @@ Resources:
       FunctionName: !Sub "${AWS::StackName}-check-wait-operation"
       Environment:
         Variables:
-          botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"']]
+          botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"}']]
           STAGE_EXECUTION_QUEUE_URL: !Ref StageExecutionQueue
           STAGE_TABLE_NAME: !Ref StageTable
           OPERATION_TABLE_NAME: !Ref OperationTable
@@ -1456,7 +1456,7 @@ Resources:
       Environment:
         Variables:
           TOPIC_ARN: !Ref WorkflowExecutionEventTopic
-          botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"']]
+          botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"}']]
       Code:
         S3Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
         S3Key:
@@ -1501,7 +1501,7 @@ Resources:
           ],
         ]
       Parameters:
-        botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"']]
+        botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"}']]
         DataplaneTableName: !Ref DataplaneTable
         ExternalBucketArn: !Ref ExternalBucketArn
         DataplaneBucketName: !Ref Dataplane
@@ -1542,7 +1542,7 @@ Resources:
             - DataplaneTable
             - StreamArn
         DynamoTableArn: !GetAtt DataplaneTable.Arn
-        botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"']]
+        botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"}']]
 
   # Workflow creation and execution API
   MediaInsightsWorkflowApi:
@@ -1560,7 +1560,7 @@ Resources:
           ],
         ]
       Parameters:
-        botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"']]
+        botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"}']]
         ShortUUID: !GetAtt GetShortUUID.Data
         StageExecutionQueueUrl: !Ref StageExecutionQueue
         StageExecutionRole: !GetAtt StepFunctionRole.Arn
@@ -1637,7 +1637,7 @@ Resources:
         MediaInsightsEnginePython36Layer: !Ref MediaInsightsEnginePython36Layer
         StartWaitOperationLambda: !GetAtt StartWaitOperationLambda.Arn
         CheckWaitOperationLambda: !GetAtt CheckWaitOperationLambda.Arn
-        Boto3UserAgent: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"']]
+        Boto3UserAgent: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"}']]
 
   TestResources:
     Condition: DeployTestResourcesCondition

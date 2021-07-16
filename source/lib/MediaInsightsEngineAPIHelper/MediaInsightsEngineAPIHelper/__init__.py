@@ -63,14 +63,14 @@ class MIE:
     def create_workflow(self, body):
         headers = {"Content-Type": "application/json"}
         logging.info("POST /workflow {}".format(json.dumps(body)))
-        create_workflow_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/workflow', headers=headers, json=body, verify=False, auth=self.auth)
+        create_workflow_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/workflow', headers=headers, json=body, verify=True, auth=self.auth)
 
         return create_workflow_response
 
     def delete_workflow(self, workflow):
         headers = {"Content-Type": "application/json"}
         logging.info("DELETE /workflow {}".format(workflow))
-        delete_workflow_response = requests.delete(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/'+workflow, verify=False, auth=self.auth, headers=headers)
+        delete_workflow_response = requests.delete(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/'+workflow, verify=True, auth=self.auth, headers=headers)
         return delete_workflow_response
 
     # Stage Methods
@@ -78,12 +78,12 @@ class MIE:
     def create_stage(self, body):
         headers = {"Content-Type": "application/json"}
         logging.info("POST /workflow/stage {}".format(json.dumps(body)))
-        create_stage_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/stage', headers=headers, json=body, verify=False, auth=self.auth)
+        create_stage_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/stage', headers=headers, json=body, verify=True, auth=self.auth)
 
         return create_stage_response
 
     def delete_stage(self, stage):
-        delete_stage_response = requests.delete(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/stage/'+stage, verify=False, auth=self.auth)
+        delete_stage_response = requests.delete(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/stage/'+stage, verify=True, auth=self.auth)
 
         return delete_stage_response
 
@@ -92,12 +92,12 @@ class MIE:
     def start_workflow(self, body):
         headers = {"Content-Type": "application/json"}
         logging.info("POST /workflow/execution")
-        create_workflow_execution_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/execution', headers=headers, json=body, verify=False, auth=self.auth)
+        create_workflow_execution_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/execution', headers=headers, json=body, verify=True, auth=self.auth)
 
         return create_workflow_execution_response
 
     def get_workflow_execution(self, id):
         logging.info("GET /workflow/execution/{}".format(id))
-        get_workflow_execution_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/' + id, verify=False, auth=self.auth)
+        get_workflow_execution_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/' + id, verify=True, auth=self.auth)
 
         return get_workflow_execution_response

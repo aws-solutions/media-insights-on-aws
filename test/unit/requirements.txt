@@ -4,6 +4,6 @@ pytest==4.5.0
 requests==2.22.0
 urllib3==1.26.5
 jsonschema==2.6.0
-chalice
-aws_xray_sdk
-pytest-cov
+chalice==1.24.0
+aws_xray_sdk==2.8.0
+pytest-cov==2.12.1

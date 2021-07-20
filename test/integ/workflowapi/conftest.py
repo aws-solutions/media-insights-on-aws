@@ -105,12 +105,12 @@ class API:
         }
 
         print ("POST /system/configuration {}".format(json.dumps(body)))
-        set_configuration_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/system/configuration', headers=headers, json=body, verify=False, auth=self.auth)
+        set_configuration_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/system/configuration', headers=headers, json=body, verify=True, auth=self.auth)
 
         return set_configuration_response
 
     def get_configuration_request(self):
-        get_configuration_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/system/configuration', verify=False, auth=self.auth)
+        get_configuration_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/system/configuration', verify=True, auth=self.auth)
 
         return get_configuration_response
 
@@ -118,7 +118,7 @@ class API:
 
     def get_operation_request(self, operation):
         get_operation_response = requests.get(
-            self.stack_resources["WorkflowApiEndpoint"] + '/workflow/operation/' + operation, verify=False,
+            self.stack_resources["WorkflowApiEndpoint"] + '/workflow/operation/' + operation, verify=True,
             auth=self.auth)
 
         return get_operation_response
@@ -129,13 +129,13 @@ class API:
         # Create the operation
 
         create_operation_response = requests.post(self.stack_resources["WorkflowApiEndpoint"] + '/workflow/operation',
-                                                  headers=headers, json=body, verify=False, auth=self.auth)
+                                                  headers=headers, json=body, verify=True, auth=self.auth)
 
         return create_operation_response
 
     def delete_operation_request(self, operation):
         client = boto3.client(service_name='stepfunctions', region_name=self.env_vars['REGION'])
-        delete_operation_response = requests.delete(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/operation/'+operation, verify=False, auth=self.auth)
+        delete_operation_response = requests.delete(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/operation/'+operation, verify=True, auth=self.auth)
         return delete_operation_response
 
     # Workflow Methods
@@ -143,14 +143,14 @@ class API:
     def create_workflow_request(self, body):
         headers = {"Content-Type": "application/json"}
         print ("POST /workflow {}".format(json.dumps(body)))
-        create_workflow_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/workflow', headers=headers, json=body, verify=False, auth=self.auth)
+        create_workflow_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/workflow', headers=headers, json=body, verify=True, auth=self.auth)
 
         return create_workflow_response
 
     def delete_workflow_request(self, workflow):
         headers = {"Content-Type": "application/json"}
         print("DELETE /workflow {}".format(workflow))
-        delete_workflow_response = requests.delete(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/'+workflow, verify=False, auth=self.auth, headers=headers)
+        delete_workflow_response = requests.delete(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/'+workflow, verify=True, auth=self.auth, headers=headers)
         return delete_workflow_response
 
     # Stage Methods
@@ -158,23 +158,23 @@ class API:
     def create_stage_request(self, body):
         headers = {"Content-Type": "application/json"}
         print ("POST /workflow/stage {}".format(json.dumps(body)))
-        create_stage_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/stage', headers=headers, json=body, verify=False, auth=self.auth)
+        create_stage_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/stage', headers=headers, json=body, verify=True, auth=self.auth)
 
         return create_stage_response
 
     def get_stage_request(self, stage):
-        get_stage_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/stage/'+stage, verify=False, auth=self.auth)
+        get_stage_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/stage/'+stage, verify=True, auth=self.auth)
 
         return get_stage_response
 
     def delete_stage_request(self, stage):
-        delete_stage_response = requests.delete(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/stage/'+stage, verify=False, auth=self.auth)
+        delete_stage_response = requests.delete(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/stage/'+stage, verify=True, auth=self.auth)
 
         return delete_stage_response
 
     def get_workflow_configuration_request(self, workflow):
         headers = {"Content-Type": "application/json"}
-        get_workflow_configuration_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/configuration/'+workflow, verify=False, auth=self.auth, headers=headers)
+        get_workflow_configuration_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/configuration/'+workflow, verify=True, auth=self.auth, headers=headers)
 
         return get_workflow_configuration_response
 

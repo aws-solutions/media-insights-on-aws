@@ -26,6 +26,11 @@ def lambda_handler(event, context):
     print("We got this event:\n", event)
     valid_types = ["mp3", "mp4", "wav", "flac"]
     optional_settings = {}
+    model_settings = {}
+    job_execution_settings = {}
+    content_redaction_settings = {}
+    identify_language = false
+    language_options = []
     operator_object = MediaInsightsOperationHelper(event)
     workflow_id = str(event["WorkflowExecutionId"])
     asset_id = event['AssetId']
@@ -52,12 +57,6 @@ def lambda_handler(event, context):
         operator_object.add_workflow_metadata(TranscribeError="Not a valid file type")
         raise MasExecutionError(operator_object.return_output_object())
     try:
-        custom_vocab = operator_object.configuration["VocabularyName"]
-        optional_settings["VocabularyName"] = custom_vocab
-    except KeyError:
-        # No custom vocab
-        pass
-    try:
         language_code = operator_object.configuration["TranscribeLanguage"]
     except KeyError:
         operator_object.update_workflow_status("Error")
@@ -65,6 +64,50 @@ def lambda_handler(event, context):
         raise MasExecutionError(operator_object.return_output_object())
 
     media_file = 'https://s3.' + region + '.amazonaws.com/' + bucket + '/' + key
+
+    # Read optional transcription job settings:
+    if "VocabularyName" in operator_object.configuration
+        option_value = operator_object.configuration["VocabularyName"]
+        optional_settings["VocabularyName"] = option_value
+    if "ShowSpeakerLabels" in operator_object.configuration
+        option_value = operator_object.configuration["ShowSpeakerLabels"]
+        optional_settings["ShowSpeakerLabels"] = option_value
+    if "MaxSpeakerLabels" in operator_object.configuration
+        option_value = operator_object.configuration["MaxSpeakerLabels"]
+        optional_settings["MaxSpeakerLabels"] = option_value
+    if "ChannelIdentification" in operator_object.configuration
+        option_value = operator_object.configuration["ChannelIdentification"]
+        optional_settings["ChannelIdentification"] = option_value
+    if "MaxAlternatives" in operator_object.configuration
+        option_value = operator_object.configuration["MaxAlternatives"]
+        optional_settings["MaxAlternatives"] = option_value
+    if "VocabularyFilterName" in operator_object.configuration
+        option_value = operator_object.configuration["VocabularyFilterName"]
+        optional_settings["VocabularyFilterName"] = option_value
+    if "VocabularyFilterMethod" in operator_object.configuration
+        option_value = operator_object.configuration["VocabularyFilterMethod"]
+        optional_settings["VocabularyFilterMethod"] = option_value
+    if "LanguageModelName" in operator_object.configuration
+        option_value = operator_object.configuration["LanguageModelName"]
+        model_settings["LanguageModelName"] = option_value
+    if "AllowDeferredExecution" in operator_object.configuration
+        option_value = operator_object.configuration["AllowDeferredExecution"]
+        job_execution_settings["AllowDeferredExecution"] = option_value
+    if "DataAccessRoleArn" in operator_object.configuration
+        option_value = operator_object.configuration["DataAccessRoleArn"]
+        job_execution_settings["DataAccessRoleArn"] = option_value
+    if "RedactionType" in operator_object.configuration
+        option_value = operator_object.configuration["RedactionType"]
+        content_redaction_settings["RedactionType"] = option_value
+    if "RedactionOutput" in operator_object.configuration
+        option_value = operator_object.configuration["RedactionOutput"]
+        content_redaction_settings["RedactionOutput"] = option_value
+    if "IdentifyLanguage" in operator_object.configuration
+        option_value = operator_object.configuration["IdentifyLanguage"]
+        identify_language = option_value
+    if "LanguageOptions" in operator_object.configuration
+        option_value = operator_object.configuration["LanguageOptions"]
+        language_options = option_value
 
     # If mediainfo data is available then use it to avoid transcribing silent videos.
     if "Mediainfo_num_audio_tracks" in event["Input"]["MetaData"]:
@@ -76,13 +119,17 @@ def lambda_handler(event, context):
             return operator_object.return_output_object()
     try:
         response = transcribe.start_transcription_job(
-            TranscriptionJobName=job_id,
-            LanguageCode=language_code,
-            Media={
+            TranscriptionJobName = job_id,
+            LanguageCode = language_code,
+            Media = {
                 "MediaFileUri": media_file
             },
-            MediaFormat=file_type,
-            Settings=optional_settings
+            MediaFormat = file_type,
+            Settings = optional_settings
+            ModelSettings = model_settings
+            JobExecutionSettings = job_execution_settings
+            ContentRedaction = content_redaction_settings
+            IdentifyLanguage = identify_language
         )
         print(response)
     except Exception as e:

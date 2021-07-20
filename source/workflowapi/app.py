@@ -2586,6 +2586,88 @@ def create_vocabulary():
     return response
 
 
+@app.route('/service/transcribe/create_language_model', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
+def create_language_model():
+    """ Creates a new custom language model for Amazon Transcribe.
+
+    Returns:
+        This is a proxy for boto3 create_language_model and returns the output from that SDK method.
+        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.create_language_model>`_
+
+    Raises:
+        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.create_language_model>`_
+    """
+    print('create_language_model request: '+app.current_request.raw_body.decode())
+    transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
+    language_code = json.loads(app.current_request.raw_body.decode())['language_code']
+    base_model_name = json.loads(app.current_request.raw_body.decode())['base_model_name']
+    model_name = json.loads(app.current_request.raw_body.decode())['model_name']
+    input_data_config = json.loads(app.current_request.raw_body.decode())['InputDataConfig']
+    response = transcribe_client.create_language_model(LanguageCode=language_code, BaseModelName=base_model_name, ModelName=model_name, InputDataConfig=input_data_config)
+    # Convert time field to a format that is JSON serializable
+    response['LastModifiedTime'] = response['LastModifiedTime'].isoformat()
+    return response
+
+
+@app.route('/service/transcribe/delete_language_model', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
+def delete_language_model():
+    """ Deletes a custom language model for Amazon Transcribe.
+
+    Returns:
+        This is a proxy for boto3 delete_language_model and returns the output from that SDK method.
+        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.delete_language_model>`_
+
+    Raises:
+        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.delete_language_model>`_
+    """
+    print('delete_language_model request: '+app.current_request.raw_body.decode())
+    transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
+    model_name = json.loads(app.current_request.raw_body.decode())['model_name']
+    response = transcribe_client.delete_language_model(ModelName=model_name)
+    # Convert time field to a format that is JSON serializable
+    response['LastModifiedTime'] = response['LastModifiedTime'].isoformat()
+    return response
+
+
+@app.route('/service/transcribe/list_language_models', cors=True, methods=['GET'], authorizer=authorizer)
+def list_language_models():
+    """ Provides more information about the custom language models you've created. You can use the information in this list to find a specific custom language model. You can then use the describe_language_model operation to get more information about it.
+
+    Returns:
+        This is a proxy for boto3 list_language_models and returns the output from that SDK method.
+        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.list_language_models>`_
+
+    Raises:
+        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.list_language_models>`_
+    """
+    print('list_language_models request: '+app.current_request.raw_body.decode())
+    transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
+    response = transcribe_client.list_language_models()
+    # Convert time field to a format that is JSON serializable
+    response['LastModifiedTime'] = response['LastModifiedTime'].isoformat()
+    return response
+
+
+@app.route('/service/transcribe/describe_language_model', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
+def delete_language_model():
+    """ Gets information about a single custom language model. Use this information to see details about the language model in your AWS account. You can also see whether the base language model used to create your custom language model has been updated. If Amazon Transcribe has updated the base model, you can create a new custom language model using the updated base model. If the language model wasn't created, you can use this operation to understand why Amazon Transcribe couldn't create it.
+
+    Returns:
+        This is a proxy for boto3 describe_language_model and returns the output from that SDK method.
+        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.describe_language_model>`_
+
+    Raises:
+        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.describe_language_model>`_
+    """
+    print('describe_language_model request: '+app.current_request.raw_body.decode())
+    transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
+    model_name = json.loads(app.current_request.raw_body.decode())['model_name']
+    response = transcribe_client.describe_language_model(ModelName=model_name)
+    # Convert time field to a format that is JSON serializable
+    response['LastModifiedTime'] = response['LastModifiedTime'].isoformat()
+    return response
+
+
 @app.route('/service/translate/get_terminology', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
 def get_terminology():
     """ Get a link to the CSV formatted description for an Amazon Translate parallel data.

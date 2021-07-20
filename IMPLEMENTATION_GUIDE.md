@@ -423,6 +423,11 @@ The MIE APIs in Amazon API Gateway require that you authenticate every request w
   * DELETE /workflow/stage/{Name}
   * DELETE /workflow/{Name}
 
+  * POST /service/transcribe/create_language_model
+  * POST /service/transcribe/delete_language_model
+  * POST /service/transcribe/describe_language_model
+  * GET /service/transcribe/list_language_models
+
 ## Data plane API
 
 * Create an asset in the data plane from a json input composed of the input key and bucket of the object:

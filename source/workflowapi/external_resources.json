@@ -126,6 +126,15 @@
                 {
                   "Effect": "Allow",
                   "Action": [
+                    "s3:GetObject"
+                  ],
+                  "Resource": {
+                    "Fn::Sub": "arn:aws:s3:::${DataPlaneBucket}/*"
+                  }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
                     "states:ListStateMachines",
                     "states:TagResource",
                     "states:CreateStateMachine",

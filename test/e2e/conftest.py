@@ -124,18 +124,18 @@ class WorkflowAPI:
     def create_workflow_request(self, body):
         headers = {"Content-Type": "application/json"}
         print ("POST /workflow {}".format(json.dumps(body)))
-        create_workflow_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/workflow', headers=headers, json=body, verify=False, auth=self.auth)
+        create_workflow_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/workflow', headers=headers, json=body, verify=True, auth=self.auth)
 
         return create_workflow_response
 
     def delete_workflow_request(self, workflow):
         headers = {"Content-Type": "application/json"}
         print("DELETE /workflow {}".format(workflow))
-        delete_workflow_response = requests.delete(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/'+workflow, verify=False, auth=self.auth, headers=headers)
+        delete_workflow_response = requests.delete(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/'+workflow, verify=True, auth=self.auth, headers=headers)
         return delete_workflow_response
 
     def get_workflow_request(self, workflow):
-        get_workflow_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/'+workflow, verify=False, auth=self.auth)
+        get_workflow_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/'+workflow, verify=True, auth=self.auth)
         return get_workflow_response
 
     # Stage Methods
@@ -143,12 +143,12 @@ class WorkflowAPI:
     def create_stage_request(self, body):
         headers = {"Content-Type": "application/json"}
         print ("POST /workflow/stage {}".format(json.dumps(body)))
-        create_stage_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/stage', headers=headers, json=body, verify=False, auth=self.auth)
+        create_stage_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/stage', headers=headers, json=body, verify=True, auth=self.auth)
 
         return create_stage_response
 
     def delete_stage_request(self, stage):
-        delete_stage_response = requests.delete(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/stage/'+stage+'?force=true', verify=False, auth=self.auth)
+        delete_stage_response = requests.delete(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/stage/'+stage+'?force=true', verify=True, auth=self.auth)
 
         return delete_stage_response
 
@@ -157,13 +157,13 @@ class WorkflowAPI:
     def create_workflow_execution_request(self, body):
         headers = {"Content-Type": "application/json"}
         print("POST /workflow/execution")
-        create_workflow_execution_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/execution', headers=headers, json=body, verify=False, auth=self.auth)
+        create_workflow_execution_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/execution', headers=headers, json=body, verify=True, auth=self.auth)
 
         return create_workflow_execution_response
 
     def get_workflow_execution_request(self, id):
         print("GET /workflow/execution/{}".format(id))
-        get_workflow_execution_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/' + id, verify=False, auth=self.auth)
+        get_workflow_execution_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/' + id, verify=True, auth=self.auth)
 
         return get_workflow_execution_response
 
@@ -194,14 +194,14 @@ class DataplaneAPI:
         url = self.stack_resources["DataplaneApiEndpoint"] + 'metadata/' + asset_id + "/" + operator
         headers = {"Content-Type": "application/json"}
         print("GET /metadata/{asset}/{operator}".format(asset=asset_id, operator=operator))
-        single_metadata_response = requests.get(url, headers=headers, verify=False, auth=self.auth)
+        single_metadata_response = requests.get(url, headers=headers, verify=True, auth=self.auth)
         return single_metadata_response
 
     def delete_asset(self, asset_id):
         url = self.stack_resources["DataplaneApiEndpoint"] + 'metadata/' + asset_id
         headers = {"Content-Type": "application/json"}
         print("DELETE /metadata/{asset}".format(asset=asset_id))
-        delete_asset_response = requests.delete(url, headers=headers, verify=False, auth=self.auth)
+        delete_asset_response = requests.delete(url, headers=headers, verify=True, auth=self.auth)
         return delete_asset_response
 
 # Dataplane API Fixture

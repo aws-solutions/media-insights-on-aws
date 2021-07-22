@@ -30,6 +30,34 @@ jobs:
         run: git push origin release/v${{ github.event.inputs.version }}
 
 
+  build-eu-west-1:
+    needs: create-release-branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out release branch
+        uses: actions/checkout@v2.3.4
+        with:
+          ref: release/v${{ github.event.inputs.version }}
+
+      - name: Initialize AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+            aws-access-key-id: ${{ secrets.BUILD_AWS_ACCESS_KEY_ID }}
+            aws-secret-access-key: ${{ secrets.BUILD_AWS_SECRET_ACCESS_KEY }}
+            aws-region: eu-west-1
+
+      - name: Run build script
+        run: |
+          cd deployment
+          MIE_STACK_NAME=${{ github.event.inputs.releaseName }}
+          REGION=eu-west-1
+          VERSION=v${{ github.event.inputs.version }}
+          DIST_OUTPUT_BUCKET=mie-dev
+          TEMPLATE_OUTPUT_BUCKET=mie-dev-$REGION
+          ./build-s3-dist.sh --no-layer --template-bucket $TEMPLATE_OUTPUT_BUCKET --code-bucket $DIST_OUTPUT_BUCKET --version $VERSION --region $REGION
+          aws cloudformation deploy --stack-name $MIE_STACK_NAME --region $REGION --template-file global-s3-assets/media-insights-stack.template --s3-bucket $DIST_OUTPUT_BUCKET-$REGION --s3-prefix aws-media-insights-engine/$VERSION --parameter-overrides DeployTestResources=true MaxConcurrentWorkflows=10 DeployAnalyticsPipeline=true EnableXrayTrace=true ParameterKey=SendAnonymousData,ParameterValue=false --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --force-upload
+
+
   build-us-west-2:
     needs: create-release-branch
     runs-on: ubuntu-latest
@@ -84,6 +112,50 @@ jobs:
           TEMPLATE_OUTPUT_BUCKET=mie-dev-$REGION
           ./build-s3-dist.sh --no-layer --template-bucket $TEMPLATE_OUTPUT_BUCKET --code-bucket $DIST_OUTPUT_BUCKET --version $VERSION --region $REGION
           aws cloudformation deploy --stack-name $MIE_STACK_NAME --region $REGION --template-file global-s3-assets/media-insights-stack.template --s3-bucket $DIST_OUTPUT_BUCKET-$REGION --s3-prefix aws-media-insights-engine/$VERSION --parameter-overrides DeployTestResources=true MaxConcurrentWorkflows=10 DeployAnalyticsPipeline=true EnableXrayTrace=true ParameterKey=SendAnonymousData,ParameterValue=false --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --force-upload
+
+  test-eu-west-1:
+    needs: build-eu-west-1
+    runs-on: ubuntu-latest
+    env:
+      MIE_REGION: 'eu-west-1'
+      MIE_STACK_NAME: ${{ github.event.inputs.releaseName }}
+    steps:
+      - name: Check out release branch
+        uses: actions/checkout@v2.3.4
+        with:
+          ref: release/v${{ github.event.inputs.version }}
+
+      - name: Initialize AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+            aws-access-key-id: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
+            aws-secret-access-key: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
+            aws-region: eu-west-1
+
+      - name: Run cfn_nag
+        uses: stelligent/cfn_nag@master
+        continue-on-error: true
+        with:
+            input_path: deployment
+
+      - name: Run unit tests
+        run: |
+          cd $GITHUB_WORKSPACE
+          cd test/unit
+          ./run_unit.sh workflowapi
+          ./run_unit.sh dataplaneapi
+
+      - name: Run integ tests
+        run: |
+          cd $GITHUB_WORKSPACE
+          cd test/integ
+          ./run_integ.sh
+      - name: Run E2E tests
+        run: |
+          cd $GITHUB_WORKSPACE
+          cd test/e2e
+          ./run_e2e.sh
+
 
   test-us-west-2:
     needs: build-us-west-2
@@ -173,6 +245,7 @@ jobs:
 
   update-version-in-docs:
     needs:
+      - test-eu-west-1
       - test-us-west-2
       - test-us-east-1
     runs-on: ubuntu-latest
@@ -193,6 +266,32 @@ jobs:
           git add README.md
           git commit -m "Update one-click links with new version"
           git push origin release/v${{ github.event.inputs.version }}
+
+
+  deploy-eu-west-1:
+    needs: update-version-in-docs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out release branch
+        uses: actions/checkout@v2.3.4
+        with:
+          ref: release/v${{ github.event.inputs.version }}
+
+      - name: Initialize AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.DEPLOY_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.DEPLOY_AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-1
+
+      - name: Run build script
+        run: |
+          cd deployment
+          REGION=eu-west-1
+          VERSION=v${{ github.event.inputs.version }}
+          DIST_OUTPUT_BUCKET=rodeolabz
+          TEMPLATE_OUTPUT_BUCKET=rodeolabz-$REGION
+          ./build-s3-dist.sh --no-layer --template-bucket $TEMPLATE_OUTPUT_BUCKET --code-bucket $DIST_OUTPUT_BUCKET --version $VERSION --region $REGION
 
 
   deploy-us-west-2:
@@ -247,6 +346,7 @@ jobs:
 
   create-git-staging-branch:
     needs:
+      - deploy-eu-west-1
       - deploy-us-west-2
       - deploy-us-east-1
     runs-on: ubuntu-latest

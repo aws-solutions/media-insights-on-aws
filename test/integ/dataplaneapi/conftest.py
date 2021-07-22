@@ -114,7 +114,7 @@ class API:
 
         print("POST /create")
         create_asset_response = requests.post(self.stack_resources["DataplaneApiEndpoint"] + '/create', headers=headers,
-                                              json=body, verify=False, auth=self.auth)
+                                              json=body, verify=True, auth=self.auth)
         return create_asset_response
 
     def post_metadata(self, asset_id, metadata, paginate=False, end=False):
@@ -128,25 +128,25 @@ class API:
         headers = {"Content-Type": "application/json"}
         body = metadata
         print("POST /metadata/{asset}".format(asset=asset_id))
-        nonpaginated_metadata_response = requests.post(url, headers=headers, json=body, verify=False, auth=self.auth)
+        nonpaginated_metadata_response = requests.post(url, headers=headers, json=body, verify=True, auth=self.auth)
         return nonpaginated_metadata_response
 
     # TODO: This test is currently broken. Seems to be a real issue with the API that needs looked into.
 
     def get_all_metadata(self, asset_id, cursor=None):
-        
+
         url = self.stack_resources["DataplaneApiEndpoint"] + 'metadata/' + asset_id
         headers = {"Content-Type": "application/json"}
         print("GET /metadata/{asset}".format(asset=asset_id))
-        
+
         if cursor is None:
             print("GET /metadata/{asset}".format(asset=asset_id))
-            metadata_response = requests.get(url, headers=headers, verify=False, auth=self.auth) 
+            metadata_response = requests.get(url, headers=headers, verify=True, auth=self.auth)
         else:
             print("GET /metadata/{asset}?cursor={cursor}".format(asset=asset_id, cursor=cursor))
             query_params = {"cursor": cursor}
-            metadata_response = requests.get(url, headers=headers, params=query_params, verify=False, auth=self.auth) 
-        
+            metadata_response = requests.get(url, headers=headers, params=query_params, verify=True, auth=self.auth)
+
         print(metadata_response.json())
         print(metadata_response.text)
         return metadata_response
@@ -156,7 +156,7 @@ class API:
         url = self.stack_resources["DataplaneApiEndpoint"] + 'metadata/' + asset_id + "/" + metadata_field
         headers = {"Content-Type": "application/json"}
         print("GET /metadata/{asset}/{operator}".format(asset=asset_id, operator=operator["OperatorName"]))
-        single_metadata_response = requests.get(url, headers=headers, verify=False, auth=self.auth)
+        single_metadata_response = requests.get(url, headers=headers, verify=True, auth=self.auth)
         return single_metadata_response
 
     def delete_single_metadata_field(self, asset_id, operator):
@@ -164,14 +164,14 @@ class API:
         url = self.stack_resources["DataplaneApiEndpoint"] + 'metadata/' + asset_id + "/" + metadata_field
         headers = {"Content-Type": "application/json"}
         print("DELETE /metadata/{asset}/{operator}".format(asset=asset_id, operator=operator["OperatorName"]))
-        delete_single_metadata_response = requests.delete(url, headers=headers, verify=False, auth=self.auth)
+        delete_single_metadata_response = requests.delete(url, headers=headers, verify=True, auth=self.auth)
         return delete_single_metadata_response
 
     def delete_asset(self, asset_id):
         url = self.stack_resources["DataplaneApiEndpoint"] + 'metadata/' + asset_id
         headers = {"Content-Type": "application/json"}
         print("DELETE /metadata/{asset}".format(asset=asset_id))
-        delete_asset_response = requests.delete(url, headers=headers, verify=False, auth=self.auth)
+        delete_asset_response = requests.delete(url, headers=headers, verify=True, auth=self.auth)
         return delete_asset_response
 
 

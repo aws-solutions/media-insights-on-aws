@@ -21,8 +21,9 @@ You can deploy MIE in your AWS account with the following Cloud Formation templa
 
 Region| Launch
 ------|-----
-US East (N. Virginia) | [![Launch in us-east-1](docs/assets/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-east-1.s3.amazonaws.com/aws-media-insights-engine/v3.0.0/media-insights-stack.template)
-US West (Oregon) | [![Launch in us-west-2](docs/assets/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-west-2.s3.us-west-2.amazonaws.com/aws-media-insights-engine/v3.0.0/media-insights-stack.template)
+US East (N. Virginia) | [![Launch in us-east-1](docs/assets/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-east-1.s3.amazonaws.com/aws-media-insights-engine/v3.0.1/media-insights-stack.template)
+US West (Oregon) | [![Launch in us-west-2](docs/assets/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-west-2.s3.us-west-2.amazonaws.com/aws-media-insights-engine/v3.0.1/media-insights-stack.template)
+EU West (Ireland) | [![Launch in eu-west-1](docs/assets/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks/new?stackName=mie&templateURL=https://rodeolabz-eu-west-1.s3.eu-west-1.amazonaws.com/aws-media-insights-engine/v3.0.1/media-insights-stack.template)
 
 The Cloud Formation options for these one-click deploys are described in the [installation parameters](#installation-parameters) section.
 
@@ -181,7 +182,7 @@ You can deploy MIE in your AWS account with the [one-click deploy buttons](#inst
 | `DeployAnalyticsPipeline` | `true` | Determines whether to deploy a data streaming pipeline that can be consumed by external applications. By default, this capability is activated when the solution is deployed. Set to `false` to deactivate this capability. |
 | `DeployTestWorkflow` | `false` | Determines whether to deploy test resources that contain Lambda functions required for integration and end-to-end testing. By default, this capability is deactivated. Set to `true` to activate this capability. |
 | `EnableXrayTrace` | `false` | Determines whether to activate Active Xray tracing on all entry points to the stack. By default, this capability is deactivated when the solution is deployed. Set to true to activate this capability. |
-| `ExternalBucketArn` | `` | The ARN for Amazon S3 resources that exist outside the MIE stack which may need to be used as inputs to MIE workflows. Values must be a valid [Amazon S3 ARN](https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-arn-format.html). By default, this option will be blank, meaning workflows will only be able to input media files from the MIE data plane bucket. |
+| `ExternalBucketArn` | `` | The ARN for Amazon S3 resources that exist outside the MIE stack which may need to be used as inputs to MIE workflows. The ARN must be a valid [Amazon S3 ARN](https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-arn-format.html) and must reference the same AWS account that is used for the MIE stack. By default, ExternalBucketArn will be blank, meaning workflows will only be able to input media files from the MIE data plane bucket. |
 
 # Developers
 

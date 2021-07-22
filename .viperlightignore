@@ -17,7 +17,7 @@ docs/assets/images/MIE-architecture-diagram.pptx
 .github/workflows/scheduled-workflow.yml:19
 .github/workflows/scheduled-workflow.yml:20
 .github/workflows/scheduled-workflow.yml:21
-README.md:196
+README.md:197
 docs/sigv4_get_sample.py:52
 docs/sigv4_get_sample.py:53
 docs/sigv4_post_sample.py:61

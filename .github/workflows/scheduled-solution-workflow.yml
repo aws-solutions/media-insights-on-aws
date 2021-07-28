@@ -97,7 +97,7 @@ jobs:
           body: Nightly test failed for latest MIE solution
       - name: Remove stack
         run: |
-          aws cloudformation delete-stack --stack-name $MIE_STACK_NAME --region $REGION
+          aws cloudformation delete-stack --stack-name $MIE_STACK_NAME --region $MIE_REGION
           aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
       - name: Remove stack buckets
         run: |
@@ -193,7 +193,7 @@ jobs:
           body: Nightly test failed for latest MIE solution
       - name: Remove stack
         run: |
-          aws cloudformation delete-stack --stack-name $MIE_STACK_NAME --region $REGION
+          aws cloudformation delete-stack --stack-name $MIE_STACK_NAME --region $MIE_REGION
           aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
       - name: Remove stack buckets
         run: |
@@ -289,7 +289,7 @@ jobs:
           body: Nightly test failed for latest MIE solution
       - name: Remove stack
         run: |
-          aws cloudformation delete-stack --stack-name $MIE_STACK_NAME --region $REGION
+          aws cloudformation delete-stack --stack-name $MIE_STACK_NAME --region $MIE_REGION
           aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
       - name: Remove stack buckets
         run: |
@@ -385,7 +385,7 @@ jobs:
           body: Nightly test failed for latest MIE solution
       - name: Remove stack
         run: |
-          aws cloudformation delete-stack --stack-name $MIE_STACK_NAME --region $REGION
+          aws cloudformation delete-stack --stack-name $MIE_STACK_NAME --region $MIE_REGION
           aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
       - name: Remove stack buckets
         run: |
@@ -481,7 +481,7 @@ jobs:
           body: Nightly test failed for latest MIE solution
       - name: Remove stack
         run: |
-          aws cloudformation delete-stack --stack-name $MIE_STACK_NAME --region $REGION
+          aws cloudformation delete-stack --stack-name $MIE_STACK_NAME --region $MIE_REGION
           aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
       - name: Remove stack buckets
         run: |
@@ -577,7 +577,7 @@ jobs:
           body: Nightly test failed for latest MIE solution
       - name: Remove stack
         run: |
-          aws cloudformation delete-stack --stack-name $MIE_STACK_NAME --region $REGION
+          aws cloudformation delete-stack --stack-name $MIE_STACK_NAME --region $MIE_REGION
           aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
       - name: Remove stack buckets
         run: |
@@ -673,7 +673,7 @@ jobs:
           body: Nightly test failed for latest MIE solution
       - name: Remove stack
         run: |
-          aws cloudformation delete-stack --stack-name $MIE_STACK_NAME --region $REGION
+          aws cloudformation delete-stack --stack-name $MIE_STACK_NAME --region $MIE_REGION
           aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
       - name: Remove stack buckets
         run: |
@@ -769,7 +769,7 @@ jobs:
           body: Nightly test failed for latest MIE solution
       - name: Remove stack
         run: |
-          aws cloudformation delete-stack --stack-name $MIE_STACK_NAME --region $REGION
+          aws cloudformation delete-stack --stack-name $MIE_STACK_NAME --region $MIE_REGION
           aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
       - name: Remove stack buckets
         run: |
@@ -865,7 +865,7 @@ jobs:
           body: Nightly test failed for latest MIE solution
       - name: Remove stack
         run: |
-          aws cloudformation delete-stack --stack-name $MIE_STACK_NAME --region $REGION
+          aws cloudformation delete-stack --stack-name $MIE_STACK_NAME --region $MIE_REGION
           aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
       - name: Remove stack buckets
         run: |
@@ -961,7 +961,7 @@ jobs:
           body: Nightly test failed for latest MIE solution
       - name: Remove stack
         run: |
-          aws cloudformation delete-stack --stack-name $MIE_STACK_NAME --region $REGION
+          aws cloudformation delete-stack --stack-name $MIE_STACK_NAME --region $MIE_REGION
           aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
       - name: Remove stack buckets
         run: |
@@ -1057,7 +1057,7 @@ jobs:
           body: Nightly test failed for latest MIE solution
       - name: Remove stack
         run: |
-          aws cloudformation delete-stack --stack-name $MIE_STACK_NAME --region $REGION
+          aws cloudformation delete-stack --stack-name $MIE_STACK_NAME --region $MIE_REGION
           aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
       - name: Remove stack buckets
         run: |

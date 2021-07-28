@@ -35,7 +35,7 @@ jobs:
           body: Nightly test failed for latest MIE solution
 
   test-us-west-2:
-    needs: build-us-west-2
+    needs: deploy-us-west-2
     runs-on: ubuntu-latest
     env:
       MIE_REGION: 'us-west-2'

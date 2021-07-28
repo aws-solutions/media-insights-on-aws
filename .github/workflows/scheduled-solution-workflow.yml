@@ -26,7 +26,7 @@ jobs:
           aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
       - name: Remove old stack buckets
         run: |
-          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line2 --force; done; done
+          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line --force; done; done
   deploy-us-east-1:
     needs: undeploy-us-east-1
     runs-on: ubuntu-latest
@@ -101,7 +101,7 @@ jobs:
           aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
       - name: Remove stack buckets
         run: |
-          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line2 --force; done; done
+          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line --force; done; done
 
   undeploy-us-east-2:
     runs-on: ubuntu-latest
@@ -122,7 +122,7 @@ jobs:
           aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
       - name: Remove old stack buckets
         run: |
-          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line2 --force; done; done
+          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line --force; done; done
   deploy-us-east-2:
     needs: undeploy-us-east-2
     runs-on: ubuntu-latest
@@ -197,7 +197,7 @@ jobs:
           aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
       - name: Remove stack buckets
         run: |
-          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line2 --force; done; done
+          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line --force; done; done
 
   undeploy-us-west-2:
     runs-on: ubuntu-latest
@@ -218,7 +218,7 @@ jobs:
           aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
       - name: Remove old stack buckets
         run: |
-          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line2 --force; done; done
+          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line --force; done; done
   deploy-us-west-2:
     needs: undeploy-us-west-2
     runs-on: ubuntu-latest
@@ -293,7 +293,7 @@ jobs:
           aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
       - name: Remove stack buckets
         run: |
-          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line2 --force; done; done
+          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line --force; done; done
 
   undeploy-ap-south-1:
     runs-on: ubuntu-latest
@@ -314,7 +314,7 @@ jobs:
           aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
       - name: Remove old stack buckets
         run: |
-          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line2 --force; done; done
+          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line --force; done; done
   deploy-ap-south-1:
     needs: undeploy-ap-south-1
     runs-on: ubuntu-latest
@@ -389,7 +389,7 @@ jobs:
           aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
       - name: Remove stack buckets
         run: |
-          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line2 --force; done; done
+          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line --force; done; done
 
   undeploy-ap-northeast-1:
     runs-on: ubuntu-latest
@@ -410,7 +410,7 @@ jobs:
           aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
       - name: Remove old stack buckets
         run: |
-          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line2 --force; done; done
+          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line --force; done; done
   deploy-ap-northeast-1:
     needs: undeploy-ap-northeast-1
     runs-on: ubuntu-latest
@@ -485,7 +485,7 @@ jobs:
           aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
       - name: Remove stack buckets
         run: |
-          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line2 --force; done; done
+          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line --force; done; done
 
   undeploy-ap-northeast-2:
     runs-on: ubuntu-latest
@@ -506,7 +506,7 @@ jobs:
           aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
       - name: Remove old stack buckets
         run: |
-          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line2 --force; done; done
+          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line --force; done; done
   deploy-ap-northeast-2:
     needs: undeploy-ap-northeast-2
     runs-on: ubuntu-latest
@@ -581,7 +581,7 @@ jobs:
           aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
       - name: Remove stack buckets
         run: |
-          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line2 --force; done; done
+          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line --force; done; done
 
   undeploy-ap-southeast-1:
     runs-on: ubuntu-latest
@@ -602,7 +602,7 @@ jobs:
           aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
       - name: Remove old stack buckets
         run: |
-          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line2 --force; done; done
+          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line --force; done; done
   deploy-ap-southeast-1:
     needs: undeploy-ap-southeast-1
     runs-on: ubuntu-latest
@@ -677,7 +677,7 @@ jobs:
           aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
       - name: Remove stack buckets
         run: |
-          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line2 --force; done; done
+          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line --force; done; done
 
   undeploy-ap-southeast-2:
     runs-on: ubuntu-latest
@@ -698,7 +698,7 @@ jobs:
           aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
       - name: Remove old stack buckets
         run: |
-          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line2 --force; done; done
+          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line --force; done; done
   deploy-ap-southeast-2:
     needs: undeploy-ap-southeast-2
     runs-on: ubuntu-latest
@@ -773,7 +773,7 @@ jobs:
           aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
       - name: Remove stack buckets
         run: |
-          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line2 --force; done; done
+          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line --force; done; done
 
   undeploy-eu-central-1:
     runs-on: ubuntu-latest
@@ -794,7 +794,7 @@ jobs:
           aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
       - name: Remove old stack buckets
         run: |
-          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line2 --force; done; done
+          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line --force; done; done
   deploy-eu-central-1:
     needs: undeploy-eu-central-1
     runs-on: ubuntu-latest
@@ -869,7 +869,7 @@ jobs:
           aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
       - name: Remove stack buckets
         run: |
-          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line2 --force; done; done
+          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line --force; done; done
 
   undeploy-eu-west-1:
     runs-on: ubuntu-latest
@@ -890,7 +890,7 @@ jobs:
           aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
       - name: Remove old stack buckets
         run: |
-          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line2 --force; done; done
+          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line --force; done; done
   deploy-eu-west-1:
     needs: undeploy-eu-west-1
     runs-on: ubuntu-latest
@@ -965,7 +965,7 @@ jobs:
           aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
       - name: Remove stack buckets
         run: |
-          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line2 --force; done; done
+          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line --force; done; done
 
   undeploy-eu-west-2:
     runs-on: ubuntu-latest
@@ -986,7 +986,7 @@ jobs:
           aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
       - name: Remove old stack buckets
         run: |
-          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line2 --force; done; done
+          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line --force; done; done
   deploy-eu-west-2:
     needs: undeploy-eu-west-2
     runs-on: ubuntu-latest
@@ -1061,4 +1061,4 @@ jobs:
           aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
       - name: Remove stack buckets
         run: |
-          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line2 --force; done; done
+          aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line --force; done; done

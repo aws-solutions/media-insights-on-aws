@@ -3,6 +3,7 @@
 
 import json
 import boto3
+from botocore.client import ClientError
 import urllib3
 import math
 import os
@@ -827,6 +828,7 @@ def start_polly_webcaptions (event, context):
 
         if language_code == "not supported":
             caption["PollyStatus"] = "not supported"
+            caption["PollyMessage"] = "WARNING: Language code not supported by the Polly service"
         else:
 
             try:
@@ -869,7 +871,17 @@ def start_polly_webcaptions (event, context):
                     TextType='text',
                     VoiceId=voice_id
                 )
-
+            except ClientError as e:
+                # Ignore and skip Polly if we get the TextLengthExceededException, bubble up
+                # other exceptions.
+                if e.response['Error']['Code'] == 'TextLengthExceededException':
+                    caption["PollyMessage"] = "WARNING: Polly.Client.exceptions.TextLengthExceededException"
+                    caption["PollyStatus"] = "not supported"
+                else:
+                    raise
+            # except polly.Client.exceptions.TextLengthExceededException as e:
+            #     caption["PollyMessage"] = "WARNING: Polly.Client.exceptions.TextLengthExceededException"
+            #     caption["PollyStatus"] = "not supported"
             except Exception as e:
                 operator_object.update_workflow_status("Error")
                 operator_object.add_workflow_metadata(PollyCollectionError="Unable to get response from polly: {e}".format(e=str(e)))

@@ -6,7 +6,6 @@ on:
   workflow_dispatch:
 
 jobs:
-
   deploy-us-east-1:
     runs-on: ubuntu-latest
     steps:
@@ -14,14 +13,12 @@ jobs:
         uses: actions/checkout@v2.3.4
         with:
           ref: master
-
       - name: Initialize AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.BUILD_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.BUILD_AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
-
       - name: Run build script
         run: |
           cd deployment
@@ -39,7 +36,6 @@ jobs:
           assignees: ianwow
           labels: bug
           body: Nightly test failed for latest MIE solution
-
   test-us-east-1:
     needs: deploy-us-east-1
     runs-on: ubuntu-latest
@@ -51,26 +47,22 @@ jobs:
         uses: actions/checkout@v2.3.4
         with:
           ref: master
-
       - name: Initialize AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
-
       - name: Run integ tests
         run: |
           cd $GITHUB_WORKSPACE
           cd test/integ
           ./run_integ.sh
-
       - name: Run E2E tests
         run: |
           cd $GITHUB_WORKSPACE
           cd test/e2e
           ./run_e2e.sh
-
       - name: Test Failed
         if: ${{ failure() }}
         uses: nashmaniac/create-issue-action@v1.1
@@ -80,7 +72,9 @@ jobs:
           assignees: ianwow
           labels: bug
           body: Nightly test failed for latest MIE solution
-
+      - name: Delete stack
+        run: |
+          aws cloudformation delete-stack --stack-name $MIE_STACK_NAME
   deploy-us-east-2:
     runs-on: ubuntu-latest
     steps:
@@ -88,14 +82,12 @@ jobs:
         uses: actions/checkout@v2.3.4
         with:
           ref: master
-
       - name: Initialize AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.BUILD_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.BUILD_AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-2
-
       - name: Run build script
         run: |
           cd deployment
@@ -113,7 +105,6 @@ jobs:
           assignees: ianwow
           labels: bug
           body: Nightly test failed for latest MIE solution
-
   test-us-east-2:
     needs: deploy-us-east-2
     runs-on: ubuntu-latest
@@ -125,26 +116,22 @@ jobs:
         uses: actions/checkout@v2.3.4
         with:
           ref: master
-
       - name: Initialize AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-2
-
       - name: Run integ tests
         run: |
           cd $GITHUB_WORKSPACE
           cd test/integ
           ./run_integ.sh
-
       - name: Run E2E tests
         run: |
           cd $GITHUB_WORKSPACE
           cd test/e2e
           ./run_e2e.sh
-
       - name: Test Failed
         if: ${{ failure() }}
         uses: nashmaniac/create-issue-action@v1.1
@@ -154,7 +141,9 @@ jobs:
           assignees: ianwow
           labels: bug
           body: Nightly test failed for latest MIE solution
-
+      - name: Delete stack
+        run: |
+          aws cloudformation delete-stack --stack-name $MIE_STACK_NAME
   deploy-us-west-2:
     runs-on: ubuntu-latest
     steps:
@@ -162,14 +151,12 @@ jobs:
         uses: actions/checkout@v2.3.4
         with:
           ref: master
-
       - name: Initialize AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.BUILD_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.BUILD_AWS_SECRET_ACCESS_KEY }}
           aws-region: us-west-2
-
       - name: Run build script
         run: |
           cd deployment
@@ -187,7 +174,6 @@ jobs:
           assignees: ianwow
           labels: bug
           body: Nightly test failed for latest MIE solution
-
   test-us-west-2:
     needs: deploy-us-west-2
     runs-on: ubuntu-latest
@@ -199,26 +185,22 @@ jobs:
         uses: actions/checkout@v2.3.4
         with:
           ref: master
-
       - name: Initialize AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
           aws-region: us-west-2
-
       - name: Run integ tests
         run: |
           cd $GITHUB_WORKSPACE
           cd test/integ
           ./run_integ.sh
-
       - name: Run E2E tests
         run: |
           cd $GITHUB_WORKSPACE
           cd test/e2e
           ./run_e2e.sh
-
       - name: Test Failed
         if: ${{ failure() }}
         uses: nashmaniac/create-issue-action@v1.1
@@ -228,7 +210,9 @@ jobs:
           assignees: ianwow
           labels: bug
           body: Nightly test failed for latest MIE solution
-
+      - name: Delete stack
+        run: |
+          aws cloudformation delete-stack --stack-name $MIE_STACK_NAME
   deploy-ap-south-1:
     runs-on: ubuntu-latest
     steps:
@@ -236,14 +220,12 @@ jobs:
         uses: actions/checkout@v2.3.4
         with:
           ref: master
-
       - name: Initialize AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.BUILD_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.BUILD_AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-south-1
-
       - name: Run build script
         run: |
           cd deployment
@@ -261,7 +243,6 @@ jobs:
           assignees: ianwow
           labels: bug
           body: Nightly test failed for latest MIE solution
-
   test-ap-south-1:
     needs: deploy-ap-south-1
     runs-on: ubuntu-latest
@@ -273,26 +254,22 @@ jobs:
         uses: actions/checkout@v2.3.4
         with:
           ref: master
-
       - name: Initialize AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-south-1
-
       - name: Run integ tests
         run: |
           cd $GITHUB_WORKSPACE
           cd test/integ
           ./run_integ.sh
-
       - name: Run E2E tests
         run: |
           cd $GITHUB_WORKSPACE
           cd test/e2e
           ./run_e2e.sh
-
       - name: Test Failed
         if: ${{ failure() }}
         uses: nashmaniac/create-issue-action@v1.1
@@ -302,7 +279,9 @@ jobs:
           assignees: ianwow
           labels: bug
           body: Nightly test failed for latest MIE solution
-
+      - name: Delete stack
+        run: |
+          aws cloudformation delete-stack --stack-name $MIE_STACK_NAME
   deploy-ap-northeast-1:
     runs-on: ubuntu-latest
     steps:
@@ -310,14 +289,12 @@ jobs:
         uses: actions/checkout@v2.3.4
         with:
           ref: master
-
       - name: Initialize AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.BUILD_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.BUILD_AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-northeast-1
-
       - name: Run build script
         run: |
           cd deployment
@@ -335,7 +312,6 @@ jobs:
           assignees: ianwow
           labels: bug
           body: Nightly test failed for latest MIE solution
-
   test-ap-northeast-1:
     needs: deploy-ap-northeast-1
     runs-on: ubuntu-latest
@@ -347,26 +323,22 @@ jobs:
         uses: actions/checkout@v2.3.4
         with:
           ref: master
-
       - name: Initialize AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-northeast-1
-
       - name: Run integ tests
         run: |
           cd $GITHUB_WORKSPACE
           cd test/integ
           ./run_integ.sh
-
       - name: Run E2E tests
         run: |
           cd $GITHUB_WORKSPACE
           cd test/e2e
           ./run_e2e.sh
-
       - name: Test Failed
         if: ${{ failure() }}
         uses: nashmaniac/create-issue-action@v1.1
@@ -376,7 +348,9 @@ jobs:
           assignees: ianwow
           labels: bug
           body: Nightly test failed for latest MIE solution
-
+      - name: Delete stack
+        run: |
+          aws cloudformation delete-stack --stack-name $MIE_STACK_NAME
   deploy-ap-northeast-2:
     runs-on: ubuntu-latest
     steps:
@@ -384,14 +358,12 @@ jobs:
         uses: actions/checkout@v2.3.4
         with:
           ref: master
-
       - name: Initialize AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.BUILD_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.BUILD_AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-northeast-2
-
       - name: Run build script
         run: |
           cd deployment
@@ -409,7 +381,6 @@ jobs:
           assignees: ianwow
           labels: bug
           body: Nightly test failed for latest MIE solution
-
   test-ap-northeast-2:
     needs: deploy-ap-northeast-2
     runs-on: ubuntu-latest
@@ -421,26 +392,22 @@ jobs:
         uses: actions/checkout@v2.3.4
         with:
           ref: master
-
       - name: Initialize AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-northeast-2
-
       - name: Run integ tests
         run: |
           cd $GITHUB_WORKSPACE
           cd test/integ
           ./run_integ.sh
-
       - name: Run E2E tests
         run: |
           cd $GITHUB_WORKSPACE
           cd test/e2e
           ./run_e2e.sh
-
       - name: Test Failed
         if: ${{ failure() }}
         uses: nashmaniac/create-issue-action@v1.1
@@ -450,7 +417,9 @@ jobs:
           assignees: ianwow
           labels: bug
           body: Nightly test failed for latest MIE solution
-
+      - name: Delete stack
+        run: |
+          aws cloudformation delete-stack --stack-name $MIE_STACK_NAME
   deploy-ap-southeast-1:
     runs-on: ubuntu-latest
     steps:
@@ -458,14 +427,12 @@ jobs:
         uses: actions/checkout@v2.3.4
         with:
           ref: master
-
       - name: Initialize AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.BUILD_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.BUILD_AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-southeast-1
-
       - name: Run build script
         run: |
           cd deployment
@@ -483,7 +450,6 @@ jobs:
           assignees: ianwow
           labels: bug
           body: Nightly test failed for latest MIE solution
-
   test-ap-southeast-1:
     needs: deploy-ap-southeast-1
     runs-on: ubuntu-latest
@@ -495,26 +461,22 @@ jobs:
         uses: actions/checkout@v2.3.4
         with:
           ref: master
-
       - name: Initialize AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-southeast-1
-
       - name: Run integ tests
         run: |
           cd $GITHUB_WORKSPACE
           cd test/integ
           ./run_integ.sh
-
       - name: Run E2E tests
         run: |
           cd $GITHUB_WORKSPACE
           cd test/e2e
           ./run_e2e.sh
-
       - name: Test Failed
         if: ${{ failure() }}
         uses: nashmaniac/create-issue-action@v1.1
@@ -524,7 +486,9 @@ jobs:
           assignees: ianwow
           labels: bug
           body: Nightly test failed for latest MIE solution
-
+      - name: Delete stack
+        run: |
+          aws cloudformation delete-stack --stack-name $MIE_STACK_NAME
   deploy-ap-southeast-2:
     runs-on: ubuntu-latest
     steps:
@@ -532,14 +496,12 @@ jobs:
         uses: actions/checkout@v2.3.4
         with:
           ref: master
-
       - name: Initialize AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.BUILD_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.BUILD_AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-southeast-2
-
       - name: Run build script
         run: |
           cd deployment
@@ -557,7 +519,6 @@ jobs:
           assignees: ianwow
           labels: bug
           body: Nightly test failed for latest MIE solution
-
   test-ap-southeast-2:
     needs: deploy-ap-southeast-2
     runs-on: ubuntu-latest
@@ -569,26 +530,22 @@ jobs:
         uses: actions/checkout@v2.3.4
         with:
           ref: master
-
       - name: Initialize AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-southeast-2
-
       - name: Run integ tests
         run: |
           cd $GITHUB_WORKSPACE
           cd test/integ
           ./run_integ.sh
-
       - name: Run E2E tests
         run: |
           cd $GITHUB_WORKSPACE
           cd test/e2e
           ./run_e2e.sh
-
       - name: Test Failed
         if: ${{ failure() }}
         uses: nashmaniac/create-issue-action@v1.1
@@ -598,7 +555,9 @@ jobs:
           assignees: ianwow
           labels: bug
           body: Nightly test failed for latest MIE solution
-
+      - name: Delete stack
+        run: |
+          aws cloudformation delete-stack --stack-name $MIE_STACK_NAME
   deploy-eu-central-1:
     runs-on: ubuntu-latest
     steps:
@@ -606,14 +565,12 @@ jobs:
         uses: actions/checkout@v2.3.4
         with:
           ref: master
-
       - name: Initialize AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.BUILD_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.BUILD_AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-central-1
-
       - name: Run build script
         run: |
           cd deployment
@@ -631,7 +588,6 @@ jobs:
           assignees: ianwow
           labels: bug
           body: Nightly test failed for latest MIE solution
-
   test-eu-central-1:
     needs: deploy-eu-central-1
     runs-on: ubuntu-latest
@@ -643,26 +599,22 @@ jobs:
         uses: actions/checkout@v2.3.4
         with:
           ref: master
-
       - name: Initialize AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-central-1
-
       - name: Run integ tests
         run: |
           cd $GITHUB_WORKSPACE
           cd test/integ
           ./run_integ.sh
-
       - name: Run E2E tests
         run: |
           cd $GITHUB_WORKSPACE
           cd test/e2e
           ./run_e2e.sh
-
       - name: Test Failed
         if: ${{ failure() }}
         uses: nashmaniac/create-issue-action@v1.1
@@ -672,7 +624,9 @@ jobs:
           assignees: ianwow
           labels: bug
           body: Nightly test failed for latest MIE solution
-
+      - name: Delete stack
+        run: |
+          aws cloudformation delete-stack --stack-name $MIE_STACK_NAME
   deploy-eu-west-1:
     runs-on: ubuntu-latest
     steps:
@@ -680,14 +634,12 @@ jobs:
         uses: actions/checkout@v2.3.4
         with:
           ref: master
-
       - name: Initialize AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.BUILD_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.BUILD_AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-west-1
-
       - name: Run build script
         run: |
           cd deployment
@@ -705,7 +657,6 @@ jobs:
           assignees: ianwow
           labels: bug
           body: Nightly test failed for latest MIE solution
-
   test-eu-west-1:
     needs: deploy-eu-west-1
     runs-on: ubuntu-latest
@@ -717,26 +668,22 @@ jobs:
         uses: actions/checkout@v2.3.4
         with:
           ref: master
-
       - name: Initialize AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-west-1
-
       - name: Run integ tests
         run: |
           cd $GITHUB_WORKSPACE
           cd test/integ
           ./run_integ.sh
-
       - name: Run E2E tests
         run: |
           cd $GITHUB_WORKSPACE
           cd test/e2e
           ./run_e2e.sh
-
       - name: Test Failed
         if: ${{ failure() }}
         uses: nashmaniac/create-issue-action@v1.1
@@ -746,7 +693,9 @@ jobs:
           assignees: ianwow
           labels: bug
           body: Nightly test failed for latest MIE solution
-
+      - name: Delete stack
+        run: |
+          aws cloudformation delete-stack --stack-name $MIE_STACK_NAME
   deploy-eu-west-2:
     runs-on: ubuntu-latest
     steps:
@@ -754,14 +703,12 @@ jobs:
         uses: actions/checkout@v2.3.4
         with:
           ref: master
-
       - name: Initialize AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.BUILD_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.BUILD_AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-west-2
-
       - name: Run build script
         run: |
           cd deployment
@@ -779,7 +726,6 @@ jobs:
           assignees: ianwow
           labels: bug
           body: Nightly test failed for latest MIE solution
-
   test-eu-west-2:
     needs: deploy-eu-west-2
     runs-on: ubuntu-latest
@@ -791,26 +737,22 @@ jobs:
         uses: actions/checkout@v2.3.4
         with:
           ref: master
-
       - name: Initialize AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-west-2
-
       - name: Run integ tests
         run: |
           cd $GITHUB_WORKSPACE
           cd test/integ
           ./run_integ.sh
-
       - name: Run E2E tests
         run: |
           cd $GITHUB_WORKSPACE
           cd test/e2e
           ./run_e2e.sh
-
       - name: Test Failed
         if: ${{ failure() }}
         uses: nashmaniac/create-issue-action@v1.1
@@ -820,3 +762,6 @@ jobs:
           assignees: ianwow
           labels: bug
           body: Nightly test failed for latest MIE solution
+      - name: Delete stack
+        run: |
+          aws cloudformation delete-stack --stack-name $MIE_STACK_NAME

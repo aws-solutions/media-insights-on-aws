@@ -98,7 +98,7 @@ jobs:
       - name: Remove stack
         run: |
           aws cloudformation delete-stack --stack-name $MIE_STACK_NAME --region $MIE_REGION
-          aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
+          aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $MIE_REGION
       - name: Remove stack buckets
         run: |
           aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line --force; done; done
@@ -195,7 +195,7 @@ jobs:
       - name: Remove stack
         run: |
           aws cloudformation delete-stack --stack-name $MIE_STACK_NAME --region $MIE_REGION
-          aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
+          aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $MIE_REGION
       - name: Remove stack buckets
         run: |
           aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line --force; done; done
@@ -292,7 +292,7 @@ jobs:
       - name: Remove stack
         run: |
           aws cloudformation delete-stack --stack-name $MIE_STACK_NAME --region $MIE_REGION
-          aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
+          aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $MIE_REGION
       - name: Remove stack buckets
         run: |
           aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line --force; done; done
@@ -388,7 +388,7 @@ jobs:
       - name: Remove stack
         run: |
           aws cloudformation delete-stack --stack-name $MIE_STACK_NAME --region $MIE_REGION
-          aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
+          aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $MIE_REGION
       - name: Remove stack buckets
         run: |
           aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line --force; done; done
@@ -485,7 +485,7 @@ jobs:
       - name: Remove stack
         run: |
           aws cloudformation delete-stack --stack-name $MIE_STACK_NAME --region $MIE_REGION
-          aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
+          aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $MIE_REGION
       - name: Remove stack buckets
         run: |
           aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line --force; done; done
@@ -582,7 +582,7 @@ jobs:
       - name: Remove stack
         run: |
           aws cloudformation delete-stack --stack-name $MIE_STACK_NAME --region $MIE_REGION
-          aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
+          aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $MIE_REGION
       - name: Remove stack buckets
         run: |
           aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line --force; done; done
@@ -679,7 +679,7 @@ jobs:
       - name: Remove stack
         run: |
           aws cloudformation delete-stack --stack-name $MIE_STACK_NAME --region $MIE_REGION
-          aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
+          aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $MIE_REGION
       - name: Remove stack buckets
         run: |
           aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line --force; done; done
@@ -776,7 +776,7 @@ jobs:
       - name: Remove stack
         run: |
           aws cloudformation delete-stack --stack-name $MIE_STACK_NAME --region $MIE_REGION
-          aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
+          aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $MIE_REGION
       - name: Remove stack buckets
         run: |
           aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line --force; done; done
@@ -872,7 +872,7 @@ jobs:
       - name: Remove stack
         run: |
           aws cloudformation delete-stack --stack-name $MIE_STACK_NAME --region $MIE_REGION
-          aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
+          aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $MIE_REGION
       - name: Remove stack buckets
         run: |
           aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line --force; done; done
@@ -969,7 +969,7 @@ jobs:
       - name: Remove stack
         run: |
           aws cloudformation delete-stack --stack-name $MIE_STACK_NAME --region $MIE_REGION
-          aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
+          aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $MIE_REGION
       - name: Remove stack buckets
         run: |
           aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line --force; done; done
@@ -1066,7 +1066,7 @@ jobs:
       - name: Remove stack
         run: |
           aws cloudformation delete-stack --stack-name $MIE_STACK_NAME --region $MIE_REGION
-          aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $REGION
+          aws cloudformation wait stack-delete-complete --stack-name $MIE_STACK_NAME --region $MIE_REGION
       - name: Remove stack buckets
         run: |
           aws s3 ls | awk '{print $3}' | grep ${MIE_STACK_NAME} | while read line; do aws s3api get-bucket-location --bucket $line --query 'LocationConstraint' --output text | grep $REGION | while read line2; do aws s3 rb s3://$line --force; done; done

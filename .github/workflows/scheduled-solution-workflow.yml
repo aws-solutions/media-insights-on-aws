@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REGION: 'us-east-1'
-      MIE_STACK_NAME: 'miesol2'
+      MIE_STACK_NAME: 'miesol3'
       TEMPLATE: 'https://solutions-reference.s3.amazonaws.com/aws-media-insights-engine/latest/media-insights-stack.template'
     steps:
       - name: Initialize AWS credentials
@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REGION: 'us-east-1'
-      MIE_STACK_NAME: 'miesol2'
+      MIE_STACK_NAME: 'miesol3'
       TEMPLATE: 'https://solutions-reference.s3.amazonaws.com/aws-media-insights-engine/latest/media-insights-stack.template'
     steps:
       - name: Check out master branch
@@ -64,7 +64,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       MIE_REGION: 'us-east-1'
-      MIE_STACK_NAME: 'miesol2'
+      MIE_STACK_NAME: 'miesol3'
     steps:
       - name: Check out master branch
         uses: actions/checkout@v2.3.4
@@ -108,7 +108,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REGION: 'us-east-2'
-      MIE_STACK_NAME: 'miesol2'
+      MIE_STACK_NAME: 'miesol3'
       TEMPLATE: 'https://solutions-reference.s3.amazonaws.com/aws-media-insights-engine/latest/media-insights-stack.template'
     steps:
       - name: Initialize AWS credentials
@@ -129,7 +129,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REGION: 'us-east-2'
-      MIE_STACK_NAME: 'miesol2'
+      MIE_STACK_NAME: 'miesol3'
       TEMPLATE: 'https://solutions-reference.s3.amazonaws.com/aws-media-insights-engine/latest/media-insights-stack.template'
     steps:
       - name: Check out master branch
@@ -161,7 +161,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       MIE_REGION: 'us-east-2'
-      MIE_STACK_NAME: 'miesol2'
+      MIE_STACK_NAME: 'miesol3'
     steps:
       - name: Check out master branch
         uses: actions/checkout@v2.3.4
@@ -205,7 +205,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REGION: 'us-west-2'
-      MIE_STACK_NAME: 'miesol2'
+      MIE_STACK_NAME: 'miesol3'
       TEMPLATE: 'https://solutions-reference.s3.amazonaws.com/aws-media-insights-engine/latest/media-insights-stack.template'
     steps:
       - name: Initialize AWS credentials
@@ -226,7 +226,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REGION: 'us-west-2'
-      MIE_STACK_NAME: 'miesol2'
+      MIE_STACK_NAME: 'miesol3'
       TEMPLATE: 'https://solutions-reference.s3.amazonaws.com/aws-media-insights-engine/latest/media-insights-stack.template'
     steps:
       - name: Check out master branch
@@ -258,7 +258,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       MIE_REGION: 'us-west-2'
-      MIE_STACK_NAME: 'miesol2'
+      MIE_STACK_NAME: 'miesol3'
     steps:
       - name: Check out master branch
         uses: actions/checkout@v2.3.4
@@ -301,7 +301,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REGION: 'ap-south-1'
-      MIE_STACK_NAME: 'miesol2'
+      MIE_STACK_NAME: 'miesol3'
       TEMPLATE: 'https://solutions-reference.s3.amazonaws.com/aws-media-insights-engine/latest/media-insights-stack.template'
     steps:
       - name: Initialize AWS credentials
@@ -322,7 +322,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REGION: 'ap-south-1'
-      MIE_STACK_NAME: 'miesol2'
+      MIE_STACK_NAME: 'miesol3'
       TEMPLATE: 'https://solutions-reference.s3.amazonaws.com/aws-media-insights-engine/latest/media-insights-stack.template'
     steps:
       - name: Check out master branch
@@ -354,7 +354,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       MIE_REGION: 'ap-south-1'
-      MIE_STACK_NAME: 'miesol2'
+      MIE_STACK_NAME: 'miesol3'
     steps:
       - name: Check out master branch
         uses: actions/checkout@v2.3.4
@@ -398,7 +398,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REGION: 'ap-northeast-1'
-      MIE_STACK_NAME: 'miesol2'
+      MIE_STACK_NAME: 'miesol3'
       TEMPLATE: 'https://solutions-reference.s3.amazonaws.com/aws-media-insights-engine/latest/media-insights-stack.template'
     steps:
       - name: Initialize AWS credentials
@@ -419,7 +419,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REGION: 'ap-northeast-1'
-      MIE_STACK_NAME: 'miesol2'
+      MIE_STACK_NAME: 'miesol3'
       TEMPLATE: 'https://solutions-reference.s3.amazonaws.com/aws-media-insights-engine/latest/media-insights-stack.template'
     steps:
       - name: Check out master branch
@@ -451,7 +451,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       MIE_REGION: 'ap-northeast-1'
-      MIE_STACK_NAME: 'miesol2'
+      MIE_STACK_NAME: 'miesol3'
     steps:
       - name: Check out master branch
         uses: actions/checkout@v2.3.4
@@ -495,7 +495,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REGION: 'ap-northeast-2'
-      MIE_STACK_NAME: 'miesol2'
+      MIE_STACK_NAME: 'miesol3'
       TEMPLATE: 'https://solutions-reference.s3.amazonaws.com/aws-media-insights-engine/latest/media-insights-stack.template'
     steps:
       - name: Initialize AWS credentials
@@ -516,7 +516,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REGION: 'ap-northeast-2'
-      MIE_STACK_NAME: 'miesol2'
+      MIE_STACK_NAME: 'miesol3'
       TEMPLATE: 'https://solutions-reference.s3.amazonaws.com/aws-media-insights-engine/latest/media-insights-stack.template'
     steps:
       - name: Check out master branch
@@ -548,7 +548,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       MIE_REGION: 'ap-northeast-2'
-      MIE_STACK_NAME: 'miesol2'
+      MIE_STACK_NAME: 'miesol3'
     steps:
       - name: Check out master branch
         uses: actions/checkout@v2.3.4
@@ -592,7 +592,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REGION: 'ap-southeast-1'
-      MIE_STACK_NAME: 'miesol2'
+      MIE_STACK_NAME: 'miesol3'
       TEMPLATE: 'https://solutions-reference.s3.amazonaws.com/aws-media-insights-engine/latest/media-insights-stack.template'
     steps:
       - name: Initialize AWS credentials
@@ -613,7 +613,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REGION: 'ap-southeast-1'
-      MIE_STACK_NAME: 'miesol2'
+      MIE_STACK_NAME: 'miesol3'
       TEMPLATE: 'https://solutions-reference.s3.amazonaws.com/aws-media-insights-engine/latest/media-insights-stack.template'
     steps:
       - name: Check out master branch
@@ -645,7 +645,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       MIE_REGION: 'ap-southeast-1'
-      MIE_STACK_NAME: 'miesol2'
+      MIE_STACK_NAME: 'miesol3'
     steps:
       - name: Check out master branch
         uses: actions/checkout@v2.3.4
@@ -689,7 +689,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REGION: 'ap-southeast-2'
-      MIE_STACK_NAME: 'miesol2'
+      MIE_STACK_NAME: 'miesol3'
       TEMPLATE: 'https://solutions-reference.s3.amazonaws.com/aws-media-insights-engine/latest/media-insights-stack.template'
     steps:
       - name: Initialize AWS credentials
@@ -710,7 +710,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REGION: 'ap-southeast-2'
-      MIE_STACK_NAME: 'miesol2'
+      MIE_STACK_NAME: 'miesol3'
       TEMPLATE: 'https://solutions-reference.s3.amazonaws.com/aws-media-insights-engine/latest/media-insights-stack.template'
     steps:
       - name: Check out master branch
@@ -742,7 +742,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       MIE_REGION: 'ap-southeast-2'
-      MIE_STACK_NAME: 'miesol2'
+      MIE_STACK_NAME: 'miesol3'
     steps:
       - name: Check out master branch
         uses: actions/checkout@v2.3.4
@@ -785,7 +785,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REGION: 'eu-central-1'
-      MIE_STACK_NAME: 'miesol2'
+      MIE_STACK_NAME: 'miesol3'
       TEMPLATE: 'https://solutions-reference.s3.amazonaws.com/aws-media-insights-engine/latest/media-insights-stack.template'
     steps:
       - name: Initialize AWS credentials
@@ -806,7 +806,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REGION: 'eu-central-1'
-      MIE_STACK_NAME: 'miesol2'
+      MIE_STACK_NAME: 'miesol3'
       TEMPLATE: 'https://solutions-reference.s3.amazonaws.com/aws-media-insights-engine/latest/media-insights-stack.template'
     steps:
       - name: Check out master branch
@@ -838,7 +838,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       MIE_REGION: 'eu-central-1'
-      MIE_STACK_NAME: 'miesol2'
+      MIE_STACK_NAME: 'miesol3'
     steps:
       - name: Check out master branch
         uses: actions/checkout@v2.3.4
@@ -882,7 +882,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REGION: 'eu-west-1'
-      MIE_STACK_NAME: 'miesol2'
+      MIE_STACK_NAME: 'miesol3'
       TEMPLATE: 'https://solutions-reference.s3.amazonaws.com/aws-media-insights-engine/latest/media-insights-stack.template'
     steps:
       - name: Initialize AWS credentials
@@ -903,7 +903,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REGION: 'eu-west-1'
-      MIE_STACK_NAME: 'miesol2'
+      MIE_STACK_NAME: 'miesol3'
       TEMPLATE: 'https://solutions-reference.s3.amazonaws.com/aws-media-insights-engine/latest/media-insights-stack.template'
     steps:
       - name: Check out master branch
@@ -935,7 +935,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       MIE_REGION: 'eu-west-1'
-      MIE_STACK_NAME: 'miesol2'
+      MIE_STACK_NAME: 'miesol3'
     steps:
       - name: Check out master branch
         uses: actions/checkout@v2.3.4
@@ -979,7 +979,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REGION: 'eu-west-2'
-      MIE_STACK_NAME: 'miesol2'
+      MIE_STACK_NAME: 'miesol3'
       TEMPLATE: 'https://solutions-reference.s3.amazonaws.com/aws-media-insights-engine/latest/media-insights-stack.template'
     steps:
       - name: Initialize AWS credentials
@@ -1000,7 +1000,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REGION: 'eu-west-2'
-      MIE_STACK_NAME: 'miesol2'
+      MIE_STACK_NAME: 'miesol3'
       TEMPLATE: 'https://solutions-reference.s3.amazonaws.com/aws-media-insights-engine/latest/media-insights-stack.template'
     steps:
       - name: Check out master branch
@@ -1032,7 +1032,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       MIE_REGION: 'eu-west-2'
-      MIE_STACK_NAME: 'miesol2'
+      MIE_STACK_NAME: 'miesol3'
     steps:
       - name: Check out master branch
         uses: actions/checkout@v2.3.4

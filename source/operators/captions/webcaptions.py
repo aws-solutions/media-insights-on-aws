@@ -879,9 +879,6 @@ def start_polly_webcaptions (event, context):
                     caption["PollyStatus"] = "not supported"
                 else:
                     raise
-            # except polly.Client.exceptions.TextLengthExceededException as e:
-            #     caption["PollyMessage"] = "WARNING: Polly.Client.exceptions.TextLengthExceededException"
-            #     caption["PollyStatus"] = "not supported"
             except Exception as e:
                 operator_object.update_workflow_status("Error")
                 operator_object.add_workflow_metadata(PollyCollectionError="Unable to get response from polly: {e}".format(e=str(e)))

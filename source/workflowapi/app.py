@@ -2775,7 +2775,7 @@ def get_parallel_data():
     parallel_data_name = json.loads(app.current_request.raw_body.decode())['parallel_data_name']
     response = translate_client.get_parallel_data(Name=parallel_data_name, parallel_dataDataFormat='CSV')
     # Remove response metadata since we don't need it
-    if 'RespnseMetadata' in response:
+    if 'ResponseMetadata' in response:
         del response['ResponseMetadata']
     # Convert time field to a format that is JSON serializable
     response['TerminologyProperties']['CreatedAt'] = response['TerminologyProperties']['CreatedAt'].isoformat()

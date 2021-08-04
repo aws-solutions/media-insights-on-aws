@@ -2729,7 +2729,7 @@ def create_terminology():
 
     Returns:
         This is a proxy for boto3 create_vocabulary and returns the output from that SDK method.
-        See `the boto3 documentation for details <htatps://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/translate.html#TranslateService.Client.create_terminology>`_
+        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/translate.html#TranslateService.Client.create_terminology>`_
 
     Raises:
         See the boto3 documentation for details

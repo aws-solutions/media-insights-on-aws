@@ -314,7 +314,6 @@ def parallel_data(workflow_api, stack_resources, testing_env_variables):
     while processing:
         body = {'parallel_data_name': testing_env_variables['SAMPLE_PARALLEL_DATA']}
         get_parallel_data_response = workflow_api.get_parallel_data(body)
-        print(get_parallel_data_response)
 
         assert get_parallel_data_response.status_code == 200
 

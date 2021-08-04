@@ -1,4 +1,4 @@
-# Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 ###############################################################################
@@ -48,7 +48,6 @@ def test_parallel_data(workflow_api, testing_env_variables, parallel_data):
 def test_terminology(workflow_api, testing_env_variables, terminology):
     workflow_api = workflow_api()
 
-    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     
     # Create terminology is done in terminology fixture
 

@@ -22,8 +22,6 @@ import json
 
 def test_parallel_data(workflow_api, testing_env_variables, parallel_data):
     workflow_api = workflow_api()
-
-    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     
     # Create parallel data is done in parallel_data fixture
 
@@ -47,7 +45,6 @@ def test_parallel_data(workflow_api, testing_env_variables, parallel_data):
 
 def test_terminology(workflow_api, testing_env_variables, terminology):
     workflow_api = workflow_api()
-
     
     # Create terminology is done in terminology fixture
 
@@ -72,7 +69,7 @@ def test_terminology(workflow_api, testing_env_variables, terminology):
     response = download_terminology_response.json()
     assert "STEEN" in json.dumps(response)
 
-    # Delete parallel data is done in terminology fixture
+    # Delete terminology is done in terminology fixture
     
 
 

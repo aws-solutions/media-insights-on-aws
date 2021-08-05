@@ -207,10 +207,12 @@
                 {
                   "Effect": "Allow",
                   "Action": [
+                    "translate:CreateTerminology",
                     "translate:DeleteTerminology",
                     "translate:GetTerminology",
                     "translate:ImportTerminology",
                     "translate:ListTerminologies",
+                    "translate:CreateParallelData",
                     "translate:DeleteParallelData",
                     "translate:GetParallelData",
                     "translate:ImportParallelData",

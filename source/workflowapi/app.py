@@ -2773,13 +2773,11 @@ def get_parallel_data():
     print('get_parallel_data request: '+app.current_request.raw_body.decode())
     translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
     parallel_data_name = json.loads(app.current_request.raw_body.decode())['parallel_data_name']
-    response = translate_client.get_parallel_data(Name=parallel_data_name, parallel_dataDataFormat='CSV')
-    # Remove response metadata since we don't need it
-    if 'RespnseMetadata' in response:
-        del response['ResponseMetadata']
+    response = translate_client.get_parallel_data(Name=parallel_data_name)
+    
     # Convert time field to a format that is JSON serializable
-    response['TerminologyProperties']['CreatedAt'] = response['TerminologyProperties']['CreatedAt'].isoformat()
-    response['TerminologyProperties']['LastUpdatedAt'] = response['TerminologyProperties']['LastUpdatedAt'].isoformat()
+    response['ParallelDataProperties']['CreatedAt'] = response['ParallelDataProperties']['CreatedAt'].isoformat()
+    response['ParallelDataProperties']['LastUpdatedAt'] = response['ParallelDataProperties']['LastUpdatedAt'].isoformat()
     return response
 
 
@@ -2797,7 +2795,7 @@ def download_parallel_data():
 
 
     Returns:
-        A string contining the CSV formatted Amazon Transcribe parallel_data
+        A pre-signed url for the the CSV formatted Amazon Transcribe parallel_data
 
         .. code-block:: python
 
@@ -2813,7 +2811,7 @@ def download_parallel_data():
     print('download_parallel_data request: '+app.current_request.raw_body.decode())
     translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
     parallel_data_name = json.loads(app.current_request.raw_body.decode())['parallel_data_name']
-    url = translate_client.get_parallel_data(Name=parallel_data_name, ParallelDataFormat='CSV')['ParallelDataLocation']['Location']
+    url = translate_client.get_parallel_data(Name=parallel_data_name)['DataLocation']['Location']
     import urllib.request
     parallel_data_csv = urllib.request.urlopen(url).read().decode("utf-8")
     return {"parallel_data_csv": parallel_data_csv}
@@ -2888,7 +2886,7 @@ def create_parallel_data():
 
         {
             'parallel_data_name'='string',
-            'parallel_data_csv='string'
+            'parallel_data_s3uri='string'
         }
 
 
@@ -2904,14 +2902,12 @@ def create_parallel_data():
     print('create_parallel_data request: '+app.current_request.raw_body.decode())
     translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
     parallel_data_name = json.loads(app.current_request.raw_body.decode())['parallel_data_name']
-    parallel_data_csv = json.loads(app.current_request.raw_body.decode())['parallel_data_csv']
-    response = translate_client.import_parallel_data(
+    parallel_data_s3uri = json.loads(app.current_request.raw_body.decode())['parallel_data_s3uri']
+    response = translate_client.create_parallel_data(
         Name=parallel_data_name,
-        MergeStrategy='OVERWRITE',
-        ParallelData={'File': parallel_data_csv, 'Format':'CSV'}
+        ParallelDataConfig={'S3Uri': parallel_data_s3uri, 'Format':'CSV'}
     )
-    response['ParallelDataProperties']['CreatedAt'] = response['ParallelDataProperties']['CreatedAt'].isoformat()
-    response['ParallelDataProperties']['LastUpdatedAt'] = response['ParallelDataProperties']['LastUpdatedAt'].isoformat()
+    
     return response
 
 # ================================================================================================

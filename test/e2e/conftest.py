@@ -72,7 +72,7 @@ def stack_resources(testing_env_variables):
     for output in outputs:
         resources[output["OutputKey"]] = output["OutputValue"]
 
-    expected_resources = ['WorkflowApiRestID', 'DataplaneBucket', 'WorkflowCustomResourceArn', 
+    expected_resources = ['WorkflowApiRestID', 'DataplaneBucket', 'WorkflowCustomResourceArn', 'TestStack',
                           'MediaInsightsEnginePython38Layer', 'AnalyticsStreamArn', 'DataplaneApiEndpoint',
                           'WorkflowApiEndpoint', 'DataplaneApiRestID', 'OperatorLibraryStack', 'PollyOperation',
                           'ContentModerationOperationImage', 'GenericDataLookupOperation',

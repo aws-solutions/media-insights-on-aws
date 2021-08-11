@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [3.0.2] - 2021-08-18
+
+### CI/CD Automation:
+
+* Allow parent stacks to specify both the solution identifier and solution version for the botoconfig string.
+
+## [3.0.1] - 2021-07-22
+
+### Documentation:
+
+* Sphinx generated API documentation copied to the Implementation Guide (#532)
+
+### Security:
+
+* Validate SSL certificates when making calls to API Gateway (#525)
+* Update Python modules known to have possible security implications (#526)
+* Grant read permission to the dataplane bucket for Translate and Transcribe operators so they can access custom vocabularies, custom terminologies, etc. (#531)
+
+### CI/CD Automation:
+
+* Add a one-click deploy option for the AWS region in eu-west-1 Ireland (#536)
+
 ## [3.0.0] - 2021-06-25
 
 ### New:

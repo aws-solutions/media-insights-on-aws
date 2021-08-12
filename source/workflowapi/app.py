@@ -35,7 +35,7 @@ APP_NAME = "workflowapi"
 API_STAGE = "dev"
 app = Chalice(app_name=APP_NAME)
 app.debug = True
-API_VERSION = "2.0.0"
+API_VERSION = "3.0.0"
 FRAMEWORK_VERSION = os.environ['FRAMEWORK_VERSION']
 
 
@@ -154,7 +154,7 @@ def version():
 
     .. code-block:: python
 
-        {"ApiVersion": "vx.x.x", "FrameworkVersion": "vx.x.x"}
+        {"ApiVersion": "x.x.x", "FrameworkVersion": "vx.x.x"}
     """
     versions = {"ApiVersion": API_VERSION, "FrameworkVersion": FRAMEWORK_VERSION}
     return versions
@@ -2774,7 +2774,7 @@ def get_parallel_data():
     translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
     parallel_data_name = json.loads(app.current_request.raw_body.decode())['parallel_data_name']
     response = translate_client.get_parallel_data(Name=parallel_data_name)
-    
+
     # Convert time field to a format that is JSON serializable
     response['ParallelDataProperties']['CreatedAt'] = response['ParallelDataProperties']['CreatedAt'].isoformat()
     response['ParallelDataProperties']['LastUpdatedAt'] = response['ParallelDataProperties']['LastUpdatedAt'].isoformat()
@@ -2907,7 +2907,7 @@ def create_parallel_data():
         Name=parallel_data_name,
         ParallelDataConfig={'S3Uri': parallel_data_s3uri, 'Format':'CSV'}
     )
-    
+
     return response
 
 # ================================================================================================

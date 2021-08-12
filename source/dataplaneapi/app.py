@@ -52,7 +52,7 @@ logger.addHandler(handler)
 
 app_name = 'dataplaneapi'
 app = Chalice(app_name=app_name)
-api_version = "1.0.0"
+api_version = "3.0.0"
 framework_version = os.environ['FRAMEWORK_VERSION']
 
 # DDB resources
@@ -208,7 +208,7 @@ def version():
 
     .. code-block:: python
 
-        {"ApiVersion": "vx.x.x", "FrameworkVersion": "vx.x.x"}
+        {"ApiVersion": "x.x.x", "FrameworkVersion": "vx.x.x"}
     """
     versions = {"ApiVersion": api_version, "FrameworkVersion": framework_version}
     return versions

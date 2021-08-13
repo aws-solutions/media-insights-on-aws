@@ -420,12 +420,12 @@ jobs:
         with:
           branch: staging/v${{ github.event.inputs.version }}
           title: Version ${{ github.event.inputs.version }} Automated Release PR
-          reviewers: brandold
+          reviewers: ianwow
           delete-branch: true
           body: |
             PR Auto-generated from Github Actions release workflow.
             Review test results here:
-            [1]: https://github.com/brandold/aws-media-insights-engine/actions/runs/${{ github.run_id }}
+            [1]: https://github.com/awslabs/aws-media-insights-engine/actions/runs/${{ github.run_id }}
 
 
 
@@ -449,7 +449,7 @@ jobs:
           branch: release/v${{ github.event.inputs.version }}
           base: development
           title: Merge automated release v${{ github.event.inputs.version }} changes into development
-          reviewers: brandold
+          reviewers: ianwow
 
 
 

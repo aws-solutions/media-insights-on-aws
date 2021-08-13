@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: (SO0163) - aws-media-insights-engine. This is the base AWS CloudFormation template that provisions Media Insights Engine services and provides parameters for user configurable MIE settings.
+Description: (SO0163) - aws-media-insights-engine %%VERSION%%. This is the base AWS CloudFormation template that provisions Media Insights Engine services and provides parameters for user configurable MIE settings.
 
 Parameters:
   DeployTestResources:
@@ -36,6 +36,10 @@ Parameters:
     Description: (Optional) AWS Solution Id used for reporting purposes
     Type: String
     Default: SO0163
+  SolutionVersion:
+    Description: (Optional) AWS Solution version used for reporting purposes
+    Type: String
+    Default: %%VERSION%%
   SendAnonymousData:
     Description: (Optional) Send anonymous data about MIE performance to AWS to help improve the quality of this solution.
     Type: String
@@ -1110,7 +1114,7 @@ Resources:
           WORKFLOW_TABLE_NAME: !Ref WorkflowTable
           SYSTEM_TABLE_NAME: !Ref SystemTable
           DEFAULT_MAX_CONCURRENT_WORKFLOWS: !Ref MaxConcurrentWorkflows
-          botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"}']]
+          botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/', !Ref "SolutionVersion", '"}']]
       Handler: app.workflow_scheduler_lambda
       TracingConfig:
           Mode: !If [EnableTraceOnEntryPoints, "Active", "PassThrough"]
@@ -1243,7 +1247,7 @@ Resources:
     Properties:
       Environment:
         Variables:
-          botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"}']]
+          botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/', !Ref "SolutionVersion", '"}']]
           STAGE_EXECUTION_QUEUE_URL: !Ref StageExecutionQueue
           STAGE_TABLE_NAME: !Ref StageTable
           OPERATION_TABLE_NAME: !Ref OperationTable
@@ -1292,7 +1296,7 @@ Resources:
     Properties:
       Environment:
         Variables:
-          botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"}']]
+          botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/', !Ref "SolutionVersion", '"}']]
           STAGE_EXECUTION_QUEUE_URL: !Ref StageExecutionQueue
           STAGE_TABLE_NAME: !Ref StageTable
           OPERATION_TABLE_NAME: !Ref OperationTable
@@ -1368,7 +1372,7 @@ Resources:
       FunctionName: !Sub "${AWS::StackName}-start-wait-operation"
       Environment:
         Variables:
-          botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"}']]
+          botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/', !Ref "SolutionVersion", '"}']]
           STAGE_EXECUTION_QUEUE_URL: !Ref StageExecutionQueue
           STAGE_TABLE_NAME: !Ref StageTable
           OPERATION_TABLE_NAME: !Ref OperationTable
@@ -1411,7 +1415,7 @@ Resources:
       FunctionName: !Sub "${AWS::StackName}-check-wait-operation"
       Environment:
         Variables:
-          botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"}']]
+          botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/', !Ref "SolutionVersion", '"}']]
           STAGE_EXECUTION_QUEUE_URL: !Ref StageExecutionQueue
           STAGE_TABLE_NAME: !Ref StageTable
           OPERATION_TABLE_NAME: !Ref OperationTable
@@ -1456,7 +1460,7 @@ Resources:
       Environment:
         Variables:
           TOPIC_ARN: !Ref WorkflowExecutionEventTopic
-          botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"}']]
+          botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/', !Ref "SolutionVersion", '"}']]
       Code:
         S3Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
         S3Key:
@@ -1501,7 +1505,7 @@ Resources:
           ],
         ]
       Parameters:
-        botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"}']]
+        botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/', !Ref "SolutionVersion", '"}']]
         DataplaneTableName: !Ref DataplaneTable
         ExternalBucketArn: !Ref ExternalBucketArn
         DataplaneBucketName: !Ref Dataplane
@@ -1542,7 +1546,7 @@ Resources:
             - DataplaneTable
             - StreamArn
         DynamoTableArn: !GetAtt DataplaneTable.Arn
-        botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"}']]
+        botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/', !Ref "SolutionVersion", '"}']]
 
   # Workflow creation and execution API
   MediaInsightsWorkflowApi:
@@ -1560,7 +1564,7 @@ Resources:
           ],
         ]
       Parameters:
-        botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"}']]
+        botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/', !Ref "SolutionVersion", '"}']]
         ShortUUID: !GetAtt GetShortUUID.Data
         StageExecutionQueueUrl: !Ref StageExecutionQueue
         StageExecutionRole: !GetAtt StepFunctionRole.Arn
@@ -1637,7 +1641,7 @@ Resources:
         MediaInsightsEnginePython36Layer: !Ref MediaInsightsEnginePython36Layer
         StartWaitOperationLambda: !GetAtt StartWaitOperationLambda.Arn
         CheckWaitOperationLambda: !GetAtt CheckWaitOperationLambda.Arn
-        Boto3UserAgent: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/%%VERSION%%"}']]
+        Boto3UserAgent: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/', !Ref "SolutionVersion", '"}']]
 
   TestResources:
     Condition: DeployTestResourcesCondition

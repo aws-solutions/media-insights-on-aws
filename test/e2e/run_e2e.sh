@@ -74,6 +74,8 @@ export TEST_TEXT="sample-text.txt"
 export TEST_JSON="sample-data.json"
 export TEST_FACE_IMAGE="sample-face.jpg"
 export TEST_FACE_COLLECTION_ID="temporary_face_collection"
+export TEST_PARALLEL_DATA="sampleparalleldata"
+export TEST_TERMINOLOGY="sampleterminology"
 
 # Retrieve exports from mie stack
 #export BUCKET_NAME=`aws cloudformation list-stack-resources --profile default --stack-name $MIE_STACK_NAME --region $REGION --output text --query 'StackResourceSummaries[?LogicalResourceId == \`Dataplane\`]'.PhysicalResourceId`

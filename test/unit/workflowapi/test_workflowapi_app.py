@@ -10,7 +10,7 @@ ddb_resource_stub.add_response(
 '''
 sample_workflow = {
     "ApiVersion": {
-        "S": "2.0.0"
+        "S": "3.0.0"
     },
     "Created": {
         "S": "1605822398.292371"
@@ -93,7 +93,7 @@ sample_workflow = {
             "defaultAudioStage": {
                 "M": {
                     "ApiVersion": {
-                        "S": "2.0.0"
+                        "S": "3.0.0"
                     },
                     "Configuration": {
                         "M": {
@@ -148,7 +148,7 @@ sample_workflow = {
             "defaultPrelimVideoStage": {
                 "M": {
                     "ApiVersion": {
-                        "S": "2.0.0"
+                        "S": "3.0.0"
                     },
                     "Configuration": {
                         "M": {
@@ -213,7 +213,7 @@ sample_workflow = {
             "defaultTextStage": {
                 "M": {
                     "ApiVersion": {
-                        "S": "2.0.0"
+                        "S": "3.0.0"
                     },
                     "Configuration": {
                         "M": {
@@ -297,7 +297,7 @@ sample_workflow = {
             "defaultTextSynthesisStage": {
                 "M": {
                     "ApiVersion": {
-                        "S": "2.0.0"
+                        "S": "3.0.0"
                     },
                     "Configuration": {
                         "M": {
@@ -349,7 +349,7 @@ sample_workflow = {
             "defaultVideoStage": {
                 "M": {
                     "ApiVersion": {
-                        "S": "2.0.0"
+                        "S": "3.0.0"
                     },
                     "Configuration": {
                         "M": {
@@ -572,9 +572,9 @@ sample_workflow_execution = {
     'Version': 'v0',
     'Created': botocore.stub.ANY,
     'ResourceType': 'WORKFLOW_EXECUTION',
-    'ApiVersion': '2.0.0',
+    'ApiVersion': '3.0.0',
     'Workflow': {
-        'ApiVersion': '2.0.0',
+        'ApiVersion': '3.0.0',
         'Created': '1605822398.292371',
         'Id': '90c25511-72e4-4220-885a-d36e5dbb0c88',
         'Name': 'CasVideoWorkflow',
@@ -587,7 +587,7 @@ sample_workflow_execution = {
         'ServiceToken': 'arn:aws:lambda:us-west-2:123456789:function:mie-MediaInsightsWorkflowAp-WorkflowCustomResource-1234ABCD',
         'Stages': {
             'defaultAudioStage': {
-                'ApiVersion': '2.0.0',
+                'ApiVersion': '3.0.0',
                 'Configuration': {
                     'Transcribe': {
                         'Enabled': True,
@@ -611,7 +611,7 @@ sample_workflow_execution = {
                 'MetaData': {}
             },
             'defaultPrelimVideoStage': {
-                'ApiVersion': '2.0.0',
+                'ApiVersion': '3.0.0',
                 'Configuration': {
                     'Mediainfo': {
                         'Enabled': True,
@@ -647,7 +647,7 @@ sample_workflow_execution = {
                 }
             },
             'defaultTextStage': {
-                'ApiVersion': '2.0.0',
+                'ApiVersion': '3.0.0',
                 'Configuration': {
                     'ComprehendEntities': {
                         'Enabled': True,
@@ -680,7 +680,7 @@ sample_workflow_execution = {
                 'MetaData': {}
             },
             'defaultTextSynthesisStage': {
-                'ApiVersion': '2.0.0',
+                'ApiVersion': '3.0.0',
                 'Configuration': {
                     'Polly': {
                         'Enabled': True,
@@ -703,7 +703,7 @@ sample_workflow_execution = {
                 'MetaData': {}
             },
             'defaultVideoStage': {
-                'ApiVersion': '2.0.0',
+                'ApiVersion': '3.0.0',
                 'Configuration': {
                     'celebrityRecognition': {
                         'Enabled': True,
@@ -820,7 +820,7 @@ sample_workflow_status_by_id = {
   "Workflow": {
     "M": {
       "ApiVersion": {
-        "S": "2.0.0"
+        "S": "3.0.0"
       },
       "Created": {
         "S": "1605223691.751675"
@@ -894,7 +894,7 @@ sample_workflow_status_by_id = {
                 "S": "Complete"
               },
               "ApiVersion": {
-                "S": "2.0.0"
+                "S": "3.0.0"
               },
               "Configuration": {
                 "M": {
@@ -1165,7 +1165,7 @@ sample_workflow_status_by_id = {
                 "S": "Complete"
               },
               "ApiVersion": {
-                "S": "2.0.0"
+                "S": "3.0.0"
               },
               "Configuration": {
                 "M": {
@@ -1439,7 +1439,7 @@ sample_workflow_status_by_id = {
                 "S": "Complete"
               },
               "ApiVersion": {
-                "S": "2.0.0"
+                "S": "3.0.0"
               },
               "Configuration": {
                 "M": {
@@ -2014,7 +2014,7 @@ sample_workflow_status_by_id = {
                 "S": "Complete"
               },
               "ApiVersion": {
-                "S": "2.0.0"
+                "S": "3.0.0"
               },
               "Configuration": {
                 "M": {
@@ -2619,7 +2619,7 @@ sample_workflow_status_by_id = {
     }
   },
   "ApiVersion": {
-    "S": "2.0.0"
+    "S": "3.0.0"
   },
   "Id": {
     "S": "0c6c202a-dd21-4791-b7b1-28c0ab60575d"

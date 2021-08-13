@@ -4,6 +4,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [3.0.2] - 2021-08-18
+
+### New:
+
+* Add new e2e tests to validate CRUD functions in the workflow API for parallel data  and terminologies in Amazon Translate. (#543)
+
+### CI/CD Automation:
+
+* Allow parent stacks to specify both the solution version for the botoconfig string. This, combined with the existing functionality to specify the solution id, means that applications which use MIE can correctly describe themselves to the internal AWS mechanisms that count solution deployments. (#574)
+
+### Fixed:
+
+* When processing long videos, workflows may fail if the video transcript exceeds the max length allowed by Amazon Polly. This behavior was changed so that worklfows will skip the Polly operation and output a warning if the text is too long (#543)
+
+* The API version reported by the /version resource under the data plane and control plane APIs was incorrectly defined as version 2.0.0. It is now correctly defined as version 3.0.0. (#576)
+
+## [3.0.1] - 2021-07-22
+
+### Documentation:
+
+* Sphinx generated API documentation copied to the Implementation Guide (#532)
+
+### Security:
+
+* Validate SSL certificates when making calls to API Gateway (#525)
+* Update Python modules known to have possible security implications (#526)
+* Grant read permission to the dataplane bucket for Translate and Transcribe operators so they can access custom vocabularies, custom terminologies, etc. (#531)
+
+### CI/CD Automation:
+
+* Add a one-click deploy option for the AWS region in eu-west-1 Ireland (#536)
+
 ## [3.0.0] - 2021-06-25
 
 ### New:

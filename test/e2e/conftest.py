@@ -29,6 +29,7 @@ def testing_env_variables():
             'SAMPLE_JSON': os.environ['TEST_JSON'],
             'SAMPLE_FACE_IMAGE': os.environ['TEST_FACE_IMAGE'],
             'SAMPLE_PARALLEL_DATA': os.environ['TEST_PARALLEL_DATA'],
+            'PARALLEL_DATA_AVAILABLE_REGIONS': ['us-west-2', 'us-east-1', 'eu-west-1'],
             'SAMPLE_TERMINOLOGY': os.environ['TEST_TERMINOLOGY'],
             'REGION': os.environ['MIE_REGION'],
             'MIE_STACK_NAME': os.environ['MIE_STACK_NAME'],
@@ -291,54 +292,58 @@ def dataplane_api(stack_resources, testing_env_variables):
 
 @pytest.fixture(scope='session')
 def parallel_data(workflow_api, stack_resources, testing_env_variables):
-    workflow_api = workflow_api()
-    parallel_data_s3_uri = 's3://' + \
-        stack_resources['DataplaneBucket'] + '/' + 'upload/' +\
-        testing_env_variables['SAMPLE_PARALLEL_DATA']
+    # Skip parallel data tests for regions where Amazon Translate
+    # does not provide parallel data APIs.
+    if testing_env_variables['REGION'] in testing_env_variables['PARALLEL_DATA_AVAILABLE_REGIONS']:
 
-    create_parallel_data_body = {
-        "parallel_data_name": testing_env_variables['SAMPLE_PARALLEL_DATA'],
-        "parallel_data_s3uri": parallel_data_s3_uri
-    }
+        workflow_api = workflow_api()
+        parallel_data_s3_uri = 's3://' + \
+            stack_resources['DataplaneBucket'] + '/' + 'upload/' +\
+            testing_env_variables['SAMPLE_PARALLEL_DATA']
 
-    create_parallel_data_response = workflow_api.create_parallel_data(
-        create_parallel_data_body)
-    assert create_parallel_data_response.status_code == 200
+        create_parallel_data_body = {
+            "parallel_data_name": testing_env_variables['SAMPLE_PARALLEL_DATA'],
+            "parallel_data_s3uri": parallel_data_s3_uri
+        }
 
-    time.sleep(5)
+        create_parallel_data_response = workflow_api.create_parallel_data(
+            create_parallel_data_body)
+        assert create_parallel_data_response.status_code == 200
 
-    # wait for parallel_data to complete
+        time.sleep(5)
 
-    processing = True
+        # wait for parallel_data to complete
 
-    while processing:
-        body = {'parallel_data_name': testing_env_variables['SAMPLE_PARALLEL_DATA']}
-        get_parallel_data_response = workflow_api.get_parallel_data(body)
+        processing = True
 
-        assert get_parallel_data_response.status_code == 200
+        while processing:
+            body = {'parallel_data_name': testing_env_variables['SAMPLE_PARALLEL_DATA']}
+            get_parallel_data_response = workflow_api.get_parallel_data(body)
 
-        response = get_parallel_data_response.json()
+            assert get_parallel_data_response.status_code == 200
 
-        status = response["ParallelDataProperties"]["Status"]
+            response = get_parallel_data_response.json()
 
-        allowed_statuses = ['CREATING','UPDATING','ACTIVE']
+            status = response["ParallelDataProperties"]["Status"]
 
-        assert status in allowed_statuses
+            allowed_statuses = ['CREATING','UPDATING','ACTIVE']
 
-        if status == "ACTIVE":
-            processing = False
-        else:
-            print('Sleeping for 30 seconds before retrying')
-            time.sleep(30)
+            assert status in allowed_statuses
 
-    yield create_parallel_data_body
-    
-    delete_parallel_data_body = {
-        "parallel_data_name": testing_env_variables['SAMPLE_PARALLEL_DATA']
-    }
-    delete_parallel_data_response = workflow_api.delete_parallel_data(
-        delete_parallel_data_body)
-    assert delete_parallel_data_response.status_code == 200
+            if status == "ACTIVE":
+                processing = False
+            else:
+                print('Sleeping for 30 seconds before retrying')
+                time.sleep(30)
+
+        yield create_parallel_data_body
+
+        delete_parallel_data_body = {
+            "parallel_data_name": testing_env_variables['SAMPLE_PARALLEL_DATA']
+        }
+        delete_parallel_data_response = workflow_api.delete_parallel_data(
+            delete_parallel_data_body)
+        assert delete_parallel_data_response.status_code == 200
 
 @pytest.fixture(scope='session')
 def terminology(workflow_api, dataplane_api, stack_resources, testing_env_variables):

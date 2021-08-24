@@ -2643,8 +2643,14 @@ def list_language_models():
     print('list_language_models request: '+app.current_request.raw_body.decode())
     transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
     response = transcribe_client.list_language_models()
+    models = response['Models']
+    while ('NextToken' in response):
+        response = transcribe_client.list_language_models(MaxResults=100, NextToken=response['NextToken'])
+        models = models + response['Models']
     # Convert time field to a format that is JSON serializable
-    response['LastModifiedTime'] = response['LastModifiedTime'].isoformat()
+    for item in models:
+        item['CreateTime'] = item['CreateTime'].isoformat()
+        item['LastModifiedTime'] = item['LastModifiedTime'].isoformat()
     return response
 
 

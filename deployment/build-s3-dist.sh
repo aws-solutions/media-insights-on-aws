@@ -28,7 +28,7 @@ trap cleanup_and_die SIGINT SIGTERM ERR
 usage() {
   msg "$msg"
   cat <<EOF
-Usage: $(basename "${BASH_SOURCE[0]}") [-h] [-v] [--no-layer] --template-bucket TEMPLATE_BUCKET --code-bucket CODE_BUCKET --version VERSION --region REGION
+Usage: $(basename "${BASH_SOURCE[0]}") [-h] [-v] [--profile PROFILE] [--no-layer] --template-bucket TEMPLATE_BUCKET --code-bucket CODE_BUCKET --version VERSION --region REGION
 
 Available options:
 
@@ -39,6 +39,7 @@ Available options:
 --code-bucket     S3 bucket to put Lambda code packages
 --version         Arbitrary string indicating build version
 --region          AWS Region, formatted like us-west-2
+--profile         AWS profile for CLI commands (optional)
 EOF
   exit 1
 }
@@ -98,6 +99,10 @@ parse_params() {
       region="${2}"
       shift
       ;;
+    --profile)
+      profile="${2}"
+      shift
+      ;;
     -?*) die "Unknown option: $1" ;;
     *) break ;;
     esac
@@ -121,6 +126,7 @@ msg "- Template bucket: ${global_bucket}"
 msg "- Code bucket: ${regional_bucket}-${region}"
 msg "- Version: ${version}"
 msg "- Region: ${region}"
+msg "- Profile: ${profile}"
 msg "- Build layer? $(if [[ -z $NO_LAYER ]]; then echo 'Yes, please.'; else echo 'No, thanks.'; fi)"
 
 echo ""
@@ -758,19 +764,19 @@ if [ "$global_bucket" != "solutions-reference" ] && [ "$global_bucket" != "solut
   echo "------------------------------------------------------------------------------"
   echo "Validating ownership of distribution buckets before copying deployment assets to them..."
   # Get account id
-  account_id=$(aws sts get-caller-identity --query Account --output text)
+  account_id=$(aws sts get-caller-identity --query Account --output text --profile $profile)
   if [ $? -ne 0 ]; then
     msg "ERROR: Failed to get AWS account ID"
     die 1
   fi
   # Validate ownership of $global_dist_dir
-  aws s3api head-bucket --bucket $global_bucket --expected-bucket-owner $account_id
+  aws s3api head-bucket --bucket $global_bucket --expected-bucket-owner $account_id --profile $profile
   if [ $? -ne 0 ]; then
     msg "ERROR: Your AWS account does not own s3://$global_bucket/"
     die 1
   fi
   # Validate ownership of ${regional_bucket}-${region}
-  aws s3api head-bucket --bucket ${regional_bucket}-${region} --expected-bucket-owner $account_id
+  aws s3api head-bucket --bucket ${regional_bucket}-${region} --expected-bucket-owner $account_id --profile $profile
   if [ $? -ne 0 ]; then
     msg "ERROR: Your AWS account does not own s3://${regional_bucket}-${region} "
     die 1
@@ -781,8 +787,8 @@ if [ "$global_bucket" != "solutions-reference" ] && [ "$global_bucket" != "solut
   echo "s3://$global_bucket/aws-media-insights-engine/$version/"
   echo "s3://${regional_bucket}-${region}/aws-media-insights-engine/$version/"
   set -x
-  aws s3 sync $global_dist_dir s3://$global_bucket/aws-media-insights-engine/$version/
-  aws s3 sync $regional_dist_dir s3://${regional_bucket}-${region}/aws-media-insights-engine/$version/
+  aws s3 sync $global_dist_dir s3://$global_bucket/aws-media-insights-engine/$version/ $(if [ ! -z $profile ]; then echo "--profile $profile"; fi)
+  aws s3 sync $regional_dist_dir s3://${regional_bucket}-${region}/aws-media-insights-engine/$version/ $(if [ ! -z $profile ]; then echo "--profile $profile"; fi)
   set +x
 
   echo "------------------------------------------------------------------------------"

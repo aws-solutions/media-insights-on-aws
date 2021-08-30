@@ -37,10 +37,11 @@ MIE_STACK_NAME=[specify a stack name]
 git clone https://github.com/awslabs/aws-media-insights-engine
 cd aws-media-insights-engine
 cd deployment
-VERSION=1.0.0
+VERSION=0.0.0
 DATETIME=$(date '+%s')
 DIST_OUTPUT_BUCKET=media-insights-engine-$DATETIME
 aws s3 mb s3://$DIST_OUTPUT_BUCKET-$REGION --region $REGION
+aws s3 mb s3://$TEMPLATE_OUTPUT_BUCKET --region $REGION
 ./build-s3-dist.sh --template-bucket $DIST_OUTPUT_BUCKET --code-bucket $DIST_OUTPUT_BUCKET --version $VERSION --region $REGION
 TEMPLATE={copy "Template to deploy" link from output of build script}
 aws cloudformation create-stack --stack-name $MIE_STACK_NAME --template-url $TEMPLATE --region $REGION --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --disable-rollback

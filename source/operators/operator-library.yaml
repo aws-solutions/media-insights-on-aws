@@ -1785,6 +1785,7 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: !Ref "Boto3UserAgent"
+          MEDIACONVERT_ENDPOINT: !Sub "mediaconvert.${AWS::Region}.amazonaws.com"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1898,6 +1899,7 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
           botoConfig: !Ref "Boto3UserAgent"
+          MEDIACONVERT_ENDPOINT: !Sub "mediaconvert.${AWS::Region}.amazonaws.com"
       Tags:
         - Key: "environment"
           Value: "mie"

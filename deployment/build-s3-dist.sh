@@ -7,13 +7,15 @@
 #   Build cloud formation templates for the Media Insights Engine
 #
 # USAGE:
-#  ./build-s3-dist.sh [-h] [-v] [--no-layer] --template-bucket {TEMPLATE_BUCKET} --code-bucket {CODE_BUCKET} --version {VERSION} --region {REGION}
+#  ./build-s3-dist.sh [-h] [-v] [--no-layer] --template-bucket {TEMPLATE_BUCKET} --code-bucket {CODE_BUCKET} --version {VERSION} --region {REGION} --profile {PROFILE}
 #    TEMPLATE_BUCKET should be the name for the S3 bucket location where MIE
 #      cloud formation templates should be saved.
 #    CODE_BUCKET should be the name for the S3 bucket location where cloud
 #      formation templates should find Lambda source code packages.
 #    VERSION should be in a format like v1.0.0
 #    REGION needs to be in a format like us-east-1
+#    PROFILE is optional. It's the profile that you have setup in ~/.aws/credentials
+#      that you want to use for AWS CLI commands.
 #
 #    The following options are available:
 #
@@ -28,7 +30,7 @@ trap cleanup_and_die SIGINT SIGTERM ERR
 usage() {
   msg "$msg"
   cat <<EOF
-Usage: $(basename "${BASH_SOURCE[0]}") [-h] [-v] [--no-layer] --template-bucket TEMPLATE_BUCKET --code-bucket CODE_BUCKET --version VERSION --region REGION
+Usage: $(basename "${BASH_SOURCE[0]}") [-h] [-v] [--profile PROFILE] [--no-layer] --template-bucket TEMPLATE_BUCKET --code-bucket CODE_BUCKET --version VERSION --region REGION
 
 Available options:
 
@@ -39,6 +41,7 @@ Available options:
 --code-bucket     S3 bucket to put Lambda code packages
 --version         Arbitrary string indicating build version
 --region          AWS Region, formatted like us-west-2
+--profile         AWS profile for CLI commands (optional)
 EOF
   exit 1
 }
@@ -98,6 +101,10 @@ parse_params() {
       region="${2}"
       shift
       ;;
+    --profile)
+      profile="${2}"
+      shift
+      ;;
     -?*) die "Unknown option: $1" ;;
     *) break ;;
     esac
@@ -121,6 +128,7 @@ msg "- Template bucket: ${global_bucket}"
 msg "- Code bucket: ${regional_bucket}-${region}"
 msg "- Version: ${version}"
 msg "- Region: ${region}"
+msg "- Profile: ${profile}"
 msg "- Build layer? $(if [[ -z $NO_LAYER ]]; then echo 'Yes, please.'; else echo 'No, thanks.'; fi)"
 
 echo ""
@@ -758,19 +766,19 @@ if [ "$global_bucket" != "solutions-reference" ] && [ "$global_bucket" != "solut
   echo "------------------------------------------------------------------------------"
   echo "Validating ownership of distribution buckets before copying deployment assets to them..."
   # Get account id
-  account_id=$(aws sts get-caller-identity --query Account --output text)
+  account_id=$(aws sts get-caller-identity --query Account --output text $(if [ ! -z $profile ]; then echo "--profile $profile"; fi))
   if [ $? -ne 0 ]; then
     msg "ERROR: Failed to get AWS account ID"
     die 1
   fi
   # Validate ownership of $global_dist_dir
-  aws s3api head-bucket --bucket $global_bucket --expected-bucket-owner $account_id
+  aws s3api head-bucket --bucket $global_bucket --expected-bucket-owner $account_id $(if [ ! -z $profile ]; then echo "--profile $profile"; fi)
   if [ $? -ne 0 ]; then
     msg "ERROR: Your AWS account does not own s3://$global_bucket/"
     die 1
   fi
   # Validate ownership of ${regional_bucket}-${region}
-  aws s3api head-bucket --bucket ${regional_bucket}-${region} --expected-bucket-owner $account_id
+  aws s3api head-bucket --bucket ${regional_bucket}-${region} --expected-bucket-owner $account_id $(if [ ! -z $profile ]; then echo "--profile $profile"; fi)
   if [ $? -ne 0 ]; then
     msg "ERROR: Your AWS account does not own s3://${regional_bucket}-${region} "
     die 1
@@ -802,8 +810,8 @@ if [ "$global_bucket" != "solutions-reference" ] && [ "$global_bucket" != "solut
   echo "---"
 
   set -x
-  aws s3 sync $global_dist_dir s3://$global_bucket/aws-media-insights-engine/$version/
-  aws s3 sync $regional_dist_dir s3://${regional_bucket}-${region}/aws-media-insights-engine/$version/
+  aws s3 sync $global_dist_dir s3://$global_bucket/aws-media-insights-engine/$version/ $(if [ ! -z $profile ]; then echo "--profile $profile"; fi)
+  aws s3 sync $regional_dist_dir s3://${regional_bucket}-${region}/aws-media-insights-engine/$version/ $(if [ ! -z $profile ]; then echo "--profile $profile"; fi)
   set +x
 
   echo "------------------------------------------------------------------------------"

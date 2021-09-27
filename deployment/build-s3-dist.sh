@@ -785,9 +785,30 @@ if [ "$global_bucket" != "solutions-reference" ] && [ "$global_bucket" != "solut
   fi
   # Copy deployment assets to distribution buckets
   cd "$build_dir"/ || exit 1
-  echo "Copying the prepared distribution to:"
-  echo "s3://$global_bucket/aws-media-insights-engine/$version/"
-  echo "s3://${regional_bucket}-${region}/aws-media-insights-engine/$version/"
+
+  echo "*******************************************************************************"
+  echo "*******************************************************************************"
+  echo "**********                    I M P O R T A N T                      **********"
+  echo "*******************************************************************************"
+  echo "** You are about to upload templates and code to S3. Please confirm that     **"
+  echo "** buckets ${bucket}-reference and ${bucket}-${region} are appropriately     **"
+  echo "** secured (not world-writeable, public access blocked) before continuing.   **"
+  echo "*******************************************************************************"
+  echo "*******************************************************************************"
+  echo "PROCEED WITH UPLOAD? (y/n) [n]: "
+  read input
+  if [ "$input" != "y" ] ; then
+      echo "Upload aborted."
+      exit
+  fi
+
+  echo "=========================================================================="
+  echo "Deploying $solution_name version $version to bucket $bucket-$region"
+  echo "=========================================================================="
+  echo "Templates: ${bucket}-reference/$solution_name/$version/"
+  echo "Lambda code: ${bucket}-${region}/$solution_name/$version/"
+  echo "---"
+
   set -x
   aws s3 sync $global_dist_dir s3://$global_bucket/aws-media-insights-engine/$version/ $(if [ ! -z $profile ]; then echo "--profile $profile"; fi)
   aws s3 sync $regional_dist_dir s3://${regional_bucket}-${region}/aws-media-insights-engine/$version/ $(if [ ! -z $profile ]; then echo "--profile $profile"; fi)

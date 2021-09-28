@@ -38,6 +38,9 @@ Parameters:
   CheckWaitOperationLambda:
     Type: String
     Description: "ARN of control plane lambda function to if a workflow is in Waiting state"
+  MediaConvertEndpoint:
+    Type: String
+    Description: "Account-specific endpoint URL for MediaConvert"
   Boto3UserAgent:
     Type: String
     Description: "Boto3 user agent string"
@@ -1784,8 +1787,8 @@ Resources:
           mediaconvertRole: !GetAtt "mediaConvertS3Role.Arn"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          MEDIACONVERT_ENDPOINT: !Ref "MediaConvertEndpoint"
           botoConfig: !Ref "Boto3UserAgent"
-          MEDIACONVERT_ENDPOINT: !Sub "mediaconvert.${AWS::Region}.amazonaws.com"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1898,8 +1901,8 @@ Resources:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          MEDIACONVERT_ENDPOINT: !Ref "MediaConvertEndpoint"
           botoConfig: !Ref "Boto3UserAgent"
-          MEDIACONVERT_ENDPOINT: !Sub "mediaconvert.${AWS::Region}.amazonaws.com"
       Tags:
         - Key: "environment"
           Value: "mie"

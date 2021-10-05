@@ -5,6 +5,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [3.0.3] - 2021-10-05
+
+### New:
+
+* Statically define the MediaConvert endpoint to avoid throttling (#606) 
+
+### CI/CD Automation:
+
+* Add an option to specify an AWS profile to the build script so build assets can be uploaded to a user-specified AWS account (#601)
+* Require users to acknowledge Amazon S3 security advice during the build script prior to uploading build assets to Amazon S3 (#603)
+
+### Fixed:
+
+* Fix a pagination bug that prevented the control plane from handling more than 50 concurrent workflow executions (#609)
+
+### Documentation:
+
+* Fix an error in the documentation for building MIE from scratch (#602)
+
+### Security:
+
+* Update Python modules known to have possible security implications (#526)
+
+
 ## [3.0.2] - 2021-08-18
 
 ### New:

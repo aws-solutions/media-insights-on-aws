@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security:
 
-* Update Python modules known to have possible security implications (#526)
+* Update Python modules known to have possible security implications (#611)
 
 
 ## [3.0.2] - 2021-08-18

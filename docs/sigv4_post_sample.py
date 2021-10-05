@@ -1,12 +1,12 @@
 ###############################################################################
 #
-# PURPOSE: This code sample shows how to start the CasImageWorkflow using a 
+# PURPOSE: This code sample shows how to start the CasImageWorkflow using a
 #   sigv4 signed request to the workflow execution REST API in the Media
 #   Insights Engine.
 #
 ###############################################################################
 #
-# Copyright 2010-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # This file is licensed under the Apache License, Version 2.0 (the "License").
 # You may not use this file except in compliance with the License. A copy of the
@@ -24,16 +24,16 @@
 # This version makes a POST request and passes request parameters
 # in the body (payload) of the request. Auth information is passed in
 # an Authorization header.
-import sys, os, base64, datetime, hashlib, hmac 
+import sys, os, base64, datetime, hashlib, hmac
 import requests # pip install requests
 
 # ************* REQUEST VALUES *************
 method = 'POST'
 service = 'execute-api'
-# Host is the base URL for your REST API, where {restapi_id} is the API identifier, {region} is the Region of the API deployment. 
+# Host is the base URL for your REST API, where {restapi_id} is the API identifier, {region} is the Region of the API deployment.
 host = '{restapi_id}.execute-api.{region}.amazonaws.com'
 region = '{region}'
-# Endpoint is the endpoint URL for your REST API resource, where {api_name} is the API name, and {method_name} is the name of the method resource of the API deployment. 
+# Endpoint is the endpoint URL for your REST API resource, where {api_name} is the API name, and {method_name} is the name of the method resource of the API deployment.
 endpoint = 'https://{restapi_id}.execute-api.us-west-2.amazonaws.com/api/{api_name}/{method_name}'
 # POST requests use a content type header.
 content_type = 'application/json'
@@ -75,7 +75,7 @@ date_stamp = t.strftime('%Y%m%d') # Date w/o time, used in credential scope
 
 # Step 1 is to define the verb (GET, POST, etc.)--already done.
 
-# Step 2: Create canonical URI--the part of the URI from domain to query 
+# Step 2: Create canonical URI--the part of the URI from domain to query
 # string (use '/' if no path)
 canonical_uri = '/api/workflow/execution'
 
@@ -143,4 +143,3 @@ r = requests.post(endpoint, data=request_parameters, headers=headers)
 print('\nRESPONSE++++++++++++++++++++++++++++++++++++')
 print('Response code: %d\n' % r.status_code)
 print(r.text)
- 

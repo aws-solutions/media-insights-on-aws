@@ -18,8 +18,10 @@
 import urllib3
 import time
 import json
+import pytest
+import os
 
-
+@pytest.mark.skipif(os.environ['MIE_REGION'] not in ["us-west-2", "us-east-1", "eu-west-1"], reason="Parallel Data is not supported in this region")
 def test_parallel_data(workflow_api, testing_env_variables, parallel_data):
     workflow_api = workflow_api()
     

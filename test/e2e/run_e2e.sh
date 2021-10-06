@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 ###############################################################################
@@ -86,7 +86,7 @@ pytest -s -W ignore::DeprecationWarning -p no:cacheproviders
 
 if [ $? -eq 0 ]; then
     exit 0
-else 
+else
     exit 1
 fi
 

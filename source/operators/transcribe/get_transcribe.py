@@ -40,6 +40,8 @@ def lambda_handler(event, context):
         response = transcribe.get_transcription_job(
             TranscriptionJobName=job_id
         )
+        source_language = response['TranscriptionJob']['LanguageCode']
+        auto_detected_source_language = response['TranscriptionJob']['IdentifyLanguage']
         print(response)
     except Exception as e:
         operator_object.update_workflow_status("Error")
@@ -93,7 +95,12 @@ def lambda_handler(event, context):
             else:
                 if metadata_upload['Status'] == 'Success':
                     operator_object.add_media_object('Text', metadata_upload['Bucket'], metadata_upload['Key'])
-                    operator_object.add_workflow_metadata(TranscribeJobId=job_id)
+                    # If source language auto-detection is enabled for the Transcribe job, then pass the identified source language to downstream operators in a workflow metadata field called IdentifiedSourceLanguage.
+                    if auto_detected_source_language:
+                        operator_object.add_workflow_metadata(TranscribeJobId=job_id,IdentifiedSourceLanguage=source_language)
+                    else:
+                        operator_object.add_workflow_metadata(TranscribeJobId=job_id)
+
                     operator_object.update_workflow_status("Complete")
                     return operator_object.return_output_object()
                 else:

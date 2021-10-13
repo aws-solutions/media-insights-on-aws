@@ -46,11 +46,20 @@ class WebCaptions:
             self.marker = "<span>"
             self.contentType = "text/html"
             self.existing_subtitles = False
-            if "SourceLanguageCode" in self.operator_object.configuration:
+            # This operator may be used as a downstream operator from Amazon Transcribe.
+            # If Transcribe auto-detected the source language then it will pass its
+            # language code to downstream operators in a field called
+            # "IdentifiedSourceLanguage" in the workflow metadata object
+            # This operator will use that field as the source language, if it exists.
+            # Otherwise it will use the user-specified source language contained in the
+            # operator configuration object.
+            if "IdentifiedSourceLanguage" in self.operator_object.input['MetaData']:
+                self.source_language_code = self.operator_object.input['MetaData']['IdentifiedSourceLanguage'].split('-')[0]
+            elif "SourceLanguageCode" in self.operator_object.configuration:
                 self.source_language_code = self.operator_object.configuration["SourceLanguageCode"]
-                self.operator_name_with_lang = self.operator_object.name+"_"+self.source_language_code
-            if "TargetLanguageCode" in self.operator_object.configuration:
-                self.target_language_code = self.operator_object.configuration["TargetLanguageCode"]
+
+            if "TargetLanguageCodes" in self.operator_object.configuration:
+                self.target_language_codes = self.operator_object.configuration["TargetLanguageCodes"]
             if "ExistingSubtitlesObject" in self.operator_object.configuration:
                 self.existing_subtitles_object = self.operator_object.configuration["ExistingSubtitlesObject"]
                 self.existing_subtitles = True
@@ -96,8 +105,6 @@ class WebCaptions:
 
         print("CaptionsOperatorName() Name {}".format(name))
         return name
-
-
 
     def GetTranscript(self):
 
@@ -214,7 +221,6 @@ class WebCaptions:
         return response["results"]["WebCaptions"]
 
     def PutWebCaptions(self, webcaptions, language_code=None, source=""):
-
         webcaptions_operator_name = self.WebCaptionsOperatorName(language_code, source)
 
         WebCaptions = {"WebCaptions": webcaptions}
@@ -530,6 +536,7 @@ def create_srt(event, context):
 
     try:
         targetLanguageCodes = webcaptions_object.operator_object.configuration["TargetLanguageCodes"]
+        targetLanguageCodes.append(webcaptions_object.source_language_code)
     except KeyError as e:
         webcaptions_object.operator_object.update_workflow_status("Error")
         operator_object.add_workflow_metadata(WebCaptionsError="Missing a required metadata key {e}".format(e=e))
@@ -566,7 +573,9 @@ def create_vtt(event, context):
     webcaptions_object = WebCaptions(operator_object)
 
     try:
-        targetLanguageCodes = webcaptions_object.operator_object.configuration["TargetLanguageCodes"]
+        targetLanguageCodes = webcaptions_object.operator_object.configuration[
+            "TargetLanguageCodes"]
+        targetLanguageCodes.append(webcaptions_object.source_language_code)
     except KeyError as e:
         webcaptions_object.operator_object.update_workflow_status("Error")
         operator_object.add_workflow_metadata(WebCaptionsError="Missing a required metadata key {e}".format(e=e))
@@ -600,8 +609,8 @@ def start_translate_webcaptions(event, context):
     webcaptions_object = WebCaptions(operator_object)
 
     try:
-        source_lang = operator_object.configuration["SourceLanguageCode"]
-        target_langs = operator_object.configuration["TargetLanguageCodes"]
+        source_lang = webcaptions_object.source_language_code
+        target_langs = webcaptions_object.target_language_codes
     except KeyError:
         operator_object.update_workflow_status("Error")
         operator_object.add_workflow_metadata(TranslateError="Language codes are not defined")
@@ -615,7 +624,6 @@ def start_translate_webcaptions(event, context):
     except KeyError:
         parallel_data_names = []
 
-    #webcaptions = get_webcaptions(operator_object, source_lang)
     webcaptions = webcaptions_object.GetWebCaptions(source_lang)
 
     # Translate takes a list of target languages, but it only allow one item in the list.  Too bad

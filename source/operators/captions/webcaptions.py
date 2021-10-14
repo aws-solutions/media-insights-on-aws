@@ -528,7 +528,8 @@ def create_srt(event, context):
 
     try:
         targetLanguageCodes = webcaptions_object.operator_object.configuration["TargetLanguageCodes"]
-        targetLanguageCodes.append(webcaptions_object.source_language_code)
+        if webcaptions_object.source_language_code not in targetLanguageCodes:
+            targetLanguageCodes.append(webcaptions_object.source_language_code)
     except KeyError as e:
         webcaptions_object.operator_object.update_workflow_status("Error")
         operator_object.add_workflow_metadata(WebCaptionsError="Missing a required metadata key {e}".format(e=e))
@@ -567,7 +568,8 @@ def create_vtt(event, context):
     try:
         targetLanguageCodes = webcaptions_object.operator_object.configuration[
             "TargetLanguageCodes"]
-        targetLanguageCodes.append(webcaptions_object.source_language_code)
+        if webcaptions_object.source_language_code not in targetLanguageCodes:
+            targetLanguageCodes.append(webcaptions_object.source_language_code)
     except KeyError as e:
         webcaptions_object.operator_object.update_workflow_status("Error")
         operator_object.add_workflow_metadata(WebCaptionsError="Missing a required metadata key {e}".format(e=e))

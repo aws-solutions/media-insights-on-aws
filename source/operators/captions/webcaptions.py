@@ -528,6 +528,10 @@ def create_srt(event, context):
 
     try:
         targetLanguageCodes = webcaptions_object.operator_object.configuration["TargetLanguageCodes"]
+        # This function is intended to generate SRT caption files for every translated
+        # transcript, but we also want to provide an SRT caption file for the source
+        # language, so here we append the source language to the target languages to
+        # make sure that happens.
         if webcaptions_object.source_language_code not in targetLanguageCodes:
             targetLanguageCodes.append(webcaptions_object.source_language_code)
     except KeyError as e:
@@ -568,6 +572,10 @@ def create_vtt(event, context):
     try:
         targetLanguageCodes = webcaptions_object.operator_object.configuration[
             "TargetLanguageCodes"]
+        # This function is intended to generate VTT caption files for every translated
+        # transcript, but we also want to provide an VTT caption file for the source
+        # language, so here we append the source language to the target languages to
+        # make sure that happens.
         if webcaptions_object.source_language_code not in targetLanguageCodes:
             targetLanguageCodes.append(webcaptions_object.source_language_code)
     except KeyError as e:

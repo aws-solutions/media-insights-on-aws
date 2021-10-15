@@ -425,6 +425,9 @@ class WebCaptions:
             # Kick off a job for each input language
             translate_jobs = []
             for targetLanguageCode in targetLanguageCodes:
+                # Avoid translating to the same language as the source language
+                if targetLanguageCode == sourceLanguageCode:
+                    continue
                 print("Starting translation to {}".format(targetLanguageCode))
                 # Even though the API takes a list of targets, Translate only supports
                 # a list of 1 or less

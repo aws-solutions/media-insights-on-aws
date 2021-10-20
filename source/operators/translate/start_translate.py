@@ -49,16 +49,18 @@ def lambda_handler(event, context):
         asset_id = ''
 
     try:
-        # This operator may be used as a downstream operator from Amazon Transcribe.
-        # If Transcribe auto-detected the source language then it will pass its
-        # language code to downstream operators in a field called
-        # "IdentifiedSourceLanguage" in the workflow metadata object
-        # This operator will use that field as the source language, if it exists.
-        # Otherwise it will use the user-specified source language contained in the
-        # operator configuration object.
-        if "IdentifiedSourceLanguage" in operator_object.input['MetaData']:
-            source_lang = operator_object.input['MetaData']["IdentifiedSourceLanguage"].split('-')[0]
+        # The source language may not have been known when the configuration for
+        # this operator was created. In that case, this operator may have been
+        # placed downstream from the Transcribe operator which can auto-detect
+        # the source language. Transcribe will put the source language into the
+        # TranscribeSourceLanguage field of the workflow metadata object. If the
+        # TranscribeSourceLanguage field is present then we will use that source
+        # language throughout this operator.
+        if "TranscribeSourceLanguage" in operator_object.input['MetaData']:
+            source_lang = operator_object.input['MetaData']['TranscribeSourceLanguage'].split('-')[0]
         else:
+            # If TranscribeSourceLanguage is not available, then SourceLanguageCode
+            # must be present in the operator Configuration block.
             source_lang = operator_object.configuration["SourceLanguageCode"]
         target_lang = operator_object.configuration["TargetLanguageCode"]
     except KeyError:

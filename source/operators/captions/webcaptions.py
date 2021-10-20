@@ -46,16 +46,20 @@ class WebCaptions:
             self.marker = "<span>"
             self.contentType = "text/html"
             self.existing_subtitles = False
-            # This operator may be used as a downstream operator from Amazon Transcribe.
-            # If Transcribe auto-detected the source language then it will pass its
-            # language code to downstream operators in a field called
-            # "IdentifiedSourceLanguage" in the workflow metadata object
-            # This operator will use that field as the source language, if it exists.
-            # Otherwise it will use the user-specified source language contained in the
-            # operator configuration object.
-            if "IdentifiedSourceLanguage" in self.operator_object.input['MetaData']:
-                self.source_language_code = self.operator_object.input['MetaData']['IdentifiedSourceLanguage'].split('-')[0]
-            elif "SourceLanguageCode" in self.operator_object.configuration:
+
+            # The source language may not have been known when the configuration for
+            # this operator was created. In that case, this operator may have been
+            # placed downstream from the Transcribe operator which can auto-detect
+            # the source language. Transcribe will put the source language into the
+            # TranscribeSourceLanguage field of the workflow metadata object. If the
+            # TranscribeSourceLanguage field is present then we will use that source
+            # language throughout this operator.
+
+            if "TranscribeSourceLanguage" in self.operator_object.input['MetaData']:
+                self.source_language_code = self.operator_object.input['MetaData']['TranscribeSourceLanguage'].split('-')[0]
+            else:
+                # If TranscribeSourceLanguage is not available, then SourceLanguageCode
+                # must be present in the operator Configuration block.
                 self.source_language_code = self.operator_object.configuration["SourceLanguageCode"]
 
             if "TargetLanguageCodes" in self.operator_object.configuration:
@@ -69,8 +73,8 @@ class WebCaptions:
             raise MasExecutionError(operator_object.return_output_object())
 
     def WebCaptionsOperatorName(self, language_code=None, source=""):
+        # This function determines filenames using the pattern "WebCaptions_[language code]".
 
-        # Shouldn't assume WebCaptions operator is WebCaptions, maybe pass it in the configuration?
         print("WebCaptionsOperatorName {}, {}".format(language_code, source))
 
         operator_name = "WebCaptions"+source
@@ -89,8 +93,8 @@ class WebCaptions:
         return name
 
     def CaptionsOperatorName(self, language_code=None):
+        # This function determines filenames using the pattern "Captions_[language code]".
 
-        # Shouldn't assume WebCaptions operator is WebCaptions, maybe pass it in the configuration?
         operator_name = "Captions"
 
         if language_code != None:

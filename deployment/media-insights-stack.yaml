@@ -39,7 +39,7 @@ Parameters:
   SolutionVersion:
     Description: (Optional) AWS Solution version used for reporting purposes
     Type: String
-    Default: %%VERSION%%
+    Default: "%%VERSION%%"
   SendAnonymousData:
     Description: (Optional) Send anonymous data about MIE performance to AWS to help improve the quality of this solution.
     Type: String

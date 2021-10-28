@@ -645,136 +645,143 @@ def check_translate_webcaptions(event, context):
     operator_object = MediaInsightsOperationHelper(event)
     webcaptions_object = WebCaptions(operator_object)
 
-    try:
-        translate_jobs = operator_object.metadata["TextTranslateJobPropertiesList"]
-        workflow_id = operator_object.workflow_execution_id
-        asset_id = operator_object.asset_id
-        transcript_storage_path = dataplane.generate_media_storage_path(asset_id, workflow_id)
-        bucket = transcript_storage_path['S3Bucket']
-        translation_output_path = transcript_storage_path['S3Key']+"webcaptions_translate_output/"
+    # If the array of target languages only contains the source language
+    # then we have nothing to do.
+    if webcaptions_object.target_language_codes == [webcaptions_object.source_language_code]:
+        print("Skipping check_translate_webcaptions because source language is same as target language")
+        operator_object.update_workflow_status("Complete")
 
-    except KeyError as e:
-        operator_object.update_workflow_status("Error")
-        operator_object.add_workflow_metadata(TranslateError="Missing a required metadata key {e}".format(e=e))
-        raise MasExecutionError(operator_object.return_output_object())
-
-    # Check the status of each job
-    # - IF ANY job has an error, we fail the workflow and return from the loop
-    # - IF ANY job is still running, the workflow is still Executing
-    # - If ALL jobs are complete, we reach the end of the loop and the workflow is complete
-    for job in translate_jobs:
-
+    else:
         try:
-            job_id = job["JobId"]
-            job_status_list = []
+            translate_jobs = operator_object.metadata["TextTranslateJobPropertiesList"]
+            workflow_id = operator_object.workflow_execution_id
+            asset_id = operator_object.asset_id
+            transcript_storage_path = dataplane.generate_media_storage_path(asset_id, workflow_id)
+            bucket = transcript_storage_path['S3Bucket']
+            translation_output_path = transcript_storage_path['S3Key']+"webcaptions_translate_output/"
 
         except KeyError as e:
             operator_object.update_workflow_status("Error")
             operator_object.add_workflow_metadata(TranslateError="Missing a required metadata key {e}".format(e=e))
             raise MasExecutionError(operator_object.return_output_object())
-        try:
-            response = translate_client.describe_text_translation_job(
-                JobId=job_id
-            )
-            print(response)
-            job_status = {
-                "JobId": job_id,
-                "Status": response["TextTranslationJobProperties"]["JobStatus"]
-            }
 
-        except Exception as e:
-            operator_object.update_workflow_status("Error")
-            operator_object.add_workflow_metadata(TranslateError=str(e), TranslateJobId=job_id)
-            raise MasExecutionError(operator_object.return_output_object())
-        else:
-            if response["TextTranslationJobProperties"]["JobStatus"] in ["IN_PROGRESS", "SUBMITTED"]:
-                operator_object.update_workflow_status("Executing")
-                operator_object.add_workflow_metadata(TextTranslateJobStatusList=job_status_list, AssetId=asset_id, WorkflowExecutionId=workflow_id)
-                return operator_object.return_output_object()
-            elif response["TextTranslationJobProperties"]["JobStatus"] in ["FAILED", "COMPLETED_WITH_ERROR", "STOP_REQUESTED", "STOPPED"]:
+        # Check the status of each job
+        # - IF ANY job has an error, we fail the workflow and return from the loop
+        # - IF ANY job is still running, the workflow is still Executing
+        # - If ALL jobs are complete, we reach the end of the loop and the workflow is complete
+        for job in translate_jobs:
+
+            try:
+                job_id = job["JobId"]
+                job_status_list = []
+
+            except KeyError as e:
                 operator_object.update_workflow_status("Error")
-                operator_object.add_workflow_metadata(TextTranslateJobStatusList=job_status_list, AssetId=asset_id, WorkflowExecutionId=workflow_id)
+                operator_object.add_workflow_metadata(TranslateError="Missing a required metadata key {e}".format(e=e))
                 raise MasExecutionError(operator_object.return_output_object())
-            elif response["TextTranslationJobProperties"]["JobStatus"] == "COMPLETED":
-                print("{} is complete".format(job_id))
-                operator_object.add_workflow_metadata(TextTranslateJobStatusList=job_status_list, AssetId=asset_id, WorkflowExecutionId=workflow_id)
+            try:
+                response = translate_client.describe_text_translation_job(
+                    JobId=job_id
+                )
+                print(response)
+                job_status = {
+                    "JobId": job_id,
+                    "Status": response["TextTranslationJobProperties"]["JobStatus"]
+                }
 
-    # If we made it here, then all the translate jobs are complete.
-    # Convert the translations back to WebCaptions and write them out
-    # to the dataplane
-    translation_storage_path = dataplane.generate_media_storage_path(asset_id, workflow_id)
-    bucket = translation_storage_path['S3Bucket']
-    translation_path = translation_storage_path['S3Key']
+            except Exception as e:
+                operator_object.update_workflow_status("Error")
+                operator_object.add_workflow_metadata(TranslateError=str(e), TranslateJobId=job_id)
+                raise MasExecutionError(operator_object.return_output_object())
+            else:
+                if response["TextTranslationJobProperties"]["JobStatus"] in ["IN_PROGRESS", "SUBMITTED"]:
+                    operator_object.update_workflow_status("Executing")
+                    operator_object.add_workflow_metadata(TextTranslateJobStatusList=job_status_list, AssetId=asset_id, WorkflowExecutionId=workflow_id)
+                    return operator_object.return_output_object()
+                elif response["TextTranslationJobProperties"]["JobStatus"] in ["FAILED", "COMPLETED_WITH_ERROR", "STOP_REQUESTED", "STOPPED"]:
+                    operator_object.update_workflow_status("Error")
+                    operator_object.add_workflow_metadata(TextTranslateJobStatusList=job_status_list, AssetId=asset_id, WorkflowExecutionId=workflow_id)
+                    raise MasExecutionError(operator_object.return_output_object())
+                elif response["TextTranslationJobProperties"]["JobStatus"] == "COMPLETED":
+                    print("{} is complete".format(job_id))
+                    operator_object.add_workflow_metadata(TextTranslateJobStatusList=job_status_list, AssetId=asset_id, WorkflowExecutionId=workflow_id)
 
-    webcaptions_collection = []
-    for job in translate_jobs:
-        try:
-            print("Save translation for job {}".format(job["JobId"]))
+        # If we made it here, then all the translate jobs are complete.
+        # Convert the translations back to WebCaptions and write them out
+        # to the dataplane
+        translation_storage_path = dataplane.generate_media_storage_path(asset_id, workflow_id)
+        bucket = translation_storage_path['S3Bucket']
+        translation_path = translation_storage_path['S3Key']
 
-            translateJobDescription = translate_client.describe_text_translation_job(JobId = job["JobId"])
-            translateJobS3Uri = translateJobDescription["TextTranslationJobProperties"]["OutputDataConfig"]["S3Uri"]
-            translateJobUrl = urlparse(translateJobS3Uri, allow_fragments = False)
-            translateJobLanguageCode = translateJobDescription["TextTranslationJobProperties"]["TargetLanguageCodes"][0]
+        webcaptions_collection = []
+        for job in translate_jobs:
+            try:
+                print("Save translation for job {}".format(job["JobId"]))
 
-            translateJobS3Location = {
-                "Uri": translateJobS3Uri,
-                "Bucket": translateJobUrl.netloc,
-                "Key": translateJobUrl.path.strip("/")
-            }
+                translateJobDescription = translate_client.describe_text_translation_job(JobId = job["JobId"])
+                translateJobS3Uri = translateJobDescription["TextTranslationJobProperties"]["OutputDataConfig"]["S3Uri"]
+                translateJobUrl = urlparse(translateJobS3Uri, allow_fragments = False)
+                translateJobLanguageCode = translateJobDescription["TextTranslationJobProperties"]["TargetLanguageCodes"][0]
 
-            # use input web captions to convert translation output to web captions format
-            for outputS3ObjectKey in map(lambda s: s.key, s3_resource.Bucket(translateJobS3Location["Bucket"]).objects.filter(Prefix=translateJobS3Location["Key"] + "/", Delimiter="/")):
-                print("Save translation for each output of job {} output {}".format(job["JobId"], outputS3ObjectKey))
+                translateJobS3Location = {
+                    "Uri": translateJobS3Uri,
+                    "Bucket": translateJobUrl.netloc,
+                    "Key": translateJobUrl.path.strip("/")
+                }
 
-                outputFilename = ntpath.basename(outputS3ObjectKey)
+                # use input web captions to convert translation output to web captions format
+                for outputS3ObjectKey in map(lambda s: s.key, s3_resource.Bucket(translateJobS3Location["Bucket"]).objects.filter(Prefix=translateJobS3Location["Key"] + "/", Delimiter="/")):
+                    print("Save translation for each output of job {} output {}".format(job["JobId"], outputS3ObjectKey))
 
-                translateOutput = s3_resource.Object(translateJobS3Location["Bucket"], outputS3ObjectKey).get()["Body"].read().decode("utf-8")
-                #inputWebCaptions = get_webcaptions(operator_object, translateJobDescription["TextTranslationJobProperties"]["SourceLanguageCode"])
-                inputWebCaptions = webcaptions_object.GetWebCaptions(translateJobDescription["TextTranslationJobProperties"]["SourceLanguageCode"])
-                outputWebCaptions = webcaptions_object.DelimitedToWebCaptions(inputWebCaptions, translateOutput, webcaptions_object.marker, 15)
-                print(outputS3ObjectKey)
-                (targetLanguageCode, basename, ext) = outputFilename.split(".")
-                #put_webcaptions(operator_object, outputWebCaptions, targetLanguageCode)
-                operator_metadata = webcaptions_object.PutWebCaptions(outputWebCaptions, targetLanguageCode)
-                operator_metadata = webcaptions_object.PutWebCaptions(outputWebCaptions, targetLanguageCode, source="Translate")
+                    outputFilename = ntpath.basename(outputS3ObjectKey)
 
-                # Save a copy of the translation text without delimiters.  The translation
-                # process may remove or add important whitespace around caption markers
-                # Try to replace markers with correct spacing (biased toward Latin based languages)
-                if webcaptions_object.contentType == 'text/html':
-                    translateOutput = html.unescape(translateOutput)
+                    translateOutput = s3_resource.Object(translateJobS3Location["Bucket"], outputS3ObjectKey).get()["Body"].read().decode("utf-8")
+                    #inputWebCaptions = get_webcaptions(operator_object, translateJobDescription["TextTranslationJobProperties"]["SourceLanguageCode"])
+                    inputWebCaptions = webcaptions_object.GetWebCaptions(translateJobDescription["TextTranslationJobProperties"]["SourceLanguageCode"])
+                    outputWebCaptions = webcaptions_object.DelimitedToWebCaptions(inputWebCaptions, translateOutput, webcaptions_object.marker, 15)
+                    print(outputS3ObjectKey)
+                    (targetLanguageCode, basename, ext) = outputFilename.split(".")
+                    #put_webcaptions(operator_object, outputWebCaptions, targetLanguageCode)
+                    operator_metadata = webcaptions_object.PutWebCaptions(outputWebCaptions, targetLanguageCode)
+                    operator_metadata = webcaptions_object.PutWebCaptions(outputWebCaptions, targetLanguageCode, source="Translate")
 
-                # - delimiter next to space keeps the space
-                translation_text = translateOutput.replace(" "+webcaptions_object.marker, " ")
-                # - delimiter next to contraction (some languages) has no space
-                translation_text = translation_text.replace("'"+webcaptions_object.marker, "")
-                # - all the rest are replaced with a space. This might add an extra space
-                # - but that's better than no space
-                translation_text = translation_text.replace(webcaptions_object.marker, " ")
+                    # Save a copy of the translation text without delimiters.  The translation
+                    # process may remove or add important whitespace around caption markers
+                    # Try to replace markers with correct spacing (biased toward Latin based languages)
+                    if webcaptions_object.contentType == 'text/html':
+                        translateOutput = html.unescape(translateOutput)
 
-                translation_text_key = translation_path+"translation"+"_"+targetLanguageCode+".txt"
-                s3_object = s3_resource.Object(bucket, translation_text_key)
-                s3_object.put(Body=translation_text)
+                    # - delimiter next to space keeps the space
+                    translation_text = translateOutput.replace(" "+webcaptions_object.marker, " ")
+                    # - delimiter next to contraction (some languages) has no space
+                    translation_text = translation_text.replace("'"+webcaptions_object.marker, "")
+                    # - all the rest are replaced with a space. This might add an extra space
+                    # - but that's better than no space
+                    translation_text = translation_text.replace(webcaptions_object.marker, " ")
 
-            metadata = {
-                "OperatorName": "TranslateWebCaptions_"+translateJobLanguageCode,
-                "TranslationText": {"S3Bucket": bucket, "S3Key": translation_text_key},
-                #"WebCaptions": operator_metadata,
-                "WorkflowId": workflow_id,
-                "TargetLanguageCode": translateJobLanguageCode
-            }
-            print(json.dumps(metadata))
+                    translation_text_key = translation_path+"translation"+"_"+targetLanguageCode+".txt"
+                    s3_object = s3_resource.Object(bucket, translation_text_key)
+                    s3_object.put(Body=translation_text)
 
-            webcaptions_collection.append(metadata)
+                metadata = {
+                    "OperatorName": "TranslateWebCaptions_"+translateJobLanguageCode,
+                    "TranslationText": {"S3Bucket": bucket, "S3Key": translation_text_key},
+                    #"WebCaptions": operator_metadata,
+                    "WorkflowId": workflow_id,
+                    "TargetLanguageCode": translateJobLanguageCode
+                }
+                print(json.dumps(metadata))
 
-        except Exception as e:
-            operator_object.update_workflow_status("Error")
-            operator_object.add_workflow_metadata(CaptionsError="Unable to construct path to translate output in S3: {e}".format(e=str(e)))
-            raise MasExecutionError(operator_object.return_output_object())
+                webcaptions_collection.append(metadata)
 
-    data = {}
-    data["CaptionsCollection"] = webcaptions_collection
-    webcaptions_object.PutMediaCollection(operator_object.name, data)
+            except Exception as e:
+                operator_object.update_workflow_status("Error")
+                operator_object.add_workflow_metadata(CaptionsError="Unable to construct path to translate output in S3: {e}".format(e=str(e)))
+                raise MasExecutionError(operator_object.return_output_object())
+
+        data = {}
+        data["CaptionsCollection"] = webcaptions_collection
+        webcaptions_object.PutMediaCollection(operator_object.name, data)
 
     return operator_object.return_output_object()
 

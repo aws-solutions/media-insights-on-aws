@@ -1,4 +1,4 @@
-# Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 import json
@@ -457,7 +457,7 @@ class WebCaptions:
 
                 parallel_data_name = []
                 if len(parallel_data_names) > 0:
-                    # Find a parallel data set in the list of 
+                    # Find a parallel data set in the list of
                     # that defines translations for targetLanguageCode.
                     # If there happens to be more than one  matching targetLanguageCode
                     # then just use the first one in the list.
@@ -608,11 +608,11 @@ def start_translate_webcaptions(event, context):
         operator_object.update_workflow_status("Error")
         operator_object.add_workflow_metadata(TranslateError="Language codes are not defined")
         raise MasExecutionError(operator_object.return_output_object())
-    try: 
+    try:
         terminology_names = operator_object.configuration["TerminologyNames"]
     except KeyError:
         terminology_names = []
-    try: 
+    try:
         parallel_data_names = operator_object.configuration["ParallelDataNames"]
     except KeyError:
         parallel_data_names = []
@@ -853,7 +853,7 @@ def start_polly_webcaptions (event, context):
                     voice_id = response["Voices"][0]["Id"]
                     caption["VoiceId"] = voice_id
                 elif language_code == "hi-IN":
-                    # FIXME: Hindi is supported but polly.describe_voices() doesn't return any voices 
+                    # FIXME: Hindi is supported but polly.describe_voices() doesn't return any voices
                     voice_id = "Aditi"
                     caption["VoiceId"] = voice_id
                 else:

@@ -1,4 +1,4 @@
-# Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 import os
@@ -41,16 +41,8 @@ def lambda_handler(event, context):
         print("No asset_id in this workflow")
         asset_id = ''
 
-    try:
-        response = mediaconvert.describe_endpoints()
-    except Exception as e:
-        print("Exception:\n", e)
-        operator_object.update_workflow_status("Error")
-        operator_object.add_workflow_metadata(MediaconvertError=str(e))
-        raise MasExecutionError(operator_object.return_output_object())
-    else:
-        mediaconvert_endpoint = response["Endpoints"][0]["Url"]
-        customer_mediaconvert = boto3.client("mediaconvert", region_name=region, endpoint_url=mediaconvert_endpoint)
+    mediaconvert_endpoint = os.environ["MEDIACONVERT_ENDPOINT"]
+    customer_mediaconvert = boto3.client("mediaconvert", region_name=region, endpoint_url=mediaconvert_endpoint)
 
     try:
         response = customer_mediaconvert.get_job(Id=job_id)

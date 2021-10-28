@@ -54,7 +54,7 @@ jobs:
           VERSION=v${{ github.event.inputs.version }}
           DIST_OUTPUT_BUCKET=mie-dev
           TEMPLATE_OUTPUT_BUCKET=mie-dev-$REGION
-          ./build-s3-dist.sh --no-layer --template-bucket $TEMPLATE_OUTPUT_BUCKET --code-bucket $DIST_OUTPUT_BUCKET --version $VERSION --region $REGION
+          echo y | ./build-s3-dist.sh --no-layer --template-bucket $TEMPLATE_OUTPUT_BUCKET --code-bucket $DIST_OUTPUT_BUCKET --version $VERSION --region $REGION
           aws cloudformation deploy --stack-name $MIE_STACK_NAME --region $REGION --template-file global-s3-assets/media-insights-stack.template --s3-bucket $DIST_OUTPUT_BUCKET-$REGION --s3-prefix aws-media-insights-engine/$VERSION --parameter-overrides DeployTestResources=true MaxConcurrentWorkflows=10 DeployAnalyticsPipeline=true EnableXrayTrace=true ParameterKey=SendAnonymousData,ParameterValue=false --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --force-upload
 
 
@@ -82,7 +82,7 @@ jobs:
           VERSION=v${{ github.event.inputs.version }}
           DIST_OUTPUT_BUCKET=mie-dev
           TEMPLATE_OUTPUT_BUCKET=mie-dev-$REGION
-          ./build-s3-dist.sh --no-layer --template-bucket $TEMPLATE_OUTPUT_BUCKET --code-bucket $DIST_OUTPUT_BUCKET --version $VERSION --region $REGION
+          echo y | ./build-s3-dist.sh --no-layer --template-bucket $TEMPLATE_OUTPUT_BUCKET --code-bucket $DIST_OUTPUT_BUCKET --version $VERSION --region $REGION
           aws cloudformation deploy --stack-name $MIE_STACK_NAME --region $REGION --template-file global-s3-assets/media-insights-stack.template --s3-bucket $DIST_OUTPUT_BUCKET-$REGION --s3-prefix aws-media-insights-engine/$VERSION --parameter-overrides DeployTestResources=true MaxConcurrentWorkflows=10 DeployAnalyticsPipeline=true EnableXrayTrace=true ParameterKey=SendAnonymousData,ParameterValue=false --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --force-upload
 
 
@@ -110,7 +110,7 @@ jobs:
           VERSION=v${{ github.event.inputs.version }}
           DIST_OUTPUT_BUCKET=mie-dev
           TEMPLATE_OUTPUT_BUCKET=mie-dev-$REGION
-          ./build-s3-dist.sh --no-layer --template-bucket $TEMPLATE_OUTPUT_BUCKET --code-bucket $DIST_OUTPUT_BUCKET --version $VERSION --region $REGION
+          echo y | ./build-s3-dist.sh --no-layer --template-bucket $TEMPLATE_OUTPUT_BUCKET --code-bucket $DIST_OUTPUT_BUCKET --version $VERSION --region $REGION
           aws cloudformation deploy --stack-name $MIE_STACK_NAME --region $REGION --template-file global-s3-assets/media-insights-stack.template --s3-bucket $DIST_OUTPUT_BUCKET-$REGION --s3-prefix aws-media-insights-engine/$VERSION --parameter-overrides DeployTestResources=true MaxConcurrentWorkflows=10 DeployAnalyticsPipeline=true EnableXrayTrace=true ParameterKey=SendAnonymousData,ParameterValue=false --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --force-upload
 
   test-eu-west-1:
@@ -291,7 +291,7 @@ jobs:
           VERSION=v${{ github.event.inputs.version }}
           DIST_OUTPUT_BUCKET=rodeolabz
           TEMPLATE_OUTPUT_BUCKET=rodeolabz-$REGION
-          ./build-s3-dist.sh --no-layer --template-bucket $TEMPLATE_OUTPUT_BUCKET --code-bucket $DIST_OUTPUT_BUCKET --version $VERSION --region $REGION
+          echo y | ./build-s3-dist.sh --no-layer --template-bucket $TEMPLATE_OUTPUT_BUCKET --code-bucket $DIST_OUTPUT_BUCKET --version $VERSION --region $REGION
 
 
   deploy-us-west-2:
@@ -317,7 +317,7 @@ jobs:
           VERSION=v${{ github.event.inputs.version }}
           DIST_OUTPUT_BUCKET=rodeolabz
           TEMPLATE_OUTPUT_BUCKET=rodeolabz-$REGION
-          ./build-s3-dist.sh --no-layer --template-bucket $TEMPLATE_OUTPUT_BUCKET --code-bucket $DIST_OUTPUT_BUCKET --version $VERSION --region $REGION
+          echo y | ./build-s3-dist.sh --no-layer --template-bucket $TEMPLATE_OUTPUT_BUCKET --code-bucket $DIST_OUTPUT_BUCKET --version $VERSION --region $REGION
 
   deploy-us-east-1:
     needs: update-version-in-docs
@@ -342,7 +342,7 @@ jobs:
           VERSION=v${{ github.event.inputs.version }}
           DIST_OUTPUT_BUCKET=rodeolabz
           TEMPLATE_OUTPUT_BUCKET=rodeolabz-$REGION
-          ./build-s3-dist.sh --no-layer --template-bucket $TEMPLATE_OUTPUT_BUCKET --code-bucket $DIST_OUTPUT_BUCKET --version $VERSION --region $REGION
+          echo y | ./build-s3-dist.sh --no-layer --template-bucket $TEMPLATE_OUTPUT_BUCKET --code-bucket $DIST_OUTPUT_BUCKET --version $VERSION --region $REGION
 
   create-git-staging-branch:
     needs:

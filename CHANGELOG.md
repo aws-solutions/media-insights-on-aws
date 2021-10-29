@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Clean up chalice generated CloudFormation templates (#623)
 
+### New:
+
+* Support source language auto-detection in Amazon Translate (#621)
+
 ## [3.0.3] - 2021-10-05
 
 ### New:

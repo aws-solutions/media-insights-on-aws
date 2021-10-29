@@ -25,6 +25,7 @@ transcribe = boto3.client("transcribe", config=config)
 def lambda_handler(event, context):
     print("We got this event:\n", event)
     valid_types = ["mp3", "mp4", "wav", "flac"]
+    identify_language = False
     optional_settings = {}
     operator_object = MediaInsightsOperationHelper(event)
     workflow_id = str(event["WorkflowExecutionId"])
@@ -58,7 +59,12 @@ def lambda_handler(event, context):
         # No custom vocab
         pass
     try:
-        language_code = operator_object.configuration["TranscribeLanguage"]
+        if "TranscribeLanguage" in operator_object.configuration:
+            language_code = operator_object.configuration["TranscribeLanguage"]
+            if language_code == 'auto':
+                identify_language = True
+        else:
+            identify_language = True
     except KeyError:
         operator_object.update_workflow_status("Error")
         operator_object.add_workflow_metadata(TranscribeError="No language code defined")
@@ -75,15 +81,26 @@ def lambda_handler(event, context):
             operator_object.update_workflow_status("Complete")
             return operator_object.return_output_object()
     try:
-        response = transcribe.start_transcription_job(
-            TranscriptionJobName=job_id,
-            LanguageCode=language_code,
-            Media={
-                "MediaFileUri": media_file
-            },
-            MediaFormat=file_type,
-            Settings=optional_settings
-        )
+        if identify_language:
+            response = transcribe.start_transcription_job(
+                TranscriptionJobName=job_id,
+                IdentifyLanguage=True,
+                Media={
+                    "MediaFileUri": media_file
+                },
+                MediaFormat=file_type,
+                Settings=optional_settings
+            )
+        else:
+            response = transcribe.start_transcription_job(
+                TranscriptionJobName=job_id,
+                LanguageCode=language_code,
+                Media={
+                    "MediaFileUri": media_file
+                },
+                MediaFormat=file_type,
+                Settings=optional_settings
+            )
         print(response)
     except Exception as e:
         operator_object.update_workflow_status("Error")

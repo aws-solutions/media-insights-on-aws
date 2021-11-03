@@ -328,7 +328,7 @@ sed -i.orig -e "$new_global_bucket" "$global_dist_dir/media-insights-dataplane-s
 sed -i.orig -e "$new_regional_bucket" "$global_dist_dir/media-insights-dataplane-streaming-stack.template"
 sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-dataplane-streaming-stack.template"
 sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-dataplane-api-stack.template"
-sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-workflowapi-stack.template"
+sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-workflow-api-stack.template"
 rm -f $global_dist_dir/*.orig
 
 echo "------------------------------------------------------------------------------"
@@ -661,8 +661,8 @@ fi
 echo "running chalice..."
 chalice package --merge-template external_resources.json dist
 echo "...chalice done"
-echo "cp ./dist/sam.json $global_dist_dir/media-insights-workflowapi-stack.template"
-cp dist/sam.json "$global_dist_dir"/media-insights-workflowapi-stack.template
+echo "cp ./dist/sam.json $global_dist_dir/media-insights-workflow-api-stack.template"
+cp dist/sam.json "$global_dist_dir"/media-insights-workflow-api-stack.template
 if [ $? -ne 0 ]; then
   echo "ERROR: Failed to build workflow api template"
   exit 1

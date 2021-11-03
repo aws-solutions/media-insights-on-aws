@@ -1588,7 +1588,7 @@ Resources:
             !FindInMap [ "SourceCode", "General", "GlobalS3Bucket" ],
             ".s3.amazonaws.com/",
             !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
-            "/media-insights-workflowapi-stack.template",
+            "/media-insights-workflow-api-stack.template",
           ],
         ]
       Parameters:

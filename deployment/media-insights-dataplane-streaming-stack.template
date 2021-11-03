@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: "Media Insights Engine - Analytics Streaming pipeline from the Dataplane DynamoDB Stream"
+Description: "(SO0163) - aws-media-insights-engine version %%VERSION%%. This AWS CloudFormation template defines resources for the analytics streaming pipeline."
 
 Parameters:
   KinesisShardCount:

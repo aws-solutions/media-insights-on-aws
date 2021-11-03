@@ -327,6 +327,8 @@ sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-test-operations-s
 sed -i.orig -e "$new_global_bucket" "$global_dist_dir/media-insights-dataplane-streaming-stack.template"
 sed -i.orig -e "$new_regional_bucket" "$global_dist_dir/media-insights-dataplane-streaming-stack.template"
 sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-dataplane-streaming-stack.template"
+sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-dataplane-api-stack.template"
+sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-workflowapi-stack.template"
 rm -f $global_dist_dir/*.orig
 
 echo "------------------------------------------------------------------------------"

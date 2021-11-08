@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: "(SO0163) - aws-media-insights-engine version %%VERSION%%. This AWS CloudFormation template provisions the Media Insights Engine operator library."
+Description: "aws-media-insights-engine version %%VERSION%%. This AWS CloudFormation template provisions the Media Insights Engine operator library."
 
 Mappings:
   SourceCode:

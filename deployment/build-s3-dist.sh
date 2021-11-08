@@ -299,36 +299,6 @@ else
 fi
 
 echo "------------------------------------------------------------------------------"
-echo "CloudFormation Templates"
-echo "------------------------------------------------------------------------------"
-
-echo "Preparing template files:"
-cp "$source_dir/operators/operator-library.yaml" "$global_dist_dir/media-insights-operator-library.template"
-cp "$build_dir/media-insights-stack.yaml" "$global_dist_dir/media-insights-stack.template"
-cp "$build_dir/media-insights-test-operations-stack.yaml" "$global_dist_dir/media-insights-test-operations-stack.template"
-cp "$build_dir/media-insights-dataplane-streaming-stack.template" "$global_dist_dir/media-insights-dataplane-streaming-stack.template"
-find "$global_dist_dir"
-echo "Updating template source bucket in template files with '$global_bucket'"
-echo "Updating code source bucket in template files with '$regional_bucket'"
-echo "Updating solution version in template files with '$version'"
-new_global_bucket="s/%%GLOBAL_BUCKET_NAME%%/$global_bucket/g"
-new_regional_bucket="s/%%REGIONAL_BUCKET_NAME%%/$regional_bucket/g"
-new_version="s/%%VERSION%%/$version/g"
-# Update templates in place. Copy originals to [filename].orig
-sed -i.orig -e "$new_global_bucket" "$global_dist_dir/media-insights-stack.template"
-sed -i.orig -e "$new_regional_bucket" "$global_dist_dir/media-insights-stack.template"
-sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-stack.template"
-sed -i.orig -e "$new_global_bucket" "$global_dist_dir/media-insights-operator-library.template"
-sed -i.orig -e "$new_regional_bucket" "$global_dist_dir/media-insights-operator-library.template"
-sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-operator-library.template"
-sed -i.orig -e "$new_global_bucket" "$global_dist_dir/media-insights-test-operations-stack.template"
-sed -i.orig -e "$new_regional_bucket" "$global_dist_dir/media-insights-test-operations-stack.template"
-sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-test-operations-stack.template"
-sed -i.orig -e "$new_global_bucket" "$global_dist_dir/media-insights-dataplane-streaming-stack.template"
-sed -i.orig -e "$new_regional_bucket" "$global_dist_dir/media-insights-dataplane-streaming-stack.template"
-sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-dataplane-streaming-stack.template"
-
-echo "------------------------------------------------------------------------------"
 echo "Operators"
 echo "------------------------------------------------------------------------------"
 
@@ -658,8 +628,8 @@ fi
 echo "running chalice..."
 chalice package --merge-template external_resources.json dist
 echo "...chalice done"
-echo "cp ./dist/sam.json $global_dist_dir/media-insights-workflowapi-stack.template"
-cp dist/sam.json "$global_dist_dir"/media-insights-workflowapi-stack.template
+echo "cp ./dist/sam.json $global_dist_dir/media-insights-workflow-api-stack.template"
+cp dist/sam.json "$global_dist_dir"/media-insights-workflow-api-stack.template
 if [ $? -ne 0 ]; then
   echo "ERROR: Failed to build workflow api template"
   exit 1
@@ -756,7 +726,39 @@ fi
 popd || exit 1
 zip -q -g ./dist/anonymous-data-logger.zip ./anonymous-data-logger.py
 cp "./dist/anonymous-data-logger.zip" "$regional_dist_dir/anonymous-data-logger.zip"
-#rm -rf ./dist ./package
+
+echo "------------------------------------------------------------------------------"
+echo "CloudFormation Templates"
+echo "------------------------------------------------------------------------------"
+
+echo "Preparing template files:"
+cp "$source_dir/operators/operator-library.yaml" "$global_dist_dir/media-insights-operator-library.template"
+cp "$build_dir/media-insights-stack.yaml" "$global_dist_dir/media-insights-stack.template"
+cp "$build_dir/media-insights-test-operations-stack.yaml" "$global_dist_dir/media-insights-test-operations-stack.template"
+cp "$build_dir/media-insights-dataplane-streaming-stack.template" "$global_dist_dir/media-insights-dataplane-streaming-stack.template"
+find "$global_dist_dir"
+echo "Updating template source bucket in template files with '$global_bucket'"
+echo "Updating code source bucket in template files with '$regional_bucket'"
+echo "Updating solution version in template files with '$version'"
+new_global_bucket="s/%%GLOBAL_BUCKET_NAME%%/$global_bucket/g"
+new_regional_bucket="s/%%REGIONAL_BUCKET_NAME%%/$regional_bucket/g"
+new_version="s/%%VERSION%%/$version/g"
+# Update templates in place. Copy originals to [filename].orig
+sed -i.orig -e "$new_global_bucket" "$global_dist_dir/media-insights-stack.template"
+sed -i.orig -e "$new_regional_bucket" "$global_dist_dir/media-insights-stack.template"
+sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-stack.template"
+sed -i.orig -e "$new_global_bucket" "$global_dist_dir/media-insights-operator-library.template"
+sed -i.orig -e "$new_regional_bucket" "$global_dist_dir/media-insights-operator-library.template"
+sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-operator-library.template"
+sed -i.orig -e "$new_global_bucket" "$global_dist_dir/media-insights-test-operations-stack.template"
+sed -i.orig -e "$new_regional_bucket" "$global_dist_dir/media-insights-test-operations-stack.template"
+sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-test-operations-stack.template"
+sed -i.orig -e "$new_global_bucket" "$global_dist_dir/media-insights-dataplane-streaming-stack.template"
+sed -i.orig -e "$new_regional_bucket" "$global_dist_dir/media-insights-dataplane-streaming-stack.template"
+sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-dataplane-streaming-stack.template"
+sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-dataplane-api-stack.template"
+sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-workflow-api-stack.template"
+rm -f $global_dist_dir/*.orig
 
 # Skip copy dist to S3 if building for solution builder because
 # that pipeline takes care of copying the dist in another script.

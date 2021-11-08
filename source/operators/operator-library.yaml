@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: "Media Insight Engine - Operator library"
+Description: "aws-media-insights-engine version %%VERSION%%. This AWS CloudFormation template provisions the Media Insights Engine operator library."
 
 Mappings:
   SourceCode:
@@ -69,7 +69,7 @@ Resources:
       cfn_nag:
         rules_to_suppress:
           - id: W11
-            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
+            reason: "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources"
     Properties:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
@@ -115,7 +115,7 @@ Resources:
       cfn_nag:
         rules_to_suppress:
           - id: W11
-            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
+            reason: "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources"
     Properties:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
@@ -193,7 +193,7 @@ Resources:
       cfn_nag:
         rules_to_suppress:
           - id: W11
-            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
+            reason: "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -254,7 +254,7 @@ Resources:
       cfn_nag:
         rules_to_suppress:
           - id: W11
-            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
+            reason: "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -316,7 +316,7 @@ Resources:
       cfn_nag:
         rules_to_suppress:
           - id: W11
-            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
+            reason: "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -395,7 +395,7 @@ Resources:
       cfn_nag:
         rules_to_suppress:
           - id: W11
-            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
+            reason: "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -462,7 +462,7 @@ Resources:
       cfn_nag:
         rules_to_suppress:
           - id: W11
-            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
+            reason: "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -532,7 +532,7 @@ Resources:
       cfn_nag:
         rules_to_suppress:
           - id: W11
-            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource. Furthermore, the KMS policy must also apply to all resources because it relates to user-defined KMS keys which cannot be known beforehand."
+            reason: "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources. Furthermore, the KMS policy must also apply to all resources because it relates to user-defined KMS keys which cannot be known beforehand."
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -582,7 +582,7 @@ Resources:
       cfn_nag:
         rules_to_suppress:
           - id: W11
-            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource. Furthermore, the KMS policy must also apply to all resources because it relates to user-defined KMS keys which cannot be known beforehand."
+            reason: "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources. Furthermore, the KMS policy must also apply to all resources because it relates to user-defined KMS keys which cannot be known beforehand."
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"

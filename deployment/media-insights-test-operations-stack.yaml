@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Media Insights Engine - Test operators, stages, and workflows
+Description: "aws-media-insights-engine version %%VERSION%%. This AWS CloudFormation template  provisions operators, stages, and workflows used for testing the Media Insights Engine"
 
 Parameters:
   WorkflowCustomResourceArn:

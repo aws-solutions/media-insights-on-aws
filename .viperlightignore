@@ -14,6 +14,9 @@ docs/assets/images/MIE-architecture-diagram.pptx
 .github/workflows/release-workflow.yml:28
 .github/workflows/release-workflow.yml:45
 .github/workflows/release-workflow.yml:46
+.github/workflows/release-workflow.yml:261
+.github/workflows/release-workflow.yml:365
+.github/workflows/release-workflow.yml:382
 .github/workflows/scheduled-workflow.yml:19
 .github/workflows/scheduled-workflow.yml:20
 .github/workflows/scheduled-workflow.yml:21
@@ -37,9 +40,11 @@ source/operators/comprehend/entities/start_entity_detection.py:21
 source/operators/comprehend/key_phrases/start_key_phrases.py:21
 source/operators/operator-library.yaml:106
 .chalice/deployments
-source/workflowapi/chalicelib/apischema/create_operation_request.json:20
 source/workflowapi/chalicelib/apischema/create_operation_response.json:22
+source/workflowapi/chalicelib/apischema/create_operation_response.json:32
+source/workflowapi/chalicelib/apischema/create_operation_response.json:103
 source/workflowapi/chalicelib/apischema/create_workflow_response.json:70
+source/workflowapi/chalicelib/apischema/create_workflow_response.json:159
 test/README.md:41
 test/README.md:42
 test/e2e/conftest.py:36
@@ -57,4 +62,5 @@ test/integ/workflowapi/conftest.py:33
 test/integ/workflowapi/conftest.py:34
 test/test-media/sample-data.json:1
 test/unit/workflowapi/test_workflowapi_app.py:265
+test/unit/workflowapi/test_workflowapi_app.py:669
 docs/source/theme/smithy/static/aws-sdk-2.826.0.min.js

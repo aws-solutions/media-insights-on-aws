@@ -21,9 +21,9 @@ You can deploy MIE in your AWS account with the following Cloud Formation templa
 
 Region| Launch
 ------|-----
-US East (N. Virginia) | [![Launch in us-east-1](docs/assets/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-east-1.s3.amazonaws.com/aws-media-insights-engine/v3.0.3/media-insights-stack.template)
-US West (Oregon) | [![Launch in us-west-2](docs/assets/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-west-2.s3.us-west-2.amazonaws.com/aws-media-insights-engine/v3.0.3/media-insights-stack.template)
-EU West (Ireland) | [![Launch in eu-west-1](docs/assets/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks/new?stackName=mie&templateURL=https://rodeolabz-eu-west-1.s3.eu-west-1.amazonaws.com/aws-media-insights-engine/v3.0.3/media-insights-stack.template)
+US East (N. Virginia) | [![Launch in us-east-1](docs/assets/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-east-1.s3.amazonaws.com/aws-media-insights-engine/v3.0.4/media-insights-stack.template)
+US West (Oregon) | [![Launch in us-west-2](docs/assets/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-west-2.s3.us-west-2.amazonaws.com/aws-media-insights-engine/v3.0.4/media-insights-stack.template)
+EU West (Ireland) | [![Launch in eu-west-1](docs/assets/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks/new?stackName=mie&templateURL=https://rodeolabz-eu-west-1.s3.eu-west-1.amazonaws.com/aws-media-insights-engine/v3.0.4/media-insights-stack.template)
 
 The Cloud Formation options for these one-click deploys are described in the [installation parameters](#installation-parameters) section.
 

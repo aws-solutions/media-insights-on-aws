@@ -793,7 +793,7 @@ if [ "$global_bucket" != "solutions-reference" ] && [ "$global_bucket" != "solut
   echo "**********                    I M P O R T A N T                      **********"
   echo "*******************************************************************************"
   echo "** You are about to upload templates and code to S3. Please confirm that     **"
-  echo "** buckets ${bucket}-reference and ${bucket}-${region} are appropriately     **"
+  echo "** buckets s3://${global_bucket} and s3://${regional_bucket}-${region} are appropriately     **"
   echo "** secured (not world-writeable, public access blocked) before continuing.   **"
   echo "*******************************************************************************"
   echo "*******************************************************************************"
@@ -807,8 +807,8 @@ if [ "$global_bucket" != "solutions-reference" ] && [ "$global_bucket" != "solut
   echo "=========================================================================="
   echo "Deploying $solution_name version $version to bucket $bucket-$region"
   echo "=========================================================================="
-  echo "Templates: ${bucket}-reference/$solution_name/$version/"
-  echo "Lambda code: ${bucket}-${region}/$solution_name/$version/"
+  echo "Templates: ${global_bucket}/$solution_name/$version/"
+  echo "Lambda code: ${regional_bucket}-${region}/$solution_name/$version/"
   echo "---"
 
   set -x

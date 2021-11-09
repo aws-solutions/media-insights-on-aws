@@ -1,4 +1,4 @@
-# Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 ###############################################################################
@@ -200,7 +200,7 @@ def lambda_handler(event, context):
                                             "TemporalAdaptiveQuantization": "ENABLED",
                                             "FlickerAdaptiveQuantization": "DISABLED",
                                             "EntropyEncoding": "CABAC",
-                                            "Bitrate": 5000000,
+                                            "Bitrate": 1600000,
                                             "FramerateControl": "SPECIFIED",
                                             "RateControlMode": "CBR",
                                             "CodecProfile": "MAIN",

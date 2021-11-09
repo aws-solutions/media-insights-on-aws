@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 ###############################################################################
@@ -74,6 +74,8 @@ export TEST_TEXT="sample-text.txt"
 export TEST_JSON="sample-data.json"
 export TEST_FACE_IMAGE="sample-face.jpg"
 export TEST_FACE_COLLECTION_ID="temporary_face_collection"
+export TEST_PARALLEL_DATA="sampleparalleldata"
+export TEST_TERMINOLOGY="sampleterminology"
 
 # Retrieve exports from mie stack
 #export BUCKET_NAME=`aws cloudformation list-stack-resources --profile default --stack-name $MIE_STACK_NAME --region $REGION --output text --query 'StackResourceSummaries[?LogicalResourceId == \`Dataplane\`]'.PhysicalResourceId`
@@ -84,7 +86,7 @@ pytest -s -W ignore::DeprecationWarning -p no:cacheproviders
 
 if [ $? -eq 0 ]; then
     exit 0
-else 
+else
     exit 1
 fi
 

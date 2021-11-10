@@ -321,8 +321,9 @@ def create_asset():
 
         {
             "Input": {
-                "S3Bucket": "{somenbucket}",
-                "S3Key": "{somekey}"
+                "MediaType": "{media type},
+                "S3Bucket": "{source bucket}",
+                "S3Key": "{source key}"
             }
         }
 
@@ -332,6 +333,7 @@ def create_asset():
 
             {
                 "AssetId": asset_id,
+                "MediaType": media_type,
                 "S3Bucket": source_bucket,
                 "S3Key": source_key
             }
@@ -353,6 +355,7 @@ def create_asset():
     # check required inputs
 
     try:
+        media_type = asset['Input']['MediaType']
         source_key = asset['Input']['S3Key']
         source_bucket = asset['Input']['S3Bucket']
     except KeyError as e:
@@ -386,6 +389,7 @@ def create_asset():
         table.put_item(
             Item={
                 "AssetId": asset_id,
+                "MediaType": media_type,
                 "S3Bucket": source_bucket,
                 "S3Key": source_key,
                 "Created": ts
@@ -400,7 +404,7 @@ def create_asset():
         raise ChaliceViewError("Exception when creating dynamo item for asset: {e}".format(e=e))
     else:
         logger.info("Completed asset creation for asset: {asset}".format(asset=asset_id))
-        return {"AssetId": asset_id, "S3Bucket": source_bucket, "S3Key": source_key}
+        return {"AssetId": asset_id, "MediaType": media_type, "S3Bucket": source_bucket, "S3Key": source_key}
 
 
 @app.route('/metadata/{asset_id}', cors=True, methods=['POST'], authorizer=authorizer)

@@ -107,14 +107,14 @@ class API:
         headers = {"Content-Type": "application/json"}
         body = {
             "Input": {
+                "MediaType": "Image",
                 "S3Bucket": self.stack_resources['DataplaneBucket'],
                 "S3Key": "upload/" + self.env_vars['SAMPLE_IMAGE']
             }
         }
 
         print("POST /create")
-        create_asset_response = requests.post(self.stack_resources["DataplaneApiEndpoint"] + '/create', headers=headers,
-                                              json=body, verify=True, auth=self.auth)
+        create_asset_response = requests.post(self.stack_resources["DataplaneApiEndpoint"] + '/create', headers=headers, json=body, verify=True, auth=self.auth)
         return create_asset_response
 
     def post_metadata(self, asset_id, metadata, paginate=False, end=False):

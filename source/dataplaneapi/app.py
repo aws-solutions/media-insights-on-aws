@@ -321,7 +321,7 @@ def create_asset():
 
         {
             "Input": {
-                "MediaType": "{media type},
+                "MediaType": "{media type}",
                 "S3Bucket": "{source bucket}",
                 "S3Key": "{source key}"
             }
@@ -688,7 +688,7 @@ def get_asset_metadata(asset_id):
             #  entire request vs. a page for a specific operator
             if "Item" in asset_item:
                 asset_attributes = asset_item["Item"]
-                global_attributes = ['S3Key', 'S3Bucket', 'AssetId', 'Created']
+                global_attributes = ['MediaType', 'S3Key', 'S3Bucket', 'AssetId', 'Created']
                 remaining_attributes = list(set(asset_attributes.keys()) - set(global_attributes))
                 remaining = []
 
@@ -1040,7 +1040,7 @@ def delete_asset(asset_id):
             logger.error("Exception occurred during request to delete asset: {e}".format(e=e))
             raise ChaliceViewError("Unable to delete asset: {e}".format(e=e))
         else:
-            global_attributes = ['S3Key', 'S3Bucket', 'AssetId', 'Created']
+            global_attributes = ['MediaType', 'S3Key', 'S3Bucket', 'AssetId', 'Created']
             remaining_attributes = list(set(attributes_to_delete.keys()) - set(global_attributes))
 
             # Build list of all s3 objects that the asset had pointers to

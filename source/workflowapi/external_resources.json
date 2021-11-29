@@ -202,8 +202,6 @@
                     "transcribe:GetVocabulary",
                     "transcribe:ListVocabularies",
                     "transcribe:ListLanguageModels",
-                    "transcribe:CreateLanguageModel",
-                    "transcribe:DeleteLanguageModel",
                     "transcribe:DescribeLanguageModel"
                   ],
                   "Resource": "*"

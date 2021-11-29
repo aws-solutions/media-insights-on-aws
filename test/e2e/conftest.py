@@ -1,4 +1,4 @@
-# Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 
@@ -9,6 +9,7 @@ import requests
 import logging
 import re
 import os
+import time
 from requests_aws4auth import AWS4Auth
 
 
@@ -27,6 +28,8 @@ def testing_env_variables():
             'SAMPLE_TEXT': os.environ['TEST_TEXT'],
             'SAMPLE_JSON': os.environ['TEST_JSON'],
             'SAMPLE_FACE_IMAGE': os.environ['TEST_FACE_IMAGE'],
+            'SAMPLE_PARALLEL_DATA': os.environ['TEST_PARALLEL_DATA'],
+            'SAMPLE_TERMINOLOGY': os.environ['TEST_TERMINOLOGY'],
             'REGION': os.environ['MIE_REGION'],
             'MIE_STACK_NAME': os.environ['MIE_STACK_NAME'],
             'FACE_COLLECTION_ID': os.environ['TEST_FACE_COLLECTION_ID'],
@@ -104,6 +107,7 @@ def upload_media(testing_env_variables, stack_resources):
     # s3.upload_file(testing_env_variables['MEDIA_PATH'] + testing_env_variables['SAMPLE_IMAGE'], stack_resources['DataplaneBucket'], 'upload/' + testing_env_variables['SAMPLE_IMAGE'])
     # s3.upload_file(testing_env_variables['MEDIA_PATH'] + testing_env_variables['SAMPLE_FACE_IMAGE'], stack_resources['DataplaneBucket'], 'upload/' + testing_env_variables['SAMPLE_FACE_IMAGE'])
     s3.upload_file(testing_env_variables['MEDIA_PATH'] + testing_env_variables['SAMPLE_VIDEO'], stack_resources['DataplaneBucket'], 'upload/' + testing_env_variables['SAMPLE_VIDEO'])
+    s3.upload_file(testing_env_variables['MEDIA_PATH'] + testing_env_variables['SAMPLE_PARALLEL_DATA'], stack_resources['DataplaneBucket'], 'upload/' + testing_env_variables['SAMPLE_PARALLEL_DATA'])
     # Wait for fixture to go out of scope:
     yield upload_media
 
@@ -167,6 +171,76 @@ class WorkflowAPI:
 
         return get_workflow_execution_response
 
+    def get_terminology(self, body):
+        headers = {"Content-Type": "application/json"}
+        print("POST /service/translate/get_terminology")
+        get_terminology_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/get_terminology', headers=headers, json=body, verify=True, auth=self.auth)
+
+        return get_terminology_response
+
+    def download_terminology(self, body):
+        headers = {"Content-Type": "application/json"}
+        print("POST /service/translate/download_terminology")
+        download_terminology_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/download_terminology', headers=headers, json=body, verify=True, auth=self.auth)
+
+        return download_terminology_response
+
+    def list_terminologies(self):
+        print("GET /service/translate/list_terminologies")
+        list_terminologies_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/list_terminologies', verify=True, auth=self.auth)
+
+        return list_terminologies_response
+
+    def delete_terminology(self, body):
+        headers = {"Content-Type": "application/json"}
+        print("POST /service/translate/delete_terminology")
+        delete_terminology_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/delete_terminology', headers=headers, json=body, verify=True, auth=self.auth)
+
+        return delete_terminology_response
+
+    def create_terminology(self, body):
+        headers = {"Content-Type": "application/json"}
+        print("POST /service/translate/create_terminology")
+        create_terminology_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/create_terminology', headers=headers, json=body, verify=True, auth=self.auth)
+
+        return create_terminology_response
+
+    def get_parallel_data(self, body):
+        headers = {"Content-Type": "application/json"}
+        print("POST /service/translate/get_parallel_data")
+        get_parallel_data_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/get_parallel_data', headers=headers, json=body, verify=True, auth=self.auth)
+
+        return get_parallel_data_response
+
+    def list_parallel_data(self):
+        print("GET /service/translate/list_parallel_data")
+        list_parallel_data_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/list_parallel_data', verify=True, auth=self.auth)
+
+        return list_parallel_data_response
+
+    def download_parallel_data(self, body):
+        headers = {"Content-Type": "application/json"}
+        print("POST /service/translate/download_parallel_data")
+        download_parallel_data_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/download_parallel_data', headers=headers, json=body, verify=True, auth=self.auth)
+
+        return download_parallel_data_response
+
+
+    def delete_parallel_data(self, body):
+        headers = {"Content-Type": "application/json"}
+        print("POST /service/translate/delete_parallel_data")
+        delete_parallel_data_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/delete_parallel_data', headers=headers, json=body, verify=True, auth=self.auth)
+
+        return delete_parallel_data_response
+
+    def create_parallel_data(self, body):
+        headers = {"Content-Type": "application/json"}
+        print("POST /service/translate/create_parallel_data")
+        create_parallel_data_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/create_parallel_data', headers=headers, json=body, verify=True, auth=self.auth)
+
+        return create_parallel_data_response
+
+
 # Workflow API Fixture
 
 
@@ -213,3 +287,79 @@ def dataplane_api(stack_resources, testing_env_variables):
         testing_api = DataplaneAPI(stack_resources, testing_env_variables)
         return testing_api
     return _gen_api
+
+
+@pytest.fixture(scope='session')
+def parallel_data(workflow_api, stack_resources, testing_env_variables):
+    workflow_api = workflow_api()
+    parallel_data_s3_uri = 's3://' + \
+        stack_resources['DataplaneBucket'] + '/' + 'upload/' +\
+        testing_env_variables['SAMPLE_PARALLEL_DATA']
+
+    create_parallel_data_body = {
+        "parallel_data_name": testing_env_variables['SAMPLE_PARALLEL_DATA'],
+        "parallel_data_s3uri": parallel_data_s3_uri
+    }
+
+    create_parallel_data_response = workflow_api.create_parallel_data(
+        create_parallel_data_body)
+    assert create_parallel_data_response.status_code == 200
+
+    time.sleep(5)
+
+    # wait for parallel_data to complete
+
+    processing = True
+
+    while processing:
+        body = {'parallel_data_name': testing_env_variables['SAMPLE_PARALLEL_DATA']}
+        get_parallel_data_response = workflow_api.get_parallel_data(body)
+
+        assert get_parallel_data_response.status_code == 200
+
+        response = get_parallel_data_response.json()
+
+        status = response["ParallelDataProperties"]["Status"]
+
+        allowed_statuses = ['CREATING','UPDATING','ACTIVE']
+
+        assert status in allowed_statuses
+
+        if status == "ACTIVE":
+            processing = False
+        else:
+            print('Sleeping for 30 seconds before retrying')
+            time.sleep(30)
+
+    yield create_parallel_data_body
+    
+    delete_parallel_data_body = {
+        "parallel_data_name": testing_env_variables['SAMPLE_PARALLEL_DATA']
+    }
+    delete_parallel_data_response = workflow_api.delete_parallel_data(
+        delete_parallel_data_body)
+    assert delete_parallel_data_response.status_code == 200
+
+@pytest.fixture(scope='session')
+def terminology(workflow_api, dataplane_api, stack_resources, testing_env_variables):
+    workflow_api = workflow_api()
+
+    create_terminology_body = {
+        "terminology_name": testing_env_variables['SAMPLE_TERMINOLOGY'],
+        "terminology_csv": "\"en\",\"es\"\n\"STEEN\",\"STEEN-replaced-by-terminology\""
+    }
+
+    create_terminology_request = workflow_api.create_terminology(
+        create_terminology_body)
+    assert create_terminology_request.status_code == 200
+
+    # wait for terminology to complete - it's synchronous but just in case
+    time.sleep(5)
+
+    yield create_terminology_body
+    delete_terminology_body = {
+        "terminology_name": testing_env_variables['SAMPLE_TERMINOLOGY']
+    }
+    delete_terminology_request = workflow_api.delete_terminology(
+        delete_terminology_body)
+    assert delete_terminology_request.status_code == 200

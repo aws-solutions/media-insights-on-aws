@@ -399,286 +399,389 @@ The MIE APIs in Amazon API Gateway require that you authenticate every request w
 
 ## Summary:
 * Data plane API
-  * GET /
-  * POST /create
-  * POST /download
-  * GET /mediapath/{asset_id}/{workflow_id}
-  * GET /metadata
-  * DELETE /metadata/{asset_id}
-  * DELETE /metadata/{asset_id}/{operator_name}
-  * POST /upload
+  * [POST /create](#POST-create)
+  * [POST /download](#POST-download)
+  * [GET /mediapath/{asset_id}/{workflow_id}](#GET-mediapathasset_idworkflow_id)
+  * [GET /metadata](#GET-metadata)
+  * [GET /metadata/{asset_id}](#GET-metadataasset_id)
+  * [POST /metadata/{asset_id}](#POST-metadataasset_id)
+  * [DELETE /metadata/{asset_id}](#DELETE-metadataasset_id)
+  * [GET /metadata/{asset_id}/{operator_name}](#GET-metadataasset_idoperator_name)
+  * [DELETE /metadata/{asset_id}/{operator_name}](#DELETE-metadataasset_idoperator_name)
+  * [POST /upload](#POST-upload)
+  * [GET /version](#GET-version)
 * Workflow (control plane) API
-  * GET /
-  * POST /system/configuration
-  * POST /workflow
-  * GET /workflow/configuration/{Name}
-  * POST /workflow/execution
-  * GET /workflow/execution/asset/{AssetId}
-  * GET /workflow/execution/status/{Status}
-  * DELETE /workflow/execution/{Id}
-  * GET /workflow/execution/{Id}
-  * POST /workflow/operation
-  * DELETE /workflow/operation/{Name}
-  * POST /workflow/stage
-  * DELETE /workflow/stage/{Name}
-  * DELETE /workflow/{Name}
+  * [POST /system/configuration](#POST-systemconfiguration)
+  * [GET /system/configuration](#GET-systemconfiguration)
+  * [POST /workflow/operation](#POST-workflowoperation)
+  * [GET /workflow/operation](#GET-workflowoperation)
+  * [GET /workflow/operation/{Name}](#GET-workflowoperationName)
+  * [DELETE /workflow/operation/{Name}](#DELETE-workflowoperationName)
+  * [POST /workflow/stage](#POST-workflowstage)
+  * [GET /workflow/stage](#GET-workflowstage)
+  * [GET /workflow/stage/{Name}](#GET-workflowstageName)
+  * [DELETE /workflow/stage/{Name}](#DELETE-workflowstageName)
+  * [POST /workflow](#POST-workflow)
+  * [PUT /workflow](#PUT-workflow)
+  * [GET /workflow](#GET-workflow)
+  * [GET /workflow/list/operation/{OperatorName}](#GET-workflowlistoperationOperatorName)
+  * [GET /workflow/list/stage/{StageName}](#GET-workflowliststageStageName)
+  * [GET /workflow/{Name}](#GET-workflowName)
+  * [GET /workflow/configuration/{Name}](#GET-workflowconfigurationName)
+  * [DELETE /workflow/{Name}](#DELETE-workflowName)
+  * [POST /workflow/execution](#POST-workflowexecution)
+  * [PUT /workflow/execution/{Id}](#PUT-workflowexecutionId)
+  * [GET /workflow/execution](#GET-workflowexecution)
+  * [GET /workflow/execution/status/{Status}](#GET-workflowexecutionstatusStatus)
+  * [GET /workflow/execution/asset/{AssetId}](#GET-workflowexecutionassetAssetId)
+  * [GET /workflow/execution/{Id}](#GET-workflowexecutionId)
+  * [DELETE /workflow/execution/{Id}](#DELETE-workflowexecutionId)
+  * [POST /service/transcribe/get_vocabulary](#POST-servicetranscribeget_vocabulary)
+  * [POST /service/transcribe/download_vocabulary](#POST-servicetranscribedownload_vocabulary)
+  * [GET /service/transcribe/list_vocabularies](#GET-servicetranscribelist_vocabularies)
+  * [POST /service/transcribe/delete_vocabulary](#POST-servicetranscribedelete_vocabulary)
+  * [POST /service/transcribe/create_vocabulary](#POST-servicetranscribecreate_vocabulary)
+  * [POST /service/translate/get_terminology](#POST-servicetranslateget_terminology)
+  * [POST /service/translate/download_terminology](#POST-servicetranslatedownload_terminology)
+  * [GET /service/translate/list_terminologies](#GET-servicetranslatelist_terminologies)
+  * [POST /service/translate/delete_terminology](#POST-servicetranslatedelete_terminology)
+  * [POST /service/translate/create_terminology](#POST-servicetranslatecreate_terminology)
+  * [POST /service/translate/get_parallel_data](#POST-servicetranslateget_parallel_data)
+  * [POST /service/translate/download_parallel_data](#POST-servicetranslatedownload_parallel_data)
+  * [GET /service/translate/list_parallel_data](#GET-servicetranslatelist_parallel_data)
+  * [POST /service/translate/delete_parallel_data](#POST-servicetranslatedelete_parallel_data)
+  * [POST /service/translate/create_parallel_data](#POST-servicetranslatecreate_parallel_data)
+  * [GET /version](#GET-version)
 
   * POST /service/transcribe/describe_language_model
   * GET /service/transcribe/list_language_models
 
 ## Data plane API
 
-* Create an asset in the data plane from a json input composed of the input key and bucket of the object:
+#### `POST /create`
 
-  `POST /create`
+Create an asset in the data plane from a json input composed of the input key and bucket of the object.
 
-  Body:
-  
-  ```
-  {
-    "Input": {
-      "S3Bucket": "{somenbucket}",
-      "S3Key": "{somekey}"
-    }
+Body:
+
+```
+{
+  "Input": {
+    "S3Bucket": "{somenbucket}",
+    "S3Key": "{somekey}"
   }
-  ```
-  
-  Returns:
-  
-  * A dictionary mapping of the asset id and the new location of the media object
+}
+```
 
-* Retrieve metadata for an asset:
+Returns:
 
-  `GET /metadata/{asset_id}`
+* A dictionary mapping of the asset id and the new location of the media object
 
-  Returns:
-  
-  * All asset metadata. If the result provides a cursor then you can get the next page by specifying the cursor like this:
+#### `POST /download`
 
-  `GET /metadata/{asset_id}?cursor={cursor}`
+Generate a pre-signed URL that can be used to download media files from S3.
 
-* Add operation metadata for an asset:
+Body:
 
-  `POST /metadata/{asset_id}`
-
-  Body:
-  
-  ```
-  {
-    "OperatorName": "{some_operator}",
-    "Results": "{json_formatted_results}"
+```
+{
+  "Input": {
+    "S3Bucket": "{somebucket}",
+    "S3Key": "{somekey}"
   }
+}
+```
+
+Returns:
+
+* Pre-signed S3 URL for downloading files from S3 to a web application.
+
+#### `GET /mediapath/{asset_id}/{workflow_id}`
+
+Generate a media storage path in the dataplane S3 bucket.
+
+Returns:
+
+* Dictionary containing the S3 bucket and key for uploading a given asset media object to the dataplane.
+
+#### `GET /metadata`
+
+Returns:
+
+* Dict containing a list of all assets by their asset_id. The list returns empty if no assets have been created.
+
+#### `GET /metadata/{asset_id}`
+
+Retrieve metadata for an asset.
+
+Returns:
+
+* All asset metadata. If the result provides a cursor then you can get the next page by specifying the cursor like this:
+
+`GET /metadata/{asset_id}?cursor={cursor}`
+
+#### `DELETE /metadata/{asset_id}`
+
+Deletes an asset and all metadata from the dataplane.
+
+Returns:
+
+* Deletion status from dataplane.
+
+#### `DELETE /metadata/{asset_id}/{operator_name}`
+
+Deletes the specified operator metadata from an asset.
+
+Returns:
+
+* Deletion status from dataplane.
+
+#### `POST /metadata/{asset_id}`
+
+Add operation metadata for an asset.
+
+Body:
+
+```
+{
+  "OperatorName": "{some_operator}",
+  "Results": "{json_formatted_results}"
+}
+```
+
+#### `POST /upload`
+
+Generate a pre-signed URL that can be used to upload media files to S3 from a web application.
+
+Body:
+
+```
+{
+  "OperatorName": "{some_operator}",
+  "Results": "{json_formatted_results}"
+}
+```
+
+#### `GET /metadata/{asset_id}/{operator_name}`
+
+Retrieve the metadata that a specific operator created from an asset.
+
+#### `GET /version`
+
+Get version information.
+
+Returns:
+
+* A dictionary containing the version of the MIE framework and the version of the dataplane API. Since it is possible for the MIE framework to be released without any API changes, these two versions can be different. The MIE framework and its APIs are versioned according to [Semantic Versioning](https://semver.org) rules. Under this scheme, version numbers and the way they change convey meaning about backwards compatibility.
+
+  For example, if the MIE framework was version [v2.0.4](https://github.com/awslabs/aws-media-insights-engine/releases/tag/v2.0.4) and the workflow API was version 2.0.0, then this would return the following response:
+
   ```
-
-* Retrieve the metadata that a specific operator created from an asset:
-
-  `GET /metadata/{asset_id}/{operator_name}`
-
-* Get version information:
-
-  `GET /version`
-
-  Returns:
-  
-  * A dictionary containing the version of the MIE framework and the version of the dataplane API. Since it is possible for the MIE framework to be released without any API changes, these two versions can be different. The MIE framework and its APIs are versioned according to [Semantic Versioning](https://semver.org) rules. Under this scheme, version numbers and the way they change convey meaning about backwards compatibility.
-
-    For example, if the MIE framework was version [v2.0.4](https://github.com/awslabs/aws-media-insights-engine/releases/tag/v2.0.4) and the workflow API was version 2.0.0, then this would return the following response:
-  
-    ```
-    b'{"ApiVersion":"2.0.0","FrameworkVersion":"v2.0.4"}'
-    ```
+  b'{"ApiVersion":"2.0.0","FrameworkVersion":"v2.0.4"}'
+  ```
 
 
 ## Workflow API
 
-* Add a new system configuration parameter or update an existing MIE system configuration parameter:
+#### `POST /system/configuration`
 
-  `POST /system/configuration`
+Add a new system configuration parameter or update an existing MIE system configuration parameter.
 
-  Body:
+Body:
+
+```
+{
+  "Name": "ParameterName",
+  "Value": "ParameterValue"
+}
+```
+
+Supported parameters:
+
+* ***MaxConcurrentWorkflows*** - Sets the maximum number of workflows that are allowed to run concurrently. Any new workflows that are added after MaxConcurrentWorkflows is reached are placed on a queue until capacity is freed by completing workflows. Use this to help avoid throttling in service API calls from workflow operators. This setting is checked each time the WorkflowSchedulerLambda is run and may take up to 60 seconds to take effect.
+
+Returns: 
+
+* Nothing
+
+Raises:
+
+* 200: The system configuration was set successfully
+* 400: Bad Request
+* 500: Internal server error - an input value is not valid
+
+#### `GET /system/configuration`
+
+Get the current MIE system configuration.
+
+Returns:
+
+* A list of dictionary containing the current MIE system configuration key-value pairs.
+
+Raises:
+
+* 200: The system configuration was returned successfully
+* 500: Internal server error
+
+#### `POST /workflow`
+
+Create a workflow from a list of existing stages.
   
-  ```
-  {
-    "Name": "ParameterName",
-    "Value": "ParameterValue"
-  }
-  ```
+A workflow is a pipeline of stages that are started sequentially to transform and extract metadata for a set of MediaType objects. Each stage must contain either a “Next” key indicating the next stage to run or and “End” key indicating it is the last stage.
 
-  Supported parameters:
-  
-  * ***MaxConcurrentWorkflows*** - Sets the maximum number of workflows that are allowed to run concurrently. Any new workflows that are added after MaxConcurrentWorkflows is reached are placed on a queue until capacity is freed by completing workflows. Use this to help avoid throttling in service API calls from workflow operators. This setting is checked each time the WorkflowSchedulerLambda is run and may take up to 60 seconds to take effect.
+Body:
 
-  Returns: 
-  
-  * Nothing
-
-  Raises:
-  
-  * 200: The system configuration was set successfully
-  * 400: Bad Request
-  * 500: Internal server error - an input value is not valid
-
-* Get the current MIE system configuration:
-
-  `GET /system/configuration`
-
-  Returns:
-  
-  * A list of dictionary containing the current MIE system configuration key-value pairs.
-
-  Raises:
-  
-  * 200: The system configuration was returned successfully
-  * 500: Internal server error
-
-* Create a workflow from a list of existing stages:
-  
-  A workflow is a pipeline of stages that are started sequentially to transform and extract metadata for a set of MediaType objects. Each stage must contain either a “Next” key indicating the next stage to run or and “End” key indicating it is the last stage.
-
-  `POST /workflow`
-  
-  Body:
-  
-  ```
-  {
-    "Name": string,
-    "StartAt": string - name of starting stage,
-    "Stages": {
-      "stage-name": {
-          "Next": "string - name of next stage"
-      },
-      ...,
-      "stage-name": {
-          "End": true
-      }
-    }
-  }
-  ```
-
-  Returns:
-  
-  * A dictionary mapping keys to the corresponding workflow created including the AWS resources used to run each stage.
-
-  Raises:
-  
-  * 200: The workflow was created successfully
-  * 400: Bad Request - one of the input stages was not found or was invalid
-  * 500: Internal server error
-
-* List all workflow definitions:
-
-  `GET /workflow`
-
-  Returns:
-  
-  * A list of workflow definitions.
-
-  Raises:
-  * 200: All workflows returned successfully
-  * 500: Internal server error
-
-* Get a workflow configuration object by name
-
-  `GET /workflow/configuration/{Name}`
-
-  Returns:
-  
-  * A dictionary containing the workflow configuration.
-
-  Raises:
-  * 200: All workflows returned successfully
-  * 404: Not found
-  * 500: Internal server error
-
-* Run a workflow: 
-  
-  The Body contains the name of the workflow to run, at least one input media type within the media object. A dictionary of stage configuration objects can be passed in to override the default configuration of the operations within the stages.
-
-  `POST /workflow/execution`
-  
-  Body:  
-  
-  ```
-  {
-  "Name":"Default",
-  "Input":{
-    "Media":{
-      "Video":{  <-- This can also be "Image"
-        "S3Bucket":"___",
-        "S3Key":"___"
-      }
-    }
-  },
-  "Configuration": {
+```
+{
+  "Name": string,
+  "StartAt": string - name of starting stage,
+  "Stages": {
     "stage-name": {
-      "Operations": {
-        "SplitAudio": {
-          "Enabled": True,
-          "MediaTypes": {
-            "Video": True/False,
-            "Audio": True/False,
-            "Frame": True/False
-          }
-       },
-     },
-   }
-   ...
+        "Next": "string - name of next stage"
+    },
+    ...,
+    "stage-name": {
+        "End": true
+    }
   }
-  ```
+}
+```
+
+Returns:
+
+* A dictionary mapping keys to the corresponding workflow created including the AWS resources used to run each stage.
+
+Raises:
+
+* 200: The workflow was created successfully
+* 400: Bad Request - one of the input stages was not found or was invalid
+* 500: Internal server error
+
+#### `GET /workflow`
+
+List all workflow definitions.
+
+Returns:
+
+* A list of workflow definitions.
+
+Raises:
+* 200: All workflows returned successfully
+* 500: Internal server error
+
+#### `GET /workflow/configuration/{Name}`
+
+Get a workflow configuration object by name.
+
+Returns:
+
+* A dictionary containing the workflow configuration.
+
+Raises:
+* 200: All workflows returned successfully
+* 404: Not found
+* 500: Internal server error
+
+#### `POST /workflow/execution`
+
+Run a workflow.
   
-  Returns:
-  
-  * A dictionary describing the workflow execution properties and the `WorkflowExecutionId` that can be used as the `Id` in `/workflow/execution/{Id}` API requests.
+The Body contains the name of the workflow to run, at least one input media type within the media object. A dictionary of stage configuration objects can be passed in to override the default configuration of the operations within the stages.
 
-  Raises:
-  
-  * 200: The workflow run was created successfully
-  * 400: Bad Request - the input workflow was not found or was not valid
-  * 500: Internal server error
+Body:  
 
-* List all workflow executions:
+```
+{
+"Name":"Default",
+"Input":{
+  "Media":{
+    "Video":{  <-- This can also be "Image"
+      "S3Bucket":"___",
+      "S3Key":"___"
+    }
+  }
+},
+"Configuration": {
+  "stage-name": {
+    "Operations": {
+      "SplitAudio": {
+        "Enabled": True,
+        "MediaTypes": {
+          "Video": True/False,
+          "Audio": True/False,
+          "Frame": True/False
+        }
+     },
+   },
+ }
+ ...
+}
+```
 
-  `GET /workflow/execution`
+Returns:
 
-  Returns:
-  
-  * A list of workflow runs
+* A dictionary describing the workflow execution properties and the `WorkflowExecutionId` that can be used as the `Id` in `/workflow/execution/{Id}` API requests.
 
-  Raises:
-  
-  * 200: List returned successfully
-  * 500: Internal server error
+Raises:
 
-* Get workflow executions by AssetId:
+* 200: The workflow run was created successfully
+* 400: Bad Request - the input workflow was not found or was not valid
+* 500: Internal server error
 
-  `GET /workflow/execution/asset/{AssetId}`
+#### `GET /workflow/execution`
 
-  Returns:
-  
-  * A list of dictionaries containing the workflow runs matching the AssetId
+List all workflow executions.
 
-  Raises:
-  
-  * 200: List returned successfully
-  * 404: Not found
-  * 500: Internal server error
+Returns:
 
-* Get all workflow executions with the specified status:
+* A list of workflow runs
 
-  `GET /workflow/execution/status/{Status}`
+Raises:
 
-  Returns:
-  
-  * A list of dictionaries containing the workflow executions with the requested status
+* 200: List returned successfully
+* 500: Internal server error
 
-  Raises:
-  * 200: All workflows returned successfully
-  * 404: Not found
-  * 500: Internal server error
+#### `PUT /workflow/execution/{Id}`
 
-* Delete a workflow execution:
+Resume a paused workflow. 
 
-  `DELETE /workflow/execution/{Id}`
+Workflow executions will pause when they encounter a WaitOperation. The WaitOperation is in the MIE operator library and is often used in workflows that need to wait for user input.
+
+Returns:
+
+
+
+
+#### `GET /workflow/execution/asset/{AssetId}`
+
+Get workflow executions by AssetId.
+
+Returns:
+
+* A list of dictionaries containing the workflow runs matching the AssetId
+
+Raises:
+
+* 200: List returned successfully
+* 404: Not found
+* 500: Internal server error
+
+#### `GET /workflow/execution/status/{Status}`
+
+Get all workflow executions with the specified status.
+
+Returns:
+
+* A list of dictionaries containing the workflow executions with the requested status
+
+Raises:
+* 200: All workflows returned successfully
+* 404: Not found
+* 500: Internal server error
+
+#### `DELETE /workflow/execution/{Id}`
+
+Delete a workflow execution.
 
   Returns:
 
@@ -690,267 +793,599 @@ The MIE APIs in Amazon API Gateway require that you authenticate every request w
   * 404: Not found
   * 500: Internal server error
 
-* Get a workflow execution by id:
+#### `GET /workflow/execution/{Id}`
 
-  `GET /workflow/execution/{Id}`
+Get a workflow execution by id.
 
-  Returns:
-  
-  * A dictionary containing the workflow execution
+Returns:
 
-  Raises:
+* A dictionary containing the workflow execution
 
-  *	200: The workflow execution details returned successfully
-  * 404: Not found
-  * 500: Internal server error
+Raises:
 
-* Create a new operation:
+*	200: The workflow execution details returned successfully
+* 404: Not found
+* 500: Internal server error
 
-  `POST /workflow/operation`
+#### `POST /workflow/operation`
 
-  Generates an operation state machine using the operation lambda(s) provided.
+Create a new operation.
 
-  Creates a singleton operator stage that can be used to run the operator as a single-operator stage in a workflow.
+Generates an operation state machine using the operation lambda(s) provided.
 
-  Operators can be synchronous or asynchronous. Synchronous operators complete before returning control to the invoker, while asynchronous operators return control to the invoker immediately after the operation is successfully initiated. Asynchronous operators require an additional monitoring task to check the status of the operation.
+Creates a singleton operator stage that can be used to run the operator as a single-operator stage in a workflow.
 
-  For more information on how to implement lambdas to be used in MIE operators, refer to [4. Implementing a new Operator in MIE](#4-implementing-a-new-operator-in-mie)
+Operators can be synchronous or asynchronous. Synchronous operators complete before returning control to the invoker, while asynchronous operators return control to the invoker immediately after the operation is successfully initiated. Asynchronous operators require an additional monitoring task to check the status of the operation.
 
-  Body:
-  
-  ```
-  {
-    "Name":"operation-name",
-    "Type": ["Async"|"Sync"],
-    "Configuration" : {
-      "MediaType": "Video",
-      "Enabled:": True,
+For more information on how to implement lambdas to be used in MIE operators, refer to [4. Implementing a new Operator in MIE](#4-implementing-a-new-operator-in-mie)
+
+Body:
+
+```
+{
+  "Name":"operation-name",
+  "Type": ["Async"|"Sync"],
+  "Configuration" : {
+    "MediaType": "Video",
+    "Enabled:": True,
+    "configuration1": "value1",
+    "configuration2": "value2",
+    ...
+  }
+  "StartLambdaArn":arn,
+  "MonitorLambdaArn":arn,
+  "SfnExecutionRole": arn
+}
+```
+
+Returns:
+
+* A dictionary mapping keys to the corresponding operation
+
+```
+{
+  "Name": string,
+  "Type": ["Async"|"Sync"],
+  "Configuration" : {
+      "MediaType": "Video|Frame|Audio|Text|...",
+      "Enabled:": boolean,
       "configuration1": "value1",
       "configuration2": "value2",
       ...
+  }
+  "StartLambdaArn":arn,
+  "MonitorLambdaArn":arn,
+  "StateMachineExecutionRoleArn": arn,
+  "StateMachineAsl": ASL-string
+  "StageName": string
+}
+```
+
+Raises:
+
+* 200: The operation and stage was created successfully
+* 400: Bad Request
+  * one of the input lambdas was not found
+  * one or more of the required input keys is missing
+  * an input value is not valid
+* 409: Conflict
+* 500: Internal server error
+
+
+***IMPORTANT:*** Do not try to create more than 35 new operators via `/workflow/operation`. The IAM inline policy used in `media-insights-stack.yaml` to grant `InvokeFunction` permission to the `StepFunctionRole` for new operators will exceed the maximum length allowed by IAM if users create more than 35 operators (+/- 1).
+
+For more information, refer to the comments in this commit:
+[awslabs/aws-media-insights-engine@451ec2e](https://github.com/awslabs/aws-media-insights-engine/commit/451ec2edc04881dd8947d5855e9145f51056465f)
+
+Sample command that shows how to create an operator from `/workflow/operation` on the command line:
+
+```
+OPERATOR_NAME="op1"
+WORKFLOW_API_ENDPOINT="https://tvplry8vn3.execute-api.us-west-2.amazonaws.com/api/"
+START_ARN="arn:aws:lambda:us-west-2:__redacted__:function:mie03d-OperatorFailedLambda-11W1LAY0CWCUZ"
+MONITOR_ARN="arn:aws:lambda:us-west-2:__redacted__:function:mie03d-OperatorFailedLambda-11W1LAY0CWCUZ"
+REGION="us-west-2"
+awscurl --region ${REGION} -X POST -H "Content-Type: application/json" -d '{"StartLambdaArn": "'${START_ARN}'", "Configuration": {"MediaType": "Video", "Enabled": true}, "Type": "Async", "Name": "'${OPERATOR_NAME}'", "MonitorLambdaArn": "'${MONITOR_ARN}}'"' ${WORKFLOW_API_ENDPOINT}workflow/operation;
+```
+
+#### `GET /workflow/operation`
+
+List all defined operators.
+
+Returns:
+
+* A list of operation definitions
+
+Raises:
+
+* 200: All operations returned successfully
+* 500: Internal server error
+
+#### `DELETE /workflow/operation/{Name}`
+
+Delete an operation.
+
+Raises:
+
+* 200: Operation deleted successfully
+* 500: Internal server error
+
+#### `GET /workflow/operation/{Name}`
+
+Get an operation definition by name.
+
+Returns:
+
+* A dictionary containing the operation definition
+
+Raises:
+
+* 200: All operations returned successfully
+* 404: Not found
+* 500: Internal server error
+
+#### `POST /workflow/stage`
+
+Create a stage state machine from a list of existing operations.
+  
+A stage is a set of operations that are grouped so they can be run in parallel. When the stage is run as part of a workflow, operations within a stage are run as branches in a parallel Step Functions state. The generated state machines status is tracked by the workflow engine control plane during the run.
+
+An optional Configuration for each operator in the stage can be input to override the default configuration for the stage.
+
+Body:
+
+```
+{
+  "Name":"stage-name",
+  "Operations": ["operation-name1", "operation-name2", ...]
+}
+```
+
+Returns:
+
+* A dictionary mapping keys to the corresponding stage created including the ARN of the state machine created
+
+```
+{
+  “Name”: string, 
+  “Operations”: [“operation-name1”, “operation-name2”, ...], 
+  “Configuration”: {
+    “operation-name1”: operation-configuration-object1, “operation-name2”: operation-configuration-object1, ...
+  }, 
+  “StateMachineArn”: ARN-string,    
+  “Name”: “TestStage”, 
+  “Operations”: [“TestOperator”], 
+  “Configuration”: {
+    “TestOperator”: {
+    “MediaType”: “Video”, 
+    “Enabled”: true
     }
-    "StartLambdaArn":arn,
-    "MonitorLambdaArn":arn,
-    "SfnExecutionRole": arn
-  }
-  ```
-  
-  Returns:
-  
-  * A dictionary mapping keys to the corresponding operation
-  
-  ```
-  {
-    "Name": string,
-    "Type": ["Async"|"Sync"],
-    "Configuration" : {
-        "MediaType": "Video|Frame|Audio|Text|...",
-        "Enabled:": boolean,
-        "configuration1": "value1",
-        "configuration2": "value2",
-        ...
+  }, 
+  “StateMachineArn”: “arn:aws:states:us-west-2:__redacted__:stateMachine:TestStage”
+}
+```
+
+Raises:
+
+* 200: The stage was created successfully
+* 400: Bad Request - one of the input state machines was not found or was not valid
+* 409: Conflict
+* 500: Internal server error
+
+#### `PUT /workflow/stage`
+
+Update a workflow from a list of existing stages.
+
+Update the definition of an existing workflow.
+
+Body:
+
+```
+{
+    "Name": string - name of the workflow to modify,
+    "StartAt": string - name of starting stage,
+    "Stages": {
+        "stage-name": {
+            "Next": "string - name of next stage"
+        },
+        ...,
+        "stage-name": {
+            "End": true
+        }
     }
-    "StartLambdaArn":arn,
-    "MonitorLambdaArn":arn,
-    "StateMachineExecutionRoleArn": arn,
-    "StateMachineAsl": ASL-string
-    "StageName": string
-  }
-  ```
-  
-  Raises:
-  
-  * 200: The operation and stage was created successfully
-  * 400: Bad Request
-    * one of the input lambdas was not found
-    * one or more of the required input keys is missing
-    * an input value is not valid
-  * 409: Conflict
-  * 500: Internal server error
+}
+```
 
+Returns:
 
-  ***IMPORTANT:*** Do not try to create more than 35 new operators via `/workflow/operation`. The IAM inline policy used in `media-insights-stack.yaml` to grant `InvokeFunction` permission to the `StepFunctionRole` for new operators will exceed the maximum length allowed by IAM if users create more than 35 operators (+/- 1).
-  
-  For more information, refer to the comments in this commit:
-  [awslabs/aws-media-insights-engine@451ec2e](https://github.com/awslabs/aws-media-insights-engine/commit/451ec2edc04881dd8947d5855e9145f51056465f)
-  
-  Sample command that shows how to create an operator from `/workflow/operation` on the command line:
-  
-  ```
-  OPERATOR_NAME="op1"
-  WORKFLOW_API_ENDPOINT="https://tvplry8vn3.execute-api.us-west-2.amazonaws.com/api/"
-  START_ARN="arn:aws:lambda:us-west-2:__redacted__:function:mie03d-OperatorFailedLambda-11W1LAY0CWCUZ"
-  MONITOR_ARN="arn:aws:lambda:us-west-2:__redacted__:function:mie03d-OperatorFailedLambda-11W1LAY0CWCUZ"
-  REGION="us-west-2"
-  awscurl --region ${REGION} -X POST -H "Content-Type: application/json" -d '{"StartLambdaArn": "'${START_ARN}'", "Configuration": {"MediaType": "Video", "Enabled": true}, "Type": "Async", "Name": "'${OPERATOR_NAME}'", "MonitorLambdaArn": "'${MONITOR_ARN}}'"' ${WORKFLOW_API_ENDPOINT}workflow/operation;
-  ```
+* A dict mapping keys to the corresponding workflow updated including the AWS resources used to execute each stage.
 
-* List all defined operators:
+```
+{
+    "Name": string - name of the workflow to modify,
+    "Configuration": Configuration object.  Contains the default configuration for the workflow.  Use the
+        GET /workflow/donfiguration/{WorkflowName} API to get the current setting for this object.
+    "StartAt": string - name of starting stage,
+    "Stages": {
+        "stage-name": {
+            "Resource": queueARN,
+            "StateMachine": stateMachineARN,
+            "Configuration": stageConfigurationObject,
+            "Next": "string - name of next stage"
+        },
+        ...,
+        "stage-name": {
+            "Resource": queueARN,
+            "StateMachine": stateMachineARN,
+            "Configuration": stageConfigurationObject,
+            "End": true
+        }
+    }
+}
+```
 
-  `GET /workflow/operation`
+Raises:
 
-  Returns:
-  
-  * A list of operation definitions
+* 200: The stage was created successfully
+* 400: Bad Request - one of the input state machines was not found or was not valid
+* 409: Conflict
+* 500: Internal server error
 
-  Raises:
-  
-  * 200: All operations returned successfully
-  * 500: Internal server error
+#### `GET /workflow/stage`
 
-* Delete an operation:
+List all stage definitions.
 
-  `DELETE /workflow/operation/{Name}`
+Returns:
 
-  Raises:
-  
-  * 200: Operation deleted successfully
-  * 500: Internal server error
+* A list of operation definitions
 
-* Get an operation definition by name:
+Raises:
 
-  `GET /workflow/operation/{Name}`
+* 200: All operations returned successfully
+* 500: Internal server error
 
-  Returns:
-  
-  * A dictionary containing the operation definition
+#### `GET /workflow/list/operation/{OperatorName}`
 
-  Raises:
-  
-  * 200: All operations returned successfully
-  * 404: Not found
-  * 500: Internal server error
+List all workflow defintions that contain an operator.
 
-* Create a stage state machine from a list of existing operations:
-  
-  A stage is a set of operations that are grouped so they can be run in parallel. When the stage is run as part of a workflow, operations within a stage are run as branches in a parallel Step Functions state. The generated state machines status is tracked by the workflow engine control plane during the run.
+Returns:
 
-  An optional Configuration for each operator in the stage can be input to override the default configuration for the stage.
+* A list of workflow definitions
 
-  `POST /workflow/stage`
+Raises:
 
-  Body:
-  
-  ```
-  {
-    "Name":"stage-name",
-    "Operations": ["operation-name1", "operation-name2", ...]
-  }
-  ```
-  
-  Returns:
-  
-  * A dictionary mapping keys to the corresponding stage created including the ARN of the state machine created
-  
-  ```
-  {
-    “Name”: string, 
-    “Operations”: [“operation-name1”, “operation-name2”, ...], 
-    “Configuration”: {
-      “operation-name1”: operation-configuration-object1, “operation-name2”: operation-configuration-object1, ...
-    }, 
-    “StateMachineArn”: ARN-string,    
-    “Name”: “TestStage”, 
-    “Operations”: [“TestOperator”], 
-    “Configuration”: {
-      “TestOperator”: {
-      “MediaType”: “Video”, 
-      “Enabled”: true
-      }
-    }, 
-    “StateMachineArn”: “arn:aws:states:us-west-2:__redacted__:stateMachine:TestStage”
-  }
-  ```
+* 200: All operations returned successfully
+* 500: Internal server error
 
-  Raises:
-  
-  * 200: The stage was created successfully
-  * 400: Bad Request - one of the input state machines was not found or was not valid
-  * 409: Conflict
-  * 500: Internal server error
+#### `GET /workflow/list/stage/{StageName}`
 
-* List all stage definitions:
+List all workflow defintions that contain a stage.
 
-  `GET /workflow/stage`
+Returns:
 
-  Returns:
-  
-  * A list of operation definitions
+* A list of workflow definitions
 
-  Raises:
-  
-  * 200: All operations returned successfully
-  * 500: Internal server error
+Raises:
 
-* Delete a stage:
+* 200: All operations returned successfully
+* 500: Internal server error
 
-  `DELETE /workflow/stage/{Name}`
+#### `DELETE /workflow/stage/{Name}`
 
-  Returns:
-  
-  * Nothing
-  
-  Raises:
-  
-  * 200: Stage deleted successfully
-  * 404: Not found
-  * 500: Internal server error
+Delete a stage.
 
-* Get a stage definition by name:
+Returns:
 
-  `GET /workflow/stage/{Name}`
+* Nothing
 
-  Returns:
-  
-  * A dictionary containing the stage definition
+Raises:
 
-  Raises:
-  
-  * 200: Stage definition was returned successfully
-  * 404: Not found
-  * 500: Internal server error
+* 200: Stage deleted successfully
+* 404: Not found
+* 500: Internal server error
 
-* Delete a workflow:
+#### `GET /workflow/stage/{Name}`
 
-  `DELETE /workflow/{Name}`
+Get a stage definition by name.
 
-  Returns:
+Returns:
 
-  * Nothing
+* A dictionary containing the stage definition
 
-  Raises:
-  
-  * 200: Workflow deleted successfully
-  * 404: Not found
-  * 500: Internal server error
+Raises:
 
-* Get a workflow definition by name:
+* 200: Stage definition was returned successfully
+* 404: Not found
+* 500: Internal server error
 
-  `GET /workflow/{Name}`
+#### `DELETE /workflow/{Name}`
 
-  Returns:
-  
-  * A dictionary containing the workflow definition
+Delete a workflow.
 
-  Raises:
-  
-  * 200: Workflow definition returned successfully
-  * 404: Not found
-  * 500: Internal server error
+Returns:
 
-* Get version information :
+* Nothing
 
-  `GET /version`
+Raises:
 
-  Returns:
-  
-  * A dictionary containing the version of the MIE framework and the version of the workflow API. Since it is possible for the MIE framework to be released without any API changes, these two versions can be different. The MIE framework and its APIs are versioned according to [Semantic Versioning](https://semver.org) rules. Under this scheme, version numbers and the way they change convey meaning about backwards compatibility.
+* 200: Workflow deleted successfully
+* 404: Not found
+* 500: Internal server error
 
-  For example, if the MIE framework was version [v2.0.4](https://github.com/awslabs/aws-media-insights-engine/releases/tag/v2.0.4) and the workflow API was version 2.0.0, then this would return the following response: 
-  
-  ```
-  b'{"ApiVersion":"2.0.0","FrameworkVersion":"v2.0.4"}'
-  ```
+#### `GET /workflow/{Name}`
+
+Get a workflow definition by name.
+
+Returns:
+
+* A dictionary containing the workflow definition
+
+Raises:
+
+* 200: Workflow definition returned successfully
+* 404: Not found
+* 500: Internal server error
+
+#### `GET /version`
+
+Get version information. 
+
+Returns:
+
+* A dictionary containing the version of the MIE framework and the version of the workflow API. Since it is possible for the MIE framework to be released without any API changes, these two versions can be different. The MIE framework and its APIs are versioned according to [Semantic Versioning](https://semver.org) rules. Under this scheme, version numbers and the way they change convey meaning about backwards compatibility.
+
+For example, if the MIE framework was version [v2.0.4](https://github.com/awslabs/aws-media-insights-engine/releases/tag/v2.0.4) and the workflow API was version 2.0.0, then this would return the following response: 
+
+```
+b'{"ApiVersion":"2.0.0","FrameworkVersion":"v2.0.4"}'
+```
+
+#### `POST /service/transcribe/create_vocabulary`
+
+Creates a new custom vocabulary that you can use to change the way Amazon Transcribe handles transcription of an audio file.
+
+Body:
+
+```
+{
+    'vocabulary_name'='string',
+    'language_code'='af-ZA'|'ar-AE'|'ar-SA'|'cy-GB'|'da-DK'|'de-CH'|'de-DE'|'en-AB'|'en-AU'|'en-GB'|'en-IE'|'en-IN'|'en-US'|'en-WL'|'es-ES'|'es-US'|'fa-IR'|'fr-CA'|'fr-FR'|'ga-IE'|'gd-GB'|'he-IL'|'hi-IN'|'id-ID'|'it-IT'|'ja-JP'|'ko-KR'|'ms-MY'|'nl-NL'|'pt-BR'|'pt-PT'|'ru-RU'|'ta-IN'|'te-IN'|'tr-TR'|'zh-CN',
+    's3uri'='string'
+}
+```
+
+Returns:
+
+* This is a proxy for boto3 create_vocabulary and returns the output from that SDK method. See the [boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.create_vocabulary) for details.
+
+```
+b'{"VocabularyName":"test_vocabulary","LanguageCode":"en-US","VocabularyState":"PENDING"}'
+```
+
+Sample command:
+
+```
+DATAPLANE_BUCKET=...
+WORKFLOW_API_ENDPOINT=...
+aws s3 cp custom_vocab.txt s3://$DATAPLANE_BUCKET
+awscurl -X POST --region us-west-2 --data '{"s3uri":"s3://'$DATAPLANE_BUCKET'/custom_vocab.txt", "vocabulary_name":"test_vocabulary", "language_code": "en-US"}' $WORKFLOW_API_ENDPOINT/service/transcribe/create_vocabulary
+```
+
+#### `GET /service/transcribe/list_vocabularies`
+
+Returns the user's entire list of vocabularies saved for Amazon Transcribe.
+
+Returns:
+
+* This is a proxy for boto3 list_vocabularies and returns the output from that SDK method. See the [boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.list_vocabularies) for details.
+
+Sample command:
+
+```
+WORKFLOW_API_ENDPOINT=...
+awscurl -X GET --region us-west-2 $WORKFLOW_API_ENDPOINT/service/transcribe/list_vocabularies
+```
+
+#### `POST /service/transcribe/delete_vocabulary`
+
+Deletes a vocabulary from Amazon Transcribe.
+
+Body:
+
+```
+{
+    'vocabulary_name': 'string'
+}
+```
+
+Returns:
+
+* This is a proxy for boto3 delete_vocabulary and returns the output from that SDK method. See the [boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.delete_vocabulary) for details.
+
+Sample command:
+
+```
+WORKFLOW_API_ENDPOINT=...
+awscurl -X POST --region us-west-2 --data '{"vocabulary_name":"test_vocabulary"}'$WORKFLOW_API_ENDPOINT/service/transcribe/delete_vocabulary
+```
+
+#### `POST /service/transcribe/get_vocabulary`
+
+Get the description for an Amazon Transcribe custom vocabulary.
+
+Body:
+
+```
+{
+    'vocabulary_name': 'string'
+}
+```
+
+Returns:
+
+* This is a proxy for boto3 get_vocabulary and returns the output from that SDK method. See the [boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.get_vocabulary) for details.
+
+#### `POST /service/transcribe/download_vocabulary`
+
+Get the contents of an Amazon Transcribe custom vocabulary.
+
+Body:
+
+```
+{
+    'vocabulary_name': 'string'
+}
+```
+
+Returns:
+
+* This is a proxy for boto3 download_vocabulary and returns the output from that SDK method. See the [boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.download_vocabulary) for details.
+
+#### `POST /service/translate/create_terminology`
+
+Create an Amazon Translate Terminology. If the terminology already exists, overwrite the terminology with this new content.
+
+Body:
+
+```
+{
+    'terminology_name'='string',
+    'terminology_csv'='string'
+}
+```
+
+Returns:
+
+* This is a proxy for boto3 create_terminology and returns the output from that SDK method. See the [boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranslateService.Client.create_terminology) for details.
+
+#### `POST /service/translate/delete_terminology`
+
+Delete an Amazon Translate Terminology. 
+
+Body:
+
+```
+{
+    'terminology_name'='string',
+}
+```
+
+Returns:
+
+* This is a proxy for boto3 delete_terminology and returns the output from that SDK method. See the [boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranslateService.Client.delete_terminology) for details.
+
+#### `POST /service/translate/get_terminology`
+
+Get a link to the CSV formatted description for an Amazon Translate parallel data.
+
+Body:
+
+```
+{
+    'terminology_name'='string',
+}
+```
+
+Returns:
+
+* This is a proxy for boto3 get_terminology and returns the output from that SDK method. See the [boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranslateService.Client.get_terminology) for details.
+
+#### `POST /service/translate/download_terminology`
+
+Get the CSV formated contents of an Amazon Translate terminology.
+
+Body:
+
+```
+{
+    'terminology_name'='string',
+}
+```
+
+Returns:
+
+* This is a proxy for boto3 download_terminology and returns the output from that SDK method. See the [boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranslateService.Client.download_terminology) for details.
+
+#### `GET /service/translate/list_terminologies`
+
+Get the list of available Amazon Translate Terminologies for this region.
+
+Returns:
+
+* This is a proxy for boto3 list_terminologies and returns the output from that SDK method. See the [boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranslateService.Client.list_terminologies) for details.
+
+#### `POST /service/translate/get_parallel_data`
+
+Get a link to the CSV formatted description for an Amazon Translate Parallel Data Set.
+
+Body:
+
+```
+{
+    'parallel_data_name'='string'
+}
+```
+
+Returns:
+
+* This is a proxy for boto3 get_parallel_data and returns the output from that SDK method. See the [boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranslateService.Client.get_parallel_data) for details.
+
+#### `POST /service/translate/download_parallel_data`
+
+Get the CSV formated contents of an Amazon Translate Parallel Data Set.
+
+Body:
+
+```
+{
+    'parallel_data_name'='string',
+}
+```
+
+Returns:
+
+* This is a proxy for boto3 download_parallel_data and returns the output from that SDK method. See the [boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranslateService.Client.download_parallel_data) for details.
+
+#### `GET /service/translate/list_parallel_data`
+
+Get the list of available Amazon Translate Parallel Data Sets for this region.
+
+Returns:
+
+* This is a proxy for boto3 list_parallel_data and returns the output from that SDK method. See the [boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranslateService.Client.list_parallel_data) for details.
+
+#### `POST /service/translate/delete_parallel_data`
+
+Delete an Amazon Translate Parallel Data.
+
+Body:
+
+```
+{
+    'parallel_data_name'='string',
+}
+```
+
+Returns:
+
+* This is a proxy for boto3 delete_parallel_data and returns the output from that SDK method. See the [boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranslateService.Client.delete_parallel_data) for details.
+
+#### `POST /service/translate/create_parallel_data`
+
+Create an Amazon Translate Parallel Data. If the parallel_data already exists, overwrite the parallel data with this new content.
+
+Body:
+
+```
+{
+    'parallel_data_name'='string',
+    'parallel_data_csv='string'
+}
+```
+
+Returns:
+
+* This is a proxy for boto3 create_parallel_data and returns the output from that SDK method. See the [boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranslateService.Client.create_parallel_data) for details.
 
 # 8. Troubleshooting
 

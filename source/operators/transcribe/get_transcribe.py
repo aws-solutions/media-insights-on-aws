@@ -1,4 +1,4 @@
-# Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 import os
@@ -71,7 +71,7 @@ def lambda_handler(event, context):
             print(text_only_transcript)
 
             dataplane = DataPlane()
-            s3 = boto3.client('s3')
+            s3 = boto3.client('s3', config=config)
 
             transcript_storage_path = dataplane.generate_media_storage_path(asset_id, workflow_id)
 

@@ -452,9 +452,8 @@ The MIE APIs in Amazon API Gateway require that you authenticate every request w
   * [POST /service/translate/delete_parallel_data](#POST-servicetranslatedelete_parallel_data)
   * [POST /service/translate/create_parallel_data](#POST-servicetranslatecreate_parallel_data)
   * [GET /version](#GET-version)
-
-  * POST /service/transcribe/describe_language_model
-  * GET /service/transcribe/list_language_models
+  * [POST /service/transcribe/describe_language_model](#POST-servicetranscribedescribe_language_model)
+  * [GET /service/transcribe/list_language_models](#GET-servicetranscribelist_language_models)
 
 ## Data plane API
 
@@ -580,6 +579,58 @@ Returns:
   b'{"ApiVersion":"2.0.0","FrameworkVersion":"v2.0.4"}'
   ```
 
+#### `POST /service/transcribe/describe_language_model`
+
+Gets information about a single custom language model for Amazon Transcribe.
+
+Body:
+
+```
+{
+    'model-name'='string'
+}
+```
+
+Sample command:
+
+```
+WORKFLOW_API_ENDPOINT=...
+awscurl -X POST --region us-west-2 --data '{"model-name":"cli-clm-example"}' $WORKFLOW_API_ENDPOINT/service/transcribe/describe_language_model
+```
+
+Returns:
+
+* This is a proxy for boto3 describe_language_model and returns the output from that SDK method. See the [boto3 documentation](https://docs.aws.amazon.com/cli/latest/reference/transcribe/describe-language-model.html) for details.
+
+```
+{
+    "LanguageModel": {
+        "ModelName": "cli-clm-example",
+        "CreateTime": "2021-11-29T21:38:47.229000-08:00",
+        "LastModifiedTime": "2021-11-29T21:38:52.399000-08:00",
+        "LanguageCode": "language-code",
+        "BaseModelName": "base-model-name",
+        "ModelStatus": "IN_PROGRESS",
+        "UpgradeAvailability": false,
+        "InputDataConfig": {
+            "S3Uri": "s3://DOC-EXAMPLE-BUCKET/Amazon-S3-Prefix/",
+            "TuningDataS3Uri": "s3://DOC-EXAMPLE-BUCKET/Amazon-S3-Prefix/",
+            "DataAccessRoleArn": "arn:aws:iam::AWS-account-number:role/IAM-role-with-permissions-to-create-a-custom-language-model"
+        }
+    }
+}
+```
+
+#### `GET /service/transcribe/list_language_models`
+
+* This is a proxy for boto3 list_language_models and returns the output from that SDK method. See the [boto3 documentation](https://docs.aws.amazon.com/cli/latest/reference/transcribe/list-language-models.html) for details.
+
+Sample command:
+
+```
+WORKFLOW_API_ENDPOINT=...
+awscurl -X GET --region us-west-2 $WORKFLOW_API_ENDPOINT/service/transcribe/list_language_models
+```
 
 ## Workflow API
 

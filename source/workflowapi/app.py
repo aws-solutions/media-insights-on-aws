@@ -2627,7 +2627,8 @@ def describe_language_model():
     model_name = json.loads(app.current_request.raw_body.decode())['model_name']
     response = transcribe_client.describe_language_model(ModelName=model_name)
     # Convert time field to a format that is JSON serializable
-    response['LastModifiedTime'] = response['LastModifiedTime'].isoformat()
+    response['LanguageModel']['CreateTime'] = response['LanguageModel']['CreateTime'].isoformat()
+    response['LanguageModel']['LastModifiedTime'] = response['LanguageModel']['LastModifiedTime'].isoformat()
     return response
 
 

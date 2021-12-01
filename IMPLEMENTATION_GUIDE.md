@@ -587,7 +587,7 @@ Body:
 
 ```
 {
-    'model-name'='string'
+    'ModelName'='string'
 }
 ```
 
@@ -595,7 +595,7 @@ Sample command:
 
 ```
 WORKFLOW_API_ENDPOINT=...
-awscurl -X POST --region us-west-2 --data '{"model-name":"cli-clm-example"}' $WORKFLOW_API_ENDPOINT/service/transcribe/describe_language_model
+awscurl -X POST --region us-west-2 --data '{"ModelName":"cli-clm-example"}' $WORKFLOW_API_ENDPOINT/service/transcribe/describe_language_model
 ```
 
 Returns:
@@ -1427,17 +1427,54 @@ Create an Amazon Translate Parallel Data. If the parallel_data already exists, o
 
 Body:
 
+* This is a proxy for boto3 create_parallel_data function. The JSON dictionary provided in the POST payload must reflect the named parameters specified in the [boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranslateService.Client.create_parallel_data).
+
 ```
 {
-    'parallel_data_name'='string',
-    'parallel_data_csv='string'
+  "Name"="string",
+  "Description"="string",
+  "ParallelDataConfig"={
+      "S3Uri": "string",
+      "Format": "TSV"|"CSV"|"TMX"
+  },
+  "EncryptionKey"={
+      "Type": "KMS",
+      "Id": "string"
+  },
+  "ClientToken"="string"
 }
+```
+
+Sample command:
+
+```
+WORKFLOW_API_ENDPOINT=...
+DATAPLANE_BUCKET=...
+aws s3 cp ./sample_parallel_data.csv $DATAPLANE_BUCKET 
+awscurl -X POST --region us-east-1 --data '{"Name":"parallel_data_study", "ParallelDataConfig":{"S3Uri":"s3://$DATAPLANE_BUCKET/sample_parallel_data.csv", "Format":"CSV"}}' $WORKFLOW_API_ENDPOINT/service/translate/create_parallel_data
 ```
 
 Returns:
 
 * This is a proxy for boto3 create_parallel_data and returns the output from that SDK method. See the [boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranslateService.Client.create_parallel_data) for details.
 
+```
+{
+  "Name": "parallel_data_study",
+  "Status": "CREATING",
+  "ResponseMetadata": {
+    "RequestId": "...",
+    "HTTPStatusCode": 200,
+    "HTTPHeaders": {
+      "x-amzn-requestid": "...",
+      "content-type": "application/x-amz-json-1.1",
+      "content-length": "39",
+      "date": "Tue, 30 Nov 2021 20:38:04 GMT"
+    },
+    "RetryAttempts": 0
+  }
+}
+```
 # 8. Troubleshooting
 
 ## How to activate AWS X-Ray request tracing for MIE

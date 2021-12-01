@@ -112,15 +112,12 @@ def test_workflow_execution(workflow_api, dataplane_api, stack_resources, testin
     while workflow_processing:
         get_workflow_execution_request = workflow_api.get_workflow_execution_request(workflow_execution_id)
         get_workflow_execution_response = get_workflow_execution_request.json()
-
         assert get_workflow_execution_request.status_code == 200
-
 
         workflow_status = get_workflow_execution_response["Status"]
         print("Workflow Status: {}".format(workflow_status))
 
         allowed_statuses = ["Started", "Queued", "Complete"]
-
         assert workflow_status in allowed_statuses
 
         if workflow_status == "Complete":

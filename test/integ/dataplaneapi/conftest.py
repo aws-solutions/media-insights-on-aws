@@ -28,7 +28,6 @@ def testing_env_variables():
             'SAMPLE_FACE_IMAGE': os.environ['TEST_FACE_IMAGE'],
             'REGION': os.environ['MIE_REGION'],
             'MIE_STACK_NAME': os.environ['MIE_STACK_NAME'],
-            'FACE_COLLECTION_ID': os.environ['TEST_FACE_COLLECTION_ID'],
             'ACCESS_KEY': os.environ['AWS_ACCESS_KEY_ID'],
             'SECRET_KEY': os.environ['AWS_SECRET_ACCESS_KEY']
             }

@@ -67,6 +67,7 @@ echo "--------------------------------------------------------------------------
 echo "Setup test environment variables"
 
 export TEST_MEDIA_PATH="../test-media/"
+export SAMPLE_IMAGE="sample-image.jpg"
 export SAMPLE_TERMINOLOGY="sampleterminology"
 export TEST_PARALLEL_DATA_NAME="sample_parallel_data"
 export TEST_PARALLEL_DATA="sample_parallel_data.csv"

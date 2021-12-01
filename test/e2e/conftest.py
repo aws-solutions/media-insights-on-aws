@@ -15,13 +15,13 @@ from requests_aws4auth import AWS4Auth
 
 # Fixture for retrieving env variables
 
-
 @pytest.fixture(scope='session')
 def testing_env_variables():
     print('Setting variables for tests')
     try:
         test_env_vars = {
             'MEDIA_PATH': os.environ['TEST_MEDIA_PATH'],
+            'SAMPLE_VIDEO': os.environ['TEST_VIDEO'],
             'REGION': os.environ['MIE_REGION'],
             'MIE_STACK_NAME': os.environ['MIE_STACK_NAME'],
             'ACCESS_KEY': os.environ['AWS_ACCESS_KEY_ID'],
@@ -36,7 +36,6 @@ def testing_env_variables():
 
 
 # Fixture for stack resources
-
 
 @pytest.fixture(scope='session')
 def stack_resources(testing_env_variables):
@@ -63,30 +62,13 @@ def stack_resources(testing_env_variables):
     for output in outputs:
         resources[output["OutputKey"]] = output["OutputValue"]
 
-    expected_resources = ['WorkflowApiRestID', 'DataplaneBucket', 'WorkflowCustomResourceArn', 'TestStack',
-                          'MediaInsightsEnginePython38Layer', 'AnalyticsStreamArn', 'DataplaneApiEndpoint',
-                          'WorkflowApiEndpoint', 'DataplaneApiRestID', 'OperatorLibraryStack', 'PollyOperation',
-                          'ContentModerationOperationImage', 'GenericDataLookupOperation',
-                          'comprehendEntitiesOperation', 'FaceSearch', 'FaceSearchOperationImage',
-                          'MediainfoOperationImage', 'TextDetection', 'TextDetectionOperationImage',
-                          'CreateSRTCaptionsOperation', 'ContentModeration', 'WebCaptionsOperation',
-                          'WebToVTTCaptionsOperation', 'PollyWebCaptionsOperation', 'WaitOperation',
-                          'TranslateWebCaptionsOperation', 'CelebRecognition', 'LabelDetection',
-                          'FaceDetection', 'PersonTracking', 'MediaconvertOperation', 'FaceDetectionOperationImage',
-                          'MediainfoOperation', 'ThumbnailOperation', 'TechnicalCueDetection',
-                          'CreateVTTCaptionsOperation', 'CelebrityRecognitionOperationImage', 'TranslateOperation',
-                          'comprehendPhrasesOperation', 'WebToSRTCaptionsOperation', 'shotDetection',
-                          'LabelDetectionOperationImage', 'StackName', "Version", "TranscribeAudioOperation",
-                          "TranscribeVideoOperation", 'DataPlaneHandlerArn']
+    expected_resources = ['WorkflowApiRestID', 'DataplaneBucket', 'WorkflowCustomResourceArn', 'TestStack',  'MediaInsightsEnginePython38Layer', 'AnalyticsStreamArn', 'DataplaneApiEndpoint', 'WorkflowApiEndpoint', 'DataplaneApiRestID', 'OperatorLibraryStack', 'PollyOperation', 'ContentModerationOperationImage', 'GenericDataLookupOperation', 'comprehendEntitiesOperation', 'FaceSearch', 'FaceSearchOperationImage', 'MediainfoOperationImage', 'TextDetection', 'TextDetectionOperationImage', 'CreateSRTCaptionsOperation', 'ContentModeration', 'WebCaptionsOperation', 'WebToVTTCaptionsOperation', 'PollyWebCaptionsOperation', 'WaitOperation', 'TranslateWebCaptionsOperation', 'CelebRecognition', 'LabelDetection', 'FaceDetection', 'PersonTracking', 'MediaconvertOperation', 'FaceDetectionOperationImage', 'MediainfoOperation', 'ThumbnailOperation', 'TechnicalCueDetection', 'CreateVTTCaptionsOperation', 'CelebrityRecognitionOperationImage', 'TranslateOperation', 'comprehendPhrasesOperation', 'WebToSRTCaptionsOperation', 'shotDetection', 'LabelDetectionOperationImage', 'StackName', "Version", "TranscribeAudioOperation", "TranscribeVideoOperation", 'DataPlaneHandlerArn']
 
     assert set(resources.keys()) == set(expected_resources)
-
     return resources
 
 
 # This fixture uploads the sample media objects for testing.
-
-
 @pytest.fixture(scope='session', autouse=True)
 def upload_media(testing_env_variables, stack_resources):
     print('Uploading Test Media')
@@ -104,8 +86,7 @@ class WorkflowAPI:
     def __init__(self, stack_resources, testing_env_variables):
         self.env_vars = testing_env_variables
         self.stack_resources = stack_resources
-        self.auth = AWS4Auth(testing_env_variables['ACCESS_KEY'], testing_env_variables['SECRET_KEY'],
-                             testing_env_variables['REGION'], 'execute-api')
+        self.auth = AWS4Auth(testing_env_variables['ACCESS_KEY'], testing_env_variables['SECRET_KEY'], testing_env_variables['REGION'], 'execute-api')
 
     # Workflow Methods
 
@@ -158,7 +139,6 @@ class WorkflowAPI:
 
 # Workflow API Fixture
 
-
 @pytest.fixture(scope='session')
 def workflow_api(stack_resources, testing_env_variables):
     def _gen_api():
@@ -169,13 +149,11 @@ def workflow_api(stack_resources, testing_env_variables):
 
 # Dataplane API Class
 
-
 class DataplaneAPI:
     def __init__(self, stack_resources, testing_env_variables):
         self.env_vars = testing_env_variables
         self.stack_resources = stack_resources
-        self.auth = AWS4Auth(testing_env_variables['ACCESS_KEY'], testing_env_variables['SECRET_KEY'],
-                             testing_env_variables['REGION'], 'execute-api')
+        self.auth = AWS4Auth(testing_env_variables['ACCESS_KEY'], testing_env_variables['SECRET_KEY'], testing_env_variables['REGION'], 'execute-api')
 
     # Dataplane methods
 
@@ -247,7 +225,7 @@ def parallel_data(workflow_api, stack_resources, testing_env_variables):
             time.sleep(30)
 
     yield create_parallel_data_body
-    
+
     delete_parallel_data_body = {
         "parallel_data_name": testing_env_variables['SAMPLE_PARALLEL_DATA']
     }

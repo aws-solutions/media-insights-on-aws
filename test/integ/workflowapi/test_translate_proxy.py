@@ -23,17 +23,19 @@ import os
 @pytest.mark.skipif(os.environ['MIE_REGION'] not in ["us-west-2", "us-east-1", "eu-west-1"], reason="Parallel Data is not supported in this region")
 def test_parallel_data(workflow_api, stack_resources, testing_env_variables):
     workflow_api = workflow_api()
-    
+
+    print("Running parallel data function tests")
+
     # Remove test parallel data if it already exists
     list_parallel_data_response = workflow_api.list_parallel_data()
     assert list_parallel_data_response.status_code == 200
     response = list_parallel_data_response.json()
     if testing_env_variables['TEST_PARALLEL_DATA_NAME'] in json.dumps(response):
         print("Removing " + testing_env_variables['TEST_PARALLEL_DATA_NAME'])
-        request_payload = {'parallel_data_name': testing_env_variables['TEST_PARALLEL_DATA_NAME']}
+        request_payload = {'Name': testing_env_variables['TEST_PARALLEL_DATA_NAME']}
         delete_parallel_data_response = workflow_api.delete_parallel_data(request_payload)
         assert delete_parallel_data_response.status_code == 200
-        
+
         # Wait until the test parallel data is not longer listed
         list_parallel_data_response = workflow_api.list_parallel_data()
         assert list_parallel_data_response.status_code == 200
@@ -49,7 +51,7 @@ def test_parallel_data(workflow_api, stack_resources, testing_env_variables):
     assert create_parallel_data_response.status_code == 200
 
     # Wait for create to finish
-    request_payload = {'parallel_data_name': testing_env_variables['TEST_PARALLEL_DATA_NAME']}
+    request_payload = {'Name': testing_env_variables['TEST_PARALLEL_DATA_NAME']}
     get_parallel_data_response = workflow_api.get_parallel_data(request_payload)
     assert get_parallel_data_response.status_code == 200
     response = get_parallel_data_response.json()
@@ -68,21 +70,21 @@ def test_parallel_data(workflow_api, stack_resources, testing_env_variables):
     assert testing_env_variables['TEST_PARALLEL_DATA_NAME'] in json.dumps(response)
 
     # Download parallel data
-    body = {'parallel_data_name': testing_env_variables['TEST_PARALLEL_DATA_NAME']}
+    body = {'Name': testing_env_variables['TEST_PARALLEL_DATA_NAME']}
     download_parallel_data_response = workflow_api.download_parallel_data(body)
     assert download_parallel_data_response.status_code == 200
 
     print("Removing " + testing_env_variables['TEST_PARALLEL_DATA_NAME'])
-    request_payload = {'parallel_data_name': testing_env_variables['TEST_PARALLEL_DATA_NAME']}
+    request_payload = {'Name': testing_env_variables['TEST_PARALLEL_DATA_NAME']}
     delete_parallel_data_response = workflow_api.delete_parallel_data(request_payload)
     assert delete_parallel_data_response.status_code == 200
 
-    
-    
 
 def test_terminology(workflow_api, testing_env_variables, terminology):
     workflow_api = workflow_api()
-    
+
+    print("Running custom terminology function tests")
+
     # Create terminology is done in terminology fixture
 
     # List terminology

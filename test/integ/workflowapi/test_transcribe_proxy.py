@@ -18,6 +18,8 @@
 def test_custom_language_model(workflow_api, testing_env_variables):
     workflow_api = workflow_api()
 
+    print("Running custom language model tests")
+
     # List custom language models.
 
     list_language_models_response = workflow_api.list_language_models()
@@ -29,7 +31,7 @@ def test_custom_language_model(workflow_api, testing_env_variables):
 
     if len(response["Models"]) > 0:
         model_name = response["Models"][0]["ModelName"]
-        body = {'model_name': model_name}
+        body = {'ModelName': model_name}
         describe_language_model_response = workflow_api.describe_language_model(body)
         response = describe_language_model_response.json()
         assert "ModelName" in response["LanguageModel"]

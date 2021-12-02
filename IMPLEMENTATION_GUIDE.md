@@ -537,7 +537,7 @@ Returns:
 
 #### `POST /metadata/{asset_id}`
 
-Add operation metadata for an asset.
+Add metadata for an asset.
 
 Body:
 
@@ -545,7 +545,23 @@ Body:
 {
   "OperatorName": "{some_operator}",
   "Results": "{json_formatted_results}"
+  "WorkflowId": "{workflow_id}"
 }
+```
+
+Sample command that shows how to add metadata to an existing asset and workflow from the command line:
+
+```
+OPERATOR_NAME=operator_test
+ASSET_ID=
+WORKFLOW_ID=
+awscurl -X POST --region us-west-2 -H "Content-Type: application/json" --data '{"OperatorName": "$OPERATOR_NAME", "Results": {"test_data":2}, "WorkflowId":"$WORKFLOW_ID"}' $DATAPLANE_API_ENDPOINT/metadata/$ASSET_ID
+```
+
+You can then read the new results you created with an HTTP GET like this:
+
+```
+awscurl -X GET --region us-west-2 -H "Content-Type: application/json" $DATAPLANE_API_ENDPOINT/metadata/$ASSET_ID/$OPERATOR_NAME
 ```
 
 #### `POST /upload`

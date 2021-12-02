@@ -29,8 +29,9 @@ def test_workflow_execution(workflow_api, dataplane_api, stack_resources, testin
 
     test_preprocess_stage = {"Name": "TestPreprocess", "Operations": ["Mediainfo", "Thumbnail"]}
     test_video_stage = {"Name": "TestVideo", "Operations": ["celebrityRecognition", "contentModeration", "faceDetection", "labelDetection",  "personTracking", "shotDetection", "textDetection", "Mediaconvert", "technicalCueDetection"]}
-    test_audio_stage = {"Name": "TestAudio", "Operations": ["TranscribeAudio"]}
-    test_text_stage = {"Name": "TestText", "Operations": ["Translate", "ComprehendKeyPhrases", "ComprehendEntities"]}
+    test_audio_stage = {"Name": "TestAudio", "Operations": ["TranscribeVideo"]}
+    test_webcaptions_stage = {"Name": "TestWebCaptions", "Operations": ["WebCaptions"]}
+    test_text_stage = {"Name": "TestText", "Operations": ["TranslateWebCaptions", "ComprehendKeyPhrases", "ComprehendEntities"]}
 
     test_workflow = {
         "Name": "TestingWF",
@@ -43,6 +44,9 @@ def test_workflow_execution(workflow_api, dataplane_api, stack_resources, testin
                 "Next": "TestAudio"
             },
             "TestAudio": {
+                "Next": "TestWebCaptions"
+            },
+            "TestWebCaptions": {
                 "Next": "TestText"
             },
             "TestText": {
@@ -69,6 +73,7 @@ def test_workflow_execution(workflow_api, dataplane_api, stack_resources, testin
     delete_preprocess_stage_request = workflow_api.delete_stage_request(test_preprocess_stage["Name"])
     delete_video_stage_request = workflow_api.delete_stage_request(test_video_stage["Name"])
     delete_audio_stage_request = workflow_api.delete_stage_request(test_audio_stage["Name"])
+    delete_webcaptions_stage_request = workflow_api.delete_stage_request(test_webcaptions_stage["Name"])
     delete_text_stage_request = workflow_api.delete_stage_request(test_text_stage["Name"])
     if workflow_api.get_workflow_request(test_workflow["Name"]).status_code == 200:
         workflow_api.delete_workflow_request(test_workflow["Name"])
@@ -85,6 +90,9 @@ def test_workflow_execution(workflow_api, dataplane_api, stack_resources, testin
 
     audio_stage_request = workflow_api.create_stage_request(test_audio_stage)
     assert audio_stage_request.status_code == 200
+
+    webcaptions_stage_request = workflow_api.create_stage_request(test_webcaptions_stage)
+    assert webcaptions_stage_request.status_code == 200
 
     text_stage_request = workflow_api.create_stage_request(test_text_stage)
     assert text_stage_request.status_code == 200
@@ -155,6 +163,9 @@ def test_workflow_execution(workflow_api, dataplane_api, stack_resources, testin
 
     delete_audio_stage_request = workflow_api.delete_stage_request(test_audio_stage["Name"])
     assert delete_audio_stage_request.status_code == 200
+
+    delete_webcaptions_stage_request = workflow_api.delete_stage_request(test_webcaptions_stage["Name"])
+    assert delete_webcaptions_stage_request.status_code == 200
 
     delete_text_stage_request = workflow_api.delete_stage_request(test_text_stage["Name"])
     assert delete_text_stage_request.status_code == 200

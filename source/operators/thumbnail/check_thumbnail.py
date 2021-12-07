@@ -45,25 +45,9 @@ def lambda_handler(event, context):
         print("No asset_id in this workflow")
         asset_id = ''
 
-    # Get mediaconvert endpoint from cache if available
-    if ("MEDIACONVERT_ENDPOINT" in os.environ):
-        mediaconvert_endpoint = os.environ["MEDIACONVERT_ENDPOINT"]
-        customer_mediaconvert = boto3.client("mediaconvert", region_name=region, endpoint_url=mediaconvert_endpoint)
-    else:
-        try:
-            response = mediaconvert.describe_endpoints()
-        except Exception as e:
-            print("Exception:\n", e)
-            operator_object.update_workflow_status("Error")
-            operator_object.add_workflow_metadata(MediaconvertError=str(e))
-            raise MasExecutionError(operator_object.return_output_object())
-        else:
-            mediaconvert_endpoint = response["Endpoints"][0]["Url"]
-            # Cache the mediaconvert endpoint in order to avoid getting throttled on
-            # the DescribeEndpoints API.
-            os.environ["MEDIACONVERT_ENDPOINT"] = mediaconvert_endpoint
-            customer_mediaconvert = boto3.client("mediaconvert", region_name=region, endpoint_url=mediaconvert_endpoint)
-
+    mediaconvert_endpoint = os.environ["MEDIACONVERT_ENDPOINT"]
+    customer_mediaconvert = boto3.client("mediaconvert", region_name=region, endpoint_url=mediaconvert_endpoint)
+    
     # Get MediaConvert job results
     try:
         response = customer_mediaconvert.get_job(Id=job_id)

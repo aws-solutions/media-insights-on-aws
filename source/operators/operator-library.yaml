@@ -1826,6 +1826,7 @@ Resources:
           mediaconvertRole: !GetAtt "mediaConvertS3Role.Arn"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          MEDIACONVERT_ENDPOINT: !Ref "MediaConvertEndpoint"
           botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
@@ -1864,6 +1865,7 @@ Resources:
           mediaconvertRole: !GetAtt "mediaConvertS3Role.Arn"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
+          MEDIACONVERT_ENDPOINT: !Ref "MediaConvertEndpoint"
           botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"

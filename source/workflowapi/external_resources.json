@@ -202,7 +202,9 @@
                     "transcribe:CreateVocabulary",
                     "transcribe:DeleteVocabulary",
                     "transcribe:GetVocabulary",
-                    "transcribe:ListVocabularies"
+                    "transcribe:ListVocabularies",
+                    "transcribe:ListLanguageModels",
+                    "transcribe:DescribeLanguageModel"
                   ],
                   "Resource": "*"
                 },

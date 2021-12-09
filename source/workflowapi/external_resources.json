@@ -1,4 +1,6 @@
 {
+  "Description" : "aws-media-insights-engine version %%VERSION%%. This AWS CloudFormation template provisions the REST API for the Media Insights Engine control plane",
+
   "Parameters": {
     "botoConfig": {
       "Type": "String",
@@ -255,7 +257,7 @@
           "rules_to_suppress": [
             {
               "id": "W11",
-              "reason": "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
+              "reason": "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources"
             }
           ]
         }

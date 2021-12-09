@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: (SO0163) - aws-media-insights-engine %%VERSION%%. This is the base AWS CloudFormation template that provisions Media Insights Engine services and provides parameters for user configurable MIE settings.
+Description: "(SO0163) - aws-media-insights-engine version %%VERSION%%. This is the base AWS CloudFormation template that provisions Media Insights Engine services and provides parameters for user configurable MIE settings."
 
 Parameters:
   DeployTestResources:
@@ -39,7 +39,7 @@ Parameters:
   SolutionVersion:
     Description: (Optional) AWS Solution version used for reporting purposes
     Type: String
-    Default: %%VERSION%%
+    Default: "%%VERSION%%"
   SendAnonymousData:
     Description: (Optional) Send anonymous data about MIE performance to AWS to help improve the quality of this solution.
     Type: String
@@ -235,7 +235,7 @@ Resources:
       cfn_nag:
         rules_to_suppress:
           - id: W11
-            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
+            reason: "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources"
     Properties:
       AssumeRolePolicyDocument:
         Version: 2012-10-17
@@ -373,7 +373,7 @@ Resources:
       cfn_nag:
         rules_to_suppress:
           - id: W11
-            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
+            reason: "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources"
     Properties:
       AssumeRolePolicyDocument:
         Version: 2012-10-17
@@ -525,7 +525,7 @@ Resources:
       cfn_nag:
         rules_to_suppress:
           - id: W11
-            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
+            reason: "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -565,7 +565,7 @@ Resources:
       cfn_nag:
         rules_to_suppress:
           - id: W11
-            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
+            reason: "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -1588,7 +1588,7 @@ Resources:
             !FindInMap [ "SourceCode", "General", "GlobalS3Bucket" ],
             ".s3.amazonaws.com/",
             !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
-            "/media-insights-workflowapi-stack.template",
+            "/media-insights-workflow-api-stack.template",
           ],
         ]
       Parameters:

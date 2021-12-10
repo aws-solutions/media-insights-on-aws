@@ -1,12 +1,12 @@
 ###############################################################################
 #
-# PURPOSE: This code sample shows how to list MIE workflows using a 
+# PURPOSE: This code sample shows how to list MIE workflows using a
 #   sigv4 signed request to the workflow execution REST API in the Media
 #   Insights Engine.
 #
 ###############################################################################
 #
-# Copyright 2010-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # This file is licensed under the Apache License, Version 2.0 (the "License").
 # You may not use this file except in compliance with the License. A copy of the
@@ -24,13 +24,13 @@
 # This version makes a POST request and passes request parameters
 # in the body (payload) of the request. Auth information is passed in
 # an Authorization header.
-import sys, os, base64, datetime, hashlib, hmac 
+import sys, os, base64, datetime, hashlib, hmac
 import requests # pip install requests
 
 # ************* REQUEST VALUES *************
 method = 'GET'
 service = 'execute-api'
-# Host is the base URL for your REST API, where {restapi_id} is the API identifier, {region} is the Region of the API deployment. 
+# Host is the base URL for your REST API, where {restapi_id} is the API identifier, {region} is the Region of the API deployment.
 host = '{restapi_id}.execute-api.{region}.amazonaws.com'
 region = '{region}'
 endpoint = 'https://{restapi_id}.execute-api.us-west-2.amazonaws.com/api/{api_name}/{method_name}'
@@ -66,9 +66,9 @@ datestamp = t.strftime('%Y%m%d') # Date w/o time, used in credential scope
 
 # Step 1 is to define the verb (GET, POST, etc.)--already done.
 
-# Step 2: Create canonical URI--the part of the URI from domain to query 
+# Step 2: Create canonical URI--the part of the URI from domain to query
 # string (use '/' if no path)
-canonical_uri = '/api/workflow/' 
+canonical_uri = '/api/workflow/'
 
 # Step 3: Create the canonical query string. In this example (a GET request),
 # request parameters are in the query string. Query string values must
@@ -84,7 +84,7 @@ canonical_headers = 'host:' + host + '\n' + 'x-amz-date:' + amzdate + '\n'
 # Step 5: Create the list of signed headers. This lists the headers
 # in the canonical_headers list, delimited with ";" and in alpha order.
 # Note: The request can include any headers; canonical_headers and
-# signed_headers lists those that you want to be included in the 
+# signed_headers lists those that you want to be included in the
 # hash of the request. "Host" and "x-amz-date" are always required.
 signed_headers = 'host;x-amz-date'
 
@@ -112,12 +112,12 @@ signature = hmac.new(signing_key, (string_to_sign).encode('utf-8'), hashlib.sha2
 
 
 # ************* TASK 4: ADD SIGNING INFORMATION TO THE REQUEST *************
-# The signing information can be either in a query string value or in 
+# The signing information can be either in a query string value or in
 # a header named Authorization. This code shows how to use a header.
 # Create authorization header and add to request headers
 authorization_header = algorithm + ' ' + 'Credential=' + access_key + '/' + credential_scope + ', ' +  'SignedHeaders=' + signed_headers + ', ' + 'Signature=' + signature
 
-# The request can include any headers, but MUST include "host", "x-amz-date", 
+# The request can include any headers, but MUST include "host", "x-amz-date",
 # and (for this scenario) "Authorization". "host" and "x-amz-date" must
 # be included in the canonical_headers and signed_headers, as noted
 # earlier. Order here is not significant.
@@ -126,7 +126,7 @@ headers = {'x-amz-date':amzdate, 'Authorization':authorization_header}
 
 
 # ************* SEND THE REQUEST *************
-request_url = endpoint 
+request_url = endpoint
 
 print('\nBEGIN REQUEST++++++++++++++++++++++++++++++++++++')
 print('Request URL = ' + request_url)

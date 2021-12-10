@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: "Media Insights Engine - Analytics Streaming pipeline from the Dataplane DynamoDB Stream"
+Description: "aws-media-insights-engine version %%VERSION%%. This AWS CloudFormation template defines resources for the analytics streaming pipeline."
 
 Parameters:
   KinesisShardCount:
@@ -131,7 +131,8 @@ Resources:
                   - "logs:CreateLogGroup"
                   - "logs:CreateLogStream"
                   - "logs:PutLogEvents"
-                Resource: "*"
+                Resource:
+                  - "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*-DynamoDBStream*"
       Tags:
         - Key: "environment"
           Value: "mie"

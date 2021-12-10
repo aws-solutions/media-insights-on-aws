@@ -1,4 +1,4 @@
-# Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 
@@ -15,25 +15,18 @@ from requests_aws4auth import AWS4Auth
 
 # Fixture for retrieving env variables
 
-
 @pytest.fixture(scope='session')
 def testing_env_variables():
     print('Setting variables for tests')
     try:
         test_env_vars = {
             'MEDIA_PATH': os.environ['TEST_MEDIA_PATH'],
-            'SAMPLE_IMAGE': os.environ['TEST_IMAGE'],
             'SAMPLE_VIDEO': os.environ['TEST_VIDEO'],
-            'SAMPLE_AUDIO': os.environ['TEST_AUDIO'],
-            'SAMPLE_TEXT': os.environ['TEST_TEXT'],
-            'SAMPLE_JSON': os.environ['TEST_JSON'],
-            'SAMPLE_FACE_IMAGE': os.environ['TEST_FACE_IMAGE'],
             'SAMPLE_PARALLEL_DATA': os.environ['TEST_PARALLEL_DATA'],
             'PARALLEL_DATA_AVAILABLE_REGIONS': ['us-west-2', 'us-east-1', 'eu-west-1'],
             'SAMPLE_TERMINOLOGY': os.environ['TEST_TERMINOLOGY'],
             'REGION': os.environ['MIE_REGION'],
             'MIE_STACK_NAME': os.environ['MIE_STACK_NAME'],
-            'FACE_COLLECTION_ID': os.environ['TEST_FACE_COLLECTION_ID'],
             'ACCESS_KEY': os.environ['AWS_ACCESS_KEY_ID'],
             'SECRET_KEY': os.environ['AWS_SECRET_ACCESS_KEY']
             }
@@ -46,7 +39,6 @@ def testing_env_variables():
 
 
 # Fixture for stack resources
-
 
 @pytest.fixture(scope='session')
 def stack_resources(testing_env_variables):
@@ -73,56 +65,31 @@ def stack_resources(testing_env_variables):
     for output in outputs:
         resources[output["OutputKey"]] = output["OutputValue"]
 
-    expected_resources = ['WorkflowApiRestID', 'DataplaneBucket', 'WorkflowCustomResourceArn', 'TestStack',
-                          'MediaInsightsEnginePython38Layer', 'AnalyticsStreamArn', 'DataplaneApiEndpoint',
-                          'WorkflowApiEndpoint', 'DataplaneApiRestID', 'OperatorLibraryStack', 'PollyOperation',
-                          'ContentModerationOperationImage', 'GenericDataLookupOperation',
-                          'comprehendEntitiesOperation', 'FaceSearch', 'FaceSearchOperationImage',
-                          'MediainfoOperationImage', 'TextDetection', 'TextDetectionOperationImage',
-                          'CreateSRTCaptionsOperation', 'ContentModeration', 'WebCaptionsOperation',
-                          'WebToVTTCaptionsOperation', 'PollyWebCaptionsOperation', 'WaitOperation',
-                          'TranslateWebCaptionsOperation', 'CelebRecognition', 'LabelDetection',
-                          'FaceDetection', 'PersonTracking', 'MediaconvertOperation', 'FaceDetectionOperationImage',
-                          'MediainfoOperation', 'ThumbnailOperation', 'TechnicalCueDetection',
-                          'CreateVTTCaptionsOperation', 'CelebrityRecognitionOperationImage', 'TranslateOperation',
-                          'comprehendPhrasesOperation', 'WebToSRTCaptionsOperation', 'shotDetection',
-                          'LabelDetectionOperationImage', 'StackName', "Version", "TranscribeAudioOperation",
-                          "TranscribeVideoOperation", 'DataPlaneHandlerArn']
+    expected_resources = ['WorkflowApiRestID', 'DataplaneBucket', 'WorkflowCustomResourceArn', 'TestStack',  'MediaInsightsEnginePython38Layer', 'AnalyticsStreamArn', 'DataplaneApiEndpoint', 'WorkflowApiEndpoint', 'DataplaneApiRestID', 'OperatorLibraryStack', 'PollyOperation', 'ContentModerationOperationImage', 'GenericDataLookupOperation', 'comprehendEntitiesOperation', 'FaceSearch', 'FaceSearchOperationImage', 'MediainfoOperationImage', 'TextDetection', 'TextDetectionOperationImage', 'CreateSRTCaptionsOperation', 'ContentModeration', 'WebCaptionsOperation', 'WebToVTTCaptionsOperation', 'PollyWebCaptionsOperation', 'WaitOperation', 'TranslateWebCaptionsOperation', 'CelebRecognition', 'LabelDetection', 'FaceDetection', 'PersonTracking', 'MediaconvertOperation', 'FaceDetectionOperationImage', 'MediainfoOperation', 'ThumbnailOperation', 'TechnicalCueDetection', 'CreateVTTCaptionsOperation', 'CelebrityRecognitionOperationImage', 'TranslateOperation', 'comprehendPhrasesOperation', 'WebToSRTCaptionsOperation', 'shotDetection', 'LabelDetectionOperationImage', 'StackName', "Version", "TranscribeAudioOperation", "TranscribeVideoOperation", 'DataPlaneHandlerArn']
 
     assert set(resources.keys()) == set(expected_resources)
-
     return resources
 
 
 # This fixture uploads the sample media objects for testing.
-
-
 @pytest.fixture(scope='session', autouse=True)
 def upload_media(testing_env_variables, stack_resources):
     print('Uploading Test Media')
     s3 = boto3.client('s3', region_name=testing_env_variables['REGION'])
     # Upload test media files
-    # s3.upload_file(testing_env_variables['MEDIA_PATH'] + testing_env_variables['SAMPLE_TEXT'], stack_resources['DataplaneBucket'], 'upload/' + testing_env_variables['SAMPLE_TEXT'])
-    # s3.upload_file(testing_env_variables['MEDIA_PATH'] + testing_env_variables['SAMPLE_JSON'], stack_resources['DataplaneBucket'], 'upload/' + testing_env_variables['SAMPLE_JSON'])
-    # s3.upload_file(testing_env_variables['MEDIA_PATH'] + testing_env_variables['SAMPLE_AUDIO'], stack_resources['DataplaneBucket'], 'upload/' + testing_env_variables['SAMPLE_AUDIO'])
-    # s3.upload_file(testing_env_variables['MEDIA_PATH'] + testing_env_variables['SAMPLE_IMAGE'], stack_resources['DataplaneBucket'], 'upload/' + testing_env_variables['SAMPLE_IMAGE'])
-    # s3.upload_file(testing_env_variables['MEDIA_PATH'] + testing_env_variables['SAMPLE_FACE_IMAGE'], stack_resources['DataplaneBucket'], 'upload/' + testing_env_variables['SAMPLE_FACE_IMAGE'])
     s3.upload_file(testing_env_variables['MEDIA_PATH'] + testing_env_variables['SAMPLE_VIDEO'], stack_resources['DataplaneBucket'], 'upload/' + testing_env_variables['SAMPLE_VIDEO'])
-    s3.upload_file(testing_env_variables['MEDIA_PATH'] + testing_env_variables['SAMPLE_PARALLEL_DATA'], stack_resources['DataplaneBucket'], 'upload/' + testing_env_variables['SAMPLE_PARALLEL_DATA'])
     # Wait for fixture to go out of scope:
     yield upload_media
 
 
 # Workflow API Class
 
-
 @pytest.mark.usefixtures("upload_media")
 class WorkflowAPI:
     def __init__(self, stack_resources, testing_env_variables):
         self.env_vars = testing_env_variables
         self.stack_resources = stack_resources
-        self.auth = AWS4Auth(testing_env_variables['ACCESS_KEY'], testing_env_variables['SECRET_KEY'],
-                             testing_env_variables['REGION'], 'execute-api')
+        self.auth = AWS4Auth(testing_env_variables['ACCESS_KEY'], testing_env_variables['SECRET_KEY'], testing_env_variables['REGION'], 'execute-api')
 
     # Workflow Methods
 
@@ -172,78 +139,8 @@ class WorkflowAPI:
 
         return get_workflow_execution_response
 
-    def get_terminology(self, body):
-        headers = {"Content-Type": "application/json"}
-        print("POST /service/translate/get_terminology")
-        get_terminology_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/get_terminology', headers=headers, json=body, verify=True, auth=self.auth)
-
-        return get_terminology_response
-
-    def download_terminology(self, body):
-        headers = {"Content-Type": "application/json"}
-        print("POST /service/translate/download_terminology")
-        download_terminology_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/download_terminology', headers=headers, json=body, verify=True, auth=self.auth)
-
-        return download_terminology_response
-
-    def list_terminologies(self):
-        print("GET /service/translate/list_terminologies")
-        list_terminologies_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/list_terminologies', verify=True, auth=self.auth)
-
-        return list_terminologies_response
-
-    def delete_terminology(self, body):
-        headers = {"Content-Type": "application/json"}
-        print("POST /service/translate/delete_terminology")
-        delete_terminology_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/delete_terminology', headers=headers, json=body, verify=True, auth=self.auth)
-
-        return delete_terminology_response
-
-    def create_terminology(self, body):
-        headers = {"Content-Type": "application/json"}
-        print("POST /service/translate/create_terminology")
-        create_terminology_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/create_terminology', headers=headers, json=body, verify=True, auth=self.auth)
-
-        return create_terminology_response
-
-    def get_parallel_data(self, body):
-        headers = {"Content-Type": "application/json"}
-        print("POST /service/translate/get_parallel_data")
-        get_parallel_data_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/get_parallel_data', headers=headers, json=body, verify=True, auth=self.auth)
-
-        return get_parallel_data_response
-
-    def list_parallel_data(self):
-        print("GET /service/translate/list_parallel_data")
-        list_parallel_data_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/list_parallel_data', verify=True, auth=self.auth)
-
-        return list_parallel_data_response
-
-    def download_parallel_data(self, body):
-        headers = {"Content-Type": "application/json"}
-        print("POST /service/translate/download_parallel_data")
-        download_parallel_data_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/download_parallel_data', headers=headers, json=body, verify=True, auth=self.auth)
-
-        return download_parallel_data_response
-
-
-    def delete_parallel_data(self, body):
-        headers = {"Content-Type": "application/json"}
-        print("POST /service/translate/delete_parallel_data")
-        delete_parallel_data_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/delete_parallel_data', headers=headers, json=body, verify=True, auth=self.auth)
-
-        return delete_parallel_data_response
-
-    def create_parallel_data(self, body):
-        headers = {"Content-Type": "application/json"}
-        print("POST /service/translate/create_parallel_data")
-        create_parallel_data_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/create_parallel_data', headers=headers, json=body, verify=True, auth=self.auth)
-
-        return create_parallel_data_response
-
 
 # Workflow API Fixture
-
 
 @pytest.fixture(scope='session')
 def workflow_api(stack_resources, testing_env_variables):
@@ -255,13 +152,11 @@ def workflow_api(stack_resources, testing_env_variables):
 
 # Dataplane API Class
 
-
 class DataplaneAPI:
     def __init__(self, stack_resources, testing_env_variables):
         self.env_vars = testing_env_variables
         self.stack_resources = stack_resources
-        self.auth = AWS4Auth(testing_env_variables['ACCESS_KEY'], testing_env_variables['SECRET_KEY'],
-                             testing_env_variables['REGION'], 'execute-api')
+        self.auth = AWS4Auth(testing_env_variables['ACCESS_KEY'], testing_env_variables['SECRET_KEY'], testing_env_variables['REGION'], 'execute-api')
 
     # Dataplane methods
 
@@ -368,3 +263,4 @@ def terminology(workflow_api, dataplane_api, stack_resources, testing_env_variab
     delete_terminology_request = workflow_api.delete_terminology(
         delete_terminology_body)
     assert delete_terminology_request.status_code == 200
+

@@ -1,4 +1,4 @@
-# Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 
@@ -20,15 +20,9 @@ def testing_env_variables():
     try:
         test_env_vars = {
             'MEDIA_PATH': os.environ['TEST_MEDIA_PATH'],
-            'SAMPLE_IMAGE': os.environ['TEST_IMAGE'],
-            'SAMPLE_VIDEO': os.environ['TEST_VIDEO'],
-            'SAMPLE_AUDIO': os.environ['TEST_AUDIO'],
-            'SAMPLE_TEXT': os.environ['TEST_TEXT'],
-            'SAMPLE_JSON': os.environ['TEST_JSON'],
-            'SAMPLE_FACE_IMAGE': os.environ['TEST_FACE_IMAGE'],
+            'SAMPLE_IMAGE': os.environ['SAMPLE_IMAGE'],
             'REGION': os.environ['MIE_REGION'],
             'MIE_STACK_NAME': os.environ['MIE_STACK_NAME'],
-            'FACE_COLLECTION_ID': os.environ['TEST_FACE_COLLECTION_ID'],
             'ACCESS_KEY': os.environ['AWS_ACCESS_KEY_ID'],
             'SECRET_KEY': os.environ['AWS_SECRET_ACCESS_KEY']
             }
@@ -77,12 +71,7 @@ def upload_media(testing_env_variables, stack_resources):
     print('Uploading Test Media')
     s3 = boto3.client('s3', region_name=testing_env_variables['REGION'])
     # Upload test media files
-    s3.upload_file(testing_env_variables['MEDIA_PATH'] + testing_env_variables['SAMPLE_TEXT'], stack_resources['DataplaneBucket'], 'upload/' + testing_env_variables['SAMPLE_TEXT'])
-    s3.upload_file(testing_env_variables['MEDIA_PATH'] + testing_env_variables['SAMPLE_JSON'], stack_resources['DataplaneBucket'], 'upload/' + testing_env_variables['SAMPLE_JSON'])
-    s3.upload_file(testing_env_variables['MEDIA_PATH'] + testing_env_variables['SAMPLE_AUDIO'], stack_resources['DataplaneBucket'], 'upload/' + testing_env_variables['SAMPLE_AUDIO'])
     s3.upload_file(testing_env_variables['MEDIA_PATH'] + testing_env_variables['SAMPLE_IMAGE'], stack_resources['DataplaneBucket'], 'upload/' + testing_env_variables['SAMPLE_IMAGE'])
-    s3.upload_file(testing_env_variables['MEDIA_PATH'] + testing_env_variables['SAMPLE_FACE_IMAGE'], stack_resources['DataplaneBucket'], 'upload/' + testing_env_variables['SAMPLE_FACE_IMAGE'])
-    s3.upload_file(testing_env_variables['MEDIA_PATH'] + testing_env_variables['SAMPLE_VIDEO'], stack_resources['DataplaneBucket'], 'upload/' + testing_env_variables['SAMPLE_VIDEO'])
     # Wait for fixture to go out of scope:
     yield upload_media
 

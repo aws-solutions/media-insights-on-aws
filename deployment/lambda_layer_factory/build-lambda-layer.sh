@@ -66,7 +66,7 @@ rm -f ./lambda_layer-python3.7.zip
 rm -f ./lambda_layer-python3.8.zip
 docker build --tag=lambda_layer_factory:latest . 2>&1 > /dev/null
 if [ $? -eq 0 ]; then
-  docker run --rm -it -v "$PWD":/packages lambda_layer_factory
+  docker run --rm -v "$PWD":/packages lambda_layer_factory
 fi
 if [[ ! -f ./lambda_layer-python3.6.zip ]] || [[ ! -f ./lambda_layer-python3.7.zip ]] || [[ ! -f ./lambda_layer-python3.8.zip ]]; then
     echo "ERROR: Failed to build lambda layer zip file."

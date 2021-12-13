@@ -3086,10 +3086,14 @@ def workflow_resource(event, context):
 
         workflow["Stages"] = json.loads(event["ResourceProperties"]["Stages"])
 
-        create_workflow("custom-resource", workflow)
+        create_workflow_response = create_workflow("custom-resource", workflow)
 
         send_response(event, context, "SUCCESS",
-                      {"Message": "Resource creation successful!", "Name": event["ResourceProperties"]["Name"]})
+                      {
+                          "Message": "Resource creation successful!",
+                          "Name": event["ResourceProperties"]["Name"],
+                          "StateMachineArn": create_workflow_response["StateMachineArn"]
+                      })
     elif event['RequestType'] == 'Update':
         logger.info('UPDATE!')
         send_response(event, context, "SUCCESS",

@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed:
 
 * The JSON response from requests to /workflow/execution now contains the correct MediaType property (#634)
-
+* Support source language auto-detection in Amazon Translate (#621)
 
 ## [3.0.4] - 2021-11-8
 

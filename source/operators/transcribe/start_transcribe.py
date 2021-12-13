@@ -24,6 +24,7 @@ transcribe = boto3.client("transcribe", config=config)
 def lambda_handler(event, context):
     print("We got this event:\n", event)
     valid_types = ["mp3", "mp4", "wav", "flac"]
+    identify_language = False
     transcribe_job_config = {}
     optional_settings = {}
     model_settings = {}
@@ -58,6 +59,18 @@ def lambda_handler(event, context):
         raise MasExecutionError(operator_object.return_output_object())
     try:
         language_code = operator_object.configuration["TranscribeLanguage"]
+        custom_vocab = operator_object.configuration["VocabularyName"]
+        optional_settings["VocabularyName"] = custom_vocab
+    except KeyError:
+        # No custom vocab
+        pass
+    try:
+        if "TranscribeLanguage" in operator_object.configuration:
+            language_code = operator_object.configuration["TranscribeLanguage"]
+            if language_code == 'auto':
+                identify_language = True
+        else:
+            identify_language = True
     except KeyError:
         operator_object.update_workflow_status("Error")
         operator_object.add_workflow_metadata(TranscribeError="No language code defined")
@@ -136,6 +149,26 @@ def lambda_handler(event, context):
             return operator_object.return_output_object()
 
     try:
+        if identify_language:
+            response = transcribe.start_transcription_job(
+                TranscriptionJobName=job_id,
+                IdentifyLanguage=True,
+                Media={
+                    "MediaFileUri": media_file
+                },
+                MediaFormat=file_type,
+                Settings=optional_settings
+            )
+        else:
+            response = transcribe.start_transcription_job(
+                TranscriptionJobName=job_id,
+                LanguageCode=language_code,
+                Media={
+                    "MediaFileUri": media_file
+                },
+                MediaFormat=file_type,
+                Settings=optional_settings
+            )
         # Run the transcribe job.
         # The ** operator converts the job config dict to keyword arguments.
         response = transcribe.start_transcription_job(**transcribe_job_config)

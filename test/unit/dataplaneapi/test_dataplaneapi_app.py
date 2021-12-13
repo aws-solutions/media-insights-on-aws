@@ -48,6 +48,7 @@ def test_create_asset(test_client, s3_client_stub, ddb_resource_stub):
             'Item':
                 {
                     'AssetId': botocore.stub.ANY,
+                    'MediaType': 'Video',
                     'S3Bucket': 'InputBucketName',
                     'S3Key': 'InputKeyName',
                     'Created': botocore.stub.ANY
@@ -57,10 +58,10 @@ def test_create_asset(test_client, s3_client_stub, ddb_resource_stub):
         service_response={}
     )
     response = test_client.http.post('/create',
-                                     body=b'{"Input": {"S3Bucket": "InputBucketName", "S3Key": "InputKeyName"}}')
+                                     body=b'{"Input": {"MediaType": "Video", "S3Bucket": "InputBucketName", "S3Key": "InputKeyName"}}')
 
     formatted_response = json.loads(response.body)
-    expected_response_keys = ['AssetId', 'S3Bucket', 'S3Key']
+    expected_response_keys = ['AssetId', 'MediaType', 'S3Bucket', 'S3Key']
 
     assert all(item in formatted_response.keys() for item in expected_response_keys)
 

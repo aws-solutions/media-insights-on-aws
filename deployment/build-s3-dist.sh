@@ -237,10 +237,13 @@ if [[ ! -z "${NO_LAYER}" ]]; then
   wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.7.zip
   echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.8.zip"
   wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.8.zip
+  echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.9.zip"
+  wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.9.zip
   echo "Copying Lambda layer zips to $dist_dir:"
   mv media_insights_engine_lambda_layer_python3.6.zip "$regional_dist_dir"
   mv media_insights_engine_lambda_layer_python3.7.zip "$regional_dist_dir"
   mv media_insights_engine_lambda_layer_python3.8.zip "$regional_dist_dir"
+  mv media_insights_engine_lambda_layer_python3.9.zip "$regional_dist_dir"
   cd "$build_dir" || exit 1
 else
   echo "------------------------------------------------------------------------------"
@@ -279,7 +282,8 @@ else
     mv lambda_layer-python3.6.zip media_insights_engine_lambda_layer_python3.6.zip
     mv lambda_layer-python3.7.zip media_insights_engine_lambda_layer_python3.7.zip
     mv lambda_layer-python3.8.zip media_insights_engine_lambda_layer_python3.8.zip
-    rm -rf lambda_layer-python-3.6/ lambda_layer-python-3.7/ lambda_layer-python-3.8/
+    mv lambda_layer-python3.9.zip media_insights_engine_lambda_layer_python3.9.zip
+    rm -rf lambda_layer-python-3.6/ lambda_layer-python-3.7/ lambda_layer-python-3.8/ lambda_layer-python-3.9/
     echo "Lambda layer build script completed.";
   else
     echo "WARNING: Lambda layer build script failed. We'll use a pre-built Lambda layers instead.";
@@ -289,11 +293,13 @@ else
     wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.7.zip
     echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.8.zip"
     wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.8.zip
+    wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.9.zip
   fi
   echo "Copying Lambda layer zips to $regional_dist_dir:"
   mv media_insights_engine_lambda_layer_python3.6.zip "$regional_dist_dir"
   mv media_insights_engine_lambda_layer_python3.7.zip "$regional_dist_dir"
   mv media_insights_engine_lambda_layer_python3.8.zip "$regional_dist_dir"
+  mv media_insights_engine_lambda_layer_python3.9.zip "$regional_dist_dir"
   mv requirements.txt.old requirements.txt
   cd "$build_dir" || exit 1
 fi

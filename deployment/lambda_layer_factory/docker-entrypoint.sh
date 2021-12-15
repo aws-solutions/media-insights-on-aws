@@ -4,6 +4,7 @@ echo "==========================================================================
 echo "Installing the packages listed in requirements.txt:"
 echo "================================================================================"
 cat /packages/requirements.txt
+pip3.9 install -q -r /packages/requirements.txt -t /packages/lambda_layer-python-3.9/python/lib/python3.9/site-packages
 pip3.8 install -q -r /packages/requirements.txt -t /packages/lambda_layer-python-3.8/python/lib/python3.8/site-packages
 pip3.7 install -q -r /packages/requirements.txt -t /packages/lambda_layer-python-3.7/python/lib/python3.7/site-packages
 pip3.6 install -q -r /packages/requirements.txt -t /packages/lambda_layer-python-3.6/python/lib/python3.6/site-packages
@@ -28,10 +29,13 @@ find /MediaInfo_DLL_GNU_FromSource/MediaInfoLib/Project/GNU/Library/.libs/
 cp /MediaInfo_DLL_GNU_FromSource/MediaInfoLib/Project/GNU/Library/.libs/* /packages/lambda_layer-python-3.6/python/ || exit 1
 cp /MediaInfo_DLL_GNU_FromSource/MediaInfoLib/Project/GNU/Library/.libs/* /packages/lambda_layer-python-3.7/python/ || exit 1
 cp /MediaInfo_DLL_GNU_FromSource/MediaInfoLib/Project/GNU/Library/.libs/* /packages/lambda_layer-python-3.8/python/ || exit 1
+cp /MediaInfo_DLL_GNU_FromSource/MediaInfoLib/Project/GNU/Library/.libs/* /packages/lambda_layer-python-3.9/python/ || exit 1
 
 echo "================================================================================"
 echo "Creating zip files for Lambda layers"
 echo "================================================================================"
+cd /packages/lambda_layer-python-3.9/
+zip -q -r /packages/lambda_layer-python3.9.zip .
 cd /packages/lambda_layer-python-3.8/
 zip -q -r /packages/lambda_layer-python3.8.zip .
 cd /packages/lambda_layer-python-3.7/
@@ -41,11 +45,14 @@ zip -q -r /packages/lambda_layer-python3.6.zip .
 
 # Clean up build environment
 cd /packages/
+rm -rf /packages/pymediainfo-3.6/
+rm -rf /packages/lambda_layer-python-3.6/
 rm -rf /packages/pymediainfo-3.7/
+rm -rf /packages/lambda_layer-python-3.7/
 rm -rf /packages/pymediainfo-3.8/
 rm -rf /packages/lambda_layer-python-3.8/
-rm -rf /packages/lambda_layer-python-3.7/
-rm -rf /packages/lambda_layer-python-3.6/
+rm -rf /packages/pymediainfo-3.9/
+rm -rf /packages/lambda_layer-python-3.9/
 
 echo "Zip files have been saved to docker volume /data. You can copy them locally like this:"
 echo "docker run --rm -it -v \$(pwd):/packages <docker_image>"

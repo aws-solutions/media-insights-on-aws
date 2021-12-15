@@ -150,25 +150,7 @@ def lambda_handler(event, context):
 
     try:
         if identify_language:
-            response = transcribe.start_transcription_job(
-                TranscriptionJobName=job_id,
-                IdentifyLanguage=True,
-                Media={
-                    "MediaFileUri": media_file
-                },
-                MediaFormat=file_type,
-                Settings=optional_settings
-            )
-        else:
-            response = transcribe.start_transcription_job(
-                TranscriptionJobName=job_id,
-                LanguageCode=language_code,
-                Media={
-                    "MediaFileUri": media_file
-                },
-                MediaFormat=file_type,
-                Settings=optional_settings
-            )
+            transcribe_job_config['IdentifyLanguage'] = True
         # Run the transcribe job.
         # The ** operator converts the job config dict to keyword arguments.
         response = transcribe.start_transcription_job(**transcribe_job_config)

@@ -20,6 +20,10 @@ URL=https://mediaarea.net/download/binary/libmediainfo0/${VERSION}/MediaInfo_DLL
 echo "Downloading MediaInfo from $URL"
 cd /
 curl $URL -o mediainfo.tgz || exit 1
+echo "Checking md5sum for MediaInfo source..."
+# Check the md5sum for MediaInfo 19.09:
+echo "74d33c37a161dba72baf09ad90c1c6b9  mediainfo.tgz" > mediainfo.md5 
+md5sum --check mediainfo.md5 || exit 1
 tar -xzf mediainfo.tgz
 echo "Compiling MediaInfo library..."
 cd MediaInfo_DLL_GNU_FromSource/

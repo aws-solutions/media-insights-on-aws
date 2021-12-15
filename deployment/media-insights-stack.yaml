@@ -1058,6 +1058,26 @@ Resources:
             ],
           ]
       Description: Boto3 and MediaInsightsEngineLambdaHelper packages for Python 3.9
+      LayerName: media-insights-engine-python39
+      LicenseInfo: Apache-2.0
+ 
+  MediaInsightsEnginePython38Layer:
+    Type: "AWS::Lambda::LayerVersion"
+    DeletionPolicy: Retain
+    Properties:
+      CompatibleRuntimes:
+        - python3.9
+      Content:
+        S3Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+            "media_insights_engine_lambda_layer_python3.8.zip",
+            ],
+          ]
+      Description: Boto3 and MediaInsightsEngineLambdaHelper packages for Python 3.8
       LayerName: media-insights-engine-python38
       LicenseInfo: Apache-2.0
 
@@ -1665,6 +1685,7 @@ Resources:
         DataPlaneBucket: !Ref Dataplane
         ExternalBucketArn: !Ref ExternalBucketArn
         MediaInsightsEnginePython39Layer: !Ref MediaInsightsEnginePython39Layer
+        MediaInsightsEnginePython38Layer: !Ref MediaInsightsEnginePython38Layer
         MediaInsightsEnginePython37Layer: !Ref MediaInsightsEnginePython37Layer
         MediaInsightsEnginePython36Layer: !Ref MediaInsightsEnginePython36Layer
         StartWaitOperationLambda: !GetAtt StartWaitOperationLambda.Arn

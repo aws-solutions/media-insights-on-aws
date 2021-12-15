@@ -129,7 +129,7 @@ Resources:
                 response_data = get_mediaconvert_endpoint()
                 cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data, "CustomResourcePhysicalID")
       Handler: index.handler
-      Runtime: python3.8
+      Runtime: python3.9
       Role: !GetAtt MieHelperExecutionRole.Arn
       Tags:
         - Key: "environment"
@@ -1041,12 +1041,32 @@ Resources:
 
   # Lambda Layers:
 
+  MediaInsightsEnginePython39Layer:
+    Type: "AWS::Lambda::LayerVersion"
+    DeletionPolicy: Retain
+    Properties:
+      CompatibleRuntimes:
+        - python3.9
+      Content:
+        S3Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+            "media_insights_engine_lambda_layer_python3.9.zip",
+            ],
+          ]
+      Description: Boto3 and MediaInsightsEngineLambdaHelper packages for Python 3.9
+      LayerName: media-insights-engine-python39
+      LicenseInfo: Apache-2.0
+ 
   MediaInsightsEnginePython38Layer:
     Type: "AWS::Lambda::LayerVersion"
     DeletionPolicy: Retain
     Properties:
       CompatibleRuntimes:
-        - python3.8
+        - python3.9
       Content:
         S3Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
         S3Key:
@@ -1157,13 +1177,13 @@ Resources:
             ],
           ]
       Layers:
-        - !Ref "MediaInsightsEnginePython38Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
           - StageExecutionRole
           - Arn
-      Runtime: python3.8
+      Runtime: python3.9
       Timeout: 900
       ReservedConcurrentExecutions: 1
       DeadLetterConfig:
@@ -1214,13 +1234,13 @@ Resources:
             ],
           ]
       Layers:
-        - !Ref "MediaInsightsEnginePython38Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
           - OperationLambdaExecutionRole
           - Arn
-      Runtime: python3.8
+      Runtime: python3.9
       Timeout: 900
       ReservedConcurrentExecutions: 1
       DeadLetterConfig:
@@ -1300,13 +1320,13 @@ Resources:
             ],
           ]
       Layers:
-        - !Ref "MediaInsightsEnginePython38Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
           - OperationLambdaExecutionRole
           - Arn
-      Runtime: python3.8
+      Runtime: python3.9
       Timeout: 900
       Tags:
         - Key: "environment"
@@ -1344,13 +1364,13 @@ Resources:
             ],
           ]
       Layers:
-        - !Ref "MediaInsightsEnginePython38Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
           - OperationLambdaExecutionRole
           - Arn
-      Runtime: python3.8
+      Runtime: python3.9
       Timeout: 900
       Tags:
         - Key: "environment"
@@ -1368,7 +1388,7 @@ Resources:
     Properties:
       Handler: "operator_failed.lambda_handler"
       Layers:
-        - !Ref "MediaInsightsEnginePython38Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       Role: !GetAtt "operatorFailedRole.Arn"
       TracingConfig:
           Mode: "PassThrough"
@@ -1382,7 +1402,7 @@ Resources:
               "operator_failed.zip",
             ],
           ]
-      Runtime: "python3.8"
+      Runtime: "python3.9"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1408,7 +1428,7 @@ Resources:
           WORKFLOW_TABLE_NAME: !Ref WorkflowTable
       Handler: app.start_wait_operation_lambda
       Layers:
-        - !Ref "MediaInsightsEnginePython38Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       Code:
         S3Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
         S3Key:
@@ -1424,7 +1444,7 @@ Resources:
         Fn::GetAtt:
           - OperationLambdaExecutionRole
           - Arn
-      Runtime: python3.8
+      Runtime: python3.9
       Timeout: 900
       Tags:
         - Key: "environment"
@@ -1451,7 +1471,7 @@ Resources:
           WORKFLOW_TABLE_NAME: !Ref WorkflowTable
       Handler: app.check_wait_operation_lambda
       Layers:
-        - !Ref "MediaInsightsEnginePython38Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       Code:
         S3Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
         S3Key:
@@ -1467,7 +1487,7 @@ Resources:
         Fn::GetAtt:
           - OperationLambdaExecutionRole
           - Arn
-      Runtime: python3.8
+      Runtime: python3.9
       Timeout: 900
       Tags:
         - Key: "environment"
@@ -1499,7 +1519,7 @@ Resources:
               "workflowstream.zip",
             ],
           ]
-      Runtime: "python3.8"
+      Runtime: "python3.9"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1547,7 +1567,7 @@ Resources:
               "dataplaneapi.zip",
             ],
           ]
-        MediaInsightsEnginePython38Layer: !Ref MediaInsightsEnginePython38Layer
+        MediaInsightsEnginePython39Layer: !Ref MediaInsightsEnginePython39Layer
         FrameworkVersion: !FindInMap ["SourceCode", "General", "FrameworkVersion"]
 
   Analytics:
@@ -1603,7 +1623,7 @@ Resources:
         HistoryTableName: !Ref HistoryTable
         SystemTableName: !Ref SystemTable
         SqsQueueArn: !GetAtt StageExecutionQueue.Arn
-        MediaInsightsEnginePython38Layer: !Ref MediaInsightsEnginePython38Layer
+        MediaInsightsEnginePython39Layer: !Ref MediaInsightsEnginePython39Layer
         TracingConfigMode: !If [EnableTraceOnEntryPoints, "Active", "PassThrough"]
         CompleteStageLambdaArn:
           Fn::GetAtt:
@@ -1664,6 +1684,7 @@ Resources:
         DataPlaneHandlerArn: !GetAtt MediaInsightsDataplaneApiStack.Outputs.APIHandlerArn
         DataPlaneBucket: !Ref Dataplane
         ExternalBucketArn: !Ref ExternalBucketArn
+        MediaInsightsEnginePython39Layer: !Ref MediaInsightsEnginePython39Layer
         MediaInsightsEnginePython38Layer: !Ref MediaInsightsEnginePython38Layer
         MediaInsightsEnginePython37Layer: !Ref MediaInsightsEnginePython37Layer
         MediaInsightsEnginePython36Layer: !Ref MediaInsightsEnginePython36Layer
@@ -1701,7 +1722,7 @@ Resources:
             - MediaInsightsDataplaneApiStack
             - Outputs.APIHandlerName
         DataPlaneBucket: !Ref Dataplane
-        MediaInsightsEnginePython38Layer: !Ref MediaInsightsEnginePython38Layer
+        MediaInsightsEnginePython39Layer: !Ref MediaInsightsEnginePython39Layer
 
   AnonymousDataCustomResourceRole:
     Type: AWS::IAM::Role
@@ -1754,7 +1775,7 @@ Resources:
       Code:
         S3Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
         S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"], "anonymous-data-logger.zip"]]
-      Runtime:  python3.8
+      Runtime:  python3.9
       Timeout: 180
 
   # SendAnonymousData
@@ -1816,12 +1837,12 @@ Outputs:
     Value: !GetAtt MediaInsightsWorkflowApi.Outputs.RestAPIId
     Export:
       Name: !Join [":", [!Ref "AWS::StackName", WorkflowApiId]]
-  MediaInsightsEnginePython38Layer:
+  MediaInsightsEnginePython39Layer:
     Description: Lambda layer for Python libraries
-    Value: !Ref MediaInsightsEnginePython38Layer
+    Value: !Ref MediaInsightsEnginePython39Layer
     Export:
       Name:
-        !Join [":", [!Ref "AWS::StackName", MediaInsightsEnginePython38Layer]]
+        !Join [":", [!Ref "AWS::StackName", MediaInsightsEnginePython39Layer]]
   AnalyticsStreamArn:
     Description: Arn of the dataplane pipeline
     Value: !GetAtt Analytics.Outputs.analyticsStreamArn

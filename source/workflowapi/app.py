@@ -1938,7 +1938,7 @@ def create_workflow_execution(trigger, workflow_execution):
                 logger.error("Exception {}".format(e))
                 raise ChaliceViewError("Exception '%s'" % e)
             else:
-                asset_creation = dataplane.create_asset(s3bucket, s3key)
+                asset_creation = dataplane.create_asset(media_type, s3bucket, s3key)
                 # If create_asset fails, then asset_creation will contain the error
                 # string instead of the expected dict. So, we'll raise that error
                 # if we get a KeyError in the following try block:
@@ -1973,10 +1973,9 @@ def create_workflow_execution(trigger, workflow_execution):
 
                 retrieve_asset = dataplane.retrieve_asset_metadata(asset_id)
                 if "results" in retrieve_asset:
-                    s3key = retrieve_asset["results"]["S3Key"]
-                    media_type = s3key.split('.')[-1]
                     s3bucket = retrieve_asset["results"]["S3Bucket"]
-
+                    s3key = retrieve_asset["results"]["S3Key"]
+                    media_type = retrieve_asset["results"]["MediaType"]
                     asset_input = {
                         "Media": {
                             media_type: {
@@ -2586,6 +2585,60 @@ def create_vocabulary():
     return response
 
 
+@app.route('/service/transcribe/list_language_models', cors=True, methods=['GET'], authorizer=authorizer)
+def list_language_models():
+    """ Provides more information about the custom language models you've created. You can use the information in this list to find a specific custom language model. You can then use the describe_language_model operation to get more information about it.
+
+    Returns:
+        This is a proxy for boto3 list_language_models and returns the output from that SDK method.
+        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.list_language_models>`_
+
+    Raises:
+        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.list_language_models>`_
+    """
+    print('list_language_models request: '+app.current_request.raw_body.decode())
+    transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
+    response = transcribe_client.list_language_models()
+    models = response['Models']
+    while ('NextToken' in response):
+        response = transcribe_client.list_language_models(MaxResults=100, NextToken=response['NextToken'])
+        models = models + response['Models']
+    # Convert time field to a format that is JSON serializable
+    for item in models:
+        item['CreateTime'] = item['CreateTime'].isoformat()
+        item['LastModifiedTime'] = item['LastModifiedTime'].isoformat()
+    return response
+
+
+@app.route('/service/transcribe/describe_language_model', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
+def describe_language_model():
+    """ Gets information about a single custom language model. 
+
+    Body:
+
+        .. code-block:: python
+
+            {
+                'ModelName': 'string'
+            }
+
+    Returns:
+        This is a proxy for boto3 describe_language_model and returns the output from that SDK method.
+        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.describe_language_model>`_
+
+    Raises:
+        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.describe_language_model>`_
+    """
+    print('describe_language_model request: '+app.current_request.raw_body.decode())
+    transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
+    request_payload = dict(json.loads(app.current_request.raw_body.decode()))
+    response = transcribe_client.describe_language_model(**request_payload)
+    # Convert time field to a format that is JSON serializable
+    response['LanguageModel']['CreateTime'] = response['LanguageModel']['CreateTime'].isoformat()
+    response['LanguageModel']['LastModifiedTime'] = response['LanguageModel']['LastModifiedTime'].isoformat()
+    return response
+
+
 @app.route('/service/translate/get_terminology', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
 def get_terminology():
     """ Get a link to the CSV formatted description for an Amazon Translate parallel data.
@@ -2714,8 +2767,7 @@ def delete_terminology():
 
 @app.route('/service/translate/create_terminology', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
 def create_terminology():
-    """ Create an Amazon Translate Terminology.  If the terminology already exists, overwrite the terminology
-        with this new content.
+    """ Create an Amazon Translate Terminology.  If the terminology already exists, overwrite the terminology with this new content.
 
     Body:
 
@@ -2725,11 +2777,12 @@ def create_terminology():
             'terminology_name'='string',
             'terminology_csv'='string'
         }
+    }
 
 
     Returns:
         This is a proxy for boto3 create_vocabulary and returns the output from that SDK method.
-        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/translate.html#TranslateService.Client.create_terminology>`_
+        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/translate.html#Translate.Client.import_terminology>`_
 
     Raises:
         See the boto3 documentation for details
@@ -2749,7 +2802,8 @@ def create_terminology():
     response['TerminologyProperties']['LastUpdatedAt'] = response['TerminologyProperties']['LastUpdatedAt'].isoformat()
     return response
 
-# ===== ACT
+# Parallel data funcitons for Active Custom Translation
+
 @app.route('/service/translate/get_parallel_data', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
 def get_parallel_data():
     """ Get a link to the CSV formatted description for an Amazon Translate Parallel Data Set.
@@ -2759,7 +2813,7 @@ def get_parallel_data():
     .. code-block:: python
 
         {
-            'parallel_data_name'='string'
+            'Name'='string'
         }
 
     Returns:
@@ -2772,8 +2826,8 @@ def get_parallel_data():
     """
     print('get_parallel_data request: '+app.current_request.raw_body.decode())
     translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
-    parallel_data_name = json.loads(app.current_request.raw_body.decode())['parallel_data_name']
-    response = translate_client.get_parallel_data(Name=parallel_data_name)
+    request_payload = dict(json.loads(app.current_request.raw_body.decode()))
+    response = translate_client.get_parallel_data(**request_payload)
 
     # Convert time field to a format that is JSON serializable
     response['ParallelDataProperties']['CreatedAt'] = response['ParallelDataProperties']['CreatedAt'].isoformat()
@@ -2790,7 +2844,7 @@ def download_parallel_data():
     .. code-block:: python
 
         {
-            'parallel_data_name'='string'
+            'Name'='string'
         }
 
 
@@ -2810,8 +2864,8 @@ def download_parallel_data():
     # This function returns the specified parallel_data in CSV format, wrapped in a JSON formatted response.
     print('download_parallel_data request: '+app.current_request.raw_body.decode())
     translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
-    parallel_data_name = json.loads(app.current_request.raw_body.decode())['parallel_data_name']
-    url = translate_client.get_parallel_data(Name=parallel_data_name)['DataLocation']['Location']
+    request_payload = dict(json.loads(app.current_request.raw_body.decode()))
+    url = translate_client.get_parallel_data(**request_payload)['DataLocation']['Location']
     import urllib.request
     parallel_data_csv = urllib.request.urlopen(url).read().decode("utf-8")
     return {"parallel_data_csv": parallel_data_csv}
@@ -2853,7 +2907,7 @@ def delete_parallel_data():
     .. code-block:: python
 
         {
-            'parallel_data_name': 'string'
+            'Name': 'string'
         }
 
 
@@ -2870,25 +2924,32 @@ def delete_parallel_data():
     # Delete the specified parallel_data if it exists
     print('delete_parallel_data request: '+app.current_request.raw_body.decode())
     translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
-    parallel_data_name = json.loads(app.current_request.raw_body.decode())['parallel_data_name']
-    response = translate_client.delete_parallel_data(Name=parallel_data_name)
+    request_payload = dict(json.loads(app.current_request.raw_body.decode()))
+    response = translate_client.delete_parallel_data(**request_payload)
     return response
 
 
 @app.route('/service/translate/create_parallel_data', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
 def create_parallel_data():
-    """ Create an Amazon Translate Parallel Data.  If the parallel_data already exists, overwrite the parallel data
-        with this new content.
+    """ Create an Amazon Translate Parallel Data.  If the parallel_data already exists, overwrite the parallel data with this new content.
 
     Body:
 
     .. code-block:: python
 
         {
-            'parallel_data_name'='string',
-            'parallel_data_s3uri='string'
+              "Name"="string",
+              "Description"="string",
+              "ParallelDataConfig"={
+                  "S3Uri": "string",
+                  "Format": "TSV"|"CSV"|"TMX"
+              },
+              "EncryptionKey"={
+                  "Type": "KMS",
+                  "Id": "string"
+              },
+              "ClientToken"="string"
         }
-
 
     Returns:
         This is a proxy for boto3 create_vocabulary and returns the output from that SDK method.
@@ -2898,16 +2959,9 @@ def create_parallel_data():
         See the boto3 documentation for details
         500: ChaliceViewError - internal server error
     """
-    # Save the input parallel_data to a new parallel data
-    print('create_parallel_data request: '+app.current_request.raw_body.decode())
     translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
-    parallel_data_name = json.loads(app.current_request.raw_body.decode())['parallel_data_name']
-    parallel_data_s3uri = json.loads(app.current_request.raw_body.decode())['parallel_data_s3uri']
-    response = translate_client.create_parallel_data(
-        Name=parallel_data_name,
-        ParallelDataConfig={'S3Uri': parallel_data_s3uri, 'Format':'CSV'}
-    )
-
+    request_payload = dict(json.loads(app.current_request.raw_body.decode()))
+    response = translate_client.create_parallel_data(**request_payload)
     return response
 
 # ================================================================================================
@@ -3032,10 +3086,14 @@ def workflow_resource(event, context):
 
         workflow["Stages"] = json.loads(event["ResourceProperties"]["Stages"])
 
-        create_workflow("custom-resource", workflow)
+        create_workflow_response = create_workflow("custom-resource", workflow)
 
         send_response(event, context, "SUCCESS",
-                      {"Message": "Resource creation successful!", "Name": event["ResourceProperties"]["Name"]})
+                      {
+                          "Message": "Resource creation successful!",
+                          "Name": event["ResourceProperties"]["Name"],
+                          "StateMachineArn": create_workflow_response["StateMachineArn"]
+                      })
     elif event['RequestType'] == 'Update':
         logger.info('UPDATE!')
         send_response(event, context, "SUCCESS",

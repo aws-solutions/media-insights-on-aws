@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [3.0.4] - 2021-11-8
 
-### Infrastructure as code:
+### CI/CD Automation:
 
 * Clean up chalice generated CloudFormation templates (#623, #624, #625)
 

@@ -5,7 +5,7 @@ Parameters:
   WorkflowCustomResourceArn:
     Type: String
     Description: "ARN of the Media Insights custom resource that handles creating operations, stages and workflows"
-  MediaInsightsEnginePython38Layer:
+  MediaInsightsEnginePython39Layer:
     Type: String
     Description: "ARN of the Media Insights lambda layer that contains basic python dependencies for boto3, chalice, control plane and dataplane"
   DataplaneEndpoint:
@@ -83,13 +83,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
-        - !Ref "MediaInsightsEnginePython38Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
         - TestExecutionRole
         - Arn
-      Runtime: python3.8
+      Runtime: python3.9
       Timeout: 900
       Environment:
         Variables:
@@ -115,13 +115,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
-        - !Ref "MediaInsightsEnginePython38Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
         - TestExecutionRole
         - Arn
-      Runtime: python3.8
+      Runtime: python3.9
       Timeout: 900
       Environment:
         Variables:
@@ -147,13 +147,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
-        - !Ref "MediaInsightsEnginePython38Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
         - TestExecutionRole
         - Arn
-      Runtime: python3.8
+      Runtime: python3.9
       Timeout: 900
       Environment:
         Variables:
@@ -179,13 +179,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
-        - !Ref "MediaInsightsEnginePython38Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
         - TestExecutionRole
         - Arn
-      Runtime: python3.8
+      Runtime: python3.9
       Timeout: 900
       Environment:
         Variables:
@@ -211,13 +211,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
-        - !Ref "MediaInsightsEnginePython38Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
         - TestExecutionRole
         - Arn
-      Runtime: python3.8
+      Runtime: python3.9
       Timeout: 900
       Environment:
         Variables:
@@ -243,13 +243,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
-        - !Ref "MediaInsightsEnginePython38Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
         - TestExecutionRole
         - Arn
-      Runtime: python3.8
+      Runtime: python3.9
       Timeout: 900
       Environment:
         Variables:
@@ -275,13 +275,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
-        - !Ref "MediaInsightsEnginePython38Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
         - TestExecutionRole
         - Arn
-      Runtime: python3.8
+      Runtime: python3.9
       Timeout: 900
       Environment:
         Variables:
@@ -307,13 +307,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
-        - !Ref "MediaInsightsEnginePython38Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
         - TestExecutionRole
         - Arn
-      Runtime: python3.8
+      Runtime: python3.9
       Timeout: 900
       Environment:
         Variables:
@@ -339,13 +339,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
-        - !Ref "MediaInsightsEnginePython38Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
         - TestExecutionRole
         - Arn
-      Runtime: python3.8
+      Runtime: python3.9
       Timeout: 900
       Environment:
         Variables:
@@ -371,13 +371,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
-        - !Ref "MediaInsightsEnginePython38Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
         - TestExecutionRole
         - Arn
-      Runtime: python3.8
+      Runtime: python3.9
       Timeout: 900
       Environment:
         Variables:
@@ -403,13 +403,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
-        - !Ref "MediaInsightsEnginePython38Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
         - TestExecutionRole
         - Arn
-      Runtime: python3.8
+      Runtime: python3.9
       Timeout: 900
       Environment:
         Variables:
@@ -435,13 +435,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
-        - !Ref "MediaInsightsEnginePython38Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
         - TestExecutionRole
         - Arn
-      Runtime: python3.8
+      Runtime: python3.9
       Timeout: 900
       Environment:
         Variables:
@@ -467,13 +467,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
-        - !Ref "MediaInsightsEnginePython38Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
         - TestExecutionRole
         - Arn
-      Runtime: python3.8
+      Runtime: python3.9
       Timeout: 900
       Environment:
         Variables:
@@ -499,13 +499,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
-        - !Ref "MediaInsightsEnginePython38Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
         - TestExecutionRole
         - Arn
-      Runtime: python3.8
+      Runtime: python3.9
       Timeout: 900
       Environment:
         Variables:

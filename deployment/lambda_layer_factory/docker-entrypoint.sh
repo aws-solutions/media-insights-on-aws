@@ -4,6 +4,7 @@ echo "==========================================================================
 echo "Installing the packages listed in requirements.txt:"
 echo "================================================================================"
 cat /packages/requirements.txt
+pip3.9 install -q -r /packages/requirements.txt -t /packages/lambda_layer-python-3.9/python/lib/python3.9/site-packages
 pip3.8 install -q -r /packages/requirements.txt -t /packages/lambda_layer-python-3.8/python/lib/python3.8/site-packages
 pip3.7 install -q -r /packages/requirements.txt -t /packages/lambda_layer-python-3.7/python/lib/python3.7/site-packages
 pip3.6 install -q -r /packages/requirements.txt -t /packages/lambda_layer-python-3.6/python/lib/python3.6/site-packages
@@ -19,6 +20,10 @@ URL=https://mediaarea.net/download/binary/libmediainfo0/${VERSION}/MediaInfo_DLL
 echo "Downloading MediaInfo from $URL"
 cd /
 curl $URL -o mediainfo.tgz || exit 1
+echo "Checking md5sum for MediaInfo source..."
+# Check the md5sum for MediaInfo 19.09:
+echo "74d33c37a161dba72baf09ad90c1c6b9  mediainfo.tgz" > mediainfo.md5 
+md5sum --check mediainfo.md5 || exit 1
 tar -xzf mediainfo.tgz
 echo "Compiling MediaInfo library..."
 cd MediaInfo_DLL_GNU_FromSource/
@@ -28,10 +33,13 @@ find /MediaInfo_DLL_GNU_FromSource/MediaInfoLib/Project/GNU/Library/.libs/
 cp /MediaInfo_DLL_GNU_FromSource/MediaInfoLib/Project/GNU/Library/.libs/* /packages/lambda_layer-python-3.6/python/ || exit 1
 cp /MediaInfo_DLL_GNU_FromSource/MediaInfoLib/Project/GNU/Library/.libs/* /packages/lambda_layer-python-3.7/python/ || exit 1
 cp /MediaInfo_DLL_GNU_FromSource/MediaInfoLib/Project/GNU/Library/.libs/* /packages/lambda_layer-python-3.8/python/ || exit 1
+cp /MediaInfo_DLL_GNU_FromSource/MediaInfoLib/Project/GNU/Library/.libs/* /packages/lambda_layer-python-3.9/python/ || exit 1
 
 echo "================================================================================"
 echo "Creating zip files for Lambda layers"
 echo "================================================================================"
+cd /packages/lambda_layer-python-3.9/
+zip -q -r /packages/lambda_layer-python3.9.zip .
 cd /packages/lambda_layer-python-3.8/
 zip -q -r /packages/lambda_layer-python3.8.zip .
 cd /packages/lambda_layer-python-3.7/
@@ -41,11 +49,14 @@ zip -q -r /packages/lambda_layer-python3.6.zip .
 
 # Clean up build environment
 cd /packages/
+rm -rf /packages/pymediainfo-3.6/
+rm -rf /packages/lambda_layer-python-3.6/
 rm -rf /packages/pymediainfo-3.7/
+rm -rf /packages/lambda_layer-python-3.7/
 rm -rf /packages/pymediainfo-3.8/
 rm -rf /packages/lambda_layer-python-3.8/
-rm -rf /packages/lambda_layer-python-3.7/
-rm -rf /packages/lambda_layer-python-3.6/
+rm -rf /packages/pymediainfo-3.9/
+rm -rf /packages/lambda_layer-python-3.9/
 
 echo "Zip files have been saved to docker volume /data. You can copy them locally like this:"
 echo "docker run --rm -it -v \$(pwd):/packages <docker_image>"

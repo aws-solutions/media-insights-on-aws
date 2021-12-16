@@ -25,9 +25,9 @@
       "Type": "String",
       "Description": "S3 Key of the dataplane deployment package"
     },
-    "MediaInsightsEnginePython38Layer": {
+    "MediaInsightsEnginePython39Layer": {
       "Type": "String",
-      "Description": "Arn of the MIE Python 3.8 lambda layer"
+      "Description": "Arn of the MIE Python 3.9 lambda layer"
     },
     "TracingConfigMode": {
       "Type": "String",
@@ -157,7 +157,7 @@
         }
       },
       "Properties": {
-        "Runtime": "python3.8",
+        "Runtime": "python3.9",
         "Environment": {
           "Variables": {
             "botoConfig": {
@@ -176,7 +176,7 @@
         },
         "Layers": [
           {
-            "Ref": "MediaInsightsEnginePython38Layer"
+            "Ref": "MediaInsightsEnginePython39Layer"
             }
           ],
         "Tracing": {"Ref": "TracingConfigMode"},

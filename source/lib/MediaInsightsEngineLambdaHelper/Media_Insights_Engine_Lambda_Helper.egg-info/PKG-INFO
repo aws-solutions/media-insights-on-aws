@@ -1,9 +1,9 @@
 Metadata-Version: 2.1
 Name: Media-Insights-Engine-Lambda-Helper
-Version: 0.0.4
+Version: 1.0.0
 Summary: Helper classes for developing Media Insights Engine Lambda Functions
 Home-page: https://code.amazon.com/packages/MediaInsightsEngine
-Author: Brandon Dold
+Author: AWS Solutions Builder
 Author-email: redacted@example.com
 License: UNKNOWN
 Description: # Media Insights Engine Lambda Helper

@@ -178,8 +178,8 @@ source_dir="$build_dir/../source"
 echo "------------------------------------------------------------------------------"
 echo "Creating a temporary Python virtualenv for this script"
 echo "------------------------------------------------------------------------------"
-python -c "import os; print (os.getenv('VIRTUAL_ENV'))" | grep -q None
-if [ $? -ne 0 ]; then
+# Exit if we're already in a python virtual env.
+if [[ "$VIRTUAL_ENV" != "" ]]; then
     echo "ERROR: Do not run this script inside Virtualenv. Type \`deactivate\` and run again.";
     exit 1;
 fi
@@ -231,16 +231,19 @@ if [[ ! -z "${NO_LAYER}" ]]; then
   echo "------------------------------------------------------------------------------"
   echo "Downloading Lambda Layers"
   echo "------------------------------------------------------------------------------"
-  echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.6.zip"
-  wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.6.zip
-  echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.7.zip"
-  wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.7.zip
-  echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.8.zip"
-  wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.8.zip
+  echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_v1.0.0_python3.6.zip"
+  wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_v1.0.0_python3.6.zip -O media_insights_engine_lambda_layer_python3.6.zip
+  echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_v1.0.0_python3.7.zip" -O media_insights_engine_lambda_layer_python3.7.zip
+  wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_v1.0.0_python3.7.zip -O media_insights_engine_lambda_layer_python3.7.zip
+  echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_v1.0.0_python3.8.zip"
+  wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_v1.0.0_python3.8.zip -O media_insights_engine_lambda_layer_python3.8.zip
+  echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_v1.0.0_python3.9.zip"
+  wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_v1.0.0_python3.9.zip -O media_insights_engine_lambda_layer_python3.9.zip
   echo "Copying Lambda layer zips to $dist_dir:"
   mv media_insights_engine_lambda_layer_python3.6.zip "$regional_dist_dir"
   mv media_insights_engine_lambda_layer_python3.7.zip "$regional_dist_dir"
   mv media_insights_engine_lambda_layer_python3.8.zip "$regional_dist_dir"
+  mv media_insights_engine_lambda_layer_python3.9.zip "$regional_dist_dir"
   cd "$build_dir" || exit 1
 else
   echo "------------------------------------------------------------------------------"
@@ -279,21 +282,25 @@ else
     mv lambda_layer-python3.6.zip media_insights_engine_lambda_layer_python3.6.zip
     mv lambda_layer-python3.7.zip media_insights_engine_lambda_layer_python3.7.zip
     mv lambda_layer-python3.8.zip media_insights_engine_lambda_layer_python3.8.zip
-    rm -rf lambda_layer-python-3.6/ lambda_layer-python-3.7/ lambda_layer-python-3.8/
+    mv lambda_layer-python3.9.zip media_insights_engine_lambda_layer_python3.9.zip
+    rm -rf lambda_layer-python-3.6/ lambda_layer-python-3.7/ lambda_layer-python-3.8/ lambda_layer-python-3.9/
     echo "Lambda layer build script completed.";
   else
     echo "WARNING: Lambda layer build script failed. We'll use a pre-built Lambda layers instead.";
-    echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.6.zip"
-    wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.6.zip
-    echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.7.zip"
-    wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.7.zip
-    echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.8.zip"
-    wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.8.zip
+    echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_v1.0.0_python3.6.zip"
+    wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_v1.0.0_python3.6.zip -O media_insights_engine_lambda_layer_python3.6.zip
+    echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_v1.0.0_python3.7.zip" -O media_insights_engine_lambda_layer_python3.7.zip
+    wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_v1.0.0_python3.7.zip -O media_insights_engine_lambda_layer_python3.7.zip
+    echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_v1.0.0_python3.8.zip"
+    wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_v1.0.0_python3.8.zip -O media_insights_engine_lambda_layer_python3.8.zip
+    echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_v1.0.0_python3.9.zip"
+    wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_v1.0.0_python3.9.zip -O media_insights_engine_lambda_layer_python3.9.zip
   fi
   echo "Copying Lambda layer zips to $regional_dist_dir:"
   mv media_insights_engine_lambda_layer_python3.6.zip "$regional_dist_dir"
   mv media_insights_engine_lambda_layer_python3.7.zip "$regional_dist_dir"
   mv media_insights_engine_lambda_layer_python3.8.zip "$regional_dist_dir"
+  mv media_insights_engine_lambda_layer_python3.9.zip "$regional_dist_dir"
   mv requirements.txt.old requirements.txt
   cd "$build_dir" || exit 1
 fi
@@ -793,7 +800,7 @@ if [ "$global_bucket" != "solutions-reference" ] && [ "$global_bucket" != "solut
   echo "**********                    I M P O R T A N T                      **********"
   echo "*******************************************************************************"
   echo "** You are about to upload templates and code to S3. Please confirm that     **"
-  echo "** buckets ${bucket}-reference and ${bucket}-${region} are appropriately     **"
+  echo "** buckets s3://${global_bucket} and s3://${regional_bucket}-${region} are appropriately     **"
   echo "** secured (not world-writeable, public access blocked) before continuing.   **"
   echo "*******************************************************************************"
   echo "*******************************************************************************"
@@ -807,8 +814,8 @@ if [ "$global_bucket" != "solutions-reference" ] && [ "$global_bucket" != "solut
   echo "=========================================================================="
   echo "Deploying $solution_name version $version to bucket $bucket-$region"
   echo "=========================================================================="
-  echo "Templates: ${bucket}-reference/$solution_name/$version/"
-  echo "Lambda code: ${bucket}-${region}/$solution_name/$version/"
+  echo "Templates: ${global_bucket}/$solution_name/$version/"
+  echo "Lambda code: ${regional_bucket}-${region}/$solution_name/$version/"
   echo "---"
 
   set -x

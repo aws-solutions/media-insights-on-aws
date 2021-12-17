@@ -79,7 +79,7 @@ These cost estimates are based on workflows processing live action videos 10 min
 
 The Cloud Formation stack name for MIE must be 12 or fewer characters long. This will ensure all the resources in MIE stack remain under the maximum length allowed by Cloud Formation.
 
-MIE does not inherently limit media attributes such as file size or video duration. Those limitations depend on the services used in user-defined workflows. For example, if a workflow uses Amazon Rekognition, then that workflow will be subject to the limitations listed in the [guidelines and quotas for Amazon Rekognition](https://docs.aws.amazon.com/rekognition/latest/dg/limits.html).
+MIE does not inherently limit media attributes such as file size or video duration. Those limitations depend on the services used in user-defined workflows. For example, if an MIE workflow uses Amazon Rekognition, then that workflow will be subject to the limitations listed in the [guidelines and quotas for Amazon Rekognition](https://docs.aws.amazon.com/rekognition/latest/dg/limits.html). For those who use  the Amazon Rekognition service within MIE workflows, be aware about [use cases that involve public safety](https://docs.aws.amazon.com/rekognition/latest/dg/considerations-public-safety-use-cases.html) and the general [AWS Service Terms](https://aws.amazon.com/service-terms/.
 
 # Architecture Overview
 

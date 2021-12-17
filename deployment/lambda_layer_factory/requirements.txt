@@ -1,4 +1,4 @@
 pymediainfo==4.2.1
 jsonpickle==2.0.0
 aws-xray-sdk==2.6.0
-/packages/Media_Insights_Engine_Lambda_Helper-0.0.4-py3-none-any.whl
+/packages/Media_Insights_Engine_Lambda_Helper-1.0.0-py3-none-any.whl

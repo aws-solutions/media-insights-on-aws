@@ -4,12 +4,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [4.0.0] - tbd
+## [4.0.0] - 2021-12-16
+
+### New:
+
+* Support custom language models in Amazon Transcribe (#599)
+* Support source language auto-detection in Amazon Translate (#621)
+* List the state machine ARN for workflows in the outputs for Cloud Formation stacks that create workflow resources (#641)
+* Cache MediaConvert endpoint in order to avoid throttling in the Thumbnail operator (#638)
+* Add support for Python 3.9 in the MIE Lambda layer (#647)
 
 ### Fixed:
 
-* The JSON response from requests to /workflow/execution now contains the correct MediaType property (#634)
-* Support source language auto-detection in Amazon Translate (#621)
+* Infrastructure as code: Return the correct MediaType in /workflow/execution requests (#635). This change altered the Dataplane API in a way that is not backwards compatible.
+* Documentation: Add missing information to the dataplane API docs for /metadata (#637)
+* Documentation: Add missing information to S3 advisory text (#633)
+
+### Security:
+
+* Upgrade python runtimes for lambda functions from python 3.8 to 3.9. (#647)
+* Support encryption options for the create_parallel_data function in Amazon Transcribe (#599). This change altered the Workflow API in a way that is not backwards compatible.
+
 
 ## [3.0.4] - 2021-11-8
 
@@ -25,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### New:
 
-* Statically define the MediaConvert endpoint to avoid throttling (#606) 
+* Statically define the MediaConvert endpoint to avoid throttling (#606)
 
 ### CI/CD Automation:
 
@@ -85,7 +100,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Added a new parameter in the MIE Cloud Formation template that allows users and parent stacks to opt-out from anonymous data collection (#509)
 
-* Added a new parameter in the MIE Cloud Formation template that allows parent stacks to associate their AWS solution id with MIE's boto3 calls. This helps the AWS Solution Builder team improve the quality of published solutions.  
+* Added a new parameter in the MIE Cloud Formation template that allows parent stacks to associate their AWS solution id with MIE's boto3 calls. This helps the AWS Solution Builder team improve the quality of published solutions.
 
 ### Changes:
 
@@ -109,7 +124,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### New:
 
-* Compatibility with build pipeline for the official AWS Media Insights Engine solution (#436, #442) 
+* Compatibility with build pipeline for the official AWS Media Insights Engine solution (#436, #442)
 * Add user-agent string for (#424)
 
 ### Changes:
@@ -155,7 +170,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changes:
 
 * Update AWS Lambda functions to use the latest python runtime, Python 3.8. (#362)
-    
+
 ### Fixed:
 
 * Fixed workflow IAM policies to support managing custom vocabularioes and terminologies with Transcribe and Translate. (#359)
@@ -327,7 +342,7 @@ This release (v1.0.0) focuses on removing cruft and reorganizing the core MIE fr
 
 ## [0.1.7] - 2020-04-09
 
-This release includes a new feature for reprocessing videos and an important bug fix for the MediaInfo operator. 
+This release includes a new feature for reprocessing videos and an important bug fix for the MediaInfo operator.
 
 ### New:
 
@@ -344,7 +359,7 @@ This release includes a new feature for reprocessing videos and an important bug
 
 ## [0.1.6] - 2020-03-25
 
-This release includes new operators, cost optimizations, improved documentation for developers, security enhancements, and lots of bug fixes. 
+This release includes new operators, cost optimizations, improved documentation for developers, security enhancements, and lots of bug fixes.
 
 ### New:
 

@@ -519,6 +519,13 @@ Resources:
                   - "xray:PutTelemetryRecords"
                 Resource: "*"
 
+  StepFunctionLogGroup:
+    Type: "AWS::Logs::LogGroup"
+    Properties:
+      Tags:
+        - Key: "environment"
+          Value: "mie"
+        
   StepFunctionRole:
     Type: "AWS::IAM::Role"
     Metadata:
@@ -1616,6 +1623,7 @@ Resources:
         ShortUUID: !GetAtt GetShortUUID.Data
         StageExecutionQueueUrl: !Ref StageExecutionQueue
         StageExecutionRole: !GetAtt StepFunctionRole.Arn
+        StepFunctionLogGroupArn: !GetAtt StepFunctionLogGroup.Arn
         OperationTableName: !Ref OperationTable
         StageTableName: !Ref StageTable
         WorkflowExecutionTableName: !Ref WorkflowExecutionTable

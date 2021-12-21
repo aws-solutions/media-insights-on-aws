@@ -42,6 +42,10 @@
         "Type": "String",
         "Description": "Queue used to post stage executions for processing"
     },
+    "StepFunctionLogGroupArn": {
+        "Type": "String",
+        "Description": "ARN of the log group used for logging step functions with Cloudwatch"
+    },
     "StageExecutionRole": {
         "Type": "String",
         "Description": "ARN of the role used to execute a stage state machine"
@@ -146,6 +150,17 @@
                     "states:UntagResource"
                   ],
                   "Resource": {"Fn::Sub": "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:*-${ShortUUID}"}
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": {
+                    "Ref": "StepFunctionLogGroupArn"
+                  }
                 },
                 {
                   "Effect": "Allow",
@@ -331,6 +346,17 @@
                 {
                   "Effect": "Allow",
                   "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": {
+                    "Ref": "StepFunctionLogGroupArn"
+                  }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
                     "iam:ListRolePolicies",
                     "iam:PutRolePolicy",
                     "iam:DeleteRolePolicy"
@@ -402,6 +428,9 @@
                 },
                 "STAGE_EXECUTION_ROLE": {
                         "Ref" : "StageExecutionRole"
+                },
+                "STEP_FUNCTION_LOG_GROUP_ARN": {
+                        "Ref" : "StepFunctionLogGroupArn"
                 },
                 "DataplaneEndpoint": {
                     "Ref": "DataplaneEndpoint"

@@ -72,6 +72,7 @@ WORKFLOW_EXECUTION_TABLE_NAME = os.environ["WORKFLOW_EXECUTION_TABLE_NAME"]
 HISTORY_TABLE_NAME = os.environ["HISTORY_TABLE_NAME"]
 STAGE_EXECUTION_QUEUE_URL = os.environ["STAGE_EXECUTION_QUEUE_URL"]
 STAGE_EXECUTION_ROLE = os.environ["STAGE_EXECUTION_ROLE"]
+STEP_FUNCTION_LOG_GROUP_ARN = os.environ["STEP_FUNCTION_LOG_GROUP_ARN"]
 # FIXME testing NoQ execution
 COMPLETE_STAGE_LAMBDA_ARN = os.environ["COMPLETE_STAGE_LAMBDA_ARN"]
 FILTER_OPERATION_LAMBDA_ARN = os.environ["FILTER_OPERATION_LAMBDA_ARN"]
@@ -1364,6 +1365,17 @@ def create_workflow(trigger, workflow):
             name=workflow["Name"] + "-" + STACK_SHORT_UUID,
             definition=json.dumps(workflow["WorkflowAsl"]),
             roleArn=STAGE_EXECUTION_ROLE,
+            loggingConfiguration={
+                'level': 'ALL',
+                'includeExecutionData': False,
+                'destinations': [
+                    {
+                        'cloudWatchLogsLogGroup': {
+                            'logGroupArn': STEP_FUNCTION_LOG_GROUP_ARN
+                        }
+                    },
+                ]
+            },
             tags=[
                 {
                     'key': 'environment',

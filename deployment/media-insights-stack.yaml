@@ -573,11 +573,14 @@ Resources:
                 Resource: "*"
               - "Effect": "Allow"
                 "Action":
-                  - "logs:CreateLogDelivery"
-                  - "logs:GetLogDelivery"
-                  - "logs:UpdateLogDelivery"
-                  - "logs:DeleteLogDelivery"
-                  - "logs:ListLogDeliveries"
+                    - "logs:CreateLogDelivery"
+                    - "logs:GetLogDelivery"
+                    - "logs:UpdateLogDelivery"
+                    - "logs:DeleteLogDelivery"
+                    - "logs:ListLogDeliveries"
+                    - "logs:PutResourcePolicy"
+                    - "logs:DescribeResourcePolicies"
+                    - "logs:DescribeLogGroups"
                 "Resource": "*"
 
   operatorFailedRole:

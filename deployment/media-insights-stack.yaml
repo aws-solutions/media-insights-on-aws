@@ -521,6 +521,11 @@ Resources:
 
   StepFunctionLogGroup:
     Type: "AWS::Logs::LogGroup"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W84
+            reason: "Log group data is encrypted by default in CloudWatch"        
     Properties:
       RetentionInDays: 14
       Tags:

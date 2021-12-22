@@ -154,17 +154,6 @@
                 {
                   "Effect": "Allow",
                   "Action": [
-                    "logs:CreateLogGroup",
-                    "logs:CreateLogStream",
-                    "logs:PutLogEvents"
-                  ],
-                  "Resource": {
-                    "Ref": "StepFunctionLogGroupArn"
-                  }
-                },
-                {
-                  "Effect": "Allow",
-                  "Action": [
                     "iam:PassRole"
                   ],
                   "Resource": {"Ref": "StageExecutionRole"}
@@ -342,17 +331,6 @@
                     "states:UntagResource"
                   ],
                   "Resource": {"Fn::Sub": "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:*-${ShortUUID}"}
-                },
-                {
-                  "Effect": "Allow",
-                  "Action": [
-                    "logs:CreateLogGroup",
-                    "logs:CreateLogStream",
-                    "logs:PutLogEvents"
-                  ],
-                  "Resource": {
-                    "Ref": "StepFunctionLogGroupArn"
-                  }
                 },
                 {
                   "Effect": "Allow",

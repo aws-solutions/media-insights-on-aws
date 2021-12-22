@@ -522,6 +522,7 @@ Resources:
   StepFunctionLogGroup:
     Type: "AWS::Logs::LogGroup"
     Properties:
+      RetentionInDays: 14
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -532,7 +533,7 @@ Resources:
       cfn_nag:
         rules_to_suppress:
           - id: W11
-            reason: "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources"
+            reason: "The X-Ray and Cloudwatch policies use actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources and https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazoncloudwatchlogs.html"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -565,6 +566,14 @@ Resources:
                   - "xray:GetSamplingRules"
                   - "xray:GetSamplingTargets"
                 Resource: "*"
+              - "Effect": "Allow"
+                "Action":
+                  - "logs:CreateLogDelivery"
+                  - "logs:GetLogDelivery"
+                  - "logs:UpdateLogDelivery"
+                  - "logs:DeleteLogDelivery"
+                  - "logs:ListLogDeliveries"
+                "Resource": "*"
 
   operatorFailedRole:
     Type: "AWS::IAM::Role"

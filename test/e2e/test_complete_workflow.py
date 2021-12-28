@@ -11,8 +11,14 @@
 # Boto3 will raise a deprecation warning (known issue). It's safe to ignore.
 #
 # USAGE:
-#   cd tests/
-#   pytest -s -W ignore::DeprecationWarning -p no:cacheprovider
+#   cd test/e2e/
+#   export MIE_REGION=...
+#   export MIE_STACK_NAME=...
+#   export AWS_ACCESS_KEY_ID=...
+#   export AWS_SECRET_ACCESS_KEY=...
+#   export TEST_MEDIA_PATH="../test-media/"
+#   export TEST_VIDEO="sample-video.mp4"
+#   pytest -s -W ignore::DeprecationWarning -p no:cacheprovider test_complete_workflow.py
 #
 ###############################################################################
 

@@ -400,6 +400,9 @@ The MIE APIs in Amazon API Gateway require that you authenticate every request w
 ## Summary:
 * Data plane API
   * [POST /create](#POST-create)
+  * [POST /checkin/{asset_id}](#POST-checkin)
+  * [POST /checkout/{asset_id}](#POST-checkout)
+  * [GET /checkouts](#GET-checkouts)
   * [POST /download](#POST-download)
   * [GET /mediapath/{asset_id}/{workflow_id}](#GET-mediapathasset_idworkflow_id)
   * [GET /metadata](#GET-metadata)
@@ -475,6 +478,85 @@ Body:
 Returns:
 
 * A dictionary mapping of the asset id and the new location of the media object
+
+#### `POST /checkin/{asset_id}`
+
+Removes LockedAt and LockedBy attributes from an asset item in the Dataplane table.
+This is intended to help applications implement mutual exclusion between users that
+can modify asset data.
+
+Body:
+
+(none)
+
+Returns:
+
+* A string in the format "Unlocked asset {asset}"
+
+Sample command:
+
+```
+awscurl -X POST --region us-east-1 -H "Content-Type: application/json" $DATAPLANE_API_ENDPOINT/checkin/0782d5ad-4cf5-4946-8578-43ec569567bd
+```
+
+#### `POST /checkout/{asset_id}`
+
+Adds LockedAt and LockedBy attributes to an asset item in the Dataplane table.
+This is intended to help applications implement mutual exclusion between users that
+can modify asset data.
+
+Body:
+
+```
+{
+  "LockedBy": "{some_user_id}"
+}
+```
+
+Returns:
+
+* A dictionary of lock info added to the asset.
+
+```
+{
+  "AssetId": asset_id,
+  "LockedBy": user_name,
+  "LockedAt": timestamp
+}
+```
+
+Sample command:
+
+```
+awscurl -X POST --region us-east-1 -H "Content-Type: application/json" --data '{"LockedBy": "user1@example.com"}' $DATAPLANE_API_ENDPOINT/checkout/0782d5ad-4cf5-4946-8578-43ec569567bd
+```
+
+#### `GET /checkouts`
+
+Returns a dictionary containing a list of all locked assets with their corresponding LockedBy, LockedAt, and AssetId attributes. The list returns empty if no assets have been locked.
+
+Sample output:
+
+```
+{
+    "locks": [
+    {'LockedAt': 1641411425}, 'AssetId': 'e69ba549-34f3-46f4-882c-6dafc3d74ca6'}, 'LockedBy': 'user1@example.com'}},
+    {'LockedAt': 1641411742}, 'AssetId': '1c745641-d9fd-4634-949b-34c9d4b3d847'}, 'LockedBy': 'user2@example.com'}},
+    ...
+    ]
+}
+```
+
+Returns:
+
+* Dictionary containing the S3 bucket and key for uploading a given asset media object to the dataplane.
+
+Sample command:
+
+```
+awscurl -X GET --region us-east-1 -H "Content-Type: application/json"  $DATAPLANE_API_ENDPOINT/checkouts
+```
+
 
 #### `POST /download`
 

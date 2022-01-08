@@ -833,7 +833,7 @@ Resources:
       AttributeDefinitions:
         - AttributeName: AssetId
           AttributeType: S
-        - AttributeName: LockedBy
+        - AttributeName: Locked
           AttributeType: S
         - AttributeName: LockedAt
           AttributeType: N
@@ -843,12 +843,14 @@ Resources:
       GlobalSecondaryIndexes:
         - IndexName: LockIndex
           KeySchema:
-            - AttributeName: LockedBy
+            - AttributeName: Locked
               KeyType: HASH
             - AttributeName: LockedAt
               KeyType: RANGE
           Projection:
-            ProjectionType: KEYS_ONLY
+            NonKeyAttributes:
+              - LockedBy
+            ProjectionType: INCLUDE
       TableName: !Join ["", [Ref: "AWS::StackName", "DataplaneTable"]]
       StreamSpecification:
         StreamViewType: "NEW_AND_OLD_IMAGES"

@@ -930,8 +930,8 @@ def lock_asset(asset_id):
         response = dynamo_client.update_item(
             TableName=dataplane_table_name,
             Key={'AssetId': {'S': asset}},
-            UpdateExpression='set LockedBy = :lockedby, LockedAt = :timestamp',
-            ExpressionAttributeValues={':lockedby': {'S': user_name}, ':timestamp': {'N': str(timestamp)}},
+            UpdateExpression='set Locked = :locked, LockedBy = :lockedby, LockedAt = :timestamp',
+            ExpressionAttributeValues={':locked': {'S': 'true'}, ':lockedby': {'S': user_name}, ':timestamp': {'N': str(timestamp)}},
             ConditionExpression='attribute_not_exists(LockedBy) and attribute_not_exists(LockedAt)'
         )
         logger.info("Update item response code: " + str(response['ResponseMetadata']['HTTPStatusCode']))
@@ -969,8 +969,8 @@ def unlock_asset(asset_id):
         response = dynamo_client.update_item(
             TableName=dataplane_table_name,
             Key={'AssetId': {'S': asset}},
-            UpdateExpression='remove LockedAt, LockedBy',
-            ConditionExpression='attribute_exists(LockedBy) and attribute_exists(LockedAt)'
+            UpdateExpression='remove Locked, LockedAt, LockedBy',
+            ConditionExpression='attribute_exists(Locked) and attribute_exists(LockedBy) and attribute_exists(LockedAt)'
         )
         logger.info("Update item response code: " + str(response['ResponseMetadata']['HTTPStatusCode']))
     except ClientError as e:
@@ -1007,9 +1007,23 @@ def list_all_locked_assets():
     table_name = dataplane_table_name
 
     try:
-        response = dynamo_client.scan(
+        # Get every row indexed by the GSI.
+        #
+        #   A scan would be more efficient than query here since the query 
+        #   has to evaluate the KeyConditionExpression for every row but we've opted 
+        #   to use query in order to predispose software developers looking here for code  
+        #   samples, to use query instead of scan, since query is generally more efficient 
+        #   than scan.
+        #
+        # response = dynamo_client.scan(
+        #     TableName=table_name,
+        #     IndexName="LockIndex"
+        # )
+        response = dynamo_client.query(
             TableName=table_name,
-            IndexName="LockIndex"
+            IndexName="LockIndex",
+            KeyConditionExpression='Locked=:locked',
+            ExpressionAttributeValues={":locked": {"S": "true"}}
         )
         data = response['Items']
     except ClientError as e:

@@ -896,10 +896,23 @@ Resume a paused workflow.
 
 Workflow executions will pause when they encounter a WaitOperation. The WaitOperation is in the MIE operator library and is often used in workflows that need to wait for user input.
 
+Sample command:
+
+```
+WORKFLOW_API_ENDPOINT=...(you define this)...
+WORKFLOW_EXECUTION_ID=...(you define this)...
+WAITING_STAGE_NAME=`awscurl -X GET --region us-east-1 $WORKFLOW_API_ENDPOINT/workflow/execution/$WORKFLOW_EXECUTION_ID |  cut -f 2 -d "'" | perl -pe 's/"Definition.+?}]}}}",//g' | jq '.CurrentStage'`
+awscurl -X PUT --region us-east-1 -H "Content-Type: application/json" --data '{"WaitingStageName": '$WAITING_STAGE_NAME'}' $WORKFLOW_API_ENDPOINT/workflow/execution/$WORKFLOW_EXECUTION_ID 
+```
+
 Returns:
 
-
-
+```
+{
+  "Id": "$WORKFLOW_EXECUTION_ID",
+  "Status": "Resumed"
+}
+```
 
 #### `GET /workflow/execution/asset/{AssetId}`
 

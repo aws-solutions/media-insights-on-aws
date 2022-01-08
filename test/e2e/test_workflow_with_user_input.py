@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 ###############################################################################
-# White box testing for the base Media Insights Engine stack and Rekognition
-# workflow.
+# White box testing for the base Media Insights Engine stack and wait operator
+# which is often used for pausing workflows to get user input.
 #
 # PRECONDITIONS:
 # MIE base stack must be deployed in your AWS account
@@ -18,7 +18,7 @@
 #   export AWS_SECRET_ACCESS_KEY=...
 #   export TEST_MEDIA_PATH="../test-media/"
 #   export TEST_VIDEO="sample-video.mp4"
-#   pytest -s -W ignore::DeprecationWarning -p no:cacheprovider test_complete_workflow.py
+#   pytest -s -W ignore::DeprecationWarning -p no:cacheprovider test_workflow_with_user_input.py
 #
 ###############################################################################
 
@@ -33,41 +33,41 @@ def test_workflow_execution(workflow_api, dataplane_api, stack_resources, testin
 
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-    test_preprocess_stage = {"Name": "TestPreprocess", "Operations": ["Mediainfo", "Thumbnail"]}
-    test_video_stage = {"Name": "TestVideo", "Operations": ["celebrityRecognition", "contentModeration", "faceDetection", "labelDetection",  "personTracking", "shotDetection", "textDetection", "Mediaconvert", "technicalCueDetection"]}
-    test_audio_stage = {"Name": "TestAudio", "Operations": ["TranscribeVideo"]}
-    test_webcaptions_stage = {"Name": "TestWebCaptions", "Operations": ["WebCaptions"]}
-    test_text_stage = {"Name": "TestText", "Operations": ["TranslateWebCaptions", "ComprehendKeyPhrases", "ComprehendEntities"]}
+    test_preprocess_stage = {"Name": "TestPreprocess", "Operations": ["Mediainfo"]}
+    test_wait_stage = {"Name": "TestWait4UserInput", "Operations": ["Wait"]}
+    test_postprocess_stage = {"Name": "TestPostprocess", "Operations": ["Thumbnail"]}
 
     test_workflow = {
-        "Name": "TestingWF",
+        "Name": "TestingWaitWF",
         "StartAt": "TestPreprocess",
         "Stages": {
             "TestPreprocess": {
-                "Next": "TestVideo"
+                "Next": "TestWait4UserInput"
             },
-            "TestVideo": {
-                "Next": "TestAudio"
+            "TestWait4UserInput": {
+                "Next": "TestPostprocess"
             },
-            "TestAudio": {
-                "Next": "TestWebCaptions"
-            },
-            "TestWebCaptions": {
-                "Next": "TestText"
-            },
-            "TestText": {
+            "TestPostprocess": {
                 "End": True
             }
         }
     }
 
     test_execution = {
-        "Name": "TestingWF",
+        "Name": "TestingWaitWF",
         "Input": {
             "Media": {
                 "Video": {
                     "S3Bucket": stack_resources['DataplaneBucket'],
                     "S3Key": 'upload/' + testing_env_variables['SAMPLE_VIDEO']
+                }
+            }
+        },
+        "Configuration": {
+            "TestWait4UserInput": {
+                "Wait": {
+                    "MediaType": "MetadataOnly",
+                    "Enabled": True
                 }
             }
         }
@@ -77,10 +77,9 @@ def test_workflow_execution(workflow_api, dataplane_api, stack_resources, testin
     print("Cleaning up previously incomplete tests")
 
     delete_preprocess_stage_request = workflow_api.delete_stage_request(test_preprocess_stage["Name"])
-    delete_video_stage_request = workflow_api.delete_stage_request(test_video_stage["Name"])
-    delete_audio_stage_request = workflow_api.delete_stage_request(test_audio_stage["Name"])
-    delete_webcaptions_stage_request = workflow_api.delete_stage_request(test_webcaptions_stage["Name"])
-    delete_text_stage_request = workflow_api.delete_stage_request(test_text_stage["Name"])
+    delete_wait_stage_request = workflow_api.delete_stage_request(test_wait_stage["Name"])
+    test_postprocess_stage_request = workflow_api.delete_stage_request(test_postprocess_stage["Name"])
+
     if workflow_api.get_workflow_request(test_workflow["Name"]).status_code == 200:
         workflow_api.delete_workflow_request(test_workflow["Name"])
         # Wait for the workflow to delete. It can take several seconds.
@@ -91,17 +90,11 @@ def test_workflow_execution(workflow_api, dataplane_api, stack_resources, testin
     preprocess_stage_request = workflow_api.create_stage_request(test_preprocess_stage)
     assert preprocess_stage_request.status_code == 200
 
-    video_stage_request = workflow_api.create_stage_request(test_video_stage)
-    assert video_stage_request.status_code == 200
+    wait_stage_request = workflow_api.create_stage_request(test_wait_stage)
+    assert wait_stage_request.status_code == 200
 
-    audio_stage_request = workflow_api.create_stage_request(test_audio_stage)
-    assert audio_stage_request.status_code == 200
-
-    webcaptions_stage_request = workflow_api.create_stage_request(test_webcaptions_stage)
-    assert webcaptions_stage_request.status_code == 200
-
-    text_stage_request = workflow_api.create_stage_request(test_text_stage)
-    assert text_stage_request.status_code == 200
+    postprocess_stage_request = workflow_api.create_stage_request(test_postprocess_stage)
+    assert postprocess_stage_request.status_code == 200
 
     # create workflow
 
@@ -123,6 +116,7 @@ def test_workflow_execution(workflow_api, dataplane_api, stack_resources, testin
 
     workflow_processing = True
 
+    # Wait for workflow to pause at the Wait operator
     while workflow_processing:
         get_workflow_execution_request = workflow_api.get_workflow_execution_request(workflow_execution_id)
         get_workflow_execution_response = get_workflow_execution_request.json()
@@ -131,7 +125,32 @@ def test_workflow_execution(workflow_api, dataplane_api, stack_resources, testin
         workflow_status = get_workflow_execution_response["Status"]
         print("Workflow Status: {}".format(workflow_status))
 
-        allowed_statuses = ["Started", "Queued", "Complete"]
+        allowed_statuses = ["Started", "Queued", "Waiting"]
+        assert workflow_status in allowed_statuses
+
+        if workflow_status == "Waiting":
+            workflow_processing = False
+        else:
+            print('Sleeping for 10 seconds before retrying')
+            time.sleep(10)
+
+    # Resume the workflow
+    workflow_current_stage = get_workflow_execution_response["CurrentStage"]
+    assert workflow_current_stage == test_wait_stage["Name"]
+    body = {"WaitingStageName": workflow_current_stage}
+    resume_workflow_execution_response = workflow_api.resume_workflow_request(body, workflow_execution_id)
+    assert resume_workflow_execution_response.status_code == 200
+
+    # Wait for workflow to complete
+    while workflow_processing:
+        get_workflow_execution_request = workflow_api.get_workflow_execution_request(workflow_execution_id)
+        get_workflow_execution_response = get_workflow_execution_request.json()
+        assert get_workflow_execution_request.status_code == 200
+
+        workflow_status = get_workflow_execution_response["Status"]
+        print("Workflow Status: {}".format(workflow_status))
+
+        allowed_statuses = ["Resumed", "Complete"]
         assert workflow_status in allowed_statuses
 
         if workflow_status == "Complete":
@@ -164,14 +183,9 @@ def test_workflow_execution(workflow_api, dataplane_api, stack_resources, testin
     delete_preprocess_stage_request = workflow_api.delete_stage_request(test_preprocess_stage["Name"])
     assert delete_preprocess_stage_request.status_code == 200
 
-    delete_video_stage_request = workflow_api.delete_stage_request(test_video_stage["Name"])
-    assert delete_video_stage_request.status_code == 200
+    delete_wait_stage_request = workflow_api.delete_stage_request(test_wait_stage["Name"])
+    assert delete_wait_stage_request.status_code == 200
 
-    delete_audio_stage_request = workflow_api.delete_stage_request(test_audio_stage["Name"])
-    assert delete_audio_stage_request.status_code == 200
+    delete_postprocess_stage_request = workflow_api.delete_stage_request(test_postprocess_stage["Name"])
+    assert delete_postprocess_stage_request.status_code == 200
 
-    delete_webcaptions_stage_request = workflow_api.delete_stage_request(test_webcaptions_stage["Name"])
-    assert delete_webcaptions_stage_request.status_code == 200
-
-    delete_text_stage_request = workflow_api.delete_stage_request(test_text_stage["Name"])
-    assert delete_text_stage_request.status_code == 200

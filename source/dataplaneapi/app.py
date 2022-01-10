@@ -705,6 +705,13 @@ def get_asset_metadata(asset_id):
 
                 else:
                     for attr in remaining_attributes:
+                        # Ignore the attributes used for checkout/checkin
+                        if attr == "Locked":
+                            continue
+                        if attr == "LockedAt":
+                            continue
+                        if attr == "LockedBy":
+                            continue
                         attr_name = attr
                         attr_pointer = asset_attributes[attr_name][0]["pointer"]
                         remaining.append({attr_name: attr_pointer})

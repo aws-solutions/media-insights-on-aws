@@ -67,7 +67,7 @@ def test_workflow_execution(workflow_api, dataplane_api, stack_resources, testin
             "Media": {
                 "Video": {
                     "S3Bucket": stack_resources['DataplaneBucket'],
-                    "S3Key": 'upload/' + testing_env_variables['SAMPLE_VIDEO']
+                    "S3Key": 'public/upload/' + testing_env_variables['SAMPLE_VIDEO']
                 }
             }
         }

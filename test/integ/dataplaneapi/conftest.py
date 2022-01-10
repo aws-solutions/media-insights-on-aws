@@ -120,7 +120,24 @@ class API:
         nonpaginated_metadata_response = requests.post(url, headers=headers, json=body, verify=True, auth=self.auth)
         return nonpaginated_metadata_response
 
-    # TODO: This test is currently broken. Seems to be a real issue with the API that needs looked into.
+    def checkout_asset(self, asset_id):
+        headers = {"Content-Type": "application/json"}
+        body = {"LockedBy": "user01@example.com"}
+        print("POST /checkout/{asset}".format(asset=asset_id))
+        response = requests.post(self.stack_resources["DataplaneApiEndpoint"] + '/checkout/' + asset_id, headers=headers, json=body, verify=True, auth=self.auth)
+        return response
+
+    def list_checkouts(self):
+        headers = {"Content-Type": "application/json"}
+        print("GET /checkouts")
+        response = requests.get(self.stack_resources["DataplaneApiEndpoint"] + '/checkouts', headers=headers, verify=True, auth=self.auth)
+        return response
+
+    def checkin_asset(self, asset_id):
+        headers = {"Content-Type": "application/json"}
+        print("POST /checkout/{asset}".format(asset=asset_id))
+        response = requests.post(self.stack_resources["DataplaneApiEndpoint"] + '/checkin/' + asset_id, headers=headers, verify=True, auth=self.auth)
+        return response
 
     def get_all_metadata(self, asset_id, cursor=None):
 

@@ -69,7 +69,7 @@ def stack_resources(testing_env_variables):
 
 
 # This fixture uploads the sample media objects for testing.
-@pytest.fixture(scope='session', autouse=True)
+@pytest.fixture(autouse=True)
 def upload_media(testing_env_variables, stack_resources):
     print('Uploading Test Media')
     s3 = boto3.client('s3', region_name=testing_env_variables['REGION'])

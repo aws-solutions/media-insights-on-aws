@@ -475,22 +475,30 @@ class WebCaptions:
                     else:
                         print("Using parallel data_names {}".format(parallel_data_name))
 
-                # Save the delimited transcript text to S3
-                response = translate_client.start_text_translation_job(
-                    JobName=job_name,
-                    InputDataConfig={
+                translation_job_config = {
+                    "JobName": job_name,
+                    "InputDataConfig": {
                         'S3Uri': translation_input_uri,
                         'ContentType': self.contentType
                     },
-                    OutputDataConfig={
+                    "OutputDataConfig": {
                         'S3Uri': translation_output_uri
                     },
-                    DataAccessRoleArn=translate_role,
-                    SourceLanguageCode=sourceLanguageCode,
-                    TargetLanguageCodes=singletonTargetList,
-                    TerminologyNames=terminology_name,
-                    ParallelDataNames=parallel_data_name
-                )
+                    "DataAccessRoleArn": translate_role,
+                    "SourceLanguageCode": sourceLanguageCode,
+                    "TargetLanguageCodes": singletonTargetList,
+                    "TerminologyNames": terminology_name,
+                }
+                current_region = os.environ['AWS_REGION']
+                # Include Parallel Data configuration when running in a region where
+                # Active Custom Translation is available. Reference:
+                # https://docs.aws.amazon.com/translate/latest/dg/customizing-translations-parallel-data.html
+                active_custom_translation_supported_regions = ['us-east-1', 'us-west-2', 'eu-west-1']
+                if current_region in active_custom_translation_supported_regions:
+                    translation_job_config["ParallelDataNames"] = parallel_data_name
+
+            # Save the delimited transcript text to S3
+                response = translate_client.start_text_translation_job(**translation_job_config)
                 jobinfo = {
                     "JobId": response["JobId"],
                     "TargetLanguageCode": targetLanguageCode

@@ -201,6 +201,10 @@ MIE uses AWS_IAM to authorize REST API requests. The following screenshot shows 
 
 For more information, see the [Implementation Guide](IMPLEMENTATION_GUIDE.md#step-6-test-your-new-workflow-and-operator).
 
+### S3 Macie
+
+Amazon Macie can help you discover and protect sensitive data in AWS. If your MIE use-case generates and stores sensitive data to Amazon S3, we recommend that you enable Amazon Macie on the MIE Dataplane Amazon S3 bucket.
+
 # Uninstall
 
 To uninstall MIE, delete the CloudFormation stack, as described below. This will delete all the resources created by the MIE template except the `Dataplane` and the `DataplaneLogs` S3 buckets. These two buckets are retained when the solution stack is deleted in order to help prevent accidental data loss. You can use either the AWS Management Console or the AWS Command Line Interface (AWS CLI) to empty, then delete those S3 buckets after deleting the CloudFormation stack.

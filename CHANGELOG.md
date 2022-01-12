@@ -4,10 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [4.0.0] - 2021-12-16
+## [4.0.0] - 2022-01-11
 
 ### New:
 
+* Add checkin/checkout functionality to facilitate mutex locking asset metadata (#660)
 * Support custom language models in Amazon Transcribe (#599)
 * Support source language auto-detection in Amazon Translate (#621)
 * List the state machine ARN for workflows in the outputs for Cloud Formation stacks that create workflow resources (#641)
@@ -16,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed:
 
+* Add an e2e test to validate the wait/resume operator (#657)
+* Fix a bug with resuming a paused workflow (#657)
 * Infrastructure as code: Return the correct MediaType in /workflow/execution requests (#635). This change altered the Dataplane API in a way that is not backwards compatible.
 * Documentation: Add missing information to the dataplane API docs for /metadata (#637)
 * Documentation: Add missing information to S3 advisory text (#633)

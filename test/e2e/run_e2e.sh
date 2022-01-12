@@ -7,11 +7,10 @@
 # PURPOSE: This script runs our pytest e2e test suite.
 #
 # PRELIMINARY:
-#  You must have a functioning MIE deployment. Set the required environment variables; see the testing readme for more
-#  details.
+#  You must have a functioning MIE deployment. Set the required environment variables; see the testing readme for more details.
 #
 # USAGE:
-#  ./run_e2e.sh $component
+#  ./run_e2e.sh
 #
 ###############################################################################
 # User-defined environment variables

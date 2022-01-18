@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Media Insights Engine - Base AWS CloudFormation template that provisions the core Media Insights Engine services and provides parameters for enabling additional functionality.
+Description: "(SO0163) - aws-media-insights-engine version %%VERSION%%. This is the base AWS CloudFormation template that provisions Media Insights Engine services and provides parameters for user configurable MIE settings."
 
 Parameters:
   DeployTestResources:
@@ -16,17 +16,34 @@ Parameters:
     AllowedValues:
       - Yes
       - No
-
   MaxConcurrentWorkflows:
     Type: Number
     Description: Maximum number of workflows to run concurrently.  When the maximum is reached, additional workflows are added to a wait queue.
     Default: 5
     MinValue: 1
-
   EnableXrayTrace:
-    Description: Enable Active Xray tracing on all entry points to the stack
+    Description: Turn on Xray tracing on all entry points to the stack
     Type: String
     Default: No
+    AllowedValues:
+      - Yes
+      - No
+  ExternalBucketArn:
+    Description: (Optional) If you intend to input media files from a bucket outside the MIE stack into MIE workflows, then specify the Amazon S3 ARN for those files here.
+    Type: String
+    Default: ""
+  SolutionId:
+    Description: (Optional) AWS Solution Id used for reporting purposes
+    Type: String
+    Default: SO0163
+  SolutionVersion:
+    Description: (Optional) AWS Solution version used for reporting purposes
+    Type: String
+    Default: "%%VERSION%%"
+  SendAnonymousData:
+    Description: (Optional) Send anonymous data about MIE performance to AWS to help improve the quality of this solution.
+    Type: String
+    Default: Yes
     AllowedValues:
       - Yes
       - No
@@ -51,33 +68,68 @@ Conditions:
   DeployTestResourcesCondition: !Equals [!Ref DeployTestResources, Yes]
   DeployAnalyticsPipelineCondition: !Equals [!Ref DeployAnalyticsPipeline, Yes]
   EnableTraceOnEntryPoints: !Equals [!Ref EnableXrayTrace, Yes]
+  EnableAnonymousData: !Equals [ !Ref SendAnonymousData, Yes]
 
 Mappings:
   SourceCode:
     General:
       GlobalS3Bucket: "%%GLOBAL_BUCKET_NAME%%"
       RegionalS3Bucket: "%%REGIONAL_BUCKET_NAME%%"
-      CodeKeyPrefix: "media_insights_engine/%%VERSION%%"
-      TemplateKeyPrefix: "media_insights_engine/%%VERSION%%"
+      CodeKeyPrefix: "aws-media-insights-engine/%%VERSION%%"
+      TemplateKeyPrefix: "aws-media-insights-engine/%%VERSION%%"
       FrameworkVersion: "%%VERSION%%"
 
 Resources:
   # Helper function - create a short UUID to avoid name conflicts
   MieHelperFunction:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
+      Environment:
+        Variables:
+          SYSTEM_TABLE_NAME: !Ref SystemTable
+          DEFAULT_MAX_CONCURRENT_WORKFLOWS: !Ref MaxConcurrentWorkflows
       Code:
         ZipFile: |
           import string
-          import random
           import cfnresponse
+          import random
+          import boto3
+          import os
           def id_generator(size=6, chars=string.ascii_lowercase + string.digits):
-              return "".join(random.choices(chars, k=size))
+            return "".join(random.choices(chars, k=size))
+          def get_mediaconvert_endpoint():
+            mediaconvert_client = boto3.client("mediaconvert", region_name=os.environ['AWS_REGION'])
+            response = mediaconvert_client.describe_endpoints()
+            mediaconvert_endpoint = response["Endpoints"][0]["Url"]
+            response_data = {'Data': mediaconvert_endpoint}
+            return response_data
+          def init_system_table():
+            dynamodb_client = boto3.resource("dynamodb")
+            SYSTEM_TABLE_NAME = os.environ["SYSTEM_TABLE_NAME"]
+            DEFAULT_MAX_CONCURRENT_WORKFLOWS = int(os.environ["DEFAULT_MAX_CONCURRENT_WORKFLOWS"])
+            system_table = dynamodb_client.Table(SYSTEM_TABLE_NAME)
+            config={"Name":"MaxConcurrentWorkflows", "Value":DEFAULT_MAX_CONCURRENT_WORKFLOWS}
+            return system_table.put_item(Item=config)
           def handler(event, context):
+            print("We got the following event:\n", event)
+            if event['ResourceProperties']['FunctionKey'] == 'get_short_uuid':
               response_data = {'Data': id_generator()}
               cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data, "CustomResourcePhysicalID")
+            elif event['ResourceProperties']['FunctionKey'] == 'init_system_table':
+              response_data = init_system_table()
+              cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data, "CustomResourcePhysicalID")
+            elif event['ResourceProperties']['FunctionKey'] == 'get_mediaconvert_endpoint':
+                response_data = get_mediaconvert_endpoint()
+                cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data, "CustomResourcePhysicalID")
       Handler: index.handler
-      Runtime: python3.6
+      Runtime: python3.9
       Role: !GetAtt MieHelperExecutionRole.Arn
       Tags:
         - Key: "environment"
@@ -89,16 +141,27 @@ Resources:
       Action: 'lambda:InvokeFunction'
       FunctionName: !GetAtt MieHelperFunction.Arn
       Principal: 'cloudformation.amazonaws.com'
+
   GetShortUUID:
     Type: Custom::CustomResource
     Properties:
       ServiceToken: !GetAtt MieHelperFunction.Arn
+      FunctionKey: "get_short_uuid"
 
-  # Custom log group
-  MieLogGroup:
-    Type: AWS::Logs::LogGroup
+  InitSystemTable:
+    Type: Custom::CustomResource
+    DependsOn:
+      - MediaInsightsDataplaneApiStack
     Properties:
-      RetentionInDays: 14
+      ServiceToken: !GetAtt MieHelperFunction.Arn
+      FunctionKey: "init_system_table"
+
+  GetMediaConvertEndpoint:
+    Type: Custom::CustomResource
+    Properties:
+      ServiceToken: !GetAtt MieHelperFunction.Arn
+      FunctionKey: "get_mediaconvert_endpoint"
+
 
   # IAM Roles
   MieHelperExecutionRole:
@@ -120,8 +183,48 @@ Resources:
             Version: 2012-10-17
             Statement:
               - Effect: Allow
-                Action: ['logs:*']
-                Resource: 'arn:aws:logs:*:*:*'
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - !Join [
+                    "",
+                    [
+                      "arn:aws:logs:",
+                      Ref: "AWS::Region",
+                      ":",
+                      Ref: "AWS::AccountId",
+                      ":log-group:/aws/lambda/*",
+                    ],
+                  ]
+              - Effect: Allow
+                Action: ['dynamodb:PutItem']
+                Resource:
+                  - !Join [
+                    "",
+                    [
+                      "arn:aws:dynamodb:",
+                      Ref: "AWS::Region",
+                      ":",
+                      Ref: "AWS::AccountId",
+                      ":table/",
+                      Ref: "SystemTable",
+                    ]
+                  ]
+              - Effect: Allow
+                Action: 'mediaconvert:DescribeEndpoints'
+                Resource:
+                  - !Join [
+                    "",
+                    [
+                      "arn:aws:mediaconvert:",
+                      Ref: "AWS::Region",
+                      ":",
+                      Ref: "AWS::AccountId",
+                      ":endpoints/*"
+                    ]
+                  ]
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -132,7 +235,7 @@ Resources:
       cfn_nag:
         rules_to_suppress:
           - id: W11
-            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
+            reason: "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources"
     Properties:
       AssumeRolePolicyDocument:
         Version: 2012-10-17
@@ -270,7 +373,7 @@ Resources:
       cfn_nag:
         rules_to_suppress:
           - id: W11
-            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
+            reason: "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources"
     Properties:
       AssumeRolePolicyDocument:
         Version: 2012-10-17
@@ -416,13 +519,26 @@ Resources:
                   - "xray:PutTelemetryRecords"
                 Resource: "*"
 
+  StepFunctionLogGroup:
+    Type: "AWS::Logs::LogGroup"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W84
+            reason: "Log group data is encrypted by default in CloudWatch"        
+    Properties:
+      RetentionInDays: 14
+      Tags:
+        - Key: "environment"
+          Value: "mie"
+        
   StepFunctionRole:
     Type: "AWS::IAM::Role"
     Metadata:
       cfn_nag:
         rules_to_suppress:
           - id: W11
-            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
+            reason: "The X-Ray and Cloudwatch policies use actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources and https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazoncloudwatchlogs.html"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -455,6 +571,17 @@ Resources:
                   - "xray:GetSamplingRules"
                   - "xray:GetSamplingTargets"
                 Resource: "*"
+              - "Effect": "Allow"
+                "Action":
+                    - "logs:CreateLogDelivery"
+                    - "logs:GetLogDelivery"
+                    - "logs:UpdateLogDelivery"
+                    - "logs:DeleteLogDelivery"
+                    - "logs:ListLogDeliveries"
+                    - "logs:PutResourcePolicy"
+                    - "logs:DescribeResourcePolicies"
+                    - "logs:DescribeLogGroups"
+                "Resource": "*"
 
   operatorFailedRole:
     Type: "AWS::IAM::Role"
@@ -462,7 +589,7 @@ Resources:
       cfn_nag:
         rules_to_suppress:
           - id: W11
-            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
+            reason: "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -528,20 +655,37 @@ Resources:
                   - "sns:Publish"
                 Resource:
                   !Ref WorkflowExecutionEventTopic
-              # TODO: Security - Scope this down
               - Effect: Allow
                 Action:
                   - "logs:CreateLogGroup"
                   - "logs:CreateLogStream"
                   - "logs:PutLogEvents"
-                Resource: "*"
+                Resource:
+                  - !Join [
+                      "",
+                    [
+                        "arn:aws:logs:",
+                        Ref: "AWS::Region",
+                        ":",
+                        Ref: "AWS::AccountId",
+                        ":log-group:/aws/lambda/*",
+                    ],
+                  ]
+
   # Services - Dynamodb
 
   SystemTable:
     Type: AWS::DynamoDB::Table
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W28
+            reason: "Table name is constructed with stack name. On update, we need to keep the existing table name."
     Properties:
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: Name
@@ -556,9 +700,16 @@ Resources:
 
   WorkflowTable:
     Type: AWS::DynamoDB::Table
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W28
+            reason: "Table name is constructed with stack name. On update, we need to keep the existing table name."
     Properties:
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: Name
@@ -573,9 +724,16 @@ Resources:
 
   StageTable:
     Type: AWS::DynamoDB::Table
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W28
+            reason: "Table name is constructed with stack name. On update, we need to keep the existing table name."
     Properties:
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: Name
@@ -590,9 +748,16 @@ Resources:
 
   OperationTable:
     Type: AWS::DynamoDB::Table
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W28
+            reason: "Table name is constructed with stack name. On update, we need to keep the existing table name."
     Properties:
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: Name
@@ -607,9 +772,16 @@ Resources:
 
   HistoryTable:
     Type: AWS::DynamoDB::Table
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W28
+            reason: "Table name is constructed with stack name. On update, we need to keep the existing table name."
     Properties:
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: Id
@@ -628,9 +800,16 @@ Resources:
 
   WorkflowExecutionTable:
     Type: AWS::DynamoDB::Table
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W28
+            reason: "Table name is constructed with stack name. On update, we need to keep the existing table name."
     Properties:
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: Id
@@ -664,16 +843,38 @@ Resources:
 
   DataplaneTable:
     Type: AWS::DynamoDB::Table
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W28
+            reason: "Table name is constructed with stack name. On update, we need to keep the existing table name."
     Properties:
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: AssetId
           AttributeType: S
+        - AttributeName: Locked
+          AttributeType: S
+        - AttributeName: LockedAt
+          AttributeType: N
       KeySchema:
         - AttributeName: AssetId
           KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: LockIndex
+          KeySchema:
+            - AttributeName: Locked
+              KeyType: HASH
+            - AttributeName: LockedAt
+              KeyType: RANGE
+          Projection:
+            NonKeyAttributes:
+              - LockedBy
+            ProjectionType: INCLUDE
       TableName: !Join ["", [Ref: "AWS::StackName", "DataplaneTable"]]
       StreamSpecification:
         StreamViewType: "NEW_AND_OLD_IMAGES"
@@ -707,7 +908,6 @@ Resources:
           - id: W51
             reason: "Bucket is private and does not need a bucket policy"
 
-  # TODO: Update cors config per: https://docs.amplify.aws/lib/storage/getting-started/q/platform/js#using-amazon-s3
   Dataplane:
     Type: "AWS::S3::Bucket"
     DependsOn: DataplaneLogsBucket
@@ -770,7 +970,9 @@ Resources:
 
   WorkflowExecutionEventTopic:
     Type: 'AWS::SNS::Topic'
-    Properties: {}
+    Properties:
+      KmsMasterKeyId: "alias/aws/sns"
+
   WorkflowExecutionEventTopicPolicy:
     Type: 'AWS::SNS::TopicPolicy'
     Metadata:
@@ -797,6 +999,15 @@ Resources:
 
   WorkflowExecutionEventQueue:
     Type: AWS::SQS::Queue
+    Properties:
+      RedrivePolicy:
+        deadLetterTargetArn:
+          "Fn::GetAtt":
+            - WorkflowExecutionLambdaDeadLetterQueue
+            - Arn
+        maxReceiveCount: 1 # Don't retry if stage times out
+      KmsMasterKeyId: "alias/aws/sqs"
+
   SqsQueuePolicy:
     Type: AWS::SQS::QueuePolicy
     Metadata:
@@ -835,6 +1046,7 @@ Resources:
     Properties:
       QueueName: !Sub "${AWS::StackName}-WorkflowExecLambdaDLQ"
       MessageRetentionPeriod: 43200 # #Maximum, 12 hours in seconds.
+      KmsMasterKeyId: "alias/aws/sqs"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -844,6 +1056,7 @@ Resources:
     Properties:
       QueueName: !Sub "${AWS::StackName}-StageExecDLQ"
       MessageRetentionPeriod: 43200 # #Maximum, 12 hours in seconds.
+      KmsMasterKeyId: "alias/aws/sqs"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -860,11 +1073,52 @@ Resources:
             - StageExecutionDeadLetterQueue
             - Arn
         maxReceiveCount: 1 # Don't retry if stage times out
+      KmsMasterKeyId: "alias/aws/sqs"
       Tags:
         - Key: "environment"
           Value: "mie"
 
   # Lambda Layers:
+
+  MediaInsightsEnginePython39Layer:
+    Type: "AWS::Lambda::LayerVersion"
+    DeletionPolicy: Retain
+    Properties:
+      CompatibleRuntimes:
+        - python3.9
+      Content:
+        S3Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+            "media_insights_engine_lambda_layer_python3.9.zip",
+            ],
+          ]
+      Description: Boto3 and MediaInsightsEngineLambdaHelper packages for Python 3.9
+      LayerName: media-insights-engine-python39
+      LicenseInfo: Apache-2.0
+ 
+  MediaInsightsEnginePython38Layer:
+    Type: "AWS::Lambda::LayerVersion"
+    DeletionPolicy: Retain
+    Properties:
+      CompatibleRuntimes:
+        - python3.9
+      Content:
+        S3Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
+        S3Key:
+          !Join [
+            "/",
+            [
+            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+            "media_insights_engine_lambda_layer_python3.8.zip",
+            ],
+          ]
+      Description: Boto3 and MediaInsightsEngineLambdaHelper packages for Python 3.8
+      LayerName: media-insights-engine-python38
+      LicenseInfo: Apache-2.0
 
   MediaInsightsEnginePython37Layer:
     Type: "AWS::Lambda::LayerVersion"
@@ -906,14 +1160,6 @@ Resources:
       LayerName: media-insights-engine-python36
       LicenseInfo: Apache-2.0
 
-  Boto3Python37LayerPermission:
-    Type: "AWS::Lambda::LayerVersionPermission"
-    DeletionPolicy: Retain
-    Properties:
-      Action: lambda:GetLayerVersion
-      LayerVersionArn: !Ref MediaInsightsEnginePython37Layer
-      Principal: !Ref AWS::AccountId
-
   # Services - Lambda
 
   LambdaSchedule:
@@ -938,6 +1184,13 @@ Resources:
 
   WorkflowSchedulerLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Environment:
         Variables:
@@ -948,7 +1201,7 @@ Resources:
           WORKFLOW_TABLE_NAME: !Ref WorkflowTable
           SYSTEM_TABLE_NAME: !Ref SystemTable
           DEFAULT_MAX_CONCURRENT_WORKFLOWS: !Ref MaxConcurrentWorkflows
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/', !Ref "SolutionVersion", '"}']]
       Handler: app.workflow_scheduler_lambda
       TracingConfig:
           Mode: !If [EnableTraceOnEntryPoints, "Active", "PassThrough"]
@@ -963,13 +1216,13 @@ Resources:
             ],
           ]
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
           - StageExecutionRole
           - Arn
-      Runtime: python3.7
+      Runtime: python3.9
       Timeout: 900
       ReservedConcurrentExecutions: 1
       DeadLetterConfig:
@@ -984,6 +1237,13 @@ Resources:
   # Workflow state machine error handler
   WorkflowErrorHandlerLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Environment:
         Variables:
@@ -1013,13 +1273,13 @@ Resources:
             ],
           ]
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
           - OperationLambdaExecutionRole
           - Arn
-      Runtime: python3.7
+      Runtime: python3.9
       Timeout: 900
       ReservedConcurrentExecutions: 1
       DeadLetterConfig:
@@ -1062,12 +1322,19 @@ Resources:
 
   CompleteStageLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     DependsOn:
       - WorkflowSchedulerLambda
     Properties:
       Environment:
         Variables:
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/', !Ref "SolutionVersion", '"}']]
           STAGE_EXECUTION_QUEUE_URL: !Ref StageExecutionQueue
           STAGE_TABLE_NAME: !Ref StageTable
           OPERATION_TABLE_NAME: !Ref OperationTable
@@ -1092,13 +1359,13 @@ Resources:
             ],
           ]
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
           - OperationLambdaExecutionRole
           - Arn
-      Runtime: python3.7
+      Runtime: python3.9
       Timeout: 900
       Tags:
         - Key: "environment"
@@ -1106,10 +1373,17 @@ Resources:
 
   FilterOperationLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Environment:
         Variables:
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/', !Ref "SolutionVersion", '"}']]
           STAGE_EXECUTION_QUEUE_URL: !Ref StageExecutionQueue
           STAGE_TABLE_NAME: !Ref StageTable
           OPERATION_TABLE_NAME: !Ref OperationTable
@@ -1129,13 +1403,13 @@ Resources:
             ],
           ]
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
           - OperationLambdaExecutionRole
           - Arn
-      Runtime: python3.7
+      Runtime: python3.9
       Timeout: 900
       Tags:
         - Key: "environment"
@@ -1143,10 +1417,17 @@ Resources:
 
   OperatorFailedLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "operator_failed.lambda_handler"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       Role: !GetAtt "operatorFailedRole.Arn"
       TracingConfig:
           Mode: "PassThrough"
@@ -1160,18 +1441,25 @@ Resources:
               "operator_failed.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Tags:
         - Key: "environment"
           Value: "mie"
 
   StartWaitOperationLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       FunctionName: !Sub "${AWS::StackName}-start-wait-operation"
       Environment:
         Variables:
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/', !Ref "SolutionVersion", '"}']]
           STAGE_EXECUTION_QUEUE_URL: !Ref StageExecutionQueue
           STAGE_TABLE_NAME: !Ref StageTable
           OPERATION_TABLE_NAME: !Ref OperationTable
@@ -1179,7 +1467,7 @@ Resources:
           WORKFLOW_TABLE_NAME: !Ref WorkflowTable
       Handler: app.start_wait_operation_lambda
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       Code:
         S3Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
         S3Key:
@@ -1195,7 +1483,7 @@ Resources:
         Fn::GetAtt:
           - OperationLambdaExecutionRole
           - Arn
-      Runtime: python3.7
+      Runtime: python3.9
       Timeout: 900
       Tags:
         - Key: "environment"
@@ -1203,11 +1491,18 @@ Resources:
 
   CheckWaitOperationLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       FunctionName: !Sub "${AWS::StackName}-check-wait-operation"
       Environment:
         Variables:
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/', !Ref "SolutionVersion", '"}']]
           STAGE_EXECUTION_QUEUE_URL: !Ref StageExecutionQueue
           STAGE_TABLE_NAME: !Ref StageTable
           OPERATION_TABLE_NAME: !Ref OperationTable
@@ -1215,7 +1510,7 @@ Resources:
           WORKFLOW_TABLE_NAME: !Ref WorkflowTable
       Handler: app.check_wait_operation_lambda
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       Code:
         S3Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
         S3Key:
@@ -1231,21 +1526,28 @@ Resources:
         Fn::GetAtt:
           - OperationLambdaExecutionRole
           - Arn
-      Runtime: python3.7
+      Runtime: python3.9
       Timeout: 900
       Tags:
         - Key: "environment"
           Value: "mie"
 
   WorkflowExecutionStreamingFunction:
-    Type: "AWS::Lambda::Function"
+    Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "workflowstream.lambda_handler"
       Role: !GetAtt WorkflowExecutionStreamLambdaRole.Arn
       Environment:
         Variables:
           TOPIC_ARN: !Ref WorkflowExecutionEventTopic
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/', !Ref "SolutionVersion", '"}']]
       Code:
         S3Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
         S3Key:
@@ -1256,7 +1558,7 @@ Resources:
               "workflowstream.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1290,8 +1592,9 @@ Resources:
           ],
         ]
       Parameters:
-        botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+        botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/', !Ref "SolutionVersion", '"}']]
         DataplaneTableName: !Ref DataplaneTable
+        ExternalBucketArn: !Ref ExternalBucketArn
         DataplaneBucketName: !Ref Dataplane
         DeploymentPackageBucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
         TracingConfigMode: !If [EnableTraceOnEntryPoints, "Active", "PassThrough"]
@@ -1303,7 +1606,7 @@ Resources:
               "dataplaneapi.zip",
             ],
           ]
-        MediaInsightsEnginePython37Layer: !Ref MediaInsightsEnginePython37Layer
+        MediaInsightsEnginePython39Layer: !Ref MediaInsightsEnginePython39Layer
         FrameworkVersion: !FindInMap ["SourceCode", "General", "FrameworkVersion"]
 
   Analytics:
@@ -1330,7 +1633,7 @@ Resources:
             - DataplaneTable
             - StreamArn
         DynamoTableArn: !GetAtt DataplaneTable.Arn
-        botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+        botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/', !Ref "SolutionVersion", '"}']]
 
   # Workflow creation and execution API
   MediaInsightsWorkflowApi:
@@ -1344,14 +1647,15 @@ Resources:
             !FindInMap [ "SourceCode", "General", "GlobalS3Bucket" ],
             ".s3.amazonaws.com/",
             !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
-            "/media-insights-workflowapi-stack.template",
+            "/media-insights-workflow-api-stack.template",
           ],
         ]
       Parameters:
-        botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+        botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/', !Ref "SolutionVersion", '"}']]
         ShortUUID: !GetAtt GetShortUUID.Data
         StageExecutionQueueUrl: !Ref StageExecutionQueue
         StageExecutionRole: !GetAtt StepFunctionRole.Arn
+        StepFunctionLogGroupArn: !GetAtt StepFunctionLogGroup.Arn
         OperationTableName: !Ref OperationTable
         StageTableName: !Ref StageTable
         WorkflowExecutionTableName: !Ref WorkflowExecutionTable
@@ -1359,7 +1663,7 @@ Resources:
         HistoryTableName: !Ref HistoryTable
         SystemTableName: !Ref SystemTable
         SqsQueueArn: !GetAtt StageExecutionQueue.Arn
-        MediaInsightsEnginePython37Layer: !Ref MediaInsightsEnginePython37Layer
+        MediaInsightsEnginePython39Layer: !Ref MediaInsightsEnginePython39Layer
         TracingConfigMode: !If [EnableTraceOnEntryPoints, "Active", "PassThrough"]
         CompleteStageLambdaArn:
           Fn::GetAtt:
@@ -1419,10 +1723,15 @@ Resources:
         DataPlaneEndpoint: !GetAtt MediaInsightsDataplaneApiStack.Outputs.APIHandlerName
         DataPlaneHandlerArn: !GetAtt MediaInsightsDataplaneApiStack.Outputs.APIHandlerArn
         DataPlaneBucket: !Ref Dataplane
+        ExternalBucketArn: !Ref ExternalBucketArn
+        MediaInsightsEnginePython39Layer: !Ref MediaInsightsEnginePython39Layer
+        MediaInsightsEnginePython38Layer: !Ref MediaInsightsEnginePython38Layer
         MediaInsightsEnginePython37Layer: !Ref MediaInsightsEnginePython37Layer
         MediaInsightsEnginePython36Layer: !Ref MediaInsightsEnginePython36Layer
         StartWaitOperationLambda: !GetAtt StartWaitOperationLambda.Arn
         CheckWaitOperationLambda: !GetAtt CheckWaitOperationLambda.Arn
+        MediaConvertEndpoint: !GetAtt GetMediaConvertEndpoint.Data
+        Boto3UserAgent: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/', !Ref "SolutionVersion", '"}']]
 
   TestResources:
     Condition: DeployTestResourcesCondition
@@ -1453,10 +1762,81 @@ Resources:
             - MediaInsightsDataplaneApiStack
             - Outputs.APIHandlerName
         DataPlaneBucket: !Ref Dataplane
-        MediaInsightsEnginePython37Layer: !Ref MediaInsightsEnginePython37Layer
+        MediaInsightsEnginePython39Layer: !Ref MediaInsightsEnginePython39Layer
+
+  AnonymousDataCustomResourceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+      Policies:
+        -
+          PolicyName: !Sub "${AWS::StackName}-anonymous-data-logger"
+          PolicyDocument:
+            Statement:
+              -
+                Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - !Join ["", ["arn:aws:logs:", Ref: "AWS::Region", ":", Ref: "AWS::AccountId", ":log-group:/aws/lambda/*"]]
+              -
+                Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                Resource:
+                  - !Join ["", ["arn:aws:ssm:", Ref: "AWS::Region", ":", Ref: "AWS::AccountId", ":parameter/*"]]
+
+  AnonymousDataCustomResource:
+    Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-anonymous-data
+      Description: Used to send anonymous data
+      Handler: anonymous-data-logger.handler
+      Role: !GetAtt AnonymousDataCustomResourceRole.Arn
+      Code:
+        S3Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "RegionalS3Bucket"], Ref: "AWS::Region"]]
+        S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"], "anonymous-data-logger.zip"]]
+      Runtime:  python3.9
+      Timeout: 180
+
+  # SendAnonymousData
+  AnonymousDataUuid:
+    Condition: EnableAnonymousData
+    Type: "Custom::UUID"
+    Properties:
+      ServiceToken: !GetAtt AnonymousDataCustomResource.Arn
+      Resource: UUID
+
+  AnonymousMetric:
+    Condition: EnableAnonymousData
+    Type: "Custom::AnonymousMetric"
+    Properties:
+      ServiceToken: !GetAtt AnonymousDataCustomResource.Arn
+      Resource: AnonymousMetric
+      SolutionId: "SO0163"
+      UUID: !GetAtt AnonymousDataUuid.UUID
+      Version: !FindInMap ["SourceCode", "General", "FrameworkVersion"]
 
 Outputs:
-  # TODO: Add outputs for rest api IDs of workflow/dataplane apis
   OperatorLibraryStack:
     Description: Nested cloudformation stack that contains the MIE operator library
     Value: !GetAtt OperatorLibrary.Outputs.StackName
@@ -1472,6 +1852,11 @@ Outputs:
     Value: !GetAtt MediaInsightsDataplaneApiStack.Outputs.EndpointURL
     Export:
       Name: !Join [":", [!Ref "AWS::StackName", DataplaneApiEndpoint]]
+  DataPlaneHandlerArn:
+    Description: API Handler Lambda ARN for dataplane.
+    Value: !GetAtt MediaInsightsDataplaneApiStack.Outputs.APIHandlerArn
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", DataPlaneHandlerArn]]
   DataplaneApiRestID:
     Description: REST API ID for dataplane API
     Value: !GetAtt MediaInsightsDataplaneApiStack.Outputs.RestAPIId
@@ -1492,12 +1877,12 @@ Outputs:
     Value: !GetAtt MediaInsightsWorkflowApi.Outputs.RestAPIId
     Export:
       Name: !Join [":", [!Ref "AWS::StackName", WorkflowApiId]]
-  MediaInsightsEnginePython37Layer:
+  MediaInsightsEnginePython39Layer:
     Description: Lambda layer for Python libraries
-    Value: !Ref MediaInsightsEnginePython37Layer
+    Value: !Ref MediaInsightsEnginePython39Layer
     Export:
       Name:
-        !Join [":", [!Ref "AWS::StackName", MediaInsightsEnginePython37Layer]]
+        !Join [":", [!Ref "AWS::StackName", MediaInsightsEnginePython39Layer]]
   AnalyticsStreamArn:
     Description: Arn of the dataplane pipeline
     Value: !GetAtt Analytics.Outputs.analyticsStreamArn

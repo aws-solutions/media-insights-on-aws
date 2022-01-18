@@ -1,19 +1,21 @@
 #!/bin/bash
 ###############################################################################
-# Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # PURPOSE:
 #   Build cloud formation templates for the Media Insights Engine
 #
 # USAGE:
-#  ./build-s3-dist.sh [-h] [-v] [--no-layer] --template-bucket {TEMPLATE_BUCKET} --code-bucket {CODE_BUCKET} --version {VERSION} --region {REGION}
+#  ./build-s3-dist.sh [-h] [-v] [--no-layer] --template-bucket {TEMPLATE_BUCKET} --code-bucket {CODE_BUCKET} --version {VERSION} --region {REGION} --profile {PROFILE}
 #    TEMPLATE_BUCKET should be the name for the S3 bucket location where MIE
 #      cloud formation templates should be saved.
 #    CODE_BUCKET should be the name for the S3 bucket location where cloud
 #      formation templates should find Lambda source code packages.
 #    VERSION should be in a format like v1.0.0
 #    REGION needs to be in a format like us-east-1
+#    PROFILE is optional. It's the profile that you have setup in ~/.aws/credentials
+#      that you want to use for AWS CLI commands.
 #
 #    The following options are available:
 #
@@ -28,7 +30,7 @@ trap cleanup_and_die SIGINT SIGTERM ERR
 usage() {
   msg "$msg"
   cat <<EOF
-Usage: $(basename "${BASH_SOURCE[0]}") [-h] [-v] [--no-layer] --template-bucket TEMPLATE_BUCKET --code-bucket CODE_BUCKET --version VERSION --region REGION
+Usage: $(basename "${BASH_SOURCE[0]}") [-h] [-v] [--profile PROFILE] [--no-layer] --template-bucket TEMPLATE_BUCKET --code-bucket CODE_BUCKET --version VERSION --region REGION
 
 Available options:
 
@@ -39,6 +41,7 @@ Available options:
 --code-bucket     S3 bucket to put Lambda code packages
 --version         Arbitrary string indicating build version
 --region          AWS Region, formatted like us-west-2
+--profile         AWS profile for CLI commands (optional)
 EOF
   exit 1
 }
@@ -55,7 +58,6 @@ cleanup() {
   if [[ "$VIRTUAL_ENV" != "" ]];
   then
     deactivate
-    #rm -rf "$VENV"
     echo "------------------------------------------------------------------------------"
     echo "Cleaning up complete"
     echo "------------------------------------------------------------------------------"
@@ -99,6 +101,10 @@ parse_params() {
       region="${2}"
       shift
       ;;
+    --profile)
+      profile="${2}"
+      shift
+      ;;
     -?*) die "Unknown option: $1" ;;
     *) break ;;
     esac
@@ -122,6 +128,7 @@ msg "- Template bucket: ${global_bucket}"
 msg "- Code bucket: ${regional_bucket}-${region}"
 msg "- Version: ${version}"
 msg "- Region: ${region}"
+msg "- Profile: ${profile}"
 msg "- Build layer? $(if [[ -z $NO_LAYER ]]; then echo 'Yes, please.'; else echo 'No, thanks.'; fi)"
 
 echo ""
@@ -171,8 +178,8 @@ source_dir="$build_dir/../source"
 echo "------------------------------------------------------------------------------"
 echo "Creating a temporary Python virtualenv for this script"
 echo "------------------------------------------------------------------------------"
-python -c "import os; print (os.getenv('VIRTUAL_ENV'))" | grep -q None
-if [ $? -ne 0 ]; then
+# Exit if we're already in a python virtual env.
+if [[ "$VIRTUAL_ENV" != "" ]]; then
     echo "ERROR: Do not run this script inside Virtualenv. Type \`deactivate\` and run again.";
     exit 1;
 fi
@@ -185,6 +192,7 @@ if [ $? -ne 0 ]; then
 fi
 python3 -m venv "$VENV"
 source "$VENV"/bin/activate
+pip3 install wheel
 pip3 install --quiet boto3 chalice docopt pyyaml jsonschema aws_xray_sdk
 export PYTHONPATH="$PYTHONPATH:$source_dir/lib/MediaInsightsEngineLambdaHelper/"
 if [ $? -ne 0 ]; then
@@ -201,8 +209,6 @@ echo "rm -rf $global_dist_dir"
 rm -rf "$global_dist_dir"
 echo "mkdir -p $global_dist_dir"
 mkdir -p "$global_dist_dir"
-echo "mkdir -p $global_dist_dir/website"
-mkdir -p "$global_dist_dir"/website
 echo "rm -rf $regional_dist_dir"
 rm -rf "$regional_dist_dir"
 echo "mkdir -p $regional_dist_dir"
@@ -225,16 +231,19 @@ if [[ ! -z "${NO_LAYER}" ]]; then
   echo "------------------------------------------------------------------------------"
   echo "Downloading Lambda Layers"
   echo "------------------------------------------------------------------------------"
-  echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.6.zip"
-  wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.6.zip
-  echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.7.zip"
-  wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.7.zip
-  echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.8.zip"
-  wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.8.zip
+  echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_v1.0.0_python3.6.zip"
+  wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_v1.0.0_python3.6.zip -O media_insights_engine_lambda_layer_python3.6.zip
+  echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_v1.0.0_python3.7.zip" -O media_insights_engine_lambda_layer_python3.7.zip
+  wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_v1.0.0_python3.7.zip -O media_insights_engine_lambda_layer_python3.7.zip
+  echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_v1.0.0_python3.8.zip"
+  wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_v1.0.0_python3.8.zip -O media_insights_engine_lambda_layer_python3.8.zip
+  echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_v1.0.0_python3.9.zip"
+  wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_v1.0.0_python3.9.zip -O media_insights_engine_lambda_layer_python3.9.zip
   echo "Copying Lambda layer zips to $dist_dir:"
   mv media_insights_engine_lambda_layer_python3.6.zip "$regional_dist_dir"
   mv media_insights_engine_lambda_layer_python3.7.zip "$regional_dist_dir"
   mv media_insights_engine_lambda_layer_python3.8.zip "$regional_dist_dir"
+  mv media_insights_engine_lambda_layer_python3.9.zip "$regional_dist_dir"
   cd "$build_dir" || exit 1
 else
   echo "------------------------------------------------------------------------------"
@@ -273,55 +282,28 @@ else
     mv lambda_layer-python3.6.zip media_insights_engine_lambda_layer_python3.6.zip
     mv lambda_layer-python3.7.zip media_insights_engine_lambda_layer_python3.7.zip
     mv lambda_layer-python3.8.zip media_insights_engine_lambda_layer_python3.8.zip
-    rm -rf lambda_layer-python-3.6/ lambda_layer-python-3.7/ lambda_layer-python-3.8/
+    mv lambda_layer-python3.9.zip media_insights_engine_lambda_layer_python3.9.zip
+    rm -rf lambda_layer-python-3.6/ lambda_layer-python-3.7/ lambda_layer-python-3.8/ lambda_layer-python-3.9/
     echo "Lambda layer build script completed.";
   else
     echo "WARNING: Lambda layer build script failed. We'll use a pre-built Lambda layers instead.";
-    echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.6.zip"
-    wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.6.zip
-    echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.7.zip"
-    wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.7.zip
-    echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_python3.8.zip"
-    wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_python3.8.zip
+    echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_v1.0.0_python3.6.zip"
+    wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_v1.0.0_python3.6.zip -O media_insights_engine_lambda_layer_python3.6.zip
+    echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_v1.0.0_python3.7.zip" -O media_insights_engine_lambda_layer_python3.7.zip
+    wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_v1.0.0_python3.7.zip -O media_insights_engine_lambda_layer_python3.7.zip
+    echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_v1.0.0_python3.8.zip"
+    wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_v1.0.0_python3.8.zip -O media_insights_engine_lambda_layer_python3.8.zip
+    echo "Downloading https://rodeolabz-$region.$s3domain/media_insights_engine/media_insights_engine_lambda_layer_v1.0.0_python3.9.zip"
+    wget -q https://rodeolabz-"$region"."$s3domain"/media_insights_engine/media_insights_engine_lambda_layer_v1.0.0_python3.9.zip -O media_insights_engine_lambda_layer_python3.9.zip
   fi
   echo "Copying Lambda layer zips to $regional_dist_dir:"
   mv media_insights_engine_lambda_layer_python3.6.zip "$regional_dist_dir"
   mv media_insights_engine_lambda_layer_python3.7.zip "$regional_dist_dir"
   mv media_insights_engine_lambda_layer_python3.8.zip "$regional_dist_dir"
+  mv media_insights_engine_lambda_layer_python3.9.zip "$regional_dist_dir"
   mv requirements.txt.old requirements.txt
   cd "$build_dir" || exit 1
 fi
-
-echo "------------------------------------------------------------------------------"
-echo "CloudFormation Templates"
-echo "------------------------------------------------------------------------------"
-
-echo "Preparing template files:"
-cp "$source_dir/operators/operator-library.yaml" "$global_dist_dir/media-insights-operator-library.template"
-cp "$build_dir/media-insights-stack.yaml" "$global_dist_dir/media-insights-stack.template"
-cp "$build_dir/string.yaml" "$global_dist_dir/string.template"
-cp "$build_dir/media-insights-test-operations-stack.yaml" "$global_dist_dir/media-insights-test-operations-stack.template"
-cp "$build_dir/media-insights-dataplane-streaming-stack.template" "$global_dist_dir/media-insights-dataplane-streaming-stack.template"
-find "$global_dist_dir"
-echo "Updating template source bucket in template files with '$global_bucket'"
-echo "Updating code source bucket in template files with '$regional_bucket'"
-echo "Updating solution version in template files with '$version'"
-new_global_bucket="s/%%GLOBAL_BUCKET_NAME%%/$global_bucket/g"
-new_regional_bucket="s/%%REGIONAL_BUCKET_NAME%%/$regional_bucket/g"
-new_version="s/%%VERSION%%/$version/g"
-# Update templates in place. Copy originals to [filename].orig
-sed -i.orig -e "$new_global_bucket" "$global_dist_dir/media-insights-stack.template"
-sed -i.orig -e "$new_regional_bucket" "$global_dist_dir/media-insights-stack.template"
-sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-stack.template"
-sed -i.orig -e "$new_global_bucket" "$global_dist_dir/media-insights-operator-library.template"
-sed -i.orig -e "$new_regional_bucket" "$global_dist_dir/media-insights-operator-library.template"
-sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-operator-library.template"
-sed -i.orig -e "$new_global_bucket" "$global_dist_dir/media-insights-test-operations-stack.template"
-sed -i.orig -e "$new_regional_bucket" "$global_dist_dir/media-insights-test-operations-stack.template"
-sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-test-operations-stack.template"
-sed -i.orig -e "$new_global_bucket" "$global_dist_dir/media-insights-dataplane-streaming-stack.template"
-sed -i.orig -e "$new_regional_bucket" "$global_dist_dir/media-insights-dataplane-streaming-stack.template"
-sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-dataplane-streaming-stack.template"
 
 echo "------------------------------------------------------------------------------"
 echo "Operators"
@@ -654,8 +636,8 @@ fi
 echo "running chalice..."
 chalice package --merge-template external_resources.json dist
 echo "...chalice done"
-echo "cp ./dist/sam.json $global_dist_dir/media-insights-workflowapi-stack.template"
-cp dist/sam.json "$global_dist_dir"/media-insights-workflowapi-stack.template
+echo "cp ./dist/sam.json $global_dist_dir/media-insights-workflow-api-stack.template"
+cp dist/sam.json "$global_dist_dir"/media-insights-workflow-api-stack.template
 if [ $? -ne 0 ]; then
   echo "ERROR: Failed to build workflow api template"
   exit 1
@@ -723,31 +705,137 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 rm -rf ./dist
-cd "$build_dir"/ || exit 1
 
 echo "------------------------------------------------------------------------------"
-echo "Copy dist to S3"
+echo "Creating deployment package for anonymous data logger"
 echo "------------------------------------------------------------------------------"
 
-echo "Copying the prepared distribution to:"
-echo "s3://$global_bucket/media_insights_engine/$version/"
-echo "s3://${regional_bucket}-${region}/media_insights_engine/$version/"
-set -x
-aws s3 sync $global_dist_dir s3://$global_bucket/media_insights_engine/$version/
-aws s3 sync $regional_dist_dir s3://${regional_bucket}-${region}/media_insights_engine/$version/
-set +x
+echo "Building anonymous data logger"
+cd "$source_dir/anonymous-data-logger" || exit 1
+[ -e dist ] && rm -rf dist
+mkdir -p dist
+[ -e package ] && rm -rf package
+mkdir -p package
+echo "create requirements for lambda"
+# Make lambda package
+pushd package || exit 1
+echo "create lambda package"
+# Handle distutils install errors
+touch ./setup.cfg
+echo "[install]" > ./setup.cfg
+echo "prefix= " >> ./setup.cfg
+pip3 install --quiet -r ../requirements.txt --target .
+cp -R ../lib .
+if ! [ -d ../dist/anonymous-data-logger.zip ]; then
+  zip -q -r9 ../dist/anonymous-data-logger.zip .
+elif [ -d ../dist/anonymous-data-logger.zip ]; then
+  echo "Package already present"
+fi
+popd || exit 1
+zip -q -g ./dist/anonymous-data-logger.zip ./anonymous-data-logger.py
+cp "./dist/anonymous-data-logger.zip" "$regional_dist_dir/anonymous-data-logger.zip"
 
 echo "------------------------------------------------------------------------------"
-echo "S3 packaging complete"
+echo "CloudFormation Templates"
 echo "------------------------------------------------------------------------------"
 
-echo ""
-echo "Template to deploy:"
-echo "TEMPLATE='"https://"$global_bucket"."$s3domain"/media_insights_engine/"$version"/media-insights-stack.template"'"
+echo "Preparing template files:"
+cp "$source_dir/operators/operator-library.yaml" "$global_dist_dir/media-insights-operator-library.template"
+cp "$build_dir/media-insights-stack.yaml" "$global_dist_dir/media-insights-stack.template"
+cp "$build_dir/media-insights-test-operations-stack.yaml" "$global_dist_dir/media-insights-test-operations-stack.template"
+cp "$build_dir/media-insights-dataplane-streaming-stack.template" "$global_dist_dir/media-insights-dataplane-streaming-stack.template"
+find "$global_dist_dir"
+echo "Updating template source bucket in template files with '$global_bucket'"
+echo "Updating code source bucket in template files with '$regional_bucket'"
+echo "Updating solution version in template files with '$version'"
+new_global_bucket="s/%%GLOBAL_BUCKET_NAME%%/$global_bucket/g"
+new_regional_bucket="s/%%REGIONAL_BUCKET_NAME%%/$regional_bucket/g"
+new_version="s/%%VERSION%%/$version/g"
+# Update templates in place. Copy originals to [filename].orig
+sed -i.orig -e "$new_global_bucket" "$global_dist_dir/media-insights-stack.template"
+sed -i.orig -e "$new_regional_bucket" "$global_dist_dir/media-insights-stack.template"
+sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-stack.template"
+sed -i.orig -e "$new_global_bucket" "$global_dist_dir/media-insights-operator-library.template"
+sed -i.orig -e "$new_regional_bucket" "$global_dist_dir/media-insights-operator-library.template"
+sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-operator-library.template"
+sed -i.orig -e "$new_global_bucket" "$global_dist_dir/media-insights-test-operations-stack.template"
+sed -i.orig -e "$new_regional_bucket" "$global_dist_dir/media-insights-test-operations-stack.template"
+sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-test-operations-stack.template"
+sed -i.orig -e "$new_global_bucket" "$global_dist_dir/media-insights-dataplane-streaming-stack.template"
+sed -i.orig -e "$new_regional_bucket" "$global_dist_dir/media-insights-dataplane-streaming-stack.template"
+sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-dataplane-streaming-stack.template"
+sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-dataplane-api-stack.template"
+sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-workflow-api-stack.template"
+rm -f $global_dist_dir/*.orig
 
-# Save the template URI for test automation scripts:
-touch templateUrl.txt
-echo "https://"$global_bucket"."$s3domain"/media_insights_engine/"$version"/media-insights-stack.template" > templateUrl.txt
+# Skip copy dist to S3 if building for solution builder because
+# that pipeline takes care of copying the dist in another script.
+if [ "$global_bucket" != "solutions-reference" ] && [ "$global_bucket" != "solutions-test-reference" ]; then
+  echo "------------------------------------------------------------------------------"
+  echo "Copy dist to S3"
+  echo "------------------------------------------------------------------------------"
+  echo "Validating ownership of distribution buckets before copying deployment assets to them..."
+  # Get account id
+  account_id=$(aws sts get-caller-identity --query Account --output text $(if [ ! -z $profile ]; then echo "--profile $profile"; fi))
+  if [ $? -ne 0 ]; then
+    msg "ERROR: Failed to get AWS account ID"
+    die 1
+  fi
+  # Validate ownership of $global_dist_dir
+  aws s3api head-bucket --bucket $global_bucket --expected-bucket-owner $account_id $(if [ ! -z $profile ]; then echo "--profile $profile"; fi)
+  if [ $? -ne 0 ]; then
+    msg "ERROR: Your AWS account does not own s3://$global_bucket/"
+    die 1
+  fi
+  # Validate ownership of ${regional_bucket}-${region}
+  aws s3api head-bucket --bucket ${regional_bucket}-${region} --expected-bucket-owner $account_id $(if [ ! -z $profile ]; then echo "--profile $profile"; fi)
+  if [ $? -ne 0 ]; then
+    msg "ERROR: Your AWS account does not own s3://${regional_bucket}-${region} "
+    die 1
+  fi
+  # Copy deployment assets to distribution buckets
+  cd "$build_dir"/ || exit 1
+
+  echo "*******************************************************************************"
+  echo "*******************************************************************************"
+  echo "**********                    I M P O R T A N T                      **********"
+  echo "*******************************************************************************"
+  echo "** You are about to upload templates and code to S3. Please confirm that     **"
+  echo "** buckets s3://${global_bucket} and s3://${regional_bucket}-${region} are appropriately     **"
+  echo "** secured (not world-writeable, public access blocked) before continuing.   **"
+  echo "*******************************************************************************"
+  echo "*******************************************************************************"
+  echo "PROCEED WITH UPLOAD? (y/n) [n]: "
+  read input
+  if [ "$input" != "y" ] ; then
+      echo "Upload aborted."
+      exit
+  fi
+
+  echo "=========================================================================="
+  echo "Deploying $solution_name version $version to bucket $bucket-$region"
+  echo "=========================================================================="
+  echo "Templates: ${global_bucket}/$solution_name/$version/"
+  echo "Lambda code: ${regional_bucket}-${region}/$solution_name/$version/"
+  echo "---"
+
+  set -x
+  aws s3 sync $global_dist_dir s3://$global_bucket/aws-media-insights-engine/$version/ $(if [ ! -z $profile ]; then echo "--profile $profile"; fi)
+  aws s3 sync $regional_dist_dir s3://${regional_bucket}-${region}/aws-media-insights-engine/$version/ $(if [ ! -z $profile ]; then echo "--profile $profile"; fi)
+  set +x
+
+  echo "------------------------------------------------------------------------------"
+  echo "S3 packaging complete"
+  echo "------------------------------------------------------------------------------"
+
+  echo ""
+  echo "Template to deploy:"
+  echo "TEMPLATE='"https://"$global_bucket"."$s3domain"/aws-media-insights-engine/"$version"/media-insights-stack.template"'"
+
+  # Save the template URI for test automation scripts:
+  touch templateUrl.txt
+  echo "https://"$global_bucket"."$s3domain"/aws-media-insights-engine/"$version"/media-insights-stack.template" > templateUrl.txt
+fi
 
 cleanup
 echo "Done"

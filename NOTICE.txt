@@ -1,6 +1,6 @@
 Media Insights Engine
 
-Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 
 **********************
 THIRD PARTY COMPONENTS
@@ -9,30 +9,15 @@ This software includes third party software subject to the following copyrights:
 
 aws-amplify under the Apache License Version 2.0
 aws-amplify-vue under the Apache License Version 2.0
-axios under the Massachusetts Institute of Technology (MIT) license
-bad-words under the Massachusetts Institute of Technology (MIT) license
-chart.js under the Massachusetts Institute of Technology (MIT) license
-core.js under the Massachusetts Institute of Technology (MIT) license
-dropzone.js under the Massachusetts Institute of Technology (MIT) license
-jquery under the Massachusetts Institute of Technology (MIT) license
-jwt-decode under the Massachusetts Institute of Technology (MIT) license
-lodash under the Massachusetts Institute of Technology (MIT) license
-register-service-worker under the Massachusetts Institute of Technology (MIT) license
-video.js under the Apache License Version 2.0
-videojs-flash under the Apache License Version 2.0
-videojs-hotkeys under the Apache License Version 2.0
-videojs-markers under the Apache License Version 2.0
-vue.js under the Massachusetts Institute of Technology (MIT) license
-vue-video-player under the Massachusetts Institute of Technology (MIT) license
-vue-highlightjs under the Massachusetts Institute of Technology (MIT) license
-vue-router under the Massachusetts Institute of Technology (MIT) license
-vue-video-player under the Massachusetts Institute of Technology (MIT) license
-vuex under the Massachusetts Institute of Technology (MIT) license
-vuex-persistedstate under the Massachusetts Institute of Technology (MIT) license
+aws_xray_sdk under the Apache License Version 2.0
+boto3 under the Apache License Version 2.0
+botocore under the Apache License Version 2.0
 chalice under the Apache License Version 2.0
 docker under the Apache License Version 2.0
-bootstrap-vue under the Massachusetts Institute of Technology (MIT) license
-bootstrap under the Massachusetts Institute of Technology (MIT) license
-urllib3 under the Massachusetts Institute of Technology (MIT) license
-boto3 under the Apache License Version 2.0
-Elasticsearch under the Apache License Version 2.0
+jsonschema under the Massachusetts Institute of Technology license
+pymediainfo under the Massachusetts Institute of Technology license
+pytest under the Massachusetts Institute of Technology license
+requests under the Apache License Version 2.0
+requests_aws4auth under the Massachusetts Institute of Technology license
+urllib3 under the Massachusetts Institute of Technology license
+

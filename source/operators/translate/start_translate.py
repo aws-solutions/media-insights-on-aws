@@ -1,4 +1,4 @@
-# Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 import boto3
@@ -49,7 +49,19 @@ def lambda_handler(event, context):
         asset_id = ''
 
     try:
-        source_lang = operator_object.configuration["SourceLanguageCode"]
+        # The source language may not have been known when the configuration for
+        # this operator was created. In that case, this operator may have been
+        # placed downstream from the Transcribe operator which can auto-detect
+        # the source language. Transcribe will put the source language into the
+        # TranscribeSourceLanguage field of the workflow metadata object. If the
+        # TranscribeSourceLanguage field is present then we will use that source
+        # language throughout this operator.
+        if "TranscribeSourceLanguage" in operator_object.input['MetaData']:
+            source_lang = operator_object.input['MetaData']['TranscribeSourceLanguage'].split('-')[0]
+        else:
+            # If TranscribeSourceLanguage is not available, then SourceLanguageCode
+            # must be present in the operator Configuration block.
+            source_lang = operator_object.configuration["SourceLanguageCode"]
         target_lang = operator_object.configuration["TargetLanguageCode"]
     except KeyError:
         operator_object.update_workflow_status("Error")

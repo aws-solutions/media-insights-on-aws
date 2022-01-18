@@ -1,4 +1,4 @@
-# Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 from chalice import Chalice
@@ -35,7 +35,7 @@ APP_NAME = "workflowapi"
 API_STAGE = "dev"
 app = Chalice(app_name=APP_NAME)
 app.debug = True
-API_VERSION = "2.0.0"
+API_VERSION = "3.0.0"
 FRAMEWORK_VERSION = os.environ['FRAMEWORK_VERSION']
 
 
@@ -72,6 +72,7 @@ WORKFLOW_EXECUTION_TABLE_NAME = os.environ["WORKFLOW_EXECUTION_TABLE_NAME"]
 HISTORY_TABLE_NAME = os.environ["HISTORY_TABLE_NAME"]
 STAGE_EXECUTION_QUEUE_URL = os.environ["STAGE_EXECUTION_QUEUE_URL"]
 STAGE_EXECUTION_ROLE = os.environ["STAGE_EXECUTION_ROLE"]
+STEP_FUNCTION_LOG_GROUP_ARN = os.environ["STEP_FUNCTION_LOG_GROUP_ARN"]
 # FIXME testing NoQ execution
 COMPLETE_STAGE_LAMBDA_ARN = os.environ["COMPLETE_STAGE_LAMBDA_ARN"]
 FILTER_OPERATION_LAMBDA_ARN = os.environ["FILTER_OPERATION_LAMBDA_ARN"]
@@ -133,9 +134,9 @@ def index():
     """ Test the API endpoint
 
     Returns:
-        
+
     .. code-block:: python
-        
+
         {"hello":"world"}
 
     Raises:
@@ -154,7 +155,7 @@ def version():
 
     .. code-block:: python
 
-        {"ApiVersion": "vx.x.x", "FrameworkVersion": "vx.x.x"}
+        {"ApiVersion": "x.x.x", "FrameworkVersion": "vx.x.x"}
     """
     versions = {"ApiVersion": API_VERSION, "FrameworkVersion": FRAMEWORK_VERSION}
     return versions
@@ -220,7 +221,7 @@ def create_system_configuration_api():
 
         system_table.put_item(Item=config)
     except Exception as e:
-        logger.info("Exception {}".format(e))
+        logger.error("Exception {}".format(e))
         raise ChaliceViewError("Exception '%s'" % e)
 
     return {}
@@ -256,7 +257,7 @@ def get_system_configuration_api():
             ConsistentRead=True)
 
     except Exception as e:
-        logger.info("Exception {}".format(e))
+        logger.error("Exception {}".format(e))
         operation = None
         raise ChaliceViewError("Exception '%s'" % e)
     return response["Items"]
@@ -483,28 +484,18 @@ def create_operation(operation):
             )
 
     except ConflictError as e:
-        logger.error ("got CoonflictError: {}".format (e))
+        logger.error ("got ConflictError: {}".format (e))
         raise
     except ValidationError as e:
         logger.error("got bad request error: {}".format(e))
         raise BadRequestError(e)
     except Exception as e:
-        logger.info("Exception {}".format(e))
+        logger.error("Exception {}".format(e))
         operation = None
         raise ChaliceViewError("Exception '%s'" % e)
 
     logger.info("end create_operation: {}".format(json.dumps(operation, cls=DecimalEncoder)))
     return operation
-
-# FIXME - dead code?
-TASK_PARAMETERS_ASL = {
-    "StageName.$": "$.Name",
-    "Name":"%%OPERATION_NAME%%",
-    "Input.$":"$.Input",
-    "Configuration.$":"$.Configuration.%%OPERATION_NAME%%",
-    "AssetId.$":"$.AssetId",
-    "WorkflowExecutionId.$":"$.WorkflowExecutionId"
-}
 
 ASYNC_OPERATION_ASL =         {
     "StartAt": "Filter %%OPERATION_NAME%% Media Type? (%%STAGE_NAME%%)",
@@ -897,7 +888,7 @@ def delete_operation(Name, Force):
     except Exception as e:
 
         operation = None
-        logger.info("Exception {}".format(e))
+        logger.error("Exception {}".format(e))
         raise ChaliceViewError("Exception: '%s'" % e)
 
     return operation
@@ -923,7 +914,7 @@ def flag_operation_dependent_workflows(OperationName):
     except Exception as e:
 
 
-        logger.info("Exception flagging workflows dependent on dropped operations {}".format(e))
+        logger.error("Exception flagging workflows dependent on dropped operations {}".format(e))
         raise ChaliceViewError("Exception: '%s'" % e)
 
     return OperationName
@@ -1098,7 +1089,7 @@ def create_stage(stage):
         logger.error("got bad request error: {}".format(e))
         raise BadRequestError(e)
     except Exception as e:
-        logger.info("Exception {}".format(e))
+        logger.error("Exception {}".format(e))
         stage = None
         raise ChaliceViewError("Exception '%s'" % e)
 
@@ -1238,7 +1229,7 @@ def delete_stage(Name, Force):
     except Exception as e:
 
         stage = None
-        logger.info("Exception {}".format(e))
+        logger.error("Exception {}".format(e))
         raise ChaliceViewError("Exception: '%s'" % e)
 
     return stage
@@ -1263,7 +1254,7 @@ def flag_stage_dependent_workflows(StageName):
 
     except Exception as e:
 
-        logger.info("Exception flagging workflows dependent on dropped stage {}".format(e))
+        logger.error("Exception flagging workflows dependent on dropped stage {}".format(e))
         raise ChaliceViewError("Exception: '%s'" % e)
 
     return StageName
@@ -1374,6 +1365,17 @@ def create_workflow(trigger, workflow):
             name=workflow["Name"] + "-" + STACK_SHORT_UUID,
             definition=json.dumps(workflow["WorkflowAsl"]),
             roleArn=STAGE_EXECUTION_ROLE,
+            loggingConfiguration={
+                'level': 'ALL',
+                'includeExecutionData': False,
+                'destinations': [
+                    {
+                        'cloudWatchLogsLogGroup': {
+                            'logGroupArn': STEP_FUNCTION_LOG_GROUP_ARN
+                        }
+                    },
+                ]
+            },
             tags=[
                 {
                     'key': 'environment',
@@ -1407,7 +1409,7 @@ def create_workflow(trigger, workflow):
             response = SFN_CLIENT.delete_state_machine(
             workflow["StateMachineArn"]
         )
-        logger.info("Exception {}".format(e))
+        logger.error("Exception {}".format(e))
         workflow = None
         raise ChaliceViewError("Exception '%s'" % e)
 
@@ -1636,7 +1638,7 @@ def update_workflow(trigger, new_workflow):
 
     except Exception as e:
 
-        logger.info("Exception {}".format(e))
+        logger.error("Exception {}".format(e))
         workflow = None
         raise ChaliceViewError("Exception '%s'" % e)
 
@@ -1824,7 +1826,7 @@ def delete_workflow(Name):
     except Exception as e:
 
         workflow = None
-        logger.info("Exception {}".format(e))
+        logger.error("Exception {}".format(e))
         raise ChaliceViewError("Exception: '%s'" % e)
 
     return workflow
@@ -1924,10 +1926,13 @@ def create_workflow_execution(trigger, workflow_execution):
     create_asset = None
 
     logger.info('create_workflow_execution workflow config: ' + str(workflow_execution))
-    if "AssetId" in workflow_execution["Input"]:
+    if "Input" in workflow_execution and "AssetId" in workflow_execution["Input"]:
         create_asset = False
-    else:
+    elif "Input" in workflow_execution and "Media" in workflow_execution["Input"]:
         create_asset = True
+    else:
+        raise BadRequestError('Input must contain either "AssetId" or "Media"')
+
     try:
         Name = workflow_execution["Name"]
 
@@ -1942,26 +1947,32 @@ def create_workflow_execution(trigger, workflow_execution):
                 s3bucket = input[media_type]["S3Bucket"]
                 s3key = input[media_type]["S3Key"]
             except KeyError as e:
-                logger.info("Exception {}".format(e))
+                logger.error("Exception {}".format(e))
                 raise ChaliceViewError("Exception '%s'" % e)
             else:
-                asset_creation = dataplane.create_asset(s3bucket, s3key)
-                asset_input = {
-                    "Media": {
-                        media_type: {
-                            "S3Bucket": asset_creation["S3Bucket"],
-                            "S3Key": asset_creation["S3Key"]
+                asset_creation = dataplane.create_asset(media_type, s3bucket, s3key)
+                # If create_asset fails, then asset_creation will contain the error
+                # string instead of the expected dict. So, we'll raise that error
+                # if we get a KeyError in the following try block:
+                try:
+                    asset_input = {
+                        "Media": {
+                            media_type: {
+                                "S3Bucket": asset_creation["S3Bucket"],
+                                "S3Key": asset_creation["S3Key"]
+                            }
                         }
                     }
-                }
-                asset_id = asset_creation["AssetId"]
+                    asset_id = asset_creation["AssetId"]
+                except KeyError as e:
+                    logger.error("Error creating asset {}".format(asset_creation))
+                    raise ChaliceViewError("Error creating asset '%s'" % asset_creation)
         else:
+
             try:
-                asset_id = workflow_execution["Input"]["AssetId"]
-                input = workflow_execution["Input"]["Media"]
-                media_type = list(input.keys())[0]
+                input = workflow_execution["Input"]["AssetId"]
             except KeyError as e:
-                logger.info("Exception {}".format(e))
+                logger.error("Exception {}".format(e))
                 raise ChaliceViewError("Exception '%s'" % e)
             else:
                 asset_id = input
@@ -1973,11 +1984,10 @@ def create_workflow_execution(trigger, workflow_execution):
                             workflow_execution["Id"], asset_id))
 
                 retrieve_asset = dataplane.retrieve_asset_metadata(asset_id)
-
                 if "results" in retrieve_asset:
-                    s3key = retrieve_asset["results"]["S3Key"]
                     s3bucket = retrieve_asset["results"]["S3Bucket"]
-
+                    s3key = retrieve_asset["results"]["S3Key"]
+                    media_type = retrieve_asset["results"]["MediaType"]
                     asset_input = {
                         "Media": {
                             media_type: {
@@ -1986,7 +1996,6 @@ def create_workflow_execution(trigger, workflow_execution):
                             }
                         }
                     }
-
                 else:
                     raise ChaliceViewError("Unable to retrieve asset: {e}".format(e=asset_id))
 
@@ -2008,7 +2017,7 @@ def create_workflow_execution(trigger, workflow_execution):
         )
 
     except Exception as e:
-        logger.info("Exception {}".format(e))
+        logger.error("Exception {}".format(e))
 
         if dynamo_status_queued:
             update_workflow_execution_status(workflow_execution["Id"], awsmie.WORKFLOW_STATUS_ERROR, "Exception {}".format(e))
@@ -2016,6 +2025,7 @@ def create_workflow_execution(trigger, workflow_execution):
         raise ChaliceViewError("Exception '%s'" % e)
 
     return workflow_execution
+
 
 
 def initialize_workflow_execution(trigger, Name, input, Configuration, asset_id):
@@ -2364,7 +2374,7 @@ def delete_workflow_execution(Id):
     except Exception as e:
 
         workflow_execution = None
-        logger.info("Exception {}".format(e))
+        logger.error("Exception {}".format(e))
         raise ChaliceViewError("Exception: '%s'" % e)
 
     return workflow_execution
@@ -2416,12 +2426,12 @@ def update_workflow_execution_status(id, status, message):
         )
 
 # ================================================================================================
-#      ___        ______    ____                  _            ____                _           
-#     / \ \      / / ___|  / ___|  ___ _ ____   _(_) ___ ___  |  _ \ _ __ _____  _(_) ___ ___  
-#    / _ \ \ /\ / /\___ \  \___ \ / _ | '__\ \ / | |/ __/ _ \ | |_) | '__/ _ \ \/ | |/ _ / __| 
-#   / ___ \ V  V /  ___) |  ___) |  __| |   \ V /| | (_|  __/ |  __/| | | (_) >  <| |  __\__ \ 
-#  /_/   \_\_/\_/  |____/  |____/ \___|_|    \_/ |_|\___\___| |_|   |_|  \___/_/\_|_|\___|___/                                                                                          
-# 
+#      ___        ______    ____                  _            ____                _
+#     / \ \      / / ___|  / ___|  ___ _ ____   _(_) ___ ___  |  _ \ _ __ _____  _(_) ___ ___
+#    / _ \ \ /\ / /\___ \  \___ \ / _ | '__\ \ / | |/ __/ _ \ | |_) | '__/ _ \ \/ | |/ _ / __|
+#   / ___ \ V  V /  ___) |  ___) |  __| |   \ V /| | (_|  __/ |  __/| | | (_) >  <| |  __\__ \
+#  /_/   \_\_/\_/  |____/  |____/ \___|_|    \_/ |_|\___\___| |_|   |_|  \___/_/\_|_|\___|___/
+#
 # ================================================================================================
 
 @app.route('/service/transcribe/get_vocabulary', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
@@ -2429,7 +2439,7 @@ def get_vocabulary():
     """ Get the description for an Amazon Transcribe custom vocabulary.
 
     Returns:
-        This is a proxy for boto3 get_vocabulary and returns the output from that SDK method.  
+        This is a proxy for boto3 get_vocabulary and returns the output from that SDK method.
         See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.get_vocabulary>`_
 
     Raises:
@@ -2458,7 +2468,7 @@ def download_vocabulary():
 
 
     Returns:
-        A list of vocabulary terms.  
+        A list of vocabulary terms.
 
         .. code-block:: python
 
@@ -2501,7 +2511,7 @@ def list_vocabularies():
     """ List all the available Amazon Transcribe custom vocabularies in this region.
 
     Returns:
-        This is a proxy for boto3 list_vocabularies and returns the output from that SDK method.  
+        This is a proxy for boto3 list_vocabularies and returns the output from that SDK method.
         See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.list_vocabularies>`_
 
     Raises:
@@ -2536,7 +2546,7 @@ def delete_vocabulary():
 
     Returns:
 
-        This is a proxy for boto3 delete_vocabulary and returns the output from that SDK method.  
+        This is a proxy for boto3 delete_vocabulary and returns the output from that SDK method.
         See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.delete_vocabulary>`_
 
     Raises:
@@ -2567,7 +2577,7 @@ def create_vocabulary():
 
 
     Returns:
-        This is a proxy for boto3 create_vocabulary and returns the output from that SDK method.  
+        This is a proxy for boto3 create_vocabulary and returns the output from that SDK method.
         See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.create_vocabulary>`_
 
     Raises:
@@ -2587,9 +2597,63 @@ def create_vocabulary():
     return response
 
 
+@app.route('/service/transcribe/list_language_models', cors=True, methods=['GET'], authorizer=authorizer)
+def list_language_models():
+    """ Provides more information about the custom language models you've created. You can use the information in this list to find a specific custom language model. You can then use the describe_language_model operation to get more information about it.
+
+    Returns:
+        This is a proxy for boto3 list_language_models and returns the output from that SDK method.
+        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.list_language_models>`_
+
+    Raises:
+        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.list_language_models>`_
+    """
+    print('list_language_models request: '+app.current_request.raw_body.decode())
+    transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
+    response = transcribe_client.list_language_models()
+    models = response['Models']
+    while ('NextToken' in response):
+        response = transcribe_client.list_language_models(MaxResults=100, NextToken=response['NextToken'])
+        models = models + response['Models']
+    # Convert time field to a format that is JSON serializable
+    for item in models:
+        item['CreateTime'] = item['CreateTime'].isoformat()
+        item['LastModifiedTime'] = item['LastModifiedTime'].isoformat()
+    return response
+
+
+@app.route('/service/transcribe/describe_language_model', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
+def describe_language_model():
+    """ Gets information about a single custom language model. 
+
+    Body:
+
+        .. code-block:: python
+
+            {
+                'ModelName': 'string'
+            }
+
+    Returns:
+        This is a proxy for boto3 describe_language_model and returns the output from that SDK method.
+        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.describe_language_model>`_
+
+    Raises:
+        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.describe_language_model>`_
+    """
+    print('describe_language_model request: '+app.current_request.raw_body.decode())
+    transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
+    request_payload = dict(json.loads(app.current_request.raw_body.decode()))
+    response = transcribe_client.describe_language_model(**request_payload)
+    # Convert time field to a format that is JSON serializable
+    response['LanguageModel']['CreateTime'] = response['LanguageModel']['CreateTime'].isoformat()
+    response['LanguageModel']['LastModifiedTime'] = response['LanguageModel']['LastModifiedTime'].isoformat()
+    return response
+
+
 @app.route('/service/translate/get_terminology', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
 def get_terminology():
-    """ Get a link to the CSV formatted description for an Amazon Translate terminology.
+    """ Get a link to the CSV formatted description for an Amazon Translate parallel data.
 
     Body:
 
@@ -2600,11 +2664,11 @@ def get_terminology():
         }
 
     Returns:
-        This is a proxy for boto3 get_terminology and returns the output from that SDK method.  
+        This is a proxy for boto3 get_terminology and returns the output from that SDK method.
         See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/translate.html#Translate.Client.get_terminology>`_
 
     Raises:
-        See the boto3 documentation for details 
+        See the boto3 documentation for details
         500: ChaliceViewError - internal server error
     """
     print('get_terminology request: '+app.current_request.raw_body.decode())
@@ -2638,7 +2702,7 @@ def download_terminology():
         .. code-block:: python
 
             {
-                'terminology_csv': string  
+                'terminology_csv': string
             }
 
     Raises:
@@ -2657,14 +2721,14 @@ def download_terminology():
 
 @app.route('/service/translate/list_terminologies', cors=True, methods=['GET'], authorizer=authorizer)
 def list_terminologies():
-    """ Get the list of available Amazon Translate custom terminologies for this region
+    """ Get the list of available Amazon Translate Terminologies for this region
 
     Returns:
-        This is a proxy for boto3 get_terminology and returns the output from that SDK method.  
+        This is a proxy for boto3 get_terminology and returns the output from that SDK method.
         See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/translate.html#Translate.Client.list_terminologies>`_
 
     Raises:
-        See the boto3 documentation for details 
+        See the boto3 documentation for details
         500: Internal server error
     """
     # This function returns a list of saved terminologies
@@ -2697,12 +2761,12 @@ def delete_terminology():
 
     Returns:
 
-        This is a proxy for boto3 delete_terminology and returns the output from that SDK method.  
+        This is a proxy for boto3 delete_terminology and returns the output from that SDK method.
         See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/translate.html#Translate.Client.delete_terminology>`_
 
 
     Raises:
-        See the boto3 documentation for details 
+        See the boto3 documentation for details
         500: ChaliceViewError - internal server error
     """
     # Delete the specified terminology if it exists
@@ -2715,8 +2779,7 @@ def delete_terminology():
 
 @app.route('/service/translate/create_terminology', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
 def create_terminology():
-    """ Create an Amazon Translate Terminology.  If the terminology already exists, overwrite the terminology
-        with this new content.
+    """ Create an Amazon Translate Terminology.  If the terminology already exists, overwrite the terminology with this new content.
 
     Body:
 
@@ -2726,11 +2789,12 @@ def create_terminology():
             'terminology_name'='string',
             'terminology_csv'='string'
         }
+    }
 
 
     Returns:
-        This is a proxy for boto3 create_vocabulary and returns the output from that SDK method.  
-        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/translate.html#TranslateService.Client.create_terminology>`_
+        This is a proxy for boto3 create_vocabulary and returns the output from that SDK method.
+        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/translate.html#Translate.Client.import_terminology>`_
 
     Raises:
         See the boto3 documentation for details
@@ -2748,6 +2812,168 @@ def create_terminology():
     )
     response['TerminologyProperties']['CreatedAt'] = response['TerminologyProperties']['CreatedAt'].isoformat()
     response['TerminologyProperties']['LastUpdatedAt'] = response['TerminologyProperties']['LastUpdatedAt'].isoformat()
+    return response
+
+# Parallel data funcitons for Active Custom Translation
+
+@app.route('/service/translate/get_parallel_data', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
+def get_parallel_data():
+    """ Get a link to the CSV formatted description for an Amazon Translate Parallel Data Set.
+
+    Body:
+
+    .. code-block:: python
+
+        {
+            'Name'='string'
+        }
+
+    Returns:
+        This is a proxy for boto3 get_parallel_data and returns the output from that SDK method.
+        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/translate.html#Translate.Client.get_parallel_data>`_
+
+    Raises:
+        See the boto3 documentation for details
+        500: ChaliceViewError - internal server error
+    """
+    print('get_parallel_data request: '+app.current_request.raw_body.decode())
+    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
+    request_payload = dict(json.loads(app.current_request.raw_body.decode()))
+    response = translate_client.get_parallel_data(**request_payload)
+
+    # Convert time field to a format that is JSON serializable
+    response['ParallelDataProperties']['CreatedAt'] = response['ParallelDataProperties']['CreatedAt'].isoformat()
+    response['ParallelDataProperties']['LastUpdatedAt'] = response['ParallelDataProperties']['LastUpdatedAt'].isoformat()
+    return response
+
+
+@app.route('/service/translate/download_parallel_data', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
+def download_parallel_data():
+    """ Get the CSV formated contents of an Amazon Translate Parallel Data Set.
+
+    Body:
+
+    .. code-block:: python
+
+        {
+            'Name'='string'
+        }
+
+
+    Returns:
+        A pre-signed url for the the CSV formatted Amazon Transcribe parallel_data
+
+        .. code-block:: python
+
+            {
+                'parallel_data_csv': string
+            }
+
+    Raises:
+        See the boto3 documentation for details
+        500: ChaliceViewError - internal server error
+    """
+    # This function returns the specified parallel_data in CSV format, wrapped in a JSON formatted response.
+    print('download_parallel_data request: '+app.current_request.raw_body.decode())
+    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
+    request_payload = dict(json.loads(app.current_request.raw_body.decode()))
+    url = translate_client.get_parallel_data(**request_payload)['DataLocation']['Location']
+    import urllib.request
+    parallel_data_csv = urllib.request.urlopen(url).read().decode("utf-8")
+    return {"parallel_data_csv": parallel_data_csv}
+
+
+@app.route('/service/translate/list_parallel_data', cors=True, methods=['GET'], authorizer=authorizer)
+def list_parallel_data():
+    """ Get the list of available Amazon Translate Parallel Data Sets for this region
+
+    Returns:
+        This is a proxy for boto3 get_parallel_data and returns the output from that SDK method.
+        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/translate.html#Translate.Client.list_parallel_data>`_
+
+    Raises:
+        See the boto3 documentation for details
+        500: Internal server error
+    """
+    # This function returns a list of saved parallel_data
+    print('list_parallel_data request: '+app.current_request.raw_body.decode())
+    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
+    response = translate_client.list_parallel_data(MaxResults=100)
+    parallel_data = response['ParallelDataPropertiesList']
+    while ('NextToken' in response):
+        response = translate_client.list_parallel_data(MaxResults=100, NextToken=response['NextToken'])
+        parallel_data = parallel_data + response['ParallelDataPropertiesList']
+    # Convert time field to a format that is JSON serializable
+    for item in parallel_data:
+        item['CreatedAt'] = item['CreatedAt'].isoformat()
+        item['LastUpdatedAt'] = item['LastUpdatedAt'].isoformat()
+    return response
+
+
+@app.route('/service/translate/delete_parallel_data', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
+def delete_parallel_data():
+    """ Delete an Amazon Translate Parallel Data
+
+    Body:
+
+    .. code-block:: python
+
+        {
+            'Name': 'string'
+        }
+
+
+    Returns:
+
+        This is a proxy for boto3 delete_parallel_data and returns the output from that SDK method.
+        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/translate.html#Translate.Client.delete_parallel_data>`_
+
+
+    Raises:
+        See the boto3 documentation for details
+        500: ChaliceViewError - internal server error
+    """
+    # Delete the specified parallel_data if it exists
+    print('delete_parallel_data request: '+app.current_request.raw_body.decode())
+    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
+    request_payload = dict(json.loads(app.current_request.raw_body.decode()))
+    response = translate_client.delete_parallel_data(**request_payload)
+    return response
+
+
+@app.route('/service/translate/create_parallel_data', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
+def create_parallel_data():
+    """ Create an Amazon Translate Parallel Data.  If the parallel_data already exists, overwrite the parallel data with this new content.
+
+    Body:
+
+    .. code-block:: python
+
+        {
+              "Name"="string",
+              "Description"="string",
+              "ParallelDataConfig"={
+                  "S3Uri": "string",
+                  "Format": "TSV"|"CSV"|"TMX"
+              },
+              "EncryptionKey"={
+                  "Type": "KMS",
+                  "Id": "string"
+              },
+              "ClientToken"="string"
+        }
+
+    Returns:
+        This is a proxy for boto3 create_vocabulary and returns the output from that SDK method.
+        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/translate.html#TranslateService.Client.create_parallel_data>`_
+
+    Raises:
+        See the boto3 documentation for details
+        500: ChaliceViewError - internal server error
+    """
+    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
+    request_payload = dict(json.loads(app.current_request.raw_body.decode()))
+    response = translate_client.create_parallel_data(**request_payload)
     return response
 
 # ================================================================================================
@@ -2803,7 +3029,7 @@ def operation_resource(event, context):
         operation = event["ResourceProperties"]
 
         # boolean type comes in as text from cloudformation - must decode string or take string for anabled parameter
-        operation["Configuration"]["Enabled"] = bool(operation["Configuration"]["Enabled"])
+        operation["Configuration"]["Enabled"] = True if operation["Configuration"]["Enabled"] == 'true' else False
         operation = create_operation(operation)
         send_response(event, context, "SUCCESS",
                       {"Message": "Resource creation successful!", "Name": event["ResourceProperties"]["Name"],
@@ -2872,10 +3098,14 @@ def workflow_resource(event, context):
 
         workflow["Stages"] = json.loads(event["ResourceProperties"]["Stages"])
 
-        create_workflow("custom-resource", workflow)
+        create_workflow_response = create_workflow("custom-resource", workflow)
 
         send_response(event, context, "SUCCESS",
-                      {"Message": "Resource creation successful!", "Name": event["ResourceProperties"]["Name"]})
+                      {
+                          "Message": "Resource creation successful!",
+                          "Name": event["ResourceProperties"]["Name"],
+                          "StateMachineArn": create_workflow_response["StateMachineArn"]
+                      })
     elif event['RequestType'] == 'Update':
         logger.info('UPDATE!')
         send_response(event, context, "SUCCESS",

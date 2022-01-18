@@ -2,7 +2,8 @@ name: scheduled-workflow
 
 on:
   schedule:
-    - cron: '0 4 * * 3,5'
+    - cron: '0 4 * * *'
+  workflow_dispatch:
 
 jobs:
   build-us-west-2:
@@ -16,15 +17,13 @@ jobs:
       - name: Initialize AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-            aws-access-key-id: ${{ secrets.BUILD_AWS_ACCESS_KEY_ID }}
-            aws-secret-access-key: ${{ secrets.BUILD_AWS_SECRET_ACCESS_KEY }}
-            aws-region: us-west-2
-
+          aws-access-key-id: ${{ secrets.BUILD_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.BUILD_AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
 
       - name: Generate short sha
         run: |
           echo "SHORT_SHA=`git rev-parse --short HEAD`" >> $GITHUB_ENV
-
 
       - name: Run build script
         run: |
@@ -34,8 +33,19 @@ jobs:
           VERSION=$SHORT_SHA
           DIST_OUTPUT_BUCKET=mie-dev
           TEMPLATE_OUTPUT_BUCKET=mie-dev-us-west-2
-          ./build-s3-dist.sh --no-layer --template-bucket $TEMPLATE_OUTPUT_BUCKET --code-bucket $DIST_OUTPUT_BUCKET --version $VERSION --region $REGION
-          aws cloudformation deploy --stack-name $MIE_STACK_NAME --template-file dist/media-insights-stack.template --s3-bucket $DIST_OUTPUT_BUCKET-$REGION --s3-prefix media_insights_engine/$VERSION --parameter-overrides DeployTestResources=true MaxConcurrentWorkflows=10 DeployAnalyticsPipeline=true EnableXrayTrace=true --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --force-upload
+          echo y | ./build-s3-dist.sh --no-layer --template-bucket $TEMPLATE_OUTPUT_BUCKET --code-bucket $DIST_OUTPUT_BUCKET --version $VERSION --region $REGION
+          aws cloudformation deploy --stack-name $MIE_STACK_NAME --region $REGION --template-file global-s3-assets/media-insights-stack.template --s3-bucket $DIST_OUTPUT_BUCKET-$REGION --s3-prefix aws-media-insights-engine/$VERSION --parameter-overrides DeployTestResources=true MaxConcurrentWorkflows=10 DeployAnalyticsPipeline=true EnableXrayTrace=true ParameterKey=SendAnonymousData,ParameterValue=false --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --force-upload
+
+      - name: Build Failed
+        if: ${{ failure() }}
+        uses: nashmaniac/create-issue-action@v1.1
+        with:
+          title: Nightly build for $SHORT_SHA Failed
+          token: ${{secrets.GITHUB_TOKEN}}
+          assignees: ianwow
+          labels: bug
+          body: Nightly build failed for commit ${{github.sha}}
+
 
   test-us-west-2:
     needs: build-us-west-2
@@ -52,15 +62,19 @@ jobs:
       - name: Initialize AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-            aws-access-key-id: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
-            aws-secret-access-key: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
-            aws-region: us-west-2
+          aws-access-key-id: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+
+      - name: Generate short sha
+        run: |
+          echo "SHORT_SHA=`git rev-parse --short HEAD`" >> $GITHUB_ENV
 
       - name: Run cfn_nag
         uses: stelligent/cfn_nag@master
         continue-on-error: true
         with:
-            input_path: deployment
+          input_path: deployment
 
       - name: Run unit tests
         run: |
@@ -74,8 +88,19 @@ jobs:
           cd $GITHUB_WORKSPACE
           cd test/integ
           ./run_integ.sh
+
       - name: Run E2E tests
         run: |
           cd $GITHUB_WORKSPACE
           cd test/e2e
           ./run_e2e.sh
+
+      - name: Test Failed
+        if: ${{ failure() }}
+        uses: nashmaniac/create-issue-action@v1.1
+        with:
+          title: Nightly test for $SHORT_SHA Failed
+          token: ${{secrets.GITHUB_TOKEN}}
+          assignees: ianwow
+          labels: bug
+          body: Nightly test failed for commit ${{github.sha}}

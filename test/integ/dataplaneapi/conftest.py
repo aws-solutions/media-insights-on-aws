@@ -1,4 +1,4 @@
-# Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 
@@ -20,15 +20,9 @@ def testing_env_variables():
     try:
         test_env_vars = {
             'MEDIA_PATH': os.environ['TEST_MEDIA_PATH'],
-            'SAMPLE_IMAGE': os.environ['TEST_IMAGE'],
-            'SAMPLE_VIDEO': os.environ['TEST_VIDEO'],
-            'SAMPLE_AUDIO': os.environ['TEST_AUDIO'],
-            'SAMPLE_TEXT': os.environ['TEST_TEXT'],
-            'SAMPLE_JSON': os.environ['TEST_JSON'],
-            'SAMPLE_FACE_IMAGE': os.environ['TEST_FACE_IMAGE'],
+            'SAMPLE_IMAGE': os.environ['SAMPLE_IMAGE'],
             'REGION': os.environ['MIE_REGION'],
             'MIE_STACK_NAME': os.environ['MIE_STACK_NAME'],
-            'FACE_COLLECTION_ID': os.environ['TEST_FACE_COLLECTION_ID'],
             'ACCESS_KEY': os.environ['AWS_ACCESS_KEY_ID'],
             'SECRET_KEY': os.environ['AWS_SECRET_ACCESS_KEY']
             }
@@ -77,12 +71,7 @@ def upload_media(testing_env_variables, stack_resources):
     print('Uploading Test Media')
     s3 = boto3.client('s3', region_name=testing_env_variables['REGION'])
     # Upload test media files
-    s3.upload_file(testing_env_variables['MEDIA_PATH'] + testing_env_variables['SAMPLE_TEXT'], stack_resources['DataplaneBucket'], 'upload/' + testing_env_variables['SAMPLE_TEXT'])
-    s3.upload_file(testing_env_variables['MEDIA_PATH'] + testing_env_variables['SAMPLE_JSON'], stack_resources['DataplaneBucket'], 'upload/' + testing_env_variables['SAMPLE_JSON'])
-    s3.upload_file(testing_env_variables['MEDIA_PATH'] + testing_env_variables['SAMPLE_AUDIO'], stack_resources['DataplaneBucket'], 'upload/' + testing_env_variables['SAMPLE_AUDIO'])
     s3.upload_file(testing_env_variables['MEDIA_PATH'] + testing_env_variables['SAMPLE_IMAGE'], stack_resources['DataplaneBucket'], 'upload/' + testing_env_variables['SAMPLE_IMAGE'])
-    s3.upload_file(testing_env_variables['MEDIA_PATH'] + testing_env_variables['SAMPLE_FACE_IMAGE'], stack_resources['DataplaneBucket'], 'upload/' + testing_env_variables['SAMPLE_FACE_IMAGE'])
-    s3.upload_file(testing_env_variables['MEDIA_PATH'] + testing_env_variables['SAMPLE_VIDEO'], stack_resources['DataplaneBucket'], 'upload/' + testing_env_variables['SAMPLE_VIDEO'])
     # Wait for fixture to go out of scope:
     yield upload_media
 
@@ -107,14 +96,14 @@ class API:
         headers = {"Content-Type": "application/json"}
         body = {
             "Input": {
+                "MediaType": "Image",
                 "S3Bucket": self.stack_resources['DataplaneBucket'],
                 "S3Key": "upload/" + self.env_vars['SAMPLE_IMAGE']
             }
         }
 
         print("POST /create")
-        create_asset_response = requests.post(self.stack_resources["DataplaneApiEndpoint"] + '/create', headers=headers,
-                                              json=body, verify=False, auth=self.auth)
+        create_asset_response = requests.post(self.stack_resources["DataplaneApiEndpoint"] + '/create', headers=headers, json=body, verify=True, auth=self.auth)
         return create_asset_response
 
     def post_metadata(self, asset_id, metadata, paginate=False, end=False):
@@ -128,25 +117,42 @@ class API:
         headers = {"Content-Type": "application/json"}
         body = metadata
         print("POST /metadata/{asset}".format(asset=asset_id))
-        nonpaginated_metadata_response = requests.post(url, headers=headers, json=body, verify=False, auth=self.auth)
+        nonpaginated_metadata_response = requests.post(url, headers=headers, json=body, verify=True, auth=self.auth)
         return nonpaginated_metadata_response
 
-    # TODO: This test is currently broken. Seems to be a real issue with the API that needs looked into.
+    def checkout_asset(self, asset_id):
+        headers = {"Content-Type": "application/json"}
+        body = {"LockedBy": "user01@example.com"}
+        print("POST /checkout/{asset}".format(asset=asset_id))
+        response = requests.post(self.stack_resources["DataplaneApiEndpoint"] + '/checkout/' + asset_id, headers=headers, json=body, verify=True, auth=self.auth)
+        return response
+
+    def list_checkouts(self):
+        headers = {"Content-Type": "application/json"}
+        print("GET /checkouts")
+        response = requests.get(self.stack_resources["DataplaneApiEndpoint"] + '/checkouts', headers=headers, verify=True, auth=self.auth)
+        return response
+
+    def checkin_asset(self, asset_id):
+        headers = {"Content-Type": "application/json"}
+        print("POST /checkout/{asset}".format(asset=asset_id))
+        response = requests.post(self.stack_resources["DataplaneApiEndpoint"] + '/checkin/' + asset_id, headers=headers, verify=True, auth=self.auth)
+        return response
 
     def get_all_metadata(self, asset_id, cursor=None):
-        
+
         url = self.stack_resources["DataplaneApiEndpoint"] + 'metadata/' + asset_id
         headers = {"Content-Type": "application/json"}
         print("GET /metadata/{asset}".format(asset=asset_id))
-        
+
         if cursor is None:
             print("GET /metadata/{asset}".format(asset=asset_id))
-            metadata_response = requests.get(url, headers=headers, verify=False, auth=self.auth) 
+            metadata_response = requests.get(url, headers=headers, verify=True, auth=self.auth)
         else:
             print("GET /metadata/{asset}?cursor={cursor}".format(asset=asset_id, cursor=cursor))
             query_params = {"cursor": cursor}
-            metadata_response = requests.get(url, headers=headers, params=query_params, verify=False, auth=self.auth) 
-        
+            metadata_response = requests.get(url, headers=headers, params=query_params, verify=True, auth=self.auth)
+
         print(metadata_response.json())
         print(metadata_response.text)
         return metadata_response
@@ -156,7 +162,7 @@ class API:
         url = self.stack_resources["DataplaneApiEndpoint"] + 'metadata/' + asset_id + "/" + metadata_field
         headers = {"Content-Type": "application/json"}
         print("GET /metadata/{asset}/{operator}".format(asset=asset_id, operator=operator["OperatorName"]))
-        single_metadata_response = requests.get(url, headers=headers, verify=False, auth=self.auth)
+        single_metadata_response = requests.get(url, headers=headers, verify=True, auth=self.auth)
         return single_metadata_response
 
     def delete_single_metadata_field(self, asset_id, operator):
@@ -164,14 +170,14 @@ class API:
         url = self.stack_resources["DataplaneApiEndpoint"] + 'metadata/' + asset_id + "/" + metadata_field
         headers = {"Content-Type": "application/json"}
         print("DELETE /metadata/{asset}/{operator}".format(asset=asset_id, operator=operator["OperatorName"]))
-        delete_single_metadata_response = requests.delete(url, headers=headers, verify=False, auth=self.auth)
+        delete_single_metadata_response = requests.delete(url, headers=headers, verify=True, auth=self.auth)
         return delete_single_metadata_response
 
     def delete_asset(self, asset_id):
         url = self.stack_resources["DataplaneApiEndpoint"] + 'metadata/' + asset_id
         headers = {"Content-Type": "application/json"}
         print("DELETE /metadata/{asset}".format(asset=asset_id))
-        delete_asset_response = requests.delete(url, headers=headers, verify=False, auth=self.auth)
+        delete_asset_response = requests.delete(url, headers=headers, verify=True, auth=self.auth)
         return delete_asset_response
 
 

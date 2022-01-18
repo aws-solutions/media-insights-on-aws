@@ -1,11 +1,11 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: "Media Insight Engine - Operator library"
+Description: "aws-media-insights-engine version %%VERSION%%. This AWS CloudFormation template provisions the Media Insights Engine operator library."
 
 Mappings:
   SourceCode:
     General:
       RegionalS3Bucket: "%%REGIONAL_BUCKET_NAME%%"
-      CodeKeyPrefix: "media_insights_engine/%%VERSION%%"
+      CodeKeyPrefix: "aws-media-insights-engine/%%VERSION%%"
 
 Parameters:
   DataPlaneEndpoint:
@@ -14,27 +14,43 @@ Parameters:
   DataPlaneBucket:
     Type: "String"
     Description: "Bucket for the dataplane"
+  ExternalBucketArn:
+    Type: "String"
+    Description: "The ARN for Amazon S3 resources that exist outside the MIE stack which may need to be used as inputs to MIE workflows"
   DataPlaneHandlerArn:
     Type: "String"
     Description: "Arn of dataplane lambda handler"
-
   WorkflowCustomResourceArn:
     Type: String
     Description: "ARN of the Media insights custom resource that handles creating operations, stages and workflows"
-
+  MediaInsightsEnginePython39Layer:
+    Type: String
+    Description: "ARN of the Media insights lambda layer (python3.9) that contains basic python dependencies for boto3, chalice, control plane and dataplane"
+  MediaInsightsEnginePython38Layer:
+    Type: String
+    Description: "ARN of the Media insights lambda layer (python3.8) that contains basic python dependencies for boto3, chalice, control plane and dataplane"
   MediaInsightsEnginePython37Layer:
     Type: String
     Description: "ARN of the Media insights lambda layer (python3.7) that contains basic python dependencies for boto3, chalice, control plane and dataplane"
   MediaInsightsEnginePython36Layer:
     Type: String
     Description: "ARN of the Media insights lambda layer (python3.6) that contains basic python dependencies for boto3, chalice, control plane and dataplane"
-
   StartWaitOperationLambda:
     Type: String
     Description: "ARN of control plane lambda function to set a workflow to Waiting state"
   CheckWaitOperationLambda:
     Type: String
     Description: "ARN of control plane lambda function to if a workflow is in Waiting state"
+  MediaConvertEndpoint:
+    Type: String
+    Description: "Account-specific endpoint URL for MediaConvert"
+  Boto3UserAgent:
+    Type: String
+    Description: "Boto3 user agent string"
+
+Conditions:
+  AllowAccessToExternalBucket: !Not
+    - !Equals [!Ref "ExternalBucketArn", ""]
 
 Resources:
   # SNS topic for storing the output of async Rekognition jobs:
@@ -42,6 +58,7 @@ Resources:
     Type: "AWS::SNS::Topic"
     Properties:
       DisplayName: "SNS Role for Rekognition"
+      KmsMasterKeyId: "alias/aws/sns"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -51,10 +68,11 @@ Resources:
   genericDataLookupLambdaRole:
     Type: "AWS::IAM::Role"
     Metadata:
+      Comment: "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty."
       cfn_nag:
         rules_to_suppress:
           - id: W11
-            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
+            reason: "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources"
     Properties:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
@@ -77,6 +95,10 @@ Resources:
                   - "s3:PutObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
                 Effect: "Allow"
+              - Action:
+                  - "s3:GetObject"
+                Resource: !If ["AllowAccessToExternalBucket", !Sub "${ExternalBucketArn}", !Sub "arn:aws:s3:::${DataPlaneBucket}/*"]
+                Effect: "Allow"
               - Action: "lambda:InvokeFunction"
                 Resource: !Ref DataPlaneHandlerArn
                 Effect: "Allow"
@@ -92,10 +114,11 @@ Resources:
   mediainfoLambdaRole:
     Type: "AWS::IAM::Role"
     Metadata:
+      Comment: "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty."
       cfn_nag:
         rules_to_suppress:
           - id: W11
-            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
+            reason: "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources"
     Properties:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
@@ -116,8 +139,11 @@ Resources:
               - Action:
                   - "s3:GetObject"
                   - "s3:PutObject"
-                  - "s3:DeleteObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
+                Effect: "Allow"
+              - Action:
+                  - "s3:GetObject"
+                Resource: !If ["AllowAccessToExternalBucket", !Sub "${ExternalBucketArn}", !Sub "arn:aws:s3:::${DataPlaneBucket}/*"]
                 Effect: "Allow"
               - Action: "lambda:InvokeFunction"
                 Resource: !Ref DataPlaneHandlerArn
@@ -133,6 +159,8 @@ Resources:
 
   mediaConvertS3Role:
     Type: "AWS::IAM::Role"
+    Metadata:
+      Comment: "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty."
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -153,6 +181,10 @@ Resources:
                   - "s3:PutObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
                 Effect: "Allow"
+              - Action:
+                  - "s3:GetObject"
+                Resource: !If ["AllowAccessToExternalBucket", !Sub "${ExternalBucketArn}", !Sub "arn:aws:s3:::${DataPlaneBucket}/*"]
+                Effect: "Allow"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -160,10 +192,11 @@ Resources:
   mediaConvertLambdaRole:
     Type: "AWS::IAM::Role"
     Metadata:
+      Comment: "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty."
       cfn_nag:
         rules_to_suppress:
           - id: W11
-            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
+            reason: "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -179,10 +212,10 @@ Resources:
             Statement:
               - Action:
                   [
-                    "mediaconvert:GetJob",
-                    "mediaconvert:ListJobs",
-                    "mediaconvert:DescribeEndpoints",
-                    "mediaconvert:CreateJob"
+                      "mediaconvert:GetJob",
+                      "mediaconvert:ListJobs",
+                      "mediaconvert:DescribeEndpoints",
+                      "mediaconvert:CreateJob"
                   ]
                 Resource: "*"
                 Effect: "Allow"
@@ -201,6 +234,10 @@ Resources:
                   - "s3:PutObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
                 Effect: "Allow"
+              - Action:
+                  - "s3:GetObject"
+                Resource: !If ["AllowAccessToExternalBucket", !Sub "${ExternalBucketArn}", !Sub "arn:aws:s3:::${DataPlaneBucket}/*"]
+                Effect: "Allow"
               - Action: "lambda:InvokeFunction"
                 Resource: !Ref DataPlaneHandlerArn
                 Effect: "Allow"
@@ -216,10 +253,11 @@ Resources:
   transcribeRole:
     Type: "AWS::IAM::Role"
     Metadata:
+      Comment: "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty."
       cfn_nag:
         rules_to_suppress:
           - id: W11
-            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
+            reason: "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -235,15 +273,16 @@ Resources:
             Statement:
               - Action:
                   [
-                    "transcribe:GetVocabulary",
-                    "transcribe:GetTranscriptionJob",
-                    "transcribe:CreateVocabulary",
-                    "transcribe:StartStreamTranscription",
-                    "transcribe:StartTranscriptionJob",
-                    "transcribe:UpdateVocabulary",
-                    "transcribe:ListTranscriptionJobs",
-                    "transcribe:ListVocabularies"
+                      "transcribe:GetVocabulary",
+                      "transcribe:GetTranscriptionJob",
+                      "transcribe:CreateVocabulary",
+                      "transcribe:StartStreamTranscription",
+                      "transcribe:StartTranscriptionJob",
+                      "transcribe:UpdateVocabulary",
+                      "transcribe:ListTranscriptionJobs",
+                      "transcribe:ListVocabularies"
                   ]
+                # These actions only support Resource: “*”
                 Resource: "*"
                 Effect: "Allow"
               - Action:
@@ -256,6 +295,10 @@ Resources:
                   - "s3:GetObject"
                   - "s3:PutObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
+                Effect: "Allow"
+              - Action:
+                  - "s3:GetObject"
+                Resource: !If ["AllowAccessToExternalBucket", !Sub "${ExternalBucketArn}", !Sub "arn:aws:s3:::${DataPlaneBucket}/*"]
                 Effect: "Allow"
               - Action: "lambda:InvokeFunction"
                 Resource: !Ref DataPlaneHandlerArn
@@ -272,10 +315,11 @@ Resources:
   captionsRole:
     Type: "AWS::IAM::Role"
     Metadata:
+      Comment: "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty."
       cfn_nag:
         rules_to_suppress:
           - id: W11
-            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
+            reason: "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -299,6 +343,10 @@ Resources:
                   - "s3:GetObject"
                   - "s3:PutObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
+                Effect: "Allow"
+              - Action:
+                  - "s3:GetObject"
+                Resource: !If ["AllowAccessToExternalBucket", !Sub "${ExternalBucketArn}", !Sub "arn:aws:s3:::${DataPlaneBucket}/*"]
                 Effect: "Allow"
               - Action: "lambda:InvokeFunction"
                 Resource: !Ref DataPlaneHandlerArn
@@ -335,6 +383,10 @@ Resources:
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
                 Effect: "Allow"
               - Action:
+                  - "s3:GetObject"
+                Resource: !If ["AllowAccessToExternalBucket", !Sub "${ExternalBucketArn}", !Sub "arn:aws:s3:::${DataPlaneBucket}/*"]
+                Effect: "Allow"
+              - Action:
                   - "s3:ListBucket"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}"
                 Effect: "Allow"
@@ -342,10 +394,11 @@ Resources:
   translateRole:
     Type: "AWS::IAM::Role"
     Metadata:
+      Comment: "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty."
       cfn_nag:
         rules_to_suppress:
           - id: W11
-            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
+            reason: "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -364,13 +417,14 @@ Resources:
                 Resource: !GetAtt "translateS3Role.Arn"
                 Effect: "Allow"
               - Action: [
-                "translate:GetTerminology",
-                "translate:ListTerminologies",
-                "translate:ImportTerminology",
-                "translate:TranslateText",
-                "translate:DescribeTextTranslationJob",
-                "translate:StartTextTranslationJob"
+                  "translate:GetTerminology",
+                  "translate:ListTerminologies",
+                  "translate:ImportTerminology",
+                  "translate:TranslateText",
+                  "translate:DescribeTextTranslationJob",
+                  "translate:StartTextTranslationJob"
               ]
+                # These actions only support Resource: “*”
                 Resource: "*"
                 Effect: "Allow"
               - Action:
@@ -383,6 +437,10 @@ Resources:
                   - "s3:GetObject"
                   - "s3:PutObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
+                Effect: "Allow"
+              - Action:
+                  - "s3:GetObject"
+                Resource: !If ["AllowAccessToExternalBucket", !Sub "${ExternalBucketArn}", !Sub "arn:aws:s3:::${DataPlaneBucket}/*"]
                 Effect: "Allow"
               - Action:
                   - "s3:ListBucket"
@@ -403,10 +461,11 @@ Resources:
   pollyRole:
     Type: "AWS::IAM::Role"
     Metadata:
+      Comment: "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty."
       cfn_nag:
         rules_to_suppress:
           - id: W11
-            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
+            reason: "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -426,15 +485,16 @@ Resources:
             Statement:
               - Action:
                   [
-                    "polly:SynthesizeSpeech",
-                    "polly:StartSpeechSynthesisTask",
-                    "polly:ListLexicons",
-                    "polly:GetSpeechSynthesisTask",
-                    "polly:ListSpeechSynthesisTasks",
-                    "comprehend:DetectDominantLanguage",
-                    "polly:GetLexicon",
-                    "polly:DescribeVoices"
+                      "polly:SynthesizeSpeech",
+                      "polly:StartSpeechSynthesisTask",
+                      "polly:ListLexicons",
+                      "polly:GetSpeechSynthesisTask",
+                      "polly:ListSpeechSynthesisTasks",
+                      "comprehend:DetectDominantLanguage",
+                      "polly:GetLexicon",
+                      "polly:DescribeVoices"
                   ]
+                # These actions only support Resource: “*”
                 Resource: "*"
                 Effect: "Allow"
               - Action:
@@ -447,6 +507,10 @@ Resources:
                   - "s3:GetObject"
                   - "s3:PutObject"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
+                Effect: "Allow"
+              - Action:
+                  - "s3:GetObject"
+                Resource: !If ["AllowAccessToExternalBucket", !Sub "${ExternalBucketArn}", !Sub "arn:aws:s3:::${DataPlaneBucket}/*"]
                 Effect: "Allow"
               - Action:
                   - "comprehend:DetectDominantLanguage"
@@ -467,10 +531,11 @@ Resources:
   comprehendS3Role:
     Type: "AWS::IAM::Role"
     Metadata:
+      Comment: "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty."
       cfn_nag:
         rules_to_suppress:
           - id: W11
-            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
+            reason: "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources. Furthermore, the KMS policy must also apply to all resources because it relates to user-defined KMS keys which cannot be known beforehand."
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -492,6 +557,10 @@ Resources:
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
                 Effect: "Allow"
               - Action:
+                  - "s3:GetObject"
+                Resource: !If ["AllowAccessToExternalBucket", !Sub "${ExternalBucketArn}", !Sub "arn:aws:s3:::${DataPlaneBucket}/*"]
+                Effect: "Allow"
+              - Action:
                   - "s3:ListBucket"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}"
                 Effect: "Allow"
@@ -500,6 +569,11 @@ Resources:
                   - "xray:PutTraceSegments"
                   - "xray:PutTelemetryRecords"
                 Resource: "*"
+              - Effect: "Allow"
+                Action:
+                  - "kms:CreateGrant"
+                  - "kms:GenerateDataKey"
+                Resource: "*"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -507,10 +581,11 @@ Resources:
   comprehendRole:
     Type: "AWS::IAM::Role"
     Metadata:
+      Comment: "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty."
       cfn_nag:
         rules_to_suppress:
           - id: W11
-            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
+            reason: "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources. Furthermore, the KMS policy must also apply to all resources because it relates to user-defined KMS keys which cannot be known beforehand."
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -540,50 +615,54 @@ Resources:
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
                 Effect: "Allow"
               - Action:
+                  - "s3:GetObject"
+                Resource: !If ["AllowAccessToExternalBucket", !Sub "${ExternalBucketArn}", !Sub "arn:aws:s3:::${DataPlaneBucket}/*"]
+                Effect: "Allow"
+              - Action:
                   [
-                    "comprehend:StartEntitiesDetectionJob",
-                    "comprehend:DetectSentiment",
-                    "comprehend:DescribeEntityRecognizer",
-                    "comprehend:ListTopicsDetectionJobs",
-                    "comprehend:DescribeDominantLanguageDetectionJob",
-                    "comprehend:StopTrainingEntityRecognizer",
-                    "comprehend:DescribeDocumentClassificationJob",
-                    "comprehend:StopSentimentDetectionJob",
-                    "comprehend:StartDominantLanguageDetectionJob",
-                    "comprehend:StartTopicsDetectionJob",
-                    "comprehend:DetectDominantLanguage",
-                    "comprehend:CreateDocumentClassifier",
-                    "comprehend:ListEntityRecognizers",
-                    "iam:PassRole",
-                    "comprehend:ListSentimentDetectionJobs",
-                    "comprehend:BatchDetectSyntax",
-                    "comprehend:StartSentimentDetectionJob",
-                    "comprehend:ListDominantLanguageDetectionJobs",
-                    "comprehend:ListDocumentClassifiers",
-                    "comprehend:DescribeKeyPhrasesDetectionJob",
-                    "comprehend:CreateEntityRecognizer",
-                    "comprehend:ListKeyPhrasesDetectionJobs",
-                    "comprehend:DescribeSentimentDetectionJob",
-                    "comprehend:DescribeTopicsDetectionJob",
-                    "comprehend:StopDominantLanguageDetectionJob",
-                    "comprehend:BatchDetectSentiment",
-                    "comprehend:StartKeyPhrasesDetectionJob",
-                    "comprehend:BatchDetectEntities",
-                    "comprehend:BatchDetectKeyPhrases",
-                    "comprehend:ListEntitiesDetectionJobs",
-                    "comprehend:StopKeyPhrasesDetectionJob",
-                    "comprehend:ListDocumentClassificationJobs",
-                    "comprehend:DetectSyntax",
-                    "comprehend:DescribeEntitiesDetectionJob",
-                    "comprehend:StopTrainingDocumentClassifier",
-                    "comprehend:ListTagsForResource",
-                    "comprehend:DescribeDocumentClassifier",
-                    "comprehend:StopEntitiesDetectionJob",
-                    "comprehend:BatchDetectDominantLanguage",
-                    "comprehend:StartDocumentClassificationJob",
-                    "comprehend:DetectEntities",
-                    "comprehend:DetectKeyPhrases"
+                      "comprehend:StartEntitiesDetectionJob",
+                      "comprehend:DetectSentiment",
+                      "comprehend:DescribeEntityRecognizer",
+                      "comprehend:ListTopicsDetectionJobs",
+                      "comprehend:DescribeDominantLanguageDetectionJob",
+                      "comprehend:StopTrainingEntityRecognizer",
+                      "comprehend:DescribeDocumentClassificationJob",
+                      "comprehend:StopSentimentDetectionJob",
+                      "comprehend:StartDominantLanguageDetectionJob",
+                      "comprehend:StartTopicsDetectionJob",
+                      "comprehend:DetectDominantLanguage",
+                      "comprehend:CreateDocumentClassifier",
+                      "comprehend:ListEntityRecognizers",
+                      "comprehend:ListSentimentDetectionJobs",
+                      "comprehend:BatchDetectSyntax",
+                      "comprehend:StartSentimentDetectionJob",
+                      "comprehend:ListDominantLanguageDetectionJobs",
+                      "comprehend:ListDocumentClassifiers",
+                      "comprehend:DescribeKeyPhrasesDetectionJob",
+                      "comprehend:CreateEntityRecognizer",
+                      "comprehend:ListKeyPhrasesDetectionJobs",
+                      "comprehend:DescribeSentimentDetectionJob",
+                      "comprehend:DescribeTopicsDetectionJob",
+                      "comprehend:StopDominantLanguageDetectionJob",
+                      "comprehend:BatchDetectSentiment",
+                      "comprehend:StartKeyPhrasesDetectionJob",
+                      "comprehend:BatchDetectEntities",
+                      "comprehend:BatchDetectKeyPhrases",
+                      "comprehend:ListEntitiesDetectionJobs",
+                      "comprehend:StopKeyPhrasesDetectionJob",
+                      "comprehend:ListDocumentClassificationJobs",
+                      "comprehend:DetectSyntax",
+                      "comprehend:DescribeEntitiesDetectionJob",
+                      "comprehend:StopTrainingDocumentClassifier",
+                      "comprehend:ListTagsForResource",
+                      "comprehend:DescribeDocumentClassifier",
+                      "comprehend:StopEntitiesDetectionJob",
+                      "comprehend:BatchDetectDominantLanguage",
+                      "comprehend:StartDocumentClassificationJob",
+                      "comprehend:DetectEntities",
+                      "comprehend:DetectKeyPhrases"
                   ]
+                # These actions only support Resource: “*”
                 Resource: "*"
                 Effect: "Allow"
               - Action: "lambda:InvokeFunction"
@@ -594,25 +673,57 @@ Resources:
                   - "xray:PutTraceSegments"
                   - "xray:PutTelemetryRecords"
                 Resource: "*"
+              - Effect: "Allow"
+                Action:
+                  - "kms:Decrypt"
+                Resource: "*"
       Tags:
         - Key: "environment"
           Value: "mie"
 
-  rekognitionRole:
+  rekognitionSNSRole:
     Type: "AWS::IAM::Role"
     Metadata:
       cfn_nag:
         rules_to_suppress:
           - id: W11
-            reason: "The X-Ray policy applies to all resources - can't be scoped to a specific resource"
+            reason: "the policy actions used in this role require * resource"
     Properties:
-      ManagedPolicyArns:
-        # TODO: Security - Scope this down
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/AmazonSNSFullAccess
-        - arn:aws:iam::aws:policy/AmazonRekognitionFullAccess
-        - arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
-        - arn:aws:iam::aws:policy/AmazonSQSFullAccess
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action:
+              - "sts:AssumeRole"
+            Effect: "Allow"
+            Principal:
+              Service: "rekognition.amazonaws.com"
+      Policies:
+        - PolicyName: "RekognitionSNSPublishPolicy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  - sns:Publish
+                Resource: !Ref "snsRekognitionTopic"
+                Effect: "Allow"
+              - Action:
+                  - "xray:PutTraceSegments"
+                  - "xray:PutTelemetryRecords"
+                Resource: "*"
+                Effect: "Allow"
+      Tags:
+        - Key: "environment"
+          Value: "mie"
+
+  rekognitionLambdaRole:
+    Type: "AWS::IAM::Role"
+    Metadata:
+      Comment: "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty."
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: "the policy actions used in this role require * resource"
+    Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -622,31 +733,68 @@ Resources:
             Principal:
               Service: "lambda.amazonaws.com"
       Policies:
-        - PolicyName: "RekogPassRolePolicy"
+        - PolicyName: "rekognitionAccess"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              # TODO: Security - Scope this down
               - Action:
                   - iam:PassRole
-                Resource: "*"
+                Resource: !GetAtt "rekognitionSNSRole.Arn"
                 Effect: "Allow"
               - Action: "lambda:InvokeFunction"
                 Resource: !Ref DataPlaneHandlerArn
                 Effect: "Allow"
-        - PolicyName: "RekognitionSNSPublishPolicy"
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
               - Action:
-                  - sns:Publish
-                Resource: !Ref "snsRekognitionTopic"
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: "arn:aws:logs:*:*:*:*"
                 Effect: "Allow"
-              - Effect: "Allow"
-                Action:
+              - Action:
+                  - "s3:GetObject"
+                Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}/*"
+                Effect: "Allow"
+              - Action:
+                  - "s3:GetObject"
+                Resource: !If ["AllowAccessToExternalBucket", !Sub "${ExternalBucketArn}", !Sub "arn:aws:s3:::${DataPlaneBucket}/*"]
+                Effect: "Allow"
+              - Action:
+                  - "rekognition:DetectFaces"
+                  - "rekognition:DetectLabels"
+                  - "rekognition:DetectText"
+                  - "rekognition:DetectModerationLabels"
+                  - "rekognition:GetCelebrityRecognition"
+                  - "rekognition:GetContentModeration"
+                  - "rekognition:GetFaceDetection"
+                  - "rekognition:GetFaceSearch"
+                  - "rekognition:GetLabelDetection"
+                  - "rekognition:GetPersonTracking"
+                  - "rekognition:RecognizeCelebrities"
+                  - "rekognition:StartCelebrityRecognition"
+                  - "rekognition:StartContentModeration"
+                  - "rekognition:StartFaceDetection"
+                  - "rekognition:StartFaceSearch"
+                  - "rekognition:StartLabelDetection"
+                  - "rekognition:StartPersonTracking"
+                  - "rekognition:StartTextDetection"
+                  - "rekognition:GetTextDetection"
+                  - "rekognition:StartSegmentDetection"
+                  - "rekognition:GetSegmentDetection"
+                # These Rekognition actions do not support resource-level permissions, so we must use Resource: *
+                Resource: "*"
+                Effect: "Allow"
+              - Action:
+                  - "rekognition:DescribeCollection"
+                  - "rekognition:SearchFaces"
+                  - "rekognition:SearchFacesByImage"
+                Resource:
+                  - !Sub "arn:aws:rekognition:${AWS::Region}:${AWS::AccountId}:collection/*"
+                Effect: "Allow"
+              - Action:
                   - "xray:PutTraceSegments"
                   - "xray:PutTelemetryRecords"
                 Resource: "*"
+                Effect: "Allow"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -656,10 +804,17 @@ Resources:
   # This is a generic Lambda function for getting metadata from JSON file in S3:
   startGenericDataLookup:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "generic_data_lookup.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
+        - !Ref MediaInsightsEnginePython39Layer
       Role: !GetAtt genericDataLookupLambdaRole.Arn
       TracingConfig:
         Mode: "PassThrough"
@@ -667,20 +822,20 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "generic_data_lookup.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "generic_data_lookup.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Timeout: 300
       Environment:
         Variables:
           OPERATOR_NAME: "GenericDataLookup"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DataLookupRole: !GetAtt genericDataLookupLambdaRole.Arn
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -689,6 +844,13 @@ Resources:
 
   Mediainfo:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "mediainfo.lambda_handler"
       Layers:
@@ -700,10 +862,10 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "mediainfo.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "mediainfo.zip",
             ],
           ]
       Runtime: "python3.7"
@@ -714,7 +876,7 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DataLookupRole: !GetAtt mediainfoLambdaRole.Arn
           LD_LIBRARY_PATH: "/opt/python/"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -723,10 +885,17 @@ Resources:
 
   startKeyPhrases:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_key_phrases.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
+        - !Ref MediaInsightsEnginePython39Layer
       Role: !GetAtt comprehendRole.Arn
       TracingConfig:
         Mode: "PassThrough"
@@ -734,30 +903,37 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "start_key_phrases.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "start_key_phrases.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Timeout: 300
       Environment:
         Variables:
           OPERATOR_NAME: "comprehendStartKeyPhrases"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           comprehendRole: !GetAtt comprehendS3Role.Arn
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
 
   getKeyPhrases:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "get_key_phrases.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
+        - !Ref MediaInsightsEnginePython39Layer
       Role: !GetAtt comprehendRole.Arn
       TracingConfig:
         Mode: "PassThrough"
@@ -765,30 +941,37 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "get_key_phrases.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "get_key_phrases.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Timeout: 300
       Environment:
         Variables:
           OPERATOR_NAME: "comprehendGetKeyPhrases"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           comprehendRole: !GetAtt comprehendS3Role.Arn
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
 
   startEntityDetection:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_entity_detection.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
+        - !Ref MediaInsightsEnginePython39Layer
       Role: !GetAtt comprehendRole.Arn
       TracingConfig:
         Mode: "PassThrough"
@@ -796,30 +979,37 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "start_entity_detection.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "start_entity_detection.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Timeout: 300
       Environment:
         Variables:
           OPERATOR_NAME: "comprehendStartEntityDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           comprehendRole: !GetAtt comprehendS3Role.Arn
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
 
   getEntityDetection:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "get_entity_detection.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
+        - !Ref MediaInsightsEnginePython39Layer
       Role: !GetAtt comprehendRole.Arn
       TracingConfig:
         Mode: "PassThrough"
@@ -827,20 +1017,20 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "get_entity_detection.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "get_entity_detection.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Timeout: 300
       Environment:
         Variables:
           OPERATOR_NAME: "comprehendEntityDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           comprehendRole: !GetAtt comprehendS3Role.Arn
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -849,589 +1039,718 @@ Resources:
 
   startTechnicalCueDetection:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_technical_cue_detection.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+        - !Ref MediaInsightsEnginePython39Layer
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "start_technical_cue_detection.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "start_technical_cue_detection.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Timeout: 120
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "technicalCueDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
 
   checkTechnicalCueDetection:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "check_technical_cue_status.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+        - !Ref MediaInsightsEnginePython39Layer
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "check_technical_cue_status.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "check_technical_cue_status.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Timeout: 120
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "technicalCueDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
 
   startShotDetection:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_shot_detection.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+        - !Ref MediaInsightsEnginePython39Layer
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "start_shot_detection.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "start_shot_detection.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Timeout: 120
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "shotDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
 
   checkShotDetection:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "check_shot_detection_status.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+        - !Ref MediaInsightsEnginePython39Layer
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "check_shot_detection_status.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "check_shot_detection_status.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Timeout: 120
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "shotDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
 
   startCelebrityRecognition:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_celebrity_recognition.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+        - !Ref MediaInsightsEnginePython39Layer
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "start_celebrity_recognition.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "start_celebrity_recognition.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Timeout: 120
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "celebrityRecognition"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
 
   checkCelebrityRecognition:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "check_celebrity_recognition_status.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+        - !Ref MediaInsightsEnginePython39Layer
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "check_celebrity_recognition_status.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "check_celebrity_recognition_status.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Timeout: 120
       Environment:
         Variables:
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "celebrityRecognition"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
 
   startContentModeration:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_content_moderation.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+        - !Ref MediaInsightsEnginePython39Layer
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "start_content_moderation.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "start_content_moderation.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Timeout: 120
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "contentModeration"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
 
   checkContentModeration:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "check_content_moderation_status.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+        - !Ref MediaInsightsEnginePython39Layer
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "check_content_moderation_status.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "check_content_moderation_status.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Timeout: 120
       Environment:
         Variables:
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "contentModeration"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
 
   startFaceDetection:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_face_detection.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+        - !Ref MediaInsightsEnginePython39Layer
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "start_face_detection.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "start_face_detection.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Timeout: 120
       MemorySize: 256
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "faceDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
 
   checkFaceDetection:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "check_face_detection_status.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+        - !Ref MediaInsightsEnginePython39Layer
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "check_face_detection_status.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "check_face_detection_status.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Timeout: 300
       MemorySize: 512
       Environment:
         Variables:
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "faceDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
 
   startFaceSearch:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_face_search.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+        - !Ref MediaInsightsEnginePython39Layer
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "start_face_search.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "start_face_search.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Timeout: 120
       MemorySize: 256
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "faceSearch"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
 
   checkFaceSearch:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "check_face_search_status.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+        - !Ref MediaInsightsEnginePython39Layer
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "check_face_search_status.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "check_face_search_status.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Timeout: 120
       MemorySize: 256
       Environment:
         Variables:
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "faceSearch"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
 
   startTextDetection:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_text_detection.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+        - !Ref MediaInsightsEnginePython39Layer
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "start_text_detection.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "start_text_detection.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
+      Timeout: 120
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "textDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
 
   checkTextDetection:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "check_text_detection_status.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+        - !Ref MediaInsightsEnginePython39Layer
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "check_text_detection_status.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "check_text_detection_status.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Timeout: 240
       MemorySize: 256
       Environment:
         Variables:
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "textDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
 
   startLabelDetection:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_label_detection.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+        - !Ref MediaInsightsEnginePython39Layer
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "start_label_detection.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "start_label_detection.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
+      Timeout: 120
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "labelDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
 
   checkLabelDetection:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "check_label_detection_status.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+        - !Ref MediaInsightsEnginePython39Layer
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "check_label_detection_status.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "check_label_detection_status.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Timeout: 240
       MemorySize: 256
       Environment:
         Variables:
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "labelDetection"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
 
   startPersonTracking:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_person_tracking.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+        - !Ref MediaInsightsEnginePython39Layer
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "start_person_tracking.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "start_person_tracking.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
+      Timeout: 120
       Environment:
         Variables:
           REKOGNITION_SNS_TOPIC_ARN: !Ref "snsRekognitionTopic"
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "personTracking"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
 
   checkPersonTracking:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "check_person_tracking_status.lambda_handler"
       Layers:
-        - !Ref MediaInsightsEnginePython37Layer
-      Role: !GetAtt "rekognitionRole.Arn"
+        - !Ref MediaInsightsEnginePython39Layer
+      Role: !GetAtt "rekognitionLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "check_person_tracking_status.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "check_person_tracking_status.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Timeout: 120
       MemorySize: 256
       Environment:
         Variables:
-          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionRole.Arn"
+          REKOGNITION_ROLE_ARN: !GetAtt "rekognitionSNSRole.Arn"
           OPERATOR_NAME: "personTracking"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1468,10 +1787,17 @@ Resources:
 
   StartMediaConvertFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_media_convert.lambda_handler"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       Role: !GetAtt "mediaConvertLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1479,30 +1805,38 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "start_media_convert.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "start_media_convert.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Timeout: 60
       Environment:
         Variables:
           mediaconvertRole: !GetAtt "mediaConvertS3Role.Arn"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          MEDIACONVERT_ENDPOINT: !Ref "MediaConvertEndpoint"
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
 
   StartThumbnailFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_thumbnail.lambda_handler"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       Role: !GetAtt "mediaConvertLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1510,30 +1844,38 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "start_thumbnail.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "start_thumbnail.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Timeout: 60
       Environment:
         Variables:
           mediaconvertRole: !GetAtt "mediaConvertS3Role.Arn"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          MEDIACONVERT_ENDPOINT: !Ref "MediaConvertEndpoint"
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
 
   CheckThumbnailFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "check_thumbnail.lambda_handler"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       Role: !GetAtt "mediaConvertLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1541,30 +1883,38 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "check_thumbnail.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "check_thumbnail.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Timeout: 60
       Environment:
         Variables:
           mediaconvertRole: !GetAtt "mediaConvertS3Role.Arn"
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          MEDIACONVERT_ENDPOINT: !Ref "MediaConvertEndpoint"
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
 
   CheckMediaConvertFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "get_media_convert.lambda_handler"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       Role: !GetAtt "mediaConvertLambdaRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1572,19 +1922,20 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "get_media_convert.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "get_media_convert.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Timeout: 60
       Environment:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          MEDIACONVERT_ENDPOINT: !Ref "MediaConvertEndpoint"
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1593,10 +1944,17 @@ Resources:
 
   StartTranscribeFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_transcribe.lambda_handler"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       Role: !GetAtt "transcribeRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1604,28 +1962,36 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "start_transcribe.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "start_transcribe.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
+      Timeout: 120
       Environment:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
 
   CheckTranscribeFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "get_transcribe.lambda_handler"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       Role: !GetAtt "transcribeRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1633,20 +1999,20 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "get_transcribe.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "get_transcribe.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Timeout: 120
       MemorySize: 256
       Environment:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1655,10 +2021,17 @@ Resources:
 
   WebCaptionsFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "webcaptions.web_captions"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       Role: !GetAtt "captionsRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1666,20 +2039,20 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "webcaptions.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "webcaptions.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Timeout: 300
       MemorySize: 256
       Environment:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1688,10 +2061,17 @@ Resources:
 
   CreateSRTCaptionsFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "webcaptions.create_srt"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       Role: !GetAtt "captionsRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1699,29 +2079,36 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "webcaptions.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "webcaptions.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Timeout: 300
       Environment:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
 
   CreateVTTCaptionsFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "webcaptions.create_vtt"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       Role: !GetAtt "captionsRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1729,29 +2116,36 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "webcaptions.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "webcaptions.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Timeout: 300
       Environment:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
 
   WebToSRTCaptionsFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "webcaptions.create_srt"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       Role: !GetAtt "captionsRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1759,29 +2153,36 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "webcaptions.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "webcaptions.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Timeout: 300
       Environment:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
 
   WebToVTTCaptionsFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "webcaptions.create_vtt"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       Role: !GetAtt "captionsRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1789,19 +2190,19 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "webcaptions.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "webcaptions.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Timeout: 300
       Environment:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1810,10 +2211,17 @@ Resources:
 
   TranslateFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_translate.lambda_handler"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       Role: !GetAtt "translateRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1821,77 +2229,91 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "start_translate.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "start_translate.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Timeout: 300
       MemorySize: 256
       Environment:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
 
   StartTranslateWebcaptionsFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "webcaptions.start_translate_webcaptions"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       Role: !GetAtt "translateRole.Arn"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "webcaptions.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "webcaptions.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Timeout: 300
       Environment:
         Variables:
           translateRole: !GetAtt translateS3Role.Arn
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
 
   CheckTranslateWebcaptionsFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "webcaptions.check_translate_webcaptions"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       Role: !GetAtt "translateRole.Arn"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "webcaptions.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "webcaptions.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Timeout: 300
       Environment:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1899,56 +2321,70 @@ Resources:
   # WebCaptions Polly tracks
   StartPollyWebCaptionsFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "webcaptions.start_polly_webcaptions"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       Role: !GetAtt "pollyRole.Arn"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "webcaptions.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "webcaptions.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Timeout: 300
       Environment:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
 
   CheckPollyWebCaptionsFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "webcaptions.check_polly_webcaptions"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       Role: !GetAtt "pollyRole.Arn"
       Code:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "webcaptions.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "webcaptions.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Timeout: 300
       Environment:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1957,10 +2393,17 @@ Resources:
 
   StartPollyFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "start_polly.lambda_handler"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       Role: !GetAtt "pollyRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1968,28 +2411,36 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "start_polly.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "start_polly.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
+      Timeout: 120
       Environment:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
 
   CheckPollyFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "get_polly.lambda_handler"
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       Role: !GetAtt "pollyRole.Arn"
       TracingConfig:
         Mode: "PassThrough"
@@ -1997,18 +2448,19 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key:
           !Join [
-            "/",
+              "/",
             [
-            !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
-            "get_polly.zip",
+              !FindInMap ["SourceCode", "General", "CodeKeyPrefix"],
+              "get_polly.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
+      Timeout: 120
       Environment:
         Variables:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           DATAPLANE_BUCKET: !Ref "DataPlaneBucket"
-          botoConfig: '{"user_agent_extra": "AwsSolution/mie/%%VERSION%%"}'
+          botoConfig: !Ref "Boto3UserAgent"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -2022,7 +2474,7 @@ Resources:
       ResourceType: "Operation"
       Name: "GenericDataLookup"
       Type: "Sync"
-      Configuration: { "MediaType": "Video", "Enabled": true }
+      Configuration: { "MediaType": "Video", "Enabled": false }
       StartLambdaArn: !GetAtt startGenericDataLookup.Arn
 
   MediainfoOperation:
@@ -2052,7 +2504,7 @@ Resources:
       ResourceType: "Operation"
       Name: "Mediaconvert"
       Type: "Async"
-      Configuration: { "MediaType": "Video", "Enabled": false }
+      Configuration: { "MediaType": "Video", "Enabled": true }
       StartLambdaArn: !GetAtt StartMediaConvertFunction.Arn
       MonitorLambdaArn: !GetAtt CheckMediaConvertFunction.Arn
 
@@ -2300,7 +2752,7 @@ Resources:
       ResourceType: "Operation"
       Name: "faceSearch"
       Type: "Async"
-      Configuration: { "MediaType": "Video", "Enabled": true }
+      Configuration: { "MediaType": "Video", "Enabled": false, "CollectionId": "" }
       StartLambdaArn: !GetAtt startFaceSearch.Arn
       MonitorLambdaArn: !GetAtt checkFaceSearch.Arn
 
@@ -2311,7 +2763,7 @@ Resources:
       ResourceType: "Operation"
       Name: "faceSearchImage"
       Type: "Sync"
-      Configuration: { "MediaType": "Image", "Enabled": true }
+      Configuration: { "MediaType": "Image", "Enabled": false, "CollectionId": "" }
       StartLambdaArn: !GetAtt startFaceSearch.Arn
 
   customLabelsOperation:

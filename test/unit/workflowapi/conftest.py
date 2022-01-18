@@ -18,12 +18,13 @@ def mock_env_variables(monkeypatch):
     monkeypatch.setenv("HISTORY_TABLE_NAME", "testHistoryTable")
     monkeypatch.setenv("STAGE_EXECUTION_QUEUE_URL", "testQueueUrl")
     monkeypatch.setenv("STAGE_EXECUTION_ROLE", "testExecutionRole")
+    monkeypatch.setenv("STEP_FUNCTION_LOG_GROUP_ARN", "testExecutionSfnLogGroup")
     monkeypatch.setenv("COMPLETE_STAGE_LAMBDA_ARN", "testCompleteStageArn")
     monkeypatch.setenv("FILTER_OPERATION_LAMBDA_ARN", "testFilterLambdaArn")
     monkeypatch.setenv("OPERATOR_FAILED_LAMBDA_ARN", "testFailedLambdaArn")
     monkeypatch.setenv("WORKFLOW_SCHEDULER_LAMBDA_ARN", "testSchedulerArn")
     monkeypatch.setenv("DataplaneEndpoint", "testDataplaneEndpoint")
-    monkeypatch.setenv("botoConfig", '{"user_agent_extra": "AwsSolution/mie/vX.X.X"}')
+    monkeypatch.setenv("botoConfig", '{"user_agent_extra": "AwsSolution/SO0163/vX.X.X"}')
     monkeypatch.setenv("FRAMEWORK_VERSION", "v9.9.9")
 
 

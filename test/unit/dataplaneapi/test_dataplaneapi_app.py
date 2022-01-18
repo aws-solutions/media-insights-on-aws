@@ -42,25 +42,15 @@ def test_create_asset(test_client, s3_client_stub, ddb_resource_stub):
         expected_params={'Bucket': 'testDataplaneBucketName', 'Key': botocore.stub.ANY},
         service_response={}
     )
-    s3_client_stub.add_response(
-        'copy_object',
-        expected_params={'Bucket': 'testDataplaneBucketName', 'Key': botocore.stub.ANY,
-                         'CopySource': {'Bucket': 'InputBucketName', 'Key': 'InputKeyName'}},
-        service_response={}
-    )
-    s3_client_stub.add_response(
-        'delete_object',
-        expected_params={'Bucket': 'InputBucketName', 'Key': 'InputKeyName'},
-        service_response={}
-    )
     ddb_resource_stub.add_response(
         'put_item',
         expected_params={
             'Item':
                 {
                     'AssetId': botocore.stub.ANY,
-                    'S3Bucket': 'testDataplaneBucketName',
-                    'S3Key': botocore.stub.ANY,
+                    'MediaType': 'Video',
+                    'S3Bucket': 'InputBucketName',
+                    'S3Key': 'InputKeyName',
                     'Created': botocore.stub.ANY
                 },
             'TableName': 'testDataplaneTableName'
@@ -68,18 +58,16 @@ def test_create_asset(test_client, s3_client_stub, ddb_resource_stub):
         service_response={}
     )
     response = test_client.http.post('/create',
-                                     body=b'{"Input": {"S3Bucket": "InputBucketName", "S3Key": "InputKeyName"}}')
+                                     body=b'{"Input": {"MediaType": "Video", "S3Bucket": "InputBucketName", "S3Key": "InputKeyName"}}')
 
     formatted_response = json.loads(response.body)
-    expected_response_keys = ['AssetId', 'S3Bucket', 'S3Key']
+    expected_response_keys = ['AssetId', 'MediaType', 'S3Bucket', 'S3Key']
 
     assert all(item in formatted_response.keys() for item in expected_response_keys)
 
     asset_id = formatted_response['AssetId']
     assert is_valid_uuid(asset_id)
 
-    s3_key = formatted_response['S3Key']
-    assert '/'.join(s3_key.split('/')[0:2]) == 'private/assets'
     print("Pass")
 
 

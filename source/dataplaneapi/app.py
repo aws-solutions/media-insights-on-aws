@@ -1,4 +1,4 @@
-# Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 from chalice import Chalice
@@ -52,7 +52,7 @@ logger.addHandler(handler)
 
 app_name = 'dataplaneapi'
 app = Chalice(app_name=app_name)
-api_version = "1.0.0"
+api_version = "3.0.0"
 framework_version = os.environ['FRAMEWORK_VERSION']
 
 # DDB resources
@@ -94,7 +94,7 @@ def write_metadata_to_s3(bucket, key, data):
         s3_client.put_object(Bucket=bucket, Key=key, Body=encoded)
     except ClientError as e:
         error = e.response['Error']['Message']
-        logger.info("Exception occurred while writing asset metadata to s3: {e}".format(e=error))
+        logger.error("Exception occurred while writing asset metadata to s3: {e}".format(e=error))
         return {"Status": "Error", "Message": error}
     except Exception as e:
         logger.error("Exception occurred while writing asset metadata to s3")
@@ -112,7 +112,7 @@ def read_metadata_from_s3(bucket, key):
         )
     except ClientError as e:
         error = e.response['Error']['Message']
-        logger.info("Exception occurred while reading asset metadata from s3: {e}".format(e=error))
+        logger.error("Exception occurred while reading asset metadata from s3: {e}".format(e=error))
         return {"Status": "Error", "Message": error}
     except Exception as e:
         logger.error("Exception occurred while reading asset metadata from s3")
@@ -135,7 +135,7 @@ def delete_s3_objects(keys):
         )
     except ClientError as e:
         error = e.response['Error']['Message']
-        logger.info("Exception occurred while deleting asset metadata from s3: {e}".format(e=error))
+        logger.error("Exception occurred while deleting asset metadata from s3: {e}".format(e=error))
         return {"Status": "Error", "Message": error}
     except Exception as e:
         logger.error("Exception occurred while deleting asset metadata from s3")
@@ -187,9 +187,9 @@ def index():
     """ Test the API endpoint
 
     Returns:
-        
+
     .. code-block:: python
-        
+
         {"hello":"world"}
 
     Raises:
@@ -208,7 +208,7 @@ def version():
 
     .. code-block:: python
 
-        {"ApiVersion": "vx.x.x", "FrameworkVersion": "vx.x.x"}
+        {"ApiVersion": "x.x.x", "FrameworkVersion": "vx.x.x"}
     """
     versions = {"ApiVersion": api_version, "FrameworkVersion": framework_version}
     return versions
@@ -321,19 +321,21 @@ def create_asset():
 
         {
             "Input": {
-                "S3Bucket": "{somenbucket}",
-                "S3Key": "{somekey}"
+                "MediaType": "{media type}",
+                "S3Bucket": "{source bucket}",
+                "S3Key": "{source key}"
             }
         }
 
     Returns:
-        A dict containing the asset id and the location of the media object in the dataplane.
+        A dict containing the asset id and the Amazon S3 bucket and key describing where its media file was sourced from.
          .. code-block:: python
 
             {
                 "AssetId": asset_id,
-                "S3Bucket": dataplane_s3_bucket,
-                "S3Key": key
+                "MediaType": media_type,
+                "S3Bucket": source_bucket,
+                "S3Key": source_key
             }
     Raises:
         ChaliceViewError - 500
@@ -353,6 +355,7 @@ def create_asset():
     # check required inputs
 
     try:
+        media_type = asset['Input']['MediaType']
         source_key = asset['Input']['S3Key']
         source_bucket = asset['Input']['S3Bucket']
     except KeyError as e:
@@ -379,36 +382,6 @@ def create_asset():
     else:
         logger.info("Created asset directory structure: {directory}".format(directory=directory))
 
-    # build key for new s3 object
-
-    new_key = directory + 'input' + '/' + source_key
-
-    # Move input media into newly created dataplane s3 directory.
-
-    try:
-        # copy input media from upload/ to private/assets/[asset_id]/input/
-        s3_client.copy_object(
-            Bucket=dataplane_s3_bucket,
-            Key=new_key,
-            CopySource={'Bucket': source_bucket, 'Key': source_key}
-        )
-        # remove input media from upload/
-        s3_client.delete_object(
-            Bucket=source_bucket,
-            Key=source_key
-        )
-    except ClientError as e:
-        error = e.response['Error']['Message']
-        logger.error("Exception occurred during asset creation: {e}".format(e=error))
-        raise ChaliceViewError("Unable to move uploaded media to the dataplane bucket: {e}".format(e=error))
-    except Exception as e:
-        logger.error("Exception occurred during asset creation: {e}".format(e=e))
-        raise ChaliceViewError("Exception when moving s3 object for asset: {e}".format(e=e))
-    else:
-        logger.info("Moved input media into dataplane bucket: {key}".format(key=new_key))
-
-    # build ddb item of the asset
-
     ts = str(datetime.datetime.now().timestamp())
 
     try:
@@ -416,8 +389,9 @@ def create_asset():
         table.put_item(
             Item={
                 "AssetId": asset_id,
-                "S3Bucket": dataplane_s3_bucket,
-                "S3Key": new_key,
+                "MediaType": media_type,
+                "S3Bucket": source_bucket,
+                "S3Key": source_key,
                 "Created": ts
             }
         )
@@ -430,7 +404,7 @@ def create_asset():
         raise ChaliceViewError("Exception when creating dynamo item for asset: {e}".format(e=e))
     else:
         logger.info("Completed asset creation for asset: {asset}".format(asset=asset_id))
-        return {"AssetId": asset_id, "S3Bucket": dataplane_s3_bucket, "S3Key": new_key}
+        return {"AssetId": asset_id, "MediaType": media_type, "S3Bucket": source_bucket, "S3Key": source_key}
 
 
 @app.route('/metadata/{asset_id}', cors=True, methods=['POST'], authorizer=authorizer)
@@ -714,7 +688,7 @@ def get_asset_metadata(asset_id):
             #  entire request vs. a page for a specific operator
             if "Item" in asset_item:
                 asset_attributes = asset_item["Item"]
-                global_attributes = ['S3Key', 'S3Bucket', 'AssetId', 'Created']
+                global_attributes = ['MediaType', 'S3Key', 'S3Bucket', 'AssetId', 'Created']
                 remaining_attributes = list(set(asset_attributes.keys()) - set(global_attributes))
                 remaining = []
 
@@ -731,6 +705,13 @@ def get_asset_metadata(asset_id):
 
                 else:
                     for attr in remaining_attributes:
+                        # Ignore the attributes used for checkout/checkin
+                        if attr == "Locked":
+                            continue
+                        if attr == "LockedAt":
+                            continue
+                        if attr == "LockedBy":
+                            continue
                         attr_name = attr
                         attr_pointer = asset_attributes[attr_name][0]["pointer"]
                         remaining.append({attr_name: attr_pointer})
@@ -916,6 +897,165 @@ def get_asset_metadata_operator(asset_id, operator_name):
         return response
 
 
+@app.route('/checkout/{asset_id}', cors=True, methods=['POST'], authorizer=authorizer)
+def lock_asset(asset_id):
+    """
+    Adds LockedAt and LockedBy attributes to an asset item in the Dataplane table.
+    This is intended to help applications implement mutual exclusion between users that
+    can modify asset data.
+
+    Body:
+
+    .. code-block:: python
+
+        {
+            "LockedBy": "{some_user_id}"
+        }
+
+    Returns:
+
+        Dictionary of lock info added to the asset.
+
+        .. code-block:: python
+
+            {
+                "AssetId": asset_id,
+                "LockedBy": user_name,
+                "LockedAt": timestamp
+            }
+
+    Raises:
+        BadRequestError - 400
+        ChaliceViewError - 500
+    """
+    asset = asset_id
+    user_name = (json.loads(app.current_request.raw_body.decode())['LockedBy'])
+    timestamp = int(datetime.datetime.now().timestamp())
+
+    try:
+        logger.info("Attempting to record a lock for asset {asset} by user {user_name} at time {timestamp}".format(asset=asset, user_name=user_name, timestamp=timestamp))
+        response = dynamo_client.update_item(
+            TableName=dataplane_table_name,
+            Key={'AssetId': {'S': asset}},
+            UpdateExpression='set Locked = :locked, LockedBy = :lockedby, LockedAt = :timestamp',
+            ExpressionAttributeValues={':locked': {'S': 'true'}, ':lockedby': {'S': user_name}, ':timestamp': {'N': str(timestamp)}},
+            ConditionExpression='attribute_not_exists(LockedBy) and attribute_not_exists(LockedAt)'
+        )
+        logger.info("Update item response code: " + str(response['ResponseMetadata']['HTTPStatusCode']))
+    except ClientError as e:
+        error = e.response['Error']['Message']
+        logger.error("Exception occurred during request to lock asset: {e}".format(e=error))
+        raise ChaliceViewError("Unable to lock asset: {e}".format(e=error))
+    except Exception as e:
+        logger.error("Exception locking asset {e}".format(e=e))
+        raise ChaliceViewError("Exception: {e}".format(e=e))
+    else:
+        logger.info("Successfully recorded lock for asset {asset} by user {user_name} at time {timestamp}".format(asset=asset, user_name=user_name, timestamp=timestamp))
+        return {'AssetId': asset, 'LockedBy': user_name, 'LockedAt': timestamp}
+
+
+@app.route('/checkin/{asset_id}', cors=True, methods=['POST'], authorizer=authorizer)
+def unlock_asset(asset_id):
+    """
+    Removes LockedAt and LockedBy attributes from an asset item in the Dataplane table.
+    This is intended to help applications implement mutual exclusion between users that
+    can modify asset data.
+
+    Returns:
+
+        Unlocked asset {asset}
+
+    Raises:
+        BadRequestError - 400
+        ChaliceViewError - 500
+    """
+    asset = asset_id
+
+    try:
+        logger.info("Attempting to remove lock attributes for asset {asset}".format(asset=asset))
+        response = dynamo_client.update_item(
+            TableName=dataplane_table_name,
+            Key={'AssetId': {'S': asset}},
+            UpdateExpression='remove Locked, LockedAt, LockedBy',
+            ConditionExpression='attribute_exists(Locked) and attribute_exists(LockedBy) and attribute_exists(LockedAt)'
+        )
+        logger.info("Update item response code: " + str(response['ResponseMetadata']['HTTPStatusCode']))
+    except ClientError as e:
+        error = e.response['Error']['Message']
+        logger.error("Exception occurred during request to unlock asset: {e}".format(e=error))
+        raise ChaliceViewError("Unable to unlock asset: {e}".format(e=error))
+    except Exception as e:
+        logger.error("Exception unlocking asset {e}".format(e=e))
+        raise ChaliceViewError("Exception: {e}".format(e=e))
+    else:
+        logger.info("Successfully removed lock attributes for asset {asset}".format(asset=asset))
+        return "Unlocked asset {asset}".format(asset=asset)
+
+
+@app.route('/checkouts', cors=True, methods=['GET'], authorizer=authorizer)
+def list_all_locked_assets():
+    """
+    Returns:
+        Dict containing a list of all locked assets with their corresponding LockedBy, LockedAt, and AssetId attributes. The list returns empty if no assets have been locked.
+
+        .. code-block:: python
+            {
+                "locks": [
+                {'LockedAt': 1641411425}, 'AssetId': 'e69ba549-34f3-46f4-882c-6dafc3d74ca6'}, 'LockedBy': 'user1@example.com'}},
+                {'LockedAt': 1641411742}, 'AssetId': '1c745641-d9fd-4634-949b-34c9d4b3d847'}, 'LockedBy': 'user2@example.com'}},
+                ...
+                ]
+            }
+    Raises:
+        ChaliceViewError - 500
+    """
+
+    logging.info("Returning a list of all locked assets")
+    table_name = dataplane_table_name
+
+    try:
+        # Get every row indexed by the GSI.
+        #
+        #   A scan would be more efficient than query here since the query 
+        #   has to evaluate the KeyConditionExpression for every row but we've opted 
+        #   to use query in order to predispose software developers looking here for code  
+        #   samples, to use query instead of scan, since query is generally more efficient 
+        #   than scan.
+        #
+        # response = dynamo_client.scan(
+        #     TableName=table_name,
+        #     IndexName="LockIndex"
+        # )
+        response = dynamo_client.query(
+            TableName=table_name,
+            IndexName="LockIndex",
+            KeyConditionExpression='Locked=:locked',
+            ExpressionAttributeValues={":locked": {"S": "true"}}
+        )
+        data = response['Items']
+    except ClientError as e:
+        error = e.response['Error']['Message']
+        logger.error("Exception occurred during request to list locked assets: {e}".format(e=error))
+        raise ChaliceViewError("Unable to list locked assets: {e}".format(e=error))
+    except Exception as e:
+        logger.error("Exception listing locked assets {e}".format(e=e))
+        raise ChaliceViewError("Exception: {e}".format(e=e))
+    else:
+        locks = []
+        if len(data) > 0:
+            logger.info("Retrieved " + str(len(data)) + " locked assets from the dataplane.")
+            for item in data:
+                locks.append({
+                    "AssetId": item['AssetId'].get('S'),
+                    "LockedBy": item['LockedBy'].get('S'),
+                    "LockedAt": item['LockedAt'].get('N')
+                })
+            logger.info(str(locks))
+        else:
+            logger.info("There are no locked assets.")
+        return {"locks": locks}
+
+
 @app.route('/metadata', cors=True, methods=['GET'], authorizer=authorizer)
 def list_all_assets():
     """
@@ -1066,7 +1206,7 @@ def delete_asset(asset_id):
             logger.error("Exception occurred during request to delete asset: {e}".format(e=e))
             raise ChaliceViewError("Unable to delete asset: {e}".format(e=e))
         else:
-            global_attributes = ['S3Key', 'S3Bucket', 'AssetId', 'Created']
+            global_attributes = ['MediaType', 'S3Key', 'S3Bucket', 'AssetId', 'Created']
             remaining_attributes = list(set(attributes_to_delete.keys()) - set(global_attributes))
 
             # Build list of all s3 objects that the asset had pointers to

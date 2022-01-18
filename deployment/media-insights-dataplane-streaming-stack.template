@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: "Media Insights Engine - Analytics Streaming pipeline from the Dataplane DynamoDB Stream"
+Description: "aws-media-insights-engine version %%VERSION%%. This AWS CloudFormation template defines resources for the analytics streaming pipeline."
 
 Parameters:
   KinesisShardCount:
@@ -19,7 +19,7 @@ Mappings:
   SourceCode:
     General:
       RegionalS3Bucket: "%%REGIONAL_BUCKET_NAME%%"
-      CodeKeyPrefix: "media_insights_engine/%%VERSION%%"
+      CodeKeyPrefix: "aws-media-insights-engine/%%VERSION%%"
 
 Resources:
 # kinesis data stream
@@ -39,6 +39,13 @@ Resources:
 
   DynamoDBStreamingFunction:
     Type: "AWS::Lambda::Function"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       Handler: "stream.lambda_handler"
       Role: !GetAtt LambdaStreamRole.Arn
@@ -54,7 +61,7 @@ Resources:
               "ddbstream.zip",
             ],
           ]
-      Runtime: "python3.7"
+      Runtime: "python3.9"
       Environment:
         Variables:
           StreamName: !Ref AnalyticsStream
@@ -124,7 +131,8 @@ Resources:
                   - "logs:CreateLogGroup"
                   - "logs:CreateLogStream"
                   - "logs:PutLogEvents"
-                Resource: "*"
+                Resource:
+                  - "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*-DynamoDBStream*"
       Tags:
         - Key: "environment"
           Value: "mie"

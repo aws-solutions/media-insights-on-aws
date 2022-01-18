@@ -1,4 +1,4 @@
-# Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 import os
@@ -40,10 +40,12 @@ def lambda_handler(event, context):
         response = transcribe.get_transcription_job(
             TranscriptionJobName=job_id
         )
+        source_language = response['TranscriptionJob']['LanguageCode']
+        print("get_transcription_job response:")
         print(response)
     except Exception as e:
         operator_object.update_workflow_status("Error")
-        operator_object.add_workflow_metadata(TranscribeError=str(e), TranscribeJobId=job_id)
+        operator_object.add_workflow_metadata(TranscribeError=str(e), TranscribeJobId=job_id, )
         raise MasExecutionError(operator_object.return_output_object())
     else:
         if response["TranscriptionJob"]["TranscriptionJobStatus"] == "IN_PROGRESS":
@@ -71,7 +73,7 @@ def lambda_handler(event, context):
             print(text_only_transcript)
 
             dataplane = DataPlane()
-            s3 = boto3.client('s3')
+            s3 = boto3.client('s3', config=config)
 
             transcript_storage_path = dataplane.generate_media_storage_path(asset_id, workflow_id)
 
@@ -93,7 +95,11 @@ def lambda_handler(event, context):
             else:
                 if metadata_upload['Status'] == 'Success':
                     operator_object.add_media_object('Text', metadata_upload['Bucket'], metadata_upload['Key'])
-                    operator_object.add_workflow_metadata(TranscribeJobId=job_id)
+                    # The source language may be user-specified or auto-detected by
+                    # Transcribe. Either way, pass it to downstream operators as
+                    # workflow metadata.
+                    operator_object.add_workflow_metadata(TranscribeJobId=job_id,TranscribeSourceLanguage=source_language)
+
                     operator_object.update_workflow_status("Complete")
                     return operator_object.return_output_object()
                 else:

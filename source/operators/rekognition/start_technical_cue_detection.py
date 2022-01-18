@@ -1,4 +1,4 @@
-# Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 ###############################################################################
@@ -56,8 +56,12 @@ def start_technical_cue_detection(bucket, key):
 def lambda_handler(event, context):
     print("We got the following event:\n", event)
     try:
-        s3bucket = event["Input"]["Media"]["ProxyEncode"]["S3Bucket"]
-        s3key = event["Input"]["Media"]["ProxyEncode"]["S3Key"]
+        if "ProxyEncode" in event["Input"]["Media"]:
+            s3bucket = event["Input"]["Media"]["ProxyEncode"]["S3Bucket"]
+            s3key = event["Input"]["Media"]["ProxyEncode"]["S3Key"]
+        elif "Video" in event["Input"]["Media"]:
+            s3bucket = event["Input"]["Media"]["Video"]["S3Bucket"]
+            s3key = event["Input"]["Media"]["Video"]["S3Key"]
         workflow_id = str(event["WorkflowExecutionId"])
         asset_id = event['AssetId']
     except Exception:

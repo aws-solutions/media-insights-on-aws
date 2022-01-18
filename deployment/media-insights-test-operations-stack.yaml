@@ -1,11 +1,11 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Media Insights Engine - Test operators, stages, and workflows
+Description: "aws-media-insights-engine version %%VERSION%%. This AWS CloudFormation template  provisions operators, stages, and workflows used for testing the Media Insights Engine"
 
 Parameters:
   WorkflowCustomResourceArn:
     Type: String
     Description: "ARN of the Media Insights custom resource that handles creating operations, stages and workflows"
-  MediaInsightsEnginePython37Layer:
+  MediaInsightsEnginePython39Layer:
     Type: String
     Description: "ARN of the Media Insights lambda layer that contains basic python dependencies for boto3, chalice, control plane and dataplane"
   DataplaneEndpoint:
@@ -20,7 +20,7 @@ Mappings:
     SourceCode:
         General:
             RegionalS3Bucket: "%%REGIONAL_BUCKET_NAME%%"
-            CodeKeyPrefix: "media_insights_engine/%%VERSION%%"
+            CodeKeyPrefix: "aws-media-insights-engine/%%VERSION%%"
 
 Resources:
 
@@ -69,6 +69,13 @@ Resources:
 
   VideoSyncOKLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       FunctionName: !Sub "${AWS::StackName}-video-sync-ok"
       Handler: test.video_sync_ok_lambda_handler
@@ -76,13 +83,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
         - TestExecutionRole
         - Arn
-      Runtime: python3.7
+      Runtime: python3.9
       Timeout: 900
       Environment:
         Variables:
@@ -94,6 +101,13 @@ Resources:
 
   VideoSyncFailLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       FunctionName: !Sub "${AWS::StackName}-video-sync-fail"
       Handler: test.video_sync_fail_lambda_handler
@@ -101,13 +115,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
         - TestExecutionRole
         - Arn
-      Runtime: python3.7
+      Runtime: python3.9
       Timeout: 900
       Environment:
         Variables:
@@ -119,6 +133,13 @@ Resources:
 
   VideoAsyncOKLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       FunctionName: !Sub "${AWS::StackName}-video-async-ok"
       Handler: test.video_async_ok_lambda_handler
@@ -126,13 +147,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
         - TestExecutionRole
         - Arn
-      Runtime: python3.7
+      Runtime: python3.9
       Timeout: 900
       Environment:
         Variables:
@@ -144,6 +165,13 @@ Resources:
 
   VideoAsyncOKMonitorLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       FunctionName: !Sub "${AWS::StackName}-video-async-ok-monitor"
       Handler: test.video_async_ok_monitor_lambda_handler
@@ -151,13 +179,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
         - TestExecutionRole
         - Arn
-      Runtime: python3.7
+      Runtime: python3.9
       Timeout: 900
       Environment:
         Variables:
@@ -169,6 +197,13 @@ Resources:
 
   VideoAsyncFailMonitorLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       FunctionName: !Sub "${AWS::StackName}-video-async-fail-monitor"
       Handler: test.video_async_fail_monitor_lambda_handler
@@ -176,13 +211,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
         - TestExecutionRole
         - Arn
-      Runtime: python3.7
+      Runtime: python3.9
       Timeout: 900
       Environment:
         Variables:
@@ -194,6 +229,13 @@ Resources:
 
   AudioSyncOKLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       FunctionName: !Sub "${AWS::StackName}-audio-sync-ok"
       Handler: test.audio_sync_ok_lambda_handler
@@ -201,13 +243,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
         - TestExecutionRole
         - Arn
-      Runtime: python3.7
+      Runtime: python3.9
       Timeout: 900
       Environment:
         Variables:
@@ -219,6 +261,13 @@ Resources:
 
   AudioAsyncOKLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       FunctionName: !Sub "${AWS::StackName}-audio-async-ok"
       Handler: test.audio_async_ok_lambda_handler
@@ -226,13 +275,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
         - TestExecutionRole
         - Arn
-      Runtime: python3.7
+      Runtime: python3.9
       Timeout: 900
       Environment:
         Variables:
@@ -244,6 +293,13 @@ Resources:
 
   AudioAsyncOKMonitorLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       FunctionName: !Sub "${AWS::StackName}-audio-async-ok-monitor"
       Handler: test.audio_async_ok_monitor_lambda_handler
@@ -251,13 +307,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
         - TestExecutionRole
         - Arn
-      Runtime: python3.7
+      Runtime: python3.9
       Timeout: 900
       Environment:
         Variables:
@@ -269,6 +325,13 @@ Resources:
 
   ImageSyncOKLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       FunctionName: !Sub "${AWS::StackName}-image-sync-ok"
       Handler: test.image_sync_ok_lambda_handler
@@ -276,13 +339,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
         - TestExecutionRole
         - Arn
-      Runtime: python3.7
+      Runtime: python3.9
       Timeout: 900
       Environment:
         Variables:
@@ -294,6 +357,13 @@ Resources:
 
   ImageAsyncOKLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       FunctionName: !Sub "${AWS::StackName}-image-async-ok"
       Handler: test.image_async_ok_lambda_handler
@@ -301,13 +371,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
         - TestExecutionRole
         - Arn
-      Runtime: python3.7
+      Runtime: python3.9
       Timeout: 900
       Environment:
         Variables:
@@ -319,6 +389,13 @@ Resources:
 
   ImageAsyncOKMonitorLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       FunctionName: !Sub "${AWS::StackName}-image-async-ok-monitor"
       Handler: test.image_async_ok_monitor_lambda_handler
@@ -326,13 +403,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
         - TestExecutionRole
         - Arn
-      Runtime: python3.7
+      Runtime: python3.9
       Timeout: 900
       Environment:
         Variables:
@@ -344,6 +421,13 @@ Resources:
 
   TextSyncOKLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       FunctionName: !Sub "${AWS::StackName}-text-sync-ok"
       Handler: test.text_sync_ok_lambda_handler
@@ -351,13 +435,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
         - TestExecutionRole
         - Arn
-      Runtime: python3.7
+      Runtime: python3.9
       Timeout: 900
       Environment:
         Variables:
@@ -369,6 +453,13 @@ Resources:
 
   TextAsyncOKLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       FunctionName: !Sub "${AWS::StackName}-text-async-ok"
       Handler: test.text_async_ok_lambda_handler
@@ -376,13 +467,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
         - TestExecutionRole
         - Arn
-      Runtime: python3.7
+      Runtime: python3.9
       Timeout: 900
       Environment:
         Variables:
@@ -394,6 +485,13 @@ Resources:
 
   TextAsyncOKMonitorLambda:
     Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "This Lambda function does not need to access any resource provisioned within a VPC."
+          - id: W92
+            reason: "This function does not require performance optimization, so the default concurrency limits suffice."
     Properties:
       FunctionName: !Sub "${AWS::StackName}-text-async-ok-monitor"
       Handler: test.text_async_ok_monitor_lambda_handler
@@ -401,13 +499,13 @@ Resources:
         S3Bucket: !Join [ "-", [ !FindInMap [ "SourceCode", "General", "RegionalS3Bucket" ], Ref: "AWS::Region" ] ]
         S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "CodeKeyPrefix"],  "test_operations.zip"]]
       Layers:
-        - !Ref "MediaInsightsEnginePython37Layer"
+        - !Ref "MediaInsightsEnginePython39Layer"
       MemorySize: 256
       Role:
         Fn::GetAtt:
         - TestExecutionRole
         - Arn
-      Runtime: python3.7
+      Runtime: python3.9
       Timeout: 900
       Environment:
         Variables:

@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Upgrade python runtimes for lambda functions from python 3.8 to 3.9. (#647)
 * Support encryption options for the create_parallel_data function in Amazon Transcribe (#599). This change altered the Workflow API in a way that is not backwards compatible.
-
+* Relocate MIE lambda layers (#676)
 
 ## [3.0.4] - 2021-11-8
 

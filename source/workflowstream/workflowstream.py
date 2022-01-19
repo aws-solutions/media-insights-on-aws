@@ -2,16 +2,27 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import os
+import time
+import logging
 import boto3
 # need to use simplejson as the std lib json package cannot handle float values
 import simplejson as json
-from botocore import config
+from botocore.client import ClientError
+from botocore.config import Config
 from boto3.dynamodb.types import TypeDeserializer
+
+formatter = logging.Formatter('{%(pathname)s:%(lineno)d} %(levelname)s - %(message)s')
+handler = logging.StreamHandler()
+handler.setFormatter(formatter)
+
+logger = logging.getLogger('boto3')
+logger.setLevel(logging.INFO)
+logger.addHandler(handler)
 
 serializer = TypeDeserializer()
 
 mie_config = json.loads(os.environ['botoConfig'])
-config = config.Config(**mie_config)
+config = Config(**mie_config)
 
 topic_arn = os.environ['TOPIC_ARN']
 sns = boto3.client('sns', config=config)
@@ -27,25 +38,26 @@ def deserialize(data):
             return {k: deserialize(v) for k, v in data.items()}
     else:
         return data
-        
-print('Loading function')
-
 
 def lambda_handler(event, context):
-        
-    for i,record in enumerate(event["Records"]):
-        print(i)
-        
+
+    for record in event["Records"]:
+
         deserialized_record = deserialize(record["dynamodb"])
-        print(deserialized_record)
-        
+        logger.info(f"Received event: {deserialized_record}")
+
         event_type = record["eventName"]
+
         if event_type == "MODIFY":
+            logger.info("event_type == MODIFY: Checking workflow status")
+            timestamp = time.time()
             old = deserialized_record["OldImage"]
             new = deserialized_record["NewImage"]
-            
+
             if new["Status"] != old["Status"]:
+                logger.info("Workflow status was changed: Creating message for SNS publishing")
                 message = {}
+                message["EventTimestamp"] = timestamp
                 message["Id"] = old["Id"]
                 message["AssetId"] = old["AssetId"]
                 message["Status"] = new["Status"]
@@ -53,17 +65,21 @@ def lambda_handler(event, context):
                 message["Configuration"] = new["Configuration"]
                 message["Created"] = new["Created"]
                 #message["StateMachineExecutionArn"] = new["StateMachineExecutionArn"]
-                print("Send an SNS - this is big news!")
-                print(message)
-                response = sns.publish(
-                    TargetArn=topic_arn,
-                    Message=json.dumps({'default': json.dumps(message)}),
-                    MessageStructure='json'
-                )
-            print("Nothing to put into stream")
+                logger.info(f"Publishing the following message: {message}")
+                try:
+                    response = sns.publish(
+                        TargetArn=topic_arn,
+                        Message=json.dumps({'default': json.dumps(message)}),
+                        MessageStructure='json'
+                    )
+                except ClientError as e:
+                    error = e.response['Error']['Message']
+                    logger.error(f"Exception occurred while publishing message to SNS: {error}")
+                else:
+                    logger.info(f"Successfully published message to SNS: {response}")
+            else:
+                logger.info("Workflow status was not changed: Nothing to do")
         if event_type == "INSERT":
-            
-            print("event_type == INSERT: Nothing to do")
+            logger.info("event_type == INSERT: Nothing to do")
         if event_type == "REMOVE":
-            
-            print("event_type == REMOVE: Nothing to do")
+            logger.info("event_type == REMOVE: Nothing to do")

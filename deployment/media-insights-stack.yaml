@@ -1896,3 +1896,8 @@ Outputs:
     Value: !FindInMap ["SourceCode", "General", "FrameworkVersion"]
     Export:
       Name: !Join [":", [!Ref "AWS::StackName", Version]]
+  SNSTopicArn:
+    Description: SNS Topic for workflow execution events
+    Value: !Ref WorkflowExecutionEventTopic
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", WorkflowExecSNSTopicArn]]

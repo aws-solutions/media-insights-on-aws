@@ -13,7 +13,7 @@ MIE has been successfully used in a variety of scenarios, such as:
 
 For additional details and sample use cases, refer to [How to Rapidly Prototype Multimedia Applications on AWS with the Media Insights Engine](https://aws.amazon.com/blogs/media/how-to-rapidly-prototype-multimedia-applications-on-aws-with-the-media-insights-engine/) on the AWS Media blog.
 
-This repository contains the MIE back-end framework. Users interact with MIE through REST APIs or by invoking MIE Lambda functions directly. You will not find a graphical user interface (GUI) in this repository, but a reference application for MIE that includes a GUI is in the [Media Insights](https://github.com/awslabs/aws-media-insights) repository. 
+This repository contains the MIE back-end framework. Users interact with MIE through REST APIs or by invoking MIE Lambda functions directly. You will not find a graphical user interface (GUI) in this repository, but a reference application for MIE that includes a GUI is in the [Content Analysis](https://github.com/aws-solutions/aws-content-analysis) repository. 
 
 # Install
 
@@ -21,9 +21,9 @@ You can deploy MIE in your AWS account with the following Cloud Formation templa
 
 Region| Launch
 ------|-----
-US East (N. Virginia) | [![Launch in us-east-1](docs/assets/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-east-1.s3.amazonaws.com/aws-media-insights-engine/v4.0.0/media-insights-stack.template)
-US West (Oregon) | [![Launch in us-west-2](docs/assets/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=mie&templateURL=https://rodeolabz-us-west-2.s3.us-west-2.amazonaws.com/aws-media-insights-engine/v4.0.0/media-insights-stack.template)
-EU West (Ireland) | [![Launch in eu-west-1](docs/assets/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks/new?stackName=mie&templateURL=https://rodeolabz-eu-west-1.s3.eu-west-1.amazonaws.com/aws-media-insights-engine/v4.0.0/media-insights-stack.template)
+US East (N. Virginia) | [![Launch in us-east-1](docs/assets/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=mie&templateURL=https://solutions-reference.s3.amazonaws.com/aws-media-insights-engine/latest/media-insights-stack.template)
+US West (Oregon) | [![Launch in us-west-2](docs/assets/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=mie&templateURL=https://solutions-reference.s3.amazonaws.com/aws-media-insights-engine/latest/media-insights-stack.template)
+EU West (Ireland) | [![Launch in eu-west-1](docs/assets/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks/new?stackName=mie&templateURL=https://solutions-reference.s3.amazonaws.com/aws-media-insights-engine/latest/media-insights-stack.template)
 
 The Cloud Formation options for these one-click deploys are described in the [installation parameters](#installation-parameters) section.
 
@@ -79,7 +79,7 @@ These cost estimates are based on workflows processing live action videos 10 min
 
 The Cloud Formation stack name for MIE must be 12 or fewer characters long. This will ensure all the resources in MIE stack remain under the maximum length allowed by Cloud Formation.
 
-MIE does not inherently limit media attributes such as file size or video duration. Those limitations depend on the services used in user-defined workflows. For example, if a workflow uses Amazon Rekognition, then that workflow will be subject to the limitations listed in the [guidelines and quotas for Amazon Rekognition](https://docs.aws.amazon.com/rekognition/latest/dg/limits.html).
+MIE does not inherently limit media attributes such as file size or video duration. Those limitations depend on the services used in user-defined workflows. For example, if an MIE workflow uses Amazon Rekognition, then that workflow will be subject to the limitations listed in the [guidelines and quotas for Amazon Rekognition](https://docs.aws.amazon.com/rekognition/latest/dg/limits.html). For those who use  the Amazon Rekognition service within MIE workflows, be aware about [use cases that involve public safety](https://docs.aws.amazon.com/rekognition/latest/dg/considerations-public-safety-use-cases.html) and the general [AWS Service Terms](https://aws.amazon.com/service-terms/).
 
 # Architecture Overview
 
@@ -200,6 +200,10 @@ MIE uses AWS_IAM to authorize REST API requests. The following screenshot shows 
 <img src="docs/assets/images/sample_postman.png" width=600>
 
 For more information, see the [Implementation Guide](IMPLEMENTATION_GUIDE.md#step-6-test-your-new-workflow-and-operator).
+
+### S3 Macie
+
+Amazon Macie can help you discover and protect sensitive data in AWS. If your MIE use-case generates and stores sensitive data to Amazon S3, we recommend that you enable Amazon Macie on the MIE Dataplane Amazon S3 bucket.
 
 # Uninstall
 

@@ -705,6 +705,13 @@ def get_asset_metadata(asset_id):
 
                 else:
                     for attr in remaining_attributes:
+                        # Ignore the attributes used for checkout/checkin
+                        if attr == "Locked":
+                            continue
+                        if attr == "LockedAt":
+                            continue
+                        if attr == "LockedBy":
+                            continue
                         attr_name = attr
                         attr_pointer = asset_attributes[attr_name][0]["pointer"]
                         remaining.append({attr_name: attr_pointer})
@@ -888,6 +895,165 @@ def get_asset_metadata_operator(asset_id, operator_name):
             response = {"asset_id": asset_id, "operator": operator_name, "results": page_data}
 
         return response
+
+
+@app.route('/checkout/{asset_id}', cors=True, methods=['POST'], authorizer=authorizer)
+def lock_asset(asset_id):
+    """
+    Adds LockedAt and LockedBy attributes to an asset item in the Dataplane table.
+    This is intended to help applications implement mutual exclusion between users that
+    can modify asset data.
+
+    Body:
+
+    .. code-block:: python
+
+        {
+            "LockedBy": "{some_user_id}"
+        }
+
+    Returns:
+
+        Dictionary of lock info added to the asset.
+
+        .. code-block:: python
+
+            {
+                "AssetId": asset_id,
+                "LockedBy": user_name,
+                "LockedAt": timestamp
+            }
+
+    Raises:
+        BadRequestError - 400
+        ChaliceViewError - 500
+    """
+    asset = asset_id
+    user_name = (json.loads(app.current_request.raw_body.decode())['LockedBy'])
+    timestamp = int(datetime.datetime.now().timestamp())
+
+    try:
+        logger.info("Attempting to record a lock for asset {asset} by user {user_name} at time {timestamp}".format(asset=asset, user_name=user_name, timestamp=timestamp))
+        response = dynamo_client.update_item(
+            TableName=dataplane_table_name,
+            Key={'AssetId': {'S': asset}},
+            UpdateExpression='set Locked = :locked, LockedBy = :lockedby, LockedAt = :timestamp',
+            ExpressionAttributeValues={':locked': {'S': 'true'}, ':lockedby': {'S': user_name}, ':timestamp': {'N': str(timestamp)}},
+            ConditionExpression='attribute_not_exists(LockedBy) and attribute_not_exists(LockedAt)'
+        )
+        logger.info("Update item response code: " + str(response['ResponseMetadata']['HTTPStatusCode']))
+    except ClientError as e:
+        error = e.response['Error']['Message']
+        logger.error("Exception occurred during request to lock asset: {e}".format(e=error))
+        raise ChaliceViewError("Unable to lock asset: {e}".format(e=error))
+    except Exception as e:
+        logger.error("Exception locking asset {e}".format(e=e))
+        raise ChaliceViewError("Exception: {e}".format(e=e))
+    else:
+        logger.info("Successfully recorded lock for asset {asset} by user {user_name} at time {timestamp}".format(asset=asset, user_name=user_name, timestamp=timestamp))
+        return {'AssetId': asset, 'LockedBy': user_name, 'LockedAt': timestamp}
+
+
+@app.route('/checkin/{asset_id}', cors=True, methods=['POST'], authorizer=authorizer)
+def unlock_asset(asset_id):
+    """
+    Removes LockedAt and LockedBy attributes from an asset item in the Dataplane table.
+    This is intended to help applications implement mutual exclusion between users that
+    can modify asset data.
+
+    Returns:
+
+        Unlocked asset {asset}
+
+    Raises:
+        BadRequestError - 400
+        ChaliceViewError - 500
+    """
+    asset = asset_id
+
+    try:
+        logger.info("Attempting to remove lock attributes for asset {asset}".format(asset=asset))
+        response = dynamo_client.update_item(
+            TableName=dataplane_table_name,
+            Key={'AssetId': {'S': asset}},
+            UpdateExpression='remove Locked, LockedAt, LockedBy',
+            ConditionExpression='attribute_exists(Locked) and attribute_exists(LockedBy) and attribute_exists(LockedAt)'
+        )
+        logger.info("Update item response code: " + str(response['ResponseMetadata']['HTTPStatusCode']))
+    except ClientError as e:
+        error = e.response['Error']['Message']
+        logger.error("Exception occurred during request to unlock asset: {e}".format(e=error))
+        raise ChaliceViewError("Unable to unlock asset: {e}".format(e=error))
+    except Exception as e:
+        logger.error("Exception unlocking asset {e}".format(e=e))
+        raise ChaliceViewError("Exception: {e}".format(e=e))
+    else:
+        logger.info("Successfully removed lock attributes for asset {asset}".format(asset=asset))
+        return "Unlocked asset {asset}".format(asset=asset)
+
+
+@app.route('/checkouts', cors=True, methods=['GET'], authorizer=authorizer)
+def list_all_locked_assets():
+    """
+    Returns:
+        Dict containing a list of all locked assets with their corresponding LockedBy, LockedAt, and AssetId attributes. The list returns empty if no assets have been locked.
+
+        .. code-block:: python
+            {
+                "locks": [
+                {'LockedAt': 1641411425}, 'AssetId': 'e69ba549-34f3-46f4-882c-6dafc3d74ca6'}, 'LockedBy': 'user1@example.com'}},
+                {'LockedAt': 1641411742}, 'AssetId': '1c745641-d9fd-4634-949b-34c9d4b3d847'}, 'LockedBy': 'user2@example.com'}},
+                ...
+                ]
+            }
+    Raises:
+        ChaliceViewError - 500
+    """
+
+    logging.info("Returning a list of all locked assets")
+    table_name = dataplane_table_name
+
+    try:
+        # Get every row indexed by the GSI.
+        #
+        #   A scan would be more efficient than query here since the query 
+        #   has to evaluate the KeyConditionExpression for every row but we've opted 
+        #   to use query in order to predispose software developers looking here for code  
+        #   samples, to use query instead of scan, since query is generally more efficient 
+        #   than scan.
+        #
+        # response = dynamo_client.scan(
+        #     TableName=table_name,
+        #     IndexName="LockIndex"
+        # )
+        response = dynamo_client.query(
+            TableName=table_name,
+            IndexName="LockIndex",
+            KeyConditionExpression='Locked=:locked',
+            ExpressionAttributeValues={":locked": {"S": "true"}}
+        )
+        data = response['Items']
+    except ClientError as e:
+        error = e.response['Error']['Message']
+        logger.error("Exception occurred during request to list locked assets: {e}".format(e=error))
+        raise ChaliceViewError("Unable to list locked assets: {e}".format(e=error))
+    except Exception as e:
+        logger.error("Exception listing locked assets {e}".format(e=e))
+        raise ChaliceViewError("Exception: {e}".format(e=e))
+    else:
+        locks = []
+        if len(data) > 0:
+            logger.info("Retrieved " + str(len(data)) + " locked assets from the dataplane.")
+            for item in data:
+                locks.append({
+                    "AssetId": item['AssetId'].get('S'),
+                    "LockedBy": item['LockedBy'].get('S'),
+                    "LockedAt": item['LockedAt'].get('N')
+                })
+            logger.info(str(locks))
+        else:
+            logger.info("There are no locked assets.")
+        return {"locks": locks}
 
 
 @app.route('/metadata', cors=True, methods=['GET'], authorizer=authorizer)

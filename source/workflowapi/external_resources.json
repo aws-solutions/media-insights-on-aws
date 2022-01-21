@@ -39,44 +39,48 @@
       "Description": "Table used to store workflow resource history"
     },
     "StageExecutionQueueUrl": {
-        "Type": "String",
-        "Description": "Queue used to post stage executions for processing"
+      "Type": "String",
+      "Description": "Queue used to post stage executions for processing"
+    },
+    "StepFunctionLogGroupArn": {
+      "Type": "String",
+      "Description": "ARN of the log group used for logging step functions with Cloudwatch"
     },
     "StageExecutionRole": {
-        "Type": "String",
-        "Description": "ARN of the role used to execute a stage state machine"
+      "Type": "String",
+      "Description": "ARN of the role used to execute a stage state machine"
     },
     "OperationTableName": {
-        "Type": "String",
-        "Description": "Table used to store operations"
+      "Type": "String",
+      "Description": "Table used to store operations"
     },
     "CompleteStageLambdaArn": {
-        "Type": "String",
-        "Description": "Lambda that completes execution of a stage"
+      "Type": "String",
+      "Description": "Lambda that completes execution of a stage"
     },
     "FilterOperationLambdaArn": {
-        "Type": "String",
-        "Description": "Lambda that checks if an operation should execute"
+      "Type": "String",
+      "Description": "Lambda that checks if an operation should execute"
     },
     "WorkflowSchedulerLambdaArn": {
-            "Type": "String",
-            "Description": "Lambda that schedules workflows from the work queue"
-            },
+      "Type": "String",
+      "Description": "Lambda that schedules workflows from the work queue"
+    },
     "DataplaneEndpoint": {
-        "Type": "String",
-        "Description": "Rest endpoint for the dataplane"
+      "Type": "String",
+      "Description": "Rest endpoint for the dataplane"
     },
     "DataplaneHandlerArn": {
-        "Type": "String",
-        "Description": "Arn for the dataplane lambda handler"
+      "Type": "String",
+      "Description": "Arn for the dataplane lambda handler"
     },
     "DataPlaneBucket": {
-        "Type": "String",
-        "Description": "S3 bucket of the dataplane"
+      "Type": "String",
+      "Description": "S3 bucket of the dataplane"
     },
     "OperatorFailedHandlerLambdaArn": {
-        "Type": "String",
-        "Description": "Lambda that handles failed operator states"
+      "Type": "String",
+      "Description": "Lambda that handles failed operator states"
     },
     "SqsQueueArn": {
       "Type": "String",
@@ -119,11 +123,11 @@
               "Version": "2012-10-17",
               "Statement": [
                 {
-                    "Effect": "Allow",
-                    "Action": [
-                      "sqs:SendMessage"
-                    ],
-                    "Resource": {"Ref": "SqsQueueArn"}
+                  "Effect": "Allow",
+                  "Action": [
+                    "sqs:SendMessage"
+                  ],
+                  "Resource": {"Ref": "SqsQueueArn"}
                 },
                 {
                   "Effect": "Allow",
@@ -172,6 +176,7 @@
                   "Action": [
                     "dynamodb:GetItem",
                     "dynamodb:PutItem",
+                    "dynamodb:UpdateItem",
                     "dynamodb:DeleteItem",
                     "dynamodb:Scan",
                     "dynamodb:Query"
@@ -189,11 +194,11 @@
                 {
                   "Effect": "Allow",
                   "Action": [
-                      "xray:PutTraceSegments",
-                      "xray:PutTelemetryRecords"
+                    "xray:PutTraceSegments",
+                    "xray:PutTelemetryRecords"
                   ],
                   "Resource": [
-                      "*"
+                    "*"
                   ]
                 },
                 {
@@ -364,61 +369,64 @@
         "Runtime": "python3.9",
         "Environment": {
           "Variables": {
-                "botoConfig": {
-                  "Ref": "botoConfig"
-                },
-                "STACK_SHORT_UUID": {
-                  "Ref": "ShortUUID"
-                },
-                "SYSTEM_TABLE_NAME": {
-                        "Ref":"SystemTableName"
-                },
-                "WORKFLOW_TABLE_NAME": {
-                        "Ref":"WorkflowTableName"
-                },
-                "WORKFLOW_EXECUTION_TABLE_NAME": {
-                        "Ref":"WorkflowExecutionTableName"
-                },
-                "HISTORY_TABLE_NAME": {
-                        "Ref":"HistoryTableName"
-                },
-                "STAGE_TABLE_NAME": {
-                        "Ref":"StageTableName"
-                },
-                "STAGE_EXECUTION_QUEUE_URL": {
-                        "Ref":"StageExecutionQueueUrl"
-                },
-                "OPERATION_TABLE_NAME": {
-                        "Ref":"OperationTableName"
-                },
-                "COMPLETE_STAGE_LAMBDA_ARN": {
-                        "Ref":"CompleteStageLambdaArn"
-                },
-                "FILTER_OPERATION_LAMBDA_ARN": {
-                        "Ref":"FilterOperationLambdaArn"
-                },
-                "WORKFLOW_SCHEDULER_LAMBDA_ARN": {
-                        "Ref":"WorkflowSchedulerLambdaArn"
-                },
-                "STAGE_EXECUTION_ROLE": {
-                        "Ref" : "StageExecutionRole"
-                },
-                "DataplaneEndpoint": {
-                    "Ref": "DataplaneEndpoint"
-                },
-                "DATAPLANE_BUCKET": {
-                    "Ref": "DataPlaneBucket"
-                },
-                "OPERATOR_FAILED_LAMBDA_ARN": {
-                    "Ref": "OperatorFailedHandlerLambdaArn"
-                }
+            "botoConfig": {
+              "Ref": "botoConfig"
+            },
+            "STACK_SHORT_UUID": {
+              "Ref": "ShortUUID"
+            },
+            "SYSTEM_TABLE_NAME": {
+              "Ref":"SystemTableName"
+            },
+            "WORKFLOW_TABLE_NAME": {
+              "Ref":"WorkflowTableName"
+            },
+            "WORKFLOW_EXECUTION_TABLE_NAME": {
+              "Ref":"WorkflowExecutionTableName"
+            },
+            "HISTORY_TABLE_NAME": {
+              "Ref":"HistoryTableName"
+            },
+            "STAGE_TABLE_NAME": {
+              "Ref":"StageTableName"
+            },
+            "STAGE_EXECUTION_QUEUE_URL": {
+              "Ref":"StageExecutionQueueUrl"
+            },
+            "OPERATION_TABLE_NAME": {
+              "Ref":"OperationTableName"
+            },
+            "COMPLETE_STAGE_LAMBDA_ARN": {
+              "Ref":"CompleteStageLambdaArn"
+            },
+            "FILTER_OPERATION_LAMBDA_ARN": {
+              "Ref":"FilterOperationLambdaArn"
+            },
+            "WORKFLOW_SCHEDULER_LAMBDA_ARN": {
+              "Ref":"WorkflowSchedulerLambdaArn"
+            },
+            "STAGE_EXECUTION_ROLE": {
+              "Ref" : "StageExecutionRole"
+            },
+            "STEP_FUNCTION_LOG_GROUP_ARN": {
+              "Ref" : "StepFunctionLogGroupArn"
+            },
+            "DataplaneEndpoint": {
+              "Ref": "DataplaneEndpoint"
+            },
+            "DATAPLANE_BUCKET": {
+              "Ref": "DataPlaneBucket"
+            },
+            "OPERATOR_FAILED_LAMBDA_ARN": {
+              "Ref": "OperatorFailedHandlerLambdaArn"
             }
+          }
         },
         "Layers": [
           {
             "Ref": "MediaInsightsEnginePython39Layer"
-            }
-          ],
+          }
+        ],
         "Tracing": {"Ref": "TracingConfigMode"},
         "CodeUri": {"Bucket":  {"Ref": "DeploymentPackageBucket"}, "Key":  {"Ref": "DeploymentPackageKey"}}
       }
@@ -442,65 +450,68 @@
         "Runtime": "python3.9",
         "Environment": {
           "Variables": {
-                "botoConfig": {
-                  "Ref": "botoConfig"
-                },
-                "STACK_SHORT_UUID": {
-                  "Ref": "ShortUUID"
-                },
-                "SYSTEM_TABLE_NAME": {
-                        "Ref":"SystemTableName"
-                },
-                "WORKFLOW_TABLE_NAME": {
-                        "Ref":"WorkflowTableName"
-                },
-                "WORKFLOW_EXECUTION_TABLE_NAME": {
-                        "Ref":"WorkflowExecutionTableName"
-                },
-                "HISTORY_TABLE_NAME": {
-                        "Ref":"HistoryTableName"
-                },
-                "STAGE_TABLE_NAME": {
-                        "Ref":"StageTableName"
-                },
-                "STAGE_EXECUTION_QUEUE_URL": {
-                        "Ref":"StageExecutionQueueUrl"
-                },
-                "OPERATION_TABLE_NAME": {
-                        "Ref":"OperationTableName"
-                },
-                "COMPLETE_STAGE_LAMBDA_ARN": {
-                        "Ref":"CompleteStageLambdaArn"
-                },
-                "FILTER_OPERATION_LAMBDA_ARN": {
-                        "Ref":"FilterOperationLambdaArn"
-                },
-                "WORKFLOW_SCHEDULER_LAMBDA_ARN": {
-                        "Ref":"WorkflowSchedulerLambdaArn"
-                },
-                "STAGE_EXECUTION_ROLE": {
-                        "Ref" : "StageExecutionRole"
-                },
-                "DataplaneEndpoint": {
-                    "Ref": "DataplaneEndpoint"
-                },
-                "DATAPLANE_BUCKET": {
-                    "Ref": "DataPlaneBucket"
-                },
-                "OPERATOR_FAILED_LAMBDA_ARN": {
-                    "Ref": "OperatorFailedHandlerLambdaArn"
-                },
-                "FRAMEWORK_VERSION": {
-                  "Ref": "FrameworkVersion"
-                }
+            "botoConfig": {
+              "Ref": "botoConfig"
+            },
+            "STACK_SHORT_UUID": {
+              "Ref": "ShortUUID"
+            },
+            "SYSTEM_TABLE_NAME": {
+              "Ref":"SystemTableName"
+            },
+            "WORKFLOW_TABLE_NAME": {
+              "Ref":"WorkflowTableName"
+            },
+            "WORKFLOW_EXECUTION_TABLE_NAME": {
+              "Ref":"WorkflowExecutionTableName"
+            },
+            "HISTORY_TABLE_NAME": {
+              "Ref":"HistoryTableName"
+            },
+            "STAGE_TABLE_NAME": {
+              "Ref":"StageTableName"
+            },
+            "STAGE_EXECUTION_QUEUE_URL": {
+              "Ref":"StageExecutionQueueUrl"
+            },
+            "OPERATION_TABLE_NAME": {
+              "Ref":"OperationTableName"
+            },
+            "COMPLETE_STAGE_LAMBDA_ARN": {
+              "Ref":"CompleteStageLambdaArn"
+            },
+            "FILTER_OPERATION_LAMBDA_ARN": {
+              "Ref":"FilterOperationLambdaArn"
+            },
+            "WORKFLOW_SCHEDULER_LAMBDA_ARN": {
+              "Ref":"WorkflowSchedulerLambdaArn"
+            },
+            "STAGE_EXECUTION_ROLE": {
+              "Ref" : "StageExecutionRole"
+            },
+            "STEP_FUNCTION_LOG_GROUP_ARN": {
+              "Ref" : "StepFunctionLogGroupArn"
+            },
+            "DataplaneEndpoint": {
+              "Ref": "DataplaneEndpoint"
+            },
+            "DATAPLANE_BUCKET": {
+              "Ref": "DataPlaneBucket"
+            },
+            "OPERATOR_FAILED_LAMBDA_ARN": {
+              "Ref": "OperatorFailedHandlerLambdaArn"
+            },
+            "FRAMEWORK_VERSION": {
+              "Ref": "FrameworkVersion"
             }
+          }
         },
         "Tracing": {"Ref": "TracingConfigMode"},
         "Layers": [
           {
             "Ref": "MediaInsightsEnginePython39Layer"
-            }
-          ],
+          }
+        ],
         "CodeUri": {"Bucket":  {"Ref": "DeploymentPackageBucket"}, "Key":  {"Ref": "DeploymentPackageKey"}}
       }
     }

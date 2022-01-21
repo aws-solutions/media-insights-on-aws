@@ -117,6 +117,13 @@
                 {
                   "Effect": "Allow",
                   "Action": [
+                    "dynamodb:Query"
+                  ],
+                  "Resource": {"Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${DataplaneTableName}/index/LockIndex"}
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
                       "xray:PutTraceSegments",
                       "xray:PutTelemetryRecords"
                   ],

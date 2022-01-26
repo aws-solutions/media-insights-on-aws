@@ -28,6 +28,10 @@ Parameters:
     AllowedValues:
       - Yes
       - No
+  CmkId:
+    Description: The alias, ARN, or key ID of an existing KMS CMK to use for encryption (optional). If not provided MIE will provision an encryption key for you.
+    Type: String
+    Default: ""
   ExternalBucketArn:
     Description: (Optional) If you intend to input media files from a bucket outside the MIE stack into MIE workflows, then specify the Amazon S3 ARN for those files here.
     Type: String
@@ -69,6 +73,10 @@ Conditions:
   DeployAnalyticsPipelineCondition: !Equals [!Ref DeployAnalyticsPipeline, Yes]
   EnableTraceOnEntryPoints: !Equals [!Ref EnableXrayTrace, Yes]
   EnableAnonymousData: !Equals [ !Ref SendAnonymousData, Yes]
+  CreateCmk: !Not 
+    - !Equals 
+      - !Ref CmkId
+      - ''
 
 Mappings:
   SourceCode:
@@ -80,6 +88,140 @@ Mappings:
       FrameworkVersion: "%%VERSION%%"
 
 Resources:
+  # Encryption
+  MieKey:
+    Type: 'AWS::KMS::Key'
+    Condition: CreateCmk
+    Properties:
+      Description: MIE provided KMS key for encryption
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+          Action: 'kms:*'
+          Resource: '*'
+        - Effect: Allow
+          Principal:
+              AWS: '*'
+          Action:
+            - 'kms:Encrypt'
+            - 'kms:Decrypt'
+            - 'kms:ReEncrypt*'
+            - 'kms:GenerateDataKey*'
+            - 'kms:CreateGrant'
+            - 'kms:ListGrants'
+            - 'kms:DescribeKey'
+          Resource: '*'
+          Condition:
+            StringEquals:
+              'kms:CallerAccount': !Ref 'AWS::AccountId'
+              'kms:ViaService': !Sub 's3.${AWS::Region}.amazonaws.com'
+        - Effect: Allow
+          Principal:
+              AWS: '*'
+          Action:
+            - 'kms:Encrypt'
+            - 'kms:Decrypt'
+            - 'kms:ReEncrypt*'
+            - 'kms:GenerateDataKey*'
+            - 'kms:CreateGrant'
+            - 'kms:ListGrants'
+            - 'kms:DescribeKey'
+          Resource: '*'
+          Condition:
+            StringEquals:
+              'kms:CallerAccount': !Ref 'AWS::AccountId'
+              'kms:ViaService': !Sub 'sns.${AWS::Region}.amazonaws.com'
+        - Effect: Allow
+          Principal:
+              AWS: '*'
+          Action:
+            - 'kms:Encrypt'
+            - 'kms:Decrypt'
+            - 'kms:ReEncrypt*'
+            - 'kms:GenerateDataKey*'
+            - 'kms:CreateGrant'
+            - 'kms:ListGrants'
+            - 'kms:DescribeKey'
+          Resource: '*'
+          Condition:
+            StringEquals:
+              'kms:CallerAccount': !Ref 'AWS::AccountId'
+              'kms:ViaService': !Sub 'dynamodb.${AWS::Region}.amazonaws.com'
+        - Effect: Allow
+          Principal:
+              AWS: '*'
+          Action:
+            - 'kms:Encrypt'
+            - 'kms:Decrypt'
+            - 'kms:ReEncrypt*'
+            - 'kms:GenerateDataKey*'
+            - 'kms:CreateGrant'
+            - 'kms:ListGrants'
+            - 'kms:DescribeKey'
+          Resource: '*'
+          Condition:
+            StringEquals:
+              'kms:CallerAccount': !Ref 'AWS::AccountId'
+              'kms:ViaService': !Sub 'sqs.${AWS::Region}.amazonaws.com'
+        - Effect: Allow
+          Principal:
+              AWS: '*'
+          Action:
+            - 'kms:Encrypt'
+            - 'kms:Decrypt'
+            - 'kms:ReEncrypt*'
+            - 'kms:GenerateDataKey*'
+            - 'kms:CreateGrant'
+            - 'kms:ListGrants'
+            - 'kms:DescribeKey'
+          Resource: '*'
+          Condition:
+            StringEquals:
+              'kms:CallerAccount': !Ref 'AWS::AccountId'
+              'kms:ViaService': !Sub 'comprehend.${AWS::Region}.amazonaws.com'
+        - Effect: Allow
+          Principal:
+              AWS: '*'
+          Action:
+            - 'kms:Encrypt'
+            - 'kms:Decrypt'
+            - 'kms:ReEncrypt*'
+            - 'kms:GenerateDataKey*'
+            - 'kms:CreateGrant'
+            - 'kms:ListGrants'
+            - 'kms:DescribeKey'
+          Resource: '*'
+          Condition:
+            StringEquals:
+              'kms:CallerAccount': !Ref 'AWS::AccountId'
+              'kms:ViaService': !Sub 'rekognition.${AWS::Region}.amazonaws.com'
+        - Effect: Allow
+          Principal:
+              AWS: '*'
+          Action:
+            - 'kms:Encrypt'
+            - 'kms:Decrypt'
+            - 'kms:ReEncrypt*'
+            - 'kms:GenerateDataKey*'
+            - 'kms:CreateGrant'
+            - 'kms:ListGrants'
+            - 'kms:DescribeKey'
+          Resource: '*'
+          Condition:
+            StringEquals:
+              'kms:CallerAccount': !Ref 'AWS::AccountId'
+              'kms:ViaService': !Sub 'kinesisanalytics.${AWS::Region}.amazonaws.com'
+  
+  MieKeyAlias:
+    Type: 'AWS::KMS::Alias'
+    Condition: CreateCmk
+    Properties:
+      AliasName: alias/mie
+      TargetKeyId: !Ref MieKey
+
   # Helper function - create a short UUID to avoid name conflicts
   MieHelperFunction:
     Type: AWS::Lambda::Function
@@ -686,6 +828,7 @@ Resources:
         PointInTimeRecoveryEnabled: true
       SSESpecification:
         SSEEnabled: true
+        KMSMasterKeyId: !If [CreateCmk, !Ref MieKeyAlias, !Ref CmkId]
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: Name
@@ -710,6 +853,7 @@ Resources:
         PointInTimeRecoveryEnabled: true
       SSESpecification:
         SSEEnabled: true
+        KMSMasterKeyId: !If [CreateCmk, !Ref MieKeyAlias, !Ref CmkId]
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: Name
@@ -734,6 +878,7 @@ Resources:
         PointInTimeRecoveryEnabled: true
       SSESpecification:
         SSEEnabled: true
+        KMSMasterKeyId: !If [CreateCmk, !Ref MieKeyAlias, !Ref CmkId]
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: Name
@@ -758,6 +903,7 @@ Resources:
         PointInTimeRecoveryEnabled: true
       SSESpecification:
         SSEEnabled: true
+        KMSMasterKeyId: !If [CreateCmk, !Ref MieKeyAlias, !Ref CmkId]
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: Name
@@ -782,6 +928,7 @@ Resources:
         PointInTimeRecoveryEnabled: true
       SSESpecification:
         SSEEnabled: true
+        KMSMasterKeyId: !If [CreateCmk, !Ref MieKeyAlias, !Ref CmkId]
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: Id
@@ -810,6 +957,7 @@ Resources:
         PointInTimeRecoveryEnabled: true
       SSESpecification:
         SSEEnabled: true
+        KMSMasterKeyId: !If [CreateCmk, !Ref MieKeyAlias, !Ref CmkId]
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: Id
@@ -853,6 +1001,7 @@ Resources:
         PointInTimeRecoveryEnabled: true
       SSESpecification:
         SSEEnabled: true
+        KMSMasterKeyId: !If [CreateCmk, !Ref MieKeyAlias, !Ref CmkId]
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: AssetId
@@ -892,6 +1041,7 @@ Resources:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
               SSEAlgorithm: AES256
+              KMSMasterKeyId: !If [CreateCmk, !Ref MieKeyAlias, !Ref CmkId]
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -929,6 +1079,7 @@ Resources:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
               SSEAlgorithm: AES256
+              KMSMasterKeyId: !If [CreateCmk, !Ref MieKeyAlias, !Ref CmkId]
       LoggingConfiguration:
         DestinationBucketName: !Ref DataplaneLogsBucket
         LogFilePrefix: "access_logs/"
@@ -971,7 +1122,7 @@ Resources:
   WorkflowExecutionEventTopic:
     Type: 'AWS::SNS::Topic'
     Properties:
-      KmsMasterKeyId: "alias/aws/sns"
+      KMSMasterKeyId: !If [CreateCmk, !Ref MieKeyAlias, !Ref CmkId]
 
   WorkflowExecutionEventTopicPolicy:
     Type: 'AWS::SNS::TopicPolicy'
@@ -1006,7 +1157,7 @@ Resources:
             - WorkflowExecutionLambdaDeadLetterQueue
             - Arn
         maxReceiveCount: 1 # Don't retry if stage times out
-      KmsMasterKeyId: "alias/aws/sqs"
+      KMSMasterKeyId: !If [CreateCmk, !Ref MieKeyAlias, !Ref CmkId]
 
   SqsQueuePolicy:
     Type: AWS::SQS::QueuePolicy
@@ -1046,7 +1197,7 @@ Resources:
     Properties:
       QueueName: !Sub "${AWS::StackName}-WorkflowExecLambdaDLQ"
       MessageRetentionPeriod: 43200 # #Maximum, 12 hours in seconds.
-      KmsMasterKeyId: "alias/aws/sqs"
+      KMSMasterKeyId: !If [CreateCmk, !Ref MieKeyAlias, !Ref CmkId]
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1056,7 +1207,7 @@ Resources:
     Properties:
       QueueName: !Sub "${AWS::StackName}-StageExecDLQ"
       MessageRetentionPeriod: 43200 # #Maximum, 12 hours in seconds.
-      KmsMasterKeyId: "alias/aws/sqs"
+      KMSMasterKeyId: !If [CreateCmk, !Ref MieKeyAlias, !Ref CmkId]
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1073,7 +1224,7 @@ Resources:
             - StageExecutionDeadLetterQueue
             - Arn
         maxReceiveCount: 1 # Don't retry if stage times out
-      KmsMasterKeyId: "alias/aws/sqs"
+      KMSMasterKeyId: !If [CreateCmk, !Ref MieKeyAlias, !Ref CmkId]
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1634,6 +1785,7 @@ Resources:
             - StreamArn
         DynamoTableArn: !GetAtt DataplaneTable.Arn
         botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/', !Ref "SolutionVersion", '"}']]
+        KmsId: KMSMasterKeyId: !If [CreateCmk, !Ref MieKeyAlias, !Ref CmkId]
 
   # Workflow creation and execution API
   MediaInsightsWorkflowApi:
@@ -1732,6 +1884,7 @@ Resources:
         CheckWaitOperationLambda: !GetAtt CheckWaitOperationLambda.Arn
         MediaConvertEndpoint: !GetAtt GetMediaConvertEndpoint.Data
         Boto3UserAgent: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/', !Ref "SolutionVersion", '"}']]
+        KmsId: KMSMasterKeyId: !If [CreateCmk, !Ref MieKeyAlias, !Ref CmkId]
 
   TestResources:
     Condition: DeployTestResourcesCondition

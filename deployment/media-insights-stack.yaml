@@ -528,6 +528,11 @@ Resources:
             reason: "Log group data is encrypted by default in CloudWatch"        
     Properties:
       RetentionInDays: 14
+      LogGroupName:
+        'Fn::Join':
+          - "-"
+          - - !Sub "/aws/vendedlogs/states/${AWS::StackName}-StepFunctionLogGroup"
+            - !GetAtt GetShortUUID.Data
       Tags:
         - Key: "environment"
           Value: "mie"

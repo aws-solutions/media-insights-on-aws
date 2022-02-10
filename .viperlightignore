@@ -15,7 +15,8 @@ docs/assets/images/MIE-architecture-diagram.pptx
 .github/workflows/release-workflow.yml:45
 .github/workflows/release-workflow.yml:46
 .github/workflows/release-workflow.yml:261
-.github/workflows/release-workflow.yml:365
+.github/workflows/release-workflow.yml:349
+.github/workflows/release-workflow.yml:366
 .github/workflows/release-workflow.yml:382
 .github/workflows/scheduled-workflow.yml:19
 .github/workflows/scheduled-workflow.yml:20

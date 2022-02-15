@@ -85,6 +85,7 @@ Resources:
     Type: 'AWS::KMS::Key'
     Properties:
       Description: MIE provided KMS key for encryption
+      EnableKeyRotation: true
       KeyPolicy:
         Version: '2012-10-17'
         Statement:

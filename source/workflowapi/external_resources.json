@@ -257,7 +257,8 @@
                 {
                   "Effect": "Allow",
                   "Action": [
-                    "kms:Decrypt"
+                    "kms:Decrypt",
+                    "kms:GenerateDataKey"
                   ],
                   "Resource": {"Fn::Sub": "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}"}
                 }

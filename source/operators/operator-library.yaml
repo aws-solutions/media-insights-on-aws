@@ -205,6 +205,10 @@ Resources:
                 Action:
                   - "kms:Decrypt"
                   - 'kms:GenerateDataKey'
+                  - "kms:Encrypt"
+                  - "kms:ReEncrypt*"
+                  - "kms:GenerateDataKey*"
+                  - "kms:DescribeKey"
                 Resource: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}"
       Tags:
         - Key: "environment"
@@ -271,6 +275,10 @@ Resources:
                 Action:
                   - "kms:Decrypt"
                   - 'kms:GenerateDataKey'
+                  - "kms:Encrypt"
+                  - "kms:ReEncrypt*"
+                  - "kms:GenerateDataKey*"
+                  - "kms:DescribeKey"
                 Resource: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}"
       Tags:
         - Key: "environment"
@@ -623,7 +631,8 @@ Resources:
               - Effect: Allow
                 Action:
                   - "kms:Decrypt"
-                  - 'kms:GenerateDataKey'
+                  - "kms:CreateGrant"
+                  - "kms:GenerateDatakey"
                 Resource: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}"
       Tags:
         - Key: "environment"
@@ -727,7 +736,8 @@ Resources:
               - Effect: Allow
                 Action:
                   - "kms:Decrypt"
-                  - 'kms:GenerateDataKey'
+                  - "kms:CreateGrant"
+                  - "kms:GenerateDatakey"
                 Resource: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}"
       Tags:
         - Key: "environment"

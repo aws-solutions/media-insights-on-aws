@@ -139,19 +139,6 @@ Resources:
               'aws:SourceAccount': !Ref 'AWS::AccountId'
         - Effect: Allow
           Principal:
-              Service: 'comprehend.amazonaws.com'
-          Action:
-            - 'kms:Encrypt'
-            - 'kms:Decrypt'
-            - 'kms:ReEncrypt*'
-            - 'kms:GenerateDataKey*'
-            - 'kms:DescribeKey'
-          Resource: '*'
-          Condition:
-            StringEquals:
-              'aws:SourceAccount': !Ref 'AWS::AccountId'
-        - Effect: Allow
-          Principal:
               Service: 'rekognition.amazonaws.com'
           Action:
             - 'kms:Encrypt'

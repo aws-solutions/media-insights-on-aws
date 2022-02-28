@@ -151,6 +151,7 @@ def lambda_handler(event, context):
     try:
         if identify_language:
             transcribe_job_config['IdentifyLanguage'] = True
+            del transcribe_job_config["LanguageCode"]
         # Run the transcribe job.
         # The ** operator converts the job config dict to keyword arguments.
         response = transcribe.start_transcription_job(**transcribe_job_config)

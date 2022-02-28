@@ -38,7 +38,7 @@ class WebCaptions:
         :param event: The event passed in to the operator
 
         """
-        print("WebCaptions operator_object = {}".format(operator_object))
+        print("WebCaptions operator_object = {}".format(operator_object.return_output_object()))
         self.operator_object = operator_object
 
         try:
@@ -59,6 +59,8 @@ class WebCaptions:
 
             if "TranscribeSourceLanguage" in self.operator_object.input['MetaData']:
                 self.source_language_code = self.operator_object.input['MetaData']['TranscribeSourceLanguage'].split('-')[0]
+            elif "TranslateSourceLanguage" in self.operator_object.input['MetaData']:
+                self.source_language_code = self.operator_object.input['MetaData']['TranslateSourceLanguage'].split('-')[0]
             else:
                 # If TranscribeSourceLanguage is not available, then SourceLanguageCode
                 # must be present in the operator Configuration block.
@@ -475,29 +477,37 @@ class WebCaptions:
                     else:
                         print("Using parallel data_names {}".format(parallel_data_name))
 
-                # Save the delimited transcript text to S3
-                response = translate_client.start_text_translation_job(
-                    JobName=job_name,
-                    InputDataConfig={
+                translation_job_config = {
+                    "JobName": job_name,
+                    "InputDataConfig": {
                         'S3Uri': translation_input_uri,
                         'ContentType': self.contentType
                     },
-                    OutputDataConfig={
+                    "OutputDataConfig": {
                         'S3Uri': translation_output_uri
                     },
-                    DataAccessRoleArn=translate_role,
-                    SourceLanguageCode=sourceLanguageCode,
-                    TargetLanguageCodes=singletonTargetList,
-                    TerminologyNames=terminology_name,
-                    ParallelDataNames=parallel_data_name
-                )
+                    "DataAccessRoleArn": translate_role,
+                    "SourceLanguageCode": sourceLanguageCode,
+                    "TargetLanguageCodes": singletonTargetList,
+                    "TerminologyNames": terminology_name,
+                }
+                current_region = os.environ['AWS_REGION']
+                # Include Parallel Data configuration when running in a region where
+                # Active Custom Translation is available. Reference:
+                # https://docs.aws.amazon.com/translate/latest/dg/customizing-translations-parallel-data.html
+                active_custom_translation_supported_regions = ['us-east-1', 'us-west-2', 'eu-west-1']
+                if current_region in active_custom_translation_supported_regions:
+                    translation_job_config["ParallelDataNames"] = parallel_data_name
+
+            # Save the delimited transcript text to S3
+                response = translate_client.start_text_translation_job(**translation_job_config)
                 jobinfo = {
                     "JobId": response["JobId"],
                     "TargetLanguageCode": targetLanguageCode
                 }
                 translate_jobs.append(jobinfo)
 
-                self.operator_object.add_workflow_metadata(TextTranslateJobPropertiesList=translate_jobs)
+                self.operator_object.add_workflow_metadata(TextTranslateJobPropertiesList=translate_jobs, TranslateSourceLanguage=sourceLanguageCode)
         except Exception as e:
             self.operator_object.update_workflow_status("Error")
             self.operator_object.add_workflow_metadata(TranslateError="Unable to start translation WebCaptions job: {e}".format(e=str(e)))

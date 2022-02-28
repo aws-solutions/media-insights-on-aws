@@ -47,6 +47,12 @@ Parameters:
   Boto3UserAgent:
     Type: String
     Description: "Boto3 user agent string"
+  KmsKeyId:
+    Type: String
+    Description: "KMS Key ID for encryption"
+  KmsAlias:
+    Type: String
+    Description: "Alias of KMS key"
 
 Conditions:
   AllowAccessToExternalBucket: !Not
@@ -58,7 +64,7 @@ Resources:
     Type: "AWS::SNS::Topic"
     Properties:
       DisplayName: "SNS Role for Rekognition"
-      KmsMasterKeyId: "alias/aws/sns"
+      KmsMasterKeyId: !Ref KmsKeyId
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -107,6 +113,11 @@ Resources:
                   - "xray:PutTraceSegments"
                   - "xray:PutTelemetryRecords"
                 Resource: "*"
+              - Effect: Allow
+                Action:
+                  - "kms:Decrypt"
+                  - 'kms:GenerateDataKey'
+                Resource: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -153,6 +164,11 @@ Resources:
                   - "xray:PutTraceSegments"
                   - "xray:PutTelemetryRecords"
                 Resource: "*"
+              - Effect: Allow
+                Action:
+                  - "kms:Decrypt"
+                  - 'kms:GenerateDataKey'
+                Resource: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -185,6 +201,15 @@ Resources:
                   - "s3:GetObject"
                 Resource: !If ["AllowAccessToExternalBucket", !Sub "${ExternalBucketArn}", !Sub "arn:aws:s3:::${DataPlaneBucket}/*"]
                 Effect: "Allow"
+              - Effect: Allow
+                Action:
+                  - "kms:Decrypt"
+                  - 'kms:GenerateDataKey'
+                  - "kms:Encrypt"
+                  - "kms:ReEncrypt*"
+                  - "kms:GenerateDataKey*"
+                  - "kms:DescribeKey"
+                Resource: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -246,6 +271,15 @@ Resources:
                   - "xray:PutTraceSegments"
                   - "xray:PutTelemetryRecords"
                 Resource: "*"
+              - Effect: Allow
+                Action:
+                  - "kms:Decrypt"
+                  - 'kms:GenerateDataKey'
+                  - "kms:Encrypt"
+                  - "kms:ReEncrypt*"
+                  - "kms:GenerateDataKey*"
+                  - "kms:DescribeKey"
+                Resource: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -308,6 +342,11 @@ Resources:
                   - "xray:PutTraceSegments"
                   - "xray:PutTelemetryRecords"
                 Resource: "*"
+              - Effect: Allow
+                Action:
+                  - "kms:Decrypt"
+                  - 'kms:GenerateDataKey'
+                Resource: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -356,6 +395,11 @@ Resources:
                   - "xray:PutTraceSegments"
                   - "xray:PutTelemetryRecords"
                 Resource: "*"
+              - Effect: Allow
+                Action:
+                  - "kms:Decrypt"
+                  - 'kms:GenerateDataKey'
+                Resource: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -390,6 +434,11 @@ Resources:
                   - "s3:ListBucket"
                 Resource: !Sub "arn:aws:s3:::${DataPlaneBucket}"
                 Effect: "Allow"
+              - Effect: Allow
+                Action:
+                  - "kms:Decrypt"
+                  - 'kms:GenerateDataKey'
+                Resource: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}"
 
   translateRole:
     Type: "AWS::IAM::Role"
@@ -423,7 +472,7 @@ Resources:
                   "translate:TranslateText",
                   "translate:DescribeTextTranslationJob",
                   "translate:StartTextTranslationJob"
-              ]
+                ]
                 # These actions only support Resource: “*”
                 Resource: "*"
                 Effect: "Allow"
@@ -454,6 +503,11 @@ Resources:
                   - "xray:PutTraceSegments"
                   - "xray:PutTelemetryRecords"
                 Resource: "*"
+              - Effect: Allow
+                Action:
+                  - "kms:Decrypt"
+                  - 'kms:GenerateDataKey'
+                Resource: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -524,6 +578,11 @@ Resources:
                   - "xray:PutTraceSegments"
                   - "xray:PutTelemetryRecords"
                 Resource: "*"
+              - Effect: Allow
+                Action:
+                  - "kms:Decrypt"
+                  - 'kms:GenerateDataKey'
+                Resource: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -535,7 +594,7 @@ Resources:
       cfn_nag:
         rules_to_suppress:
           - id: W11
-            reason: "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources. Furthermore, the KMS policy must also apply to all resources because it relates to user-defined KMS keys which cannot be known beforehand."
+            reason: "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources."
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -569,11 +628,12 @@ Resources:
                   - "xray:PutTraceSegments"
                   - "xray:PutTelemetryRecords"
                 Resource: "*"
-              - Effect: "Allow"
+              - Effect: Allow
                 Action:
+                  - "kms:Decrypt"
                   - "kms:CreateGrant"
-                  - "kms:GenerateDataKey"
-                Resource: "*"
+                  - "kms:GenerateDatakey"
+                Resource: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -585,7 +645,7 @@ Resources:
       cfn_nag:
         rules_to_suppress:
           - id: W11
-            reason: "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources. Furthermore, the KMS policy must also apply to all resources because it relates to user-defined KMS keys which cannot be known beforehand."
+            reason: "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources."
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -673,10 +733,12 @@ Resources:
                   - "xray:PutTraceSegments"
                   - "xray:PutTelemetryRecords"
                 Resource: "*"
-              - Effect: "Allow"
+              - Effect: Allow
                 Action:
                   - "kms:Decrypt"
-                Resource: "*"
+                  - "kms:CreateGrant"
+                  - "kms:GenerateDatakey"
+                Resource: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -711,6 +773,11 @@ Resources:
                   - "xray:PutTelemetryRecords"
                 Resource: "*"
                 Effect: "Allow"
+              - Effect: Allow
+                Action:
+                  - "kms:Decrypt"
+                  - 'kms:GenerateDataKey'
+                Resource: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -795,6 +862,11 @@ Resources:
                   - "xray:PutTelemetryRecords"
                 Resource: "*"
                 Effect: "Allow"
+              - Effect: Allow
+                Action:
+                  - "kms:Decrypt"
+                  - 'kms:GenerateDataKey'
+                Resource: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -917,6 +989,7 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           comprehendRole: !GetAtt comprehendS3Role.Arn
           botoConfig: !Ref "Boto3UserAgent"
+          KmsId: !Ref KmsKeyId
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -955,6 +1028,7 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           comprehendRole: !GetAtt comprehendS3Role.Arn
           botoConfig: !Ref "Boto3UserAgent"
+          KmsId: !Ref KmsKeyId
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -993,6 +1067,7 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           comprehendRole: !GetAtt comprehendS3Role.Arn
           botoConfig: !Ref "Boto3UserAgent"
+          KmsId: !Ref KmsKeyId
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1031,6 +1106,7 @@ Resources:
           DataplaneEndpoint: !Ref "DataPlaneEndpoint"
           comprehendRole: !GetAtt comprehendS3Role.Arn
           botoConfig: !Ref "Boto3UserAgent"
+          KmsId: !Ref KmsKeyId
       Tags:
         - Key: "environment"
           Value: "mie"

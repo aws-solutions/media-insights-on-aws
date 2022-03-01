@@ -219,6 +219,7 @@
                     "translate:CreateTerminology",
                     "translate:DeleteTerminology",
                     "translate:GetTerminology",
+                    "mediatailor:ListChannels",
                     "translate:ImportTerminology",
                     "translate:ListTerminologies",
                     "translate:CreateParallelData",

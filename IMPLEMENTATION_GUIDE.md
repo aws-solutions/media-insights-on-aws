@@ -454,6 +454,7 @@ The MIE APIs in Amazon API Gateway require that you authenticate every request w
   * [GET /service/translate/list_parallel_data](#GET-servicetranslatelist_parallel_data)
   * [POST /service/translate/delete_parallel_data](#POST-servicetranslatedelete_parallel_data)
   * [POST /service/translate/create_parallel_data](#POST-servicetranslatecreate_parallel_data)
+  * [GET /service/mediatailor/list_channels](#GET-list_channels)
   * [GET /version](#GET-version)
   * [POST /service/transcribe/describe_language_model](#POST-servicetranscribedescribe_language_model)
   * [GET /service/transcribe/list_language_models](#GET-servicetranscribelist_language_models)
@@ -1586,6 +1587,23 @@ Returns:
   }
 }
 ```
+
+#### `GET /service/mediatailor/list_channels`
+
+Returns a list of MediaTailor channels that are associated with this account.
+
+Returns:
+
+* This is a proxy for boto3 list_channels and returns the output from that SDK method. See the [boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/mediatailor.html#MediaTailor.Client.list_channels) for details.
+
+Sample command:
+
+```
+WORKFLOW_API_ENDPOINT=...
+awscurl -X GET --region us-west-2 $WORKFLOW_API_ENDPOINT/service/mediatailor/list_channels
+```
+
+
 # 8. Troubleshooting
 
 ## How to activate AWS X-Ray request tracing for MIE

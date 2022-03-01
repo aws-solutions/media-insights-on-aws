@@ -2434,6 +2434,26 @@ def update_workflow_execution_status(id, status, message):
 #
 # ================================================================================================
 
+@app.route('/service/mediatailor/list_channels', cors=True, methods=['GET'], authorizer=authorizer)
+def list_channels():
+    """ List all the available AWS Elemental MediaTailor channels in this region.
+
+    Returns:
+        This is a proxy for boto3 MediaTailor list_channels method.
+        It returns a list of MediaTailor channels that are associated with this account.
+        See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/mediatailor.html#MediaTailor.Client.list_channels>`_
+
+    Raises:
+        See the boto3 documentation for details.
+        500: ChaliceViewError - internal server error
+    """
+    
+    mediatailor_client = boto3.client('mediatailor')
+    response = mediatailor_client.list_channels()
+    response_str = json.dumps(response, default=str)
+    return json.loads(response_str)
+    
+
 @app.route('/service/transcribe/get_vocabulary', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
 def get_vocabulary():
     """ Get the description for an Amazon Transcribe custom vocabulary.

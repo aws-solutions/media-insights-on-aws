@@ -2035,3 +2035,13 @@ Outputs:
     Value: !Ref MieKeyAlias
     Export:
       Name: !Join [":", [!Ref "AWS::StackName", MieKMSAlias]]
+  MieSNSTopic:
+    Description: ARN of the MIE SNS Workflow Execution Topic
+    Value: !Ref WorkflowExecutionEventTopic
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", MieSNSTopic]]
+  MieSQSQueue:
+    Description: ARN of the MIE Workflow Execution Queue
+    Value: !GetAtt WorkflowExecutionEventQueue.Arn
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", MieSQSQueue]]

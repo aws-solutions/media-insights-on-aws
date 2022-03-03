@@ -58,7 +58,7 @@ def lambda_handler(event, context):
                 logger.info("Workflow status was changed: Creating message for SNS publishing")
                 message = {}
                 message["EventTimestamp"] = timestamp
-                message["Id"] = old["Id"]
+                message["WorkflowExecutionId"] = old["Id"]
                 message["AssetId"] = old["AssetId"]
                 message["Status"] = new["Status"]
                 message["Globals"] = new["Globals"]

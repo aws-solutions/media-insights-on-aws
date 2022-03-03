@@ -2020,8 +2020,18 @@ Outputs:
     Value: !FindInMap ["SourceCode", "General", "FrameworkVersion"]
     Export:
       Name: !Join [":", [!Ref "AWS::StackName", Version]]
-  SNSTopicArn:
-    Description: SNS Topic for workflow execution events
-    Value: !Ref WorkflowExecutionEventTopic
+  MieKMSArn:
+    Description: ARN of the MIE KMS Key
+    Value: !GetAtt MieKey.Arn
     Export:
-      Name: !Join [":", [!Ref "AWS::StackName", WorkflowExecSNSTopicArn]]
+      Name: !Join [":", [!Ref "AWS::StackName", MieKMSArn]]
+  MieKMSId:
+    Description: ID of the MIE KMS Key
+    Value: !GetAtt MieKey.KeyId
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", MieKMSId]]
+  MieKMSAlias:
+    Description: Alias of the MIE KMS Key
+    Value: !Ref MieKeyAlias
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", MieKMSAlias]]

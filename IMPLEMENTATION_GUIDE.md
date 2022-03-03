@@ -227,18 +227,31 @@ Again, the `my_media_type` variable should be "Video", "Audio", or "Text".
 ### Step 2: Add your operator to the MIE operator library
 ***(Time to complete: 30 minutes)***
 
-This step involves editing the CloudFormation script for deploying the MIE operator library, located at `source/operators/operator-library.yaml`. You need to add new entries for your operator under the following sections:
+*This step involves editing the CloudFormation script for deploying the MIE operator library, located at [`source/operators/operator-library.yaml`](source/operators/operator-library.yaml).*
+
+You need to add new entries for your operator under the following sections:
 
 * `Lambda Functions`
 * `IAM Roles`
 * `Register as operators in the control plane`
 * `Export operator names as outputs`
 
-This step involves editing the CloudFormation script for deploying the MIE operator library, located at [`source/operators/operator-library.yaml`](source/operators/operator-library.yaml).
 
 #### Create the IAM Role resource
 
-Create a CloudFormation IAM resource that will be used to give your Lambda function the appropriate permissions. MIE operators need `AWSLambdaBasicExecutionRole` plus policies for any other AWS resource and services accessed by the Lambda function.
+Create a CloudFormation IAM role resource that will be used to give your Lambda function the appropriate permissions. At minimum, the function needs the `AWSLambdaBasicExecutionRole` policy attached to the IAM role and the following IAM actions granted to the relevant MIE resources, e.g. S3 Bucket, KMS Key, etc. 
+
+* `kms:Decrypt` 
+* `kms:GenerateDataKey`
+* `s3:GetObject`
+* `s3:PutObject`
+* `lambda:InvokeFunction`
+
+*The ARN's for the relevant resources can be obtained from the stack outputs.*
+
+In addition to the minimum set of permissions, you will need to add permissions for any other AWS resource or service accessed by the Lambda function, e.g. Rekognition, Comprehend, etc.
+
+You can see an example of a complete IAM role for an MIE Operator [here](https://github.com/aws-solutions/aws-media-insights-engine/blob/development/source/operators/operator-library.yaml#L74). This can be used as a reference to create from.
 
 #### Create Lambda Function resource
 

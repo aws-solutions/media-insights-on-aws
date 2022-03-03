@@ -24,13 +24,15 @@ Join our Gitter chat at [https://gitter.im/awslabs/aws-media-insights-engine](ht
 
 [5. Implementing a new data stream consumer](#5-implementing-a-new-data-stream-consumer)
 
-[6. Signing API Requests](#6-signing-api-requests)
+[6. Receive workflow executuion events](#6-receive-workflow-execution-events)
 
-[7. API Documentation](#7-api-documentation)
+[7. Signing API Requests](#7-signing-api-requests)
 
-[8. Troubleshooting](#8-troubleshooting)
+[8. API Documentation](#8-api-documentation)
 
-[9. Glossary](#9-glossary)
+[9. Troubleshooting](#9-troubleshooting)
+
+[10. Glossary](#10-glossary)
 
 ## 1. Overview
 This guide describes how to build MIE from source code and how to build applications that use MIE as a back-end for executing multimedia workflows. This guide is intended for software developers who have experience working with the AWS Cloud.
@@ -401,14 +403,80 @@ The data plane provides a change-data-capture (CDC) stream from DynamoDB to comm
 
 For more information about how to implement Kinesis Data Stream consumers in MIE, refer to the [MIE demo application](https://github.com/awslabs/aws-media-insights/blob/master/README.md#advanced-usage), which includes a data stream consumer that feeds Amazon ES.
 
-# 6. Signing API Requests
+# 6. Receive workflow execution events
+
+MIE provides an Amazon SNS Topic and Amazon SQS queue that publish and distribute all workflow execution events (*started, waiting, resumed, error, and completed*). These events can be used to trigger external actions that perform common media workflow tasks, e.g. adding extracted metadata to a media asset management tool.
+
+The simplest way to receive these events is by [creating an AWS Lambda function](https://docs.aws.amazon.com/lambda/latest/dg/getting-started-create-function.html) and adding the MIE `WorkflowExecutionEventQueue` as the [event source](https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html#events-sqs-eventsource).
+
+In addition to the basic permissions required for the Lambda function to operate, you will need to add the following permissions to the function execution role:
+
+  * `sqs:ReceiveMessage`
+  * `sqs:DeleteMessage`
+  * `sqs:GetQueueAttributes`
+  * `kms:Decrypt`
+
+To maintain least privilege design, these permissions should be scoped to the relevant MIE resources, e.g. workflow execution queue and KMS key. These resources can be found in the CloudFormation Stack outputs under the keys `MieSQSQueue` and `MieKMSArn`.
+
+An example workflow execution event is docuemented below:
+
+```
+{
+	"Records": [{
+		"messageId": "ABC1234-56789AB-C1234",
+		"receiptHandle": "ABC123456789ABC1234/pdf",
+		"body": {
+			"Type": "Notification",
+			"MessageId": "ABC-123-456-DEF",
+			"TopicArn": "arn:aws:sns:us-west-2:012345678910:sns1-WorkflowExecutionEventTopic-ABC1183ca00823456789",
+			"Message": {
+				"EventTimestamp": 1646345195.3847969,
+				"WorkflowExecutionId": "92698907-9254-4678-86f9-d036ad4123c1",
+				"AssetId": "8741f942-abbb-4daf-9c5b-50e81bc18e22",
+				"Status": "Started",
+				"Globals": {
+					"MetaData": {},
+					"Media": {
+						"Video": {
+							"S3Bucket": "sns1-dataplane",
+							"S3Key": "upload/sample-video.mp4"
+						}
+					}
+				},
+				"Configuration": {},
+				"Created": "1646345193.497301"
+			},
+			"Timestamp": "2022-03-03T22:06:35.620Z",
+			"SignatureVersion": "1",
+			"Signature": "",
+			"SigningCertURL": "https://sns.us-west-2.amazonaws.com/SimpleNotificationService",
+			"UnsubscribeURL": "https://sns.us-west-2.amazonaws.com/?Action=Unsubscribe&SubscriptionArn=arn:aws:sns:us-west-2:012345678910:sns1-WorkflowExecutionEventTopic"
+		},
+		"attributes": {
+			"ApproximateReceiveCount": "1",
+			"SentTimestamp": "1646345195718",
+			"SenderId": "ABC123456789ABC1234",
+			"ApproximateFirstReceiveTimestamp": "1646345195734"
+		},
+		"messageAttributes": {},
+		"md5OfBody": "ABC123456789ABC1234",
+		"eventSource": "aws:sqs",
+		"eventSourceARN": "arn:aws:sqs:us-west-2:012345678910:sns1-WorkflowExecutionEventQueue-ABC123456789",
+		"awsRegion": "us-west-2"
+	}]
+}
+```
+
+The relevant workflow details are located within the `Message` key under `body`.
+
+# 7. Signing API Requests
 
 The MIE APIs in Amazon API Gateway require that you authenticate every request with the Signature Version 4 signing process. The following two example programs written in Python illustrate how to submit GET and POST requests to the MIE workflow API with Signature Version 4 signing:
 
 * [sigv4_post_sample.py](docs/sigv4_post_sample.py) shows how to start the `CasImageWorkflow` using a Sigv4 signed request to the workflow execution API
 * [sigv4_get_sample.py](docs/sigv4_get_sample.py) shows how to list all workflows using a Sigv4 signed request to the workflow execution API
 
-# 7. API Documentation
+# 8. API Documentation
 
 ## Summary:
 * Data plane API
@@ -1599,7 +1667,7 @@ Returns:
   }
 }
 ```
-# 8. Troubleshooting
+# 9. Troubleshooting
 
 ## How to activate AWS X-Ray request tracing for MIE
 
@@ -1683,7 +1751,7 @@ If you need to perform certain actions in response to workflow errors, then edit
 If an error occurs in the Step Function service that causes the state machine for an MIE workflow to be terminated immediately, then the `Catch` and `Retry` and **OperatorFailed** lambda will not be able to handle the error.  These types of errors can occur in a number of circumstances, such as when the Step Function history limit is exceeded, or the step function has been manually stopped.  Failure to handle these errors will put the workflow in a perpetually `Started` status in the MIE control plane. If this happens then you will need to manually remove the workflow from the `WorkflowExecution` DynamoDB table.
 
 
-# 9. Glossary
+# 10. Glossary
 
 ## Workflow API
 Provides a REST interface to start workflow, create, update and delete workflows and operators, and check the status of executed workflows.

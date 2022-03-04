@@ -63,6 +63,7 @@ if is_aws():
 logger = logging.getLogger('boto3')
 logger.setLevel(logging.INFO)
 
+DATAPLANE_BUCKET = os.environ["DATAPLANE_BUCKET"]
 STACK_SHORT_UUID = os.environ["STACK_SHORT_UUID"]
 SYSTEM_TABLE_NAME = os.environ["SYSTEM_TABLE_NAME"]
 WORKFLOW_TABLE_NAME = os.environ["WORKFLOW_TABLE_NAME"]
@@ -2433,6 +2434,62 @@ def update_workflow_execution_status(id, status, message):
 #  /_/   \_\_/\_/  |____/  |____/ \___|_|    \_/ |_|\___\___| |_|   |_|  \___/_/\_|_|\___|___/
 #
 # ================================================================================================
+
+@app.route('/service/mediatailor/create_channel', cors=True, methods=['POST'], authorizer=authorizer)
+def create_mediatailor_channel():
+    """ Create a MediaTailor channel for the specified assets 
+
+    The Body contains the channel name and an array of s3 locations to be used as VOD sources for a new MediaTailor channel.
+
+    Body:
+
+    .. code-block:: python
+
+        {
+            "channel": {
+                "Name": string
+            },
+            "vod_sources": [
+                {
+                    "s3_uri": string
+                },
+                ...
+            ]
+        }
+
+    Returns:
+        The playback URL for the MediaTailor channel.
+
+        .. code-block:: python
+
+            {
+                "PlaybackUrl": string
+            }
+
+    Raises:
+        200: The MediaTailor channel was created successfully.
+        400: Bad Request - the input was not found or was invalid
+        500: ChaliceViewError - internal server error
+    """
+
+    response = {}
+    params = json.loads(app.current_request.raw_body.decode())
+    logger.info("create_mediatailor_channel request:")
+    logger.info(json.dumps(params))
+
+    # Step 1: Create a source location
+    # Step 2: Add VOD sources to your source location
+    # Step 3: Create a channel
+    # Step 4: Add programs to your channel's schedule
+    #   List all Vod Sources
+    #     For each VOD Source create a new program. 
+    #       create_program()
+    #       schedule the program after the previously created program
+    # Step 5: Start the channel
+
+    logger.info("create_mediatailor_channel response:")
+    logger.info(json.dumps(response))
+    return response
 
 @app.route('/service/mediatailor/list_channels', cors=True, methods=['GET'], authorizer=authorizer)
 def list_channels():

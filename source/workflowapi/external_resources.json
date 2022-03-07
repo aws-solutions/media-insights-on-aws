@@ -97,6 +97,10 @@
     "FrameworkVersion": {
       "Type": "String",
       "Description": "Version of the Media Insights Engine Framework"
+    },
+    "KmsKeyId": {
+      "Type": "String",
+      "Description": "ID of the stack KMS Key"
     }
   },
   "Resources": {
@@ -219,7 +223,6 @@
                     "translate:CreateTerminology",
                     "translate:DeleteTerminology",
                     "translate:GetTerminology",
-                    "mediatailor:ListChannels",
                     "translate:ImportTerminology",
                     "translate:ListTerminologies",
                     "translate:CreateParallelData",
@@ -250,6 +253,14 @@
                   "Resource": {
                     "Ref": "StageExecutionRole"
                   }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "kms:Decrypt",
+                    "kms:GenerateDataKey"
+                  ],
+                  "Resource": {"Fn::Sub": "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}"}
                 }
               ]
             },
@@ -344,6 +355,14 @@
                   "Resource": {
                     "Ref": "StageExecutionRole"
                   }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "kms:Decrypt",
+                    "kms:GenerateDataKey"
+                  ],
+                  "Resource": {"Fn::Sub": "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}"}
                 }
               ]
             }

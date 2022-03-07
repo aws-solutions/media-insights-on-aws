@@ -399,7 +399,7 @@ The data plane stores each item as an object in Amazon S3 and stores their S3 ob
 
 The data plane provides a change-data-capture (CDC) stream from DynamoDB to communicate media analysis data to stream consumers where ETL tasks can transform and load raw data to the downstream data stores that support end-user applications. This CDC stream is provided as a Kinesis Data Stream. The ARN for this is provided as an output called `AnalyticsStreamArn` in the base MIE CloudFormation stack, as shown below:
 
-<img src="docs/assets/images/analytics_stream_output.png" width=400>
+<img src="docs/assets/images/analytics_stream_output.png" width=400 alt="screenshot showing analytics stream in CloudFormation outputs">
 
 For more information about how to implement Kinesis Data Stream consumers in MIE, refer to the [MIE demo application](https://github.com/awslabs/aws-media-insights/blob/master/README.md#advanced-usage), which includes a data stream consumer that feeds Amazon ES.
 
@@ -672,15 +672,39 @@ Returns:
 
 * Dict containing a list of all assets by their asset_id. The list returns empty if no assets have been created.
 
+Sample output:
+
+```
+{"assets":[""66a0a998-c654-4be4-a00b-81f5afac95d5","17fe93d5-8e1f-4c64-b0d6-409d44012bb9","c9a10556-2215-4ca9-a93f-b1e45112b7fd","53d078e0-a746-4164-8660-d544d7d7aadf","3fef5eac-cabc-4cb2-8c28-4b0a6518a32b""]}
+```
+
+Sample command:
+
+```
+DATAPLANE_API_ENDPOINT=...
+awscurl -X GET --region us-west-2 -H "Content-Type: application/json" $DATAPLANE_API_ENDPOINT/metadata
+```
+
 #### `GET /metadata/{asset_id}`
 
-Retrieve metadata for an asset.
+Retrieve all metadata for an asset.
 
 Returns:
 
 * All asset metadata. If the result provides a cursor then you can get the next page by specifying the cursor like this:
 
 `GET /metadata/{asset_id}?cursor={cursor}`
+
+Sample command to get all pages:
+
+```
+ASSET_ID=...
+cursor=$(awscurl -X GET --region us-west-2 -H "Content-Type: application/json" "$DATAPLANE_API_ENDPOINT/metadata/$ASSET_ID" | tee results.txt | jq '.cursor')
+while [ $cursor != null ]; do
+  echo -n '.' 
+  cursor=$(awscurl -X GET --region us-west-2 -H "Content-Type: application/json" "$DATAPLANE_API_ENDPOINT/metadata/$ASSET_ID" | tee -a results.txt | jq '.cursor')
+done
+```
 
 #### `DELETE /metadata/{asset_id}`
 
@@ -743,6 +767,18 @@ Body:
 #### `GET /metadata/{asset_id}/{operator_name}`
 
 Retrieve the metadata that a specific operator created from an asset.
+
+Sample command to get all pages:
+
+```
+ASSET_ID=...
+OPERATOR_NAME=...
+cursor=$(awscurl -X GET --region us-west-2 -H "Content-Type: application/json" "$DATAPLANE_API_ENDPOINT/metadata/$ASSET_ID/$OPERATOR_NAME" | tee results.txt | jq '.cursor')
+while [ $cursor != null ]; do
+  echo -n '.' 
+  cursor=$(awscurl -X GET --region us-west-2 -H "Content-Type: application/json" "$DATAPLANE_API_ENDPOINT/metadata/$ASSET_ID/$OPERATOR_NAME" | tee -a results.txt | jq '.cursor')
+done
+```
 
 #### `GET /version`
 
@@ -887,6 +923,26 @@ Raises:
 * 400: Bad Request - one of the input stages was not found or was invalid
 * 500: Internal server error
 
+Sample command to create a workflow with one stage:
+
+```
+WORKFLOW_API_ENDPOINT=...
+WORKFLOW_NAME=...
+STAGE_1_NAME=...
+awscurl -X POST --region us-west-2 -H "Content-Type: application/json" --data '{"Name":"'$WORKFLOW_NAME'", "StartAt": "'$STAGE_1_NAME'", "Stages": {"'$STAGE_1_NAME'":{"End":true}}}' $WORKFLOW_API_ENDPOINT/workflow
+```
+
+Sample command to create a workflow with three stages:
+
+```
+WORKFLOW_API_ENDPOINT=...
+WORKFLOW_NAME=...
+STAGE_1_NAME=...
+STAGE_2_NAME=...
+STAGE_3_NAME=...
+awscurl -X POST --region us-west-2 -H "Content-Type: application/json" --data '{"Name":"'$WORKFLOW_NAME'", "StartAt": "'$STAGE_1_NAME'", "Stages": {"'$STAGE_1_NAME'":{"Next":"'$STAGE_2_NAME'"},"'$STAGE_2_NAME'":{"Next":"'$STAGE_3_NAME'"},"'$STAGE_3_NAME'":{"End":true}}}' $WORKFLOW_API_ENDPOINT/workflow
+```
+
 #### `GET /workflow`
 
 List all workflow definitions.
@@ -957,6 +1013,15 @@ Raises:
 * 200: The workflow run was created successfully
 * 400: Bad Request - the input workflow was not found or was not valid
 * 500: Internal server error
+
+Sample command:
+
+```
+WORKFLOW_API_ENDPOINT=...
+DATAPLANE_BUCKET=...
+aws s3 cp test_video.mp4 s3://$DATAPLANE_BUCKET/
+awscurl -X POST --region us-west-2 -H "Content-Type: application/json" --data '{"Name": "'$WORKFLOW_NAME'", "Input": {"Media": {"Video": {"S3Bucket": "'$DATAPLANE_BUCKET'", "S3Key": "test_video.mp4"}}}}' $WORKFLOW_API_ENDPOINT/workflow/execution | jq
+```
 
 #### `GET /workflow/execution`
 
@@ -1049,6 +1114,15 @@ Raises:
 *	200: The workflow execution details returned successfully
 * 404: Not found
 * 500: Internal server error
+
+Sample command:
+
+```
+WORKFLOW_API_ENDPOINT=...
+WORKFLOW_NAME=...
+WORKFLOW_EXECUTION_ID=...
+awscurl -X GET --region us-west-2 $WORKFLOW_API_ENDPOINT/workflow/execution/$WORKFLOW_EXECUTION_ID | jq 
+```
 
 #### `POST /workflow/operation`
 
@@ -1144,6 +1218,13 @@ Raises:
 * 200: All operations returned successfully
 * 500: Internal server error
 
+Sample command:
+
+```
+awscurl -X GET --region us-west-2 $WORKFLOW_API_ENDPOINT/workflow/operation \
+| jq -c '.[].Name' | sort
+```
+
 #### `DELETE /workflow/operation/{Name}`
 
 Delete an operation.
@@ -1214,6 +1295,14 @@ Raises:
 * 400: Bad Request - one of the input state machines was not found or was not valid
 * 409: Conflict
 * 500: Internal server error
+
+Sample command:
+
+```
+WORKFLOW_API_ENDPOINT=...
+STAGE_NAME=...
+awscurl -X POST --region us-west-2 -H "Content-Type: application/json" --data '{"Name":"'$STAGE_NAME'", "Operations": ["Thumbnail","Mediainfo"]}' $WORKFLOW_API_ENDPOINT/workflow/stage
+```
 
 #### `PUT /workflow/stage`
 
@@ -1287,9 +1376,24 @@ Raises:
 * 200: All operations returned successfully
 * 500: Internal server error
 
+Sample command to list all stages:
+
+```
+WORKFLOW_API_ENDPOINT=...
+awscurl --region us-west-2 $WORKFLOW_API_ENDPOINT/workflow/stage | jq -c '.[].Name' | sort
+```
+
+Sample command to list a specific stage:
+
+```
+WORKFLOW_API_ENDPOINT=...
+STAGE_NAME=...
+awscurl --region us-west-2 $WORKFLOW_API_ENDPOINT/workflow/stage/$STAGE_NAME | jq
+```
+
 #### `GET /workflow/list/operation/{OperatorName}`
 
-List all workflow defintions that contain an operator.
+List all workflow definitions that contain an operator.
 
 Returns:
 
@@ -1302,7 +1406,7 @@ Raises:
 
 #### `GET /workflow/list/stage/{StageName}`
 
-List all workflow defintions that contain a stage.
+List all workflow definitions that contain a stage.
 
 Returns:
 
@@ -1319,13 +1423,21 @@ Delete a stage.
 
 Returns:
 
-* Nothing
+* The deleted stage's definition.
 
 Raises:
 
 * 200: Stage deleted successfully
 * 404: Not found
 * 500: Internal server error
+
+Sample command:
+
+```
+WORKFLOW_API_ENDPOINT=...
+STAGE_NAME=...
+awscurl -X DELETE --region us-west-2 -H "Content-Type: application/json" $WORKFLOW_API_ENDPOINT/workflow/stage/$STAGE_NAME
+```
 
 #### `GET /workflow/stage/{Name}`
 
@@ -1347,13 +1459,20 @@ Delete a workflow.
 
 Returns:
 
-* Nothing
+* The definition of the deleted workflow.
 
 Raises:
 
 * 200: Workflow deleted successfully
 * 404: Not found
 * 500: Internal server error
+
+Sample command:
+```
+WORKFLOW_API_ENDPOINT=...
+WORKFLOW_NAME=...
+awscurl -X DELETE --region us-west-2  $WORKFLOW_API_ENDPOINT/workflow/$WORKFLOW_NAME | jq
+```
 
 #### `GET /workflow/{Name}`
 

@@ -128,6 +128,7 @@ def lambda_handler(event, context):
     transcribe_job_config["MediaFormat"] = file_type
     transcribe_job_config["LanguageCode"] = language_code
     transcribe_job_config["IdentifyLanguage"] = identify_language
+    transcribe_job_config["OutputBucketName"] = bucket
     if len(optional_settings) > 0:
         transcribe_job_config["Settings"] = optional_settings
     if len(model_settings) > 0:

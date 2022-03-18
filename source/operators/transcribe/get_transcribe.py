@@ -58,27 +58,25 @@ def lambda_handler(event, context):
                                           TranscribeError=str(response["TranscriptionJob"]["FailureReason"]))
             raise MasExecutionError(operator_object.return_output_object())
         elif response["TranscriptionJob"]["TranscriptionJobStatus"] == "COMPLETED":
-            transcribe_uri = response["TranscriptionJob"]["Transcript"]["TranscriptFileUri"]
-            http = urllib3.PoolManager()
-            transcription = http.request('GET', transcribe_uri)
-            transcription_data = transcription.data.decode("utf-8")
-            transcription_json = json.loads(transcription_data)
-
-            text_only_transcript = ''
-
-            for transcripts in transcription_json["results"]["transcripts"]:
-                transcript = transcripts["transcript"]
-                text_only_transcript = text_only_transcript.join(transcript)
-
-            print(text_only_transcript)
-
             dataplane = DataPlane()
             s3 = boto3.client('s3', config=config)
 
             transcript_storage_path = dataplane.generate_media_storage_path(asset_id, workflow_id)
+            bucket = transcript_storage_path['S3Bucket']
+            transcribe_results_key = job_id + ".json"
+
+            content_object = boto3.resource('s3').Object(bucket, transcribe_results_key)
+            file_content = content_object.get()['Body'].read().decode('utf-8')
+            transcription_json = json.loads(file_content)
+
+            text_only_transcript = ''
+            for transcripts in transcription_json["results"]["transcripts"]:
+                transcript = transcripts["transcript"]
+                text_only_transcript = text_only_transcript.join(transcript)
+            
+            print(text_only_transcript)
 
             key = transcript_storage_path['S3Key'] + "transcript.txt"
-            bucket = transcript_storage_path['S3Bucket']
 
             s3.put_object(Bucket=bucket, Key=key, Body=text_only_transcript)
 

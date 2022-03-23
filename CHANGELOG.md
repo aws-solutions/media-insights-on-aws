@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.0] - 2022-03-23
+
+### Fixed:
+
+* SNS / SQS workflow event notification configured correctly (#694)
+
+### New:
+
+* MIE now provisions a custom KMS key (#689)
+* Custom KMS key identifiers added to stack output (#693)
+* Additional curl examples added to implementation guide (#698)
+* Instructions on how to receive workflow notification events added to implementation guide (#694)
+
+### Security:
+
+* Applicable MIE services configured to use MIE created KMS key (#689)
+* KMS Key permissions scoped down to least privilege (#689, #701)
+
 ## [4.0.1] - 2022-02-10
 
 ### Fixed:

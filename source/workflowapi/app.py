@@ -297,16 +297,16 @@ def create_operation_api():
 
         {
             "Name":"operation-name",
-            "Type": ["Async"|"Sync"],
-            "Configuration" : {
+            "Type": "Async"|"Sync",
+            "Configuration": {
                     "MediaType": "Video",
-                    "Enabled:": True,
+                    "Enabled": True,
                     "configuration1": "value1",
                     "configuration2": "value2",
                     ...
                 }
-            "StartLambdaArn":arn,
-            "MonitorLambdaArn":arn
+            "StartLambdaArn": arn,
+            "MonitorLambdaArn": arn
             }
 
     Returns:
@@ -316,17 +316,22 @@ def create_operation_api():
 
             {
                 "Name": string,
-                "Type": ["Async"|"Sync"],
-                "Configuration" : {
+                "Type": "Async"|"Sync",
+                "Configuration": {
                     "MediaType": "Video|Frame|Audio|Text|...",
-                    "Enabled:": boolean,
+                    "Enabled": boolean,
                     "configuration1": "value1",
                     "configuration2": "value2",
                     ...
                 }
-                "StartLambdaArn":arn,
-                "MonitorLambdaArn":arn,
-                "StateMachineAsl": ASL-string
+                "StartLambdaArn": arn,
+                "MonitorLambdaArn": arn,
+                "StateMachineAsl": ASL-string,
+                "Version": string,
+                "Id": string,
+                "Created": string,
+                "ResourceType": string,
+                "ApiVersion": string,
                 "StageName": string
             }
 

@@ -647,10 +647,8 @@ Body:
 
 ```
 {
-  "Input": {
-    "S3Bucket": "{somebucket}",
-    "S3Key": "{somekey}"
-  }
+  "S3Bucket": "{somebucket}",
+  "S3Key": "{somekey}"
 }
 ```
 
@@ -1141,7 +1139,7 @@ Body:
 ```
 {
   "Name":"operation-name",
-  "Type": ["Async"|"Sync"],
+  "Type": "Async"|"Sync",
   "Configuration" : {
     "MediaType": "Video",
     "Enabled:": True,
@@ -1151,8 +1149,22 @@ Body:
   }
   "StartLambdaArn":arn,
   "MonitorLambdaArn":arn,
-  "SfnExecutionRole": arn
 }
+```
+
+Sample command:
+
+```
+awscurl -X POST --region $REGION -d '{
+  "Name": "my_operator_name",
+  "Type": "Sync",
+  "Configuration" : {
+    "MediaType": "Video",
+    "Enabled": true, 
+    "configuration1": "custom config value #1",
+    "configuration2": "custom config value #2"
+  },
+  "StartLambdaArn":"arn:aws:lambda:us-west-2:012345678910:function:my_operator"
 ```
 
 Returns:
@@ -1162,18 +1174,22 @@ Returns:
 ```
 {
   "Name": string,
-  "Type": ["Async"|"Sync"],
-  "Configuration" : {
-      "MediaType": "Video|Frame|Audio|Text|...",
-      "Enabled:": boolean,
-      "configuration1": "value1",
-      "configuration2": "value2",
-      ...
+  "Type": "Async"|"Sync",
+  "Configuration": {
+    "MediaType": "Video|Frame|Audio|Text|...",
+    "Enabled": boolean,
+    "configuration1": "value1",
+    "configuration2": "value2",
+    ...
   }
-  "StartLambdaArn":arn,
-  "MonitorLambdaArn":arn,
-  "StateMachineExecutionRoleArn": arn,
-  "StateMachineAsl": ASL-string
+  "StartLambdaArn": arn,
+  "MonitorLambdaArn": arn,
+  "StateMachineAsl": ASL-string,
+  "Version": string,
+  "Id": string,
+  "Created": string,
+  "ResourceType": string,
+  "ApiVersion": string,
   "StageName": string
 }
 ```

@@ -32,9 +32,6 @@ Parameters:
   MediaInsightsEnginePython37Layer:
     Type: String
     Description: "ARN of the Media insights lambda layer (python3.7) that contains basic python dependencies for boto3, chalice, control plane and dataplane"
-  MediaInsightsEnginePython36Layer:
-    Type: String
-    Description: "ARN of the Media insights lambda layer (python3.6) that contains basic python dependencies for boto3, chalice, control plane and dataplane"
   StartWaitOperationLambda:
     Type: String
     Description: "ARN of control plane lambda function to set a workflow to Waiting state"

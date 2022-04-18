@@ -14,6 +14,9 @@ Parameters:
   botoConfig:
     Type: String
     Description: "Botocore config"
+  KmsId:
+    Type: String
+    Description: "KMS Key ID for encryption"
 
 Mappings:
   SourceCode:
@@ -30,7 +33,7 @@ Resources:
       ShardCount: !Ref KinesisShardCount
       StreamEncryption:
         EncryptionType: "KMS"
-        KeyId: "alias/aws/kinesis"
+        KeyId: !Ref KmsId
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -133,6 +136,12 @@ Resources:
                   - "logs:PutLogEvents"
                 Resource:
                   - "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*-DynamoDBStream*"
+              - Effect: Allow
+                Action:
+                  - "kms:GenerateDataKey"
+                  - "kms:Decrypt"
+                Resource:
+                  - "Fn::Sub": "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsId}"
       Tags:
         - Key: "environment"
           Value: "mie"

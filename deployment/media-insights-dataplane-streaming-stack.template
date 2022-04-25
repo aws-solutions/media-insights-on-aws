@@ -139,6 +139,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - "kms:GenerateDataKey"
+                  - "kms:Decrypt"
                 Resource:
                   - "Fn::Sub": "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsId}"
       Tags:

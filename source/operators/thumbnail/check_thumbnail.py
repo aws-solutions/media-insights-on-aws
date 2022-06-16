@@ -57,7 +57,7 @@ def lambda_handler(event, context):
         operator_object.add_workflow_metadata(MediaconvertError=e, MediaconvertJobId=job_id)
         raise MasExecutionError(operator_object.return_output_object())
     else:
-        if response["Job"]["Status"] == 'IN_PROGRESS' or response["Job"]["Status"] == 'PROGRESSING':
+        if response["Job"]["Status"] == 'IN_PROGRESS' or response["Job"]["Status"] == 'PROGRESSING' or response["Job"]["Status"] == 'SUBMITTED':
             operator_object.update_workflow_status("Executing")
             operator_object.add_workflow_metadata(MediaconvertJobId=job_id, MediaconvertInputFile=input_file, AssetId=asset_id, WorkflowExecutionId=workflow_id)
             return operator_object.return_output_object()

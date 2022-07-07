@@ -1366,6 +1366,7 @@ Resources:
     Properties:
       Environment:
         Variables:
+          botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/', !Ref "SolutionVersion", '"}']]
           STAGE_EXECUTION_QUEUE_URL: !Ref StageExecutionQueue
           STAGE_TABLE_NAME: !Ref StageTable
           OPERATION_TABLE_NAME: !Ref OperationTable

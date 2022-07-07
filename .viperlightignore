@@ -15,7 +15,8 @@ docs/assets/images/MIE-architecture-diagram.pptx
 .github/workflows/release-workflow.yml:45
 .github/workflows/release-workflow.yml:46
 .github/workflows/release-workflow.yml:261
-.github/workflows/release-workflow.yml:365
+.github/workflows/release-workflow.yml:349
+.github/workflows/release-workflow.yml:366
 .github/workflows/release-workflow.yml:382
 .github/workflows/scheduled-workflow.yml:19
 .github/workflows/scheduled-workflow.yml:20
@@ -64,3 +65,6 @@ test/test-media/sample-data.json:1
 test/unit/workflowapi/test_workflowapi_app.py:265
 test/unit/workflowapi/test_workflowapi_app.py:669
 docs/source/theme/smithy/static/aws-sdk-2.826.0.min.js
+IMPLEMENTATION_GUIDE.md:431
+IMPLEMENTATION_GUIDE.md:453
+IMPLEMENTATION_GUIDE.md:464

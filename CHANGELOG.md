@@ -4,10 +4,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [4.0.0] - 2021-12-16
+## [5.0.0] - 2022-04-13
+
+### Fixed:
+
+* SNS / SQS workflow event notification configured correctly (#694)
 
 ### New:
 
+* MIE now provisions a custom KMS key (#689)
+* Custom KMS key identifiers added to stack output (#693)
+* Additional curl examples added to implementation guide (#698)
+* Instructions on how to receive workflow notification events added to implementation guide (#694)
+* Sonarcube properties file added
+
+### Security:
+
+* Applicable MIE services configured to use MIE created KMS key (#689)
+* KMS Key permissions scoped down to least privilege (#689, #701)
+
+## [4.0.1] - 2022-02-10
+
+### Fixed:
+
+* Avoid resource policy size restrictions in AWS Step Functions (#686) 
+
+## [4.0.0] - 2022-01-11
+
+### New:
+
+* Add checkin/checkout functionality to facilitate mutex locking asset metadata (#660)
 * Support custom language models in Amazon Transcribe (#599)
 * Support source language auto-detection in Amazon Translate (#621)
 * List the state machine ARN for workflows in the outputs for Cloud Formation stacks that create workflow resources (#641)
@@ -16,6 +42,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed:
 
+* Add an e2e test to validate the wait/resume operator (#657)
+* Fix a bug with resuming a paused workflow (#657)
 * Infrastructure as code: Return the correct MediaType in /workflow/execution requests (#635). This change altered the Dataplane API in a way that is not backwards compatible.
 * Documentation: Add missing information to the dataplane API docs for /metadata (#637)
 * Documentation: Add missing information to S3 advisory text (#633)
@@ -24,7 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Upgrade python runtimes for lambda functions from python 3.8 to 3.9. (#647)
 * Support encryption options for the create_parallel_data function in Amazon Transcribe (#599). This change altered the Workflow API in a way that is not backwards compatible.
-
+* Relocate MIE lambda layers (#676)
 
 ## [3.0.4] - 2021-11-8
 

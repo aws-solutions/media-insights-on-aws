@@ -62,14 +62,14 @@ def stack_resources(testing_env_variables):
     for output in outputs:
         resources[output["OutputKey"]] = output["OutputValue"]
 
-    expected_resources = ['WorkflowApiRestID', 'DataplaneBucket', 'WorkflowCustomResourceArn', 'TestStack',  'MediaInsightsEnginePython39Layer', 'AnalyticsStreamArn', 'DataplaneApiEndpoint', 'WorkflowApiEndpoint', 'DataplaneApiRestID', 'OperatorLibraryStack', 'PollyOperation', 'ContentModerationOperationImage', 'GenericDataLookupOperation', 'comprehendEntitiesOperation', 'FaceSearch', 'FaceSearchOperationImage', 'MediainfoOperationImage', 'TextDetection', 'TextDetectionOperationImage', 'CreateSRTCaptionsOperation', 'ContentModeration', 'WebCaptionsOperation', 'WebToVTTCaptionsOperation', 'PollyWebCaptionsOperation', 'WaitOperation', 'TranslateWebCaptionsOperation', 'CelebRecognition', 'LabelDetection', 'FaceDetection', 'PersonTracking', 'MediaconvertOperation', 'FaceDetectionOperationImage', 'MediainfoOperation', 'ThumbnailOperation', 'TechnicalCueDetection', 'CreateVTTCaptionsOperation', 'CelebrityRecognitionOperationImage', 'TranslateOperation', 'comprehendPhrasesOperation', 'WebToSRTCaptionsOperation', 'shotDetection', 'LabelDetectionOperationImage', 'StackName', "Version", "TranscribeAudioOperation", "TranscribeVideoOperation", 'DataPlaneHandlerArn']
+    expected_resources = ['WorkflowApiRestID', 'DataplaneBucket', 'WorkflowCustomResourceArn', 'TestStack',  'MediaInsightsEnginePython39Layer', 'AnalyticsStreamArn', 'DataplaneApiEndpoint', 'WorkflowApiEndpoint', 'DataplaneApiRestID', 'OperatorLibraryStack', 'PollyOperation', 'ContentModerationOperationImage', 'GenericDataLookupOperation', 'comprehendEntitiesOperation', 'FaceSearch', 'FaceSearchOperationImage', 'MediainfoOperationImage', 'TextDetection', 'TextDetectionOperationImage', 'CreateSRTCaptionsOperation', 'ContentModeration', 'WebCaptionsOperation', 'WebToVTTCaptionsOperation', 'PollyWebCaptionsOperation', 'WaitOperation', 'TranslateWebCaptionsOperation', 'CelebRecognition', 'LabelDetection', 'FaceDetection', 'PersonTracking', 'MediaconvertOperation', 'FaceDetectionOperationImage', 'MediainfoOperation', 'ThumbnailOperation', 'TechnicalCueDetection', 'CreateVTTCaptionsOperation', 'CelebrityRecognitionOperationImage', 'TranslateOperation', 'comprehendPhrasesOperation', 'WebToSRTCaptionsOperation', 'shotDetection', 'LabelDetectionOperationImage', 'StackName', "Version", "TranscribeAudioOperation", "TranscribeVideoOperation", 'DataPlaneHandlerArn', 'MieKMSArn', 'MieKMSId', 'MieKMSAlias', 'MieSNSTopic', 'MieSQSQueue']
 
     assert set(resources.keys()) == set(expected_resources)
     return resources
 
 
 # This fixture uploads the sample media objects for testing.
-@pytest.fixture(scope='session', autouse=True)
+@pytest.fixture(autouse=True)
 def upload_media(testing_env_variables, stack_resources):
     print('Uploading Test Media')
     s3 = boto3.client('s3', region_name=testing_env_variables['REGION'])
@@ -107,6 +107,12 @@ class WorkflowAPI:
         get_workflow_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/'+workflow, verify=True, auth=self.auth)
         return get_workflow_response
 
+    def resume_workflow_request(self, body, workflow_execution_id):
+        headers = {"Content-Type": "application/json"}
+        print ("PUT /workflow/execution/" + workflow_execution_id + " {}".format(json.dumps(body)))
+        resume_workflow_response = requests.put(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/'+workflow_execution_id, headers=headers, json=body, verify=True, auth=self.auth)
+        return resume_workflow_response
+
     # Stage Methods
 
     def create_stage_request(self, body):
@@ -126,6 +132,7 @@ class WorkflowAPI:
     def create_workflow_execution_request(self, body):
         headers = {"Content-Type": "application/json"}
         print("POST /workflow/execution")
+        print(body)
         create_workflow_execution_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/execution', headers=headers, json=body, verify=True, auth=self.auth)
 
         return create_workflow_execution_response

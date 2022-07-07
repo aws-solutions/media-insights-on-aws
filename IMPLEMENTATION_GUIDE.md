@@ -24,13 +24,15 @@ Join our Gitter chat at [https://gitter.im/awslabs/aws-media-insights-engine](ht
 
 [5. Implementing a new data stream consumer](#5-implementing-a-new-data-stream-consumer)
 
-[6. Signing API Requests](#6-signing-api-requests)
+[6. Receive workflow executuion events](#6-receive-workflow-execution-events)
 
-[7. API Documentation](#7-api-documentation)
+[7. Signing API Requests](#7-signing-api-requests)
 
-[8. Troubleshooting](#8-troubleshooting)
+[8. API Documentation](#8-api-documentation)
 
-[9. Glossary](#9-glossary)
+[9. Troubleshooting](#9-troubleshooting)
+
+[10. Glossary](#10-glossary)
 
 ## 1. Overview
 This guide describes how to build MIE from source code and how to build applications that use MIE as a back-end for executing multimedia workflows. This guide is intended for software developers who have experience working with the AWS Cloud.
@@ -227,18 +229,31 @@ Again, the `my_media_type` variable should be "Video", "Audio", or "Text".
 ### Step 2: Add your operator to the MIE operator library
 ***(Time to complete: 30 minutes)***
 
-This step involves editing the CloudFormation script for deploying the MIE operator library, located at `source/operators/operator-library.yaml`. You need to add new entries for your operator under the following sections:
+*This step involves editing the CloudFormation script for deploying the MIE operator library, located at [`source/operators/operator-library.yaml`](source/operators/operator-library.yaml).*
+
+You need to add new entries for your operator under the following sections:
 
 * `Lambda Functions`
 * `IAM Roles`
 * `Register as operators in the control plane`
 * `Export operator names as outputs`
 
-This step involves editing the CloudFormation script for deploying the MIE operator library, located at [`source/operators/operator-library.yaml`](source/operators/operator-library.yaml).
 
 #### Create the IAM Role resource
 
-Create a CloudFormation IAM resource that will be used to give your Lambda function the appropriate permissions. MIE operators need `AWSLambdaBasicExecutionRole` plus policies for any other AWS resource and services accessed by the Lambda function.
+Create a CloudFormation IAM role resource that will be used to give your Lambda function the appropriate permissions. At minimum, the function needs the `AWSLambdaBasicExecutionRole` policy attached to the IAM role and the following IAM actions granted to the relevant MIE resources, e.g. S3 Bucket, KMS Key, etc. 
+
+* `kms:Decrypt` 
+* `kms:GenerateDataKey`
+* `s3:GetObject`
+* `s3:PutObject`
+* `lambda:InvokeFunction`
+
+*The ARN's for the relevant resources can be obtained from the stack outputs.*
+
+In addition to the minimum set of permissions, you will need to add permissions for any other AWS resource or service accessed by the Lambda function, e.g. Rekognition, Comprehend, etc.
+
+You can see an example of a complete IAM role for an MIE Operator [here](https://github.com/aws-solutions/aws-media-insights-engine/blob/development/source/operators/operator-library.yaml#L74). This can be used as a reference to create from.
 
 #### Create Lambda Function resource
 
@@ -384,22 +399,91 @@ The data plane stores each item as an object in Amazon S3 and stores their S3 ob
 
 The data plane provides a change-data-capture (CDC) stream from DynamoDB to communicate media analysis data to stream consumers where ETL tasks can transform and load raw data to the downstream data stores that support end-user applications. This CDC stream is provided as a Kinesis Data Stream. The ARN for this is provided as an output called `AnalyticsStreamArn` in the base MIE CloudFormation stack, as shown below:
 
-<img src="docs/assets/images/analytics_stream_output.png" width=400>
+<img src="docs/assets/images/analytics_stream_output.png" width=400 alt="screenshot showing analytics stream in CloudFormation outputs">
 
 For more information about how to implement Kinesis Data Stream consumers in MIE, refer to the [MIE demo application](https://github.com/awslabs/aws-media-insights/blob/master/README.md#advanced-usage), which includes a data stream consumer that feeds Amazon ES.
 
-# 6. Signing API Requests
+# 6. Receive workflow execution events
+
+MIE provides an Amazon SNS Topic and Amazon SQS queue that publish and distribute all workflow execution events (*started, waiting, resumed, error, and completed*). These events can be used to trigger external actions that perform common media workflow tasks, e.g. adding extracted metadata to a media asset management tool.
+
+The simplest way to receive these events is by [creating an AWS Lambda function](https://docs.aws.amazon.com/lambda/latest/dg/getting-started-create-function.html) and adding the MIE `WorkflowExecutionEventQueue` as the [event source](https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html#events-sqs-eventsource).
+
+In addition to the basic permissions required for the Lambda function to operate, you will need to add the following permissions to the function execution role:
+
+  * `sqs:ReceiveMessage`
+  * `sqs:DeleteMessage`
+  * `sqs:GetQueueAttributes`
+  * `kms:Decrypt`
+
+To maintain least privilege design, these permissions should be scoped to the relevant MIE resources, e.g. workflow execution queue and KMS key. These resources can be found in the CloudFormation Stack outputs under the keys `MieSQSQueue` and `MieKMSArn`.
+
+An example workflow execution event is docuemented below:
+
+```
+{
+	"Records": [{
+		"messageId": "ABC1234-56789AB-C1234",
+		"receiptHandle": "ABC123456789ABC1234/pdf",
+		"body": {
+			"Type": "Notification",
+			"MessageId": "ABC-123-456-DEF",
+			"TopicArn": "arn:aws:sns:us-west-2:012345678910:sns1-WorkflowExecutionEventTopic-ABC1183ca00823456789",
+			"Message": {
+				"EventTimestamp": 1646345195.3847969,
+				"WorkflowExecutionId": "92698907-9254-4678-86f9-d036ad4123c1",
+				"AssetId": "8741f942-abbb-4daf-9c5b-50e81bc18e22",
+				"Status": "Started",
+				"Globals": {
+					"MetaData": {},
+					"Media": {
+						"Video": {
+							"S3Bucket": "sns1-dataplane",
+							"S3Key": "upload/sample-video.mp4"
+						}
+					}
+				},
+				"Configuration": {},
+				"Created": "1646345193.497301"
+			},
+			"Timestamp": "2022-03-03T22:06:35.620Z",
+			"SignatureVersion": "1",
+			"Signature": "",
+			"SigningCertURL": "https://sns.us-west-2.amazonaws.com/SimpleNotificationService",
+			"UnsubscribeURL": "https://sns.us-west-2.amazonaws.com/?Action=Unsubscribe&SubscriptionArn=arn:aws:sns:us-west-2:012345678910:sns1-WorkflowExecutionEventTopic"
+		},
+		"attributes": {
+			"ApproximateReceiveCount": "1",
+			"SentTimestamp": "1646345195718",
+			"SenderId": "ABC123456789ABC1234",
+			"ApproximateFirstReceiveTimestamp": "1646345195734"
+		},
+		"messageAttributes": {},
+		"md5OfBody": "ABC123456789ABC1234",
+		"eventSource": "aws:sqs",
+		"eventSourceARN": "arn:aws:sqs:us-west-2:012345678910:sns1-WorkflowExecutionEventQueue-ABC123456789",
+		"awsRegion": "us-west-2"
+	}]
+}
+```
+
+The relevant workflow details are located within the `Message` key under `body`.
+
+# 7. Signing API Requests
 
 The MIE APIs in Amazon API Gateway require that you authenticate every request with the Signature Version 4 signing process. The following two example programs written in Python illustrate how to submit GET and POST requests to the MIE workflow API with Signature Version 4 signing:
 
 * [sigv4_post_sample.py](docs/sigv4_post_sample.py) shows how to start the `CasImageWorkflow` using a Sigv4 signed request to the workflow execution API
 * [sigv4_get_sample.py](docs/sigv4_get_sample.py) shows how to list all workflows using a Sigv4 signed request to the workflow execution API
 
-# 7. API Documentation
+# 8. API Documentation
 
 ## Summary:
 * Data plane API
   * [POST /create](#POST-create)
+  * [POST /checkin/{asset_id}](#POST-checkin)
+  * [POST /checkout/{asset_id}](#POST-checkout)
+  * [GET /checkouts](#GET-checkouts)
   * [POST /download](#POST-download)
   * [GET /mediapath/{asset_id}/{workflow_id}](#GET-mediapathasset_idworkflow_id)
   * [GET /metadata](#GET-metadata)
@@ -476,6 +560,85 @@ Returns:
 
 * A dictionary mapping of the asset id and the new location of the media object
 
+#### `POST /checkin/{asset_id}`
+
+Removes LockedAt and LockedBy attributes from an asset item in the Dataplane table.
+This is intended to help applications implement mutual exclusion between users that
+can modify asset data.
+
+Body:
+
+(none)
+
+Returns:
+
+* A string in the format "Unlocked asset {asset}"
+
+Sample command:
+
+```
+awscurl -X POST --region us-east-1 -H "Content-Type: application/json" $DATAPLANE_API_ENDPOINT/checkin/0782d5ad-4cf5-4946-8578-43ec569567bd
+```
+
+#### `POST /checkout/{asset_id}`
+
+Adds LockedAt and LockedBy attributes to an asset item in the Dataplane table.
+This is intended to help applications implement mutual exclusion between users that
+can modify asset data.
+
+Body:
+
+```
+{
+  "LockedBy": "{some_user_id}"
+}
+```
+
+Returns:
+
+* A dictionary of lock info added to the asset.
+
+```
+{
+  "AssetId": asset_id,
+  "LockedBy": user_name,
+  "LockedAt": timestamp
+}
+```
+
+Sample command:
+
+```
+awscurl -X POST --region us-east-1 -H "Content-Type: application/json" --data '{"LockedBy": "user1@example.com"}' $DATAPLANE_API_ENDPOINT/checkout/0782d5ad-4cf5-4946-8578-43ec569567bd
+```
+
+#### `GET /checkouts`
+
+Returns a dictionary containing a list of all locked assets with their corresponding LockedBy, LockedAt, and AssetId attributes. The list returns empty if no assets have been locked.
+
+Sample output:
+
+```
+{
+    "locks": [
+    {'LockedAt': 1641411425}, 'AssetId': 'e69ba549-34f3-46f4-882c-6dafc3d74ca6'}, 'LockedBy': 'user1@example.com'}},
+    {'LockedAt': 1641411742}, 'AssetId': '1c745641-d9fd-4634-949b-34c9d4b3d847'}, 'LockedBy': 'user2@example.com'}},
+    ...
+    ]
+}
+```
+
+Returns:
+
+* Dictionary containing the S3 bucket and key for uploading a given asset media object to the dataplane.
+
+Sample command:
+
+```
+awscurl -X GET --region us-east-1 -H "Content-Type: application/json"  $DATAPLANE_API_ENDPOINT/checkouts
+```
+
+
 #### `POST /download`
 
 Generate a pre-signed URL that can be used to download media files from S3.
@@ -509,15 +672,39 @@ Returns:
 
 * Dict containing a list of all assets by their asset_id. The list returns empty if no assets have been created.
 
+Sample output:
+
+```
+{"assets":[""66a0a998-c654-4be4-a00b-81f5afac95d5","17fe93d5-8e1f-4c64-b0d6-409d44012bb9","c9a10556-2215-4ca9-a93f-b1e45112b7fd","53d078e0-a746-4164-8660-d544d7d7aadf","3fef5eac-cabc-4cb2-8c28-4b0a6518a32b""]}
+```
+
+Sample command:
+
+```
+DATAPLANE_API_ENDPOINT=...
+awscurl -X GET --region us-west-2 -H "Content-Type: application/json" $DATAPLANE_API_ENDPOINT/metadata
+```
+
 #### `GET /metadata/{asset_id}`
 
-Retrieve metadata for an asset.
+Retrieve all metadata for an asset.
 
 Returns:
 
 * All asset metadata. If the result provides a cursor then you can get the next page by specifying the cursor like this:
 
 `GET /metadata/{asset_id}?cursor={cursor}`
+
+Sample command to get all pages:
+
+```
+ASSET_ID=...
+cursor=$(awscurl -X GET --region us-west-2 -H "Content-Type: application/json" "$DATAPLANE_API_ENDPOINT/metadata/$ASSET_ID" | tee results.txt | jq '.cursor')
+while [ $cursor != null ]; do
+  echo -n '.' 
+  cursor=$(awscurl -X GET --region us-west-2 -H "Content-Type: application/json" "$DATAPLANE_API_ENDPOINT/metadata/$ASSET_ID" | tee -a results.txt | jq '.cursor')
+done
+```
 
 #### `DELETE /metadata/{asset_id}`
 
@@ -580,6 +767,18 @@ Body:
 #### `GET /metadata/{asset_id}/{operator_name}`
 
 Retrieve the metadata that a specific operator created from an asset.
+
+Sample command to get all pages:
+
+```
+ASSET_ID=...
+OPERATOR_NAME=...
+cursor=$(awscurl -X GET --region us-west-2 -H "Content-Type: application/json" "$DATAPLANE_API_ENDPOINT/metadata/$ASSET_ID/$OPERATOR_NAME" | tee results.txt | jq '.cursor')
+while [ $cursor != null ]; do
+  echo -n '.' 
+  cursor=$(awscurl -X GET --region us-west-2 -H "Content-Type: application/json" "$DATAPLANE_API_ENDPOINT/metadata/$ASSET_ID/$OPERATOR_NAME" | tee -a results.txt | jq '.cursor')
+done
+```
 
 #### `GET /version`
 
@@ -724,6 +923,26 @@ Raises:
 * 400: Bad Request - one of the input stages was not found or was invalid
 * 500: Internal server error
 
+Sample command to create a workflow with one stage:
+
+```
+WORKFLOW_API_ENDPOINT=...
+WORKFLOW_NAME=...
+STAGE_1_NAME=...
+awscurl -X POST --region us-west-2 -H "Content-Type: application/json" --data '{"Name":"'$WORKFLOW_NAME'", "StartAt": "'$STAGE_1_NAME'", "Stages": {"'$STAGE_1_NAME'":{"End":true}}}' $WORKFLOW_API_ENDPOINT/workflow
+```
+
+Sample command to create a workflow with three stages:
+
+```
+WORKFLOW_API_ENDPOINT=...
+WORKFLOW_NAME=...
+STAGE_1_NAME=...
+STAGE_2_NAME=...
+STAGE_3_NAME=...
+awscurl -X POST --region us-west-2 -H "Content-Type: application/json" --data '{"Name":"'$WORKFLOW_NAME'", "StartAt": "'$STAGE_1_NAME'", "Stages": {"'$STAGE_1_NAME'":{"Next":"'$STAGE_2_NAME'"},"'$STAGE_2_NAME'":{"Next":"'$STAGE_3_NAME'"},"'$STAGE_3_NAME'":{"End":true}}}' $WORKFLOW_API_ENDPOINT/workflow
+```
+
 #### `GET /workflow`
 
 List all workflow definitions.
@@ -795,6 +1014,15 @@ Raises:
 * 400: Bad Request - the input workflow was not found or was not valid
 * 500: Internal server error
 
+Sample command:
+
+```
+WORKFLOW_API_ENDPOINT=...
+DATAPLANE_BUCKET=...
+aws s3 cp test_video.mp4 s3://$DATAPLANE_BUCKET/
+awscurl -X POST --region us-west-2 -H "Content-Type: application/json" --data '{"Name": "'$WORKFLOW_NAME'", "Input": {"Media": {"Video": {"S3Bucket": "'$DATAPLANE_BUCKET'", "S3Key": "test_video.mp4"}}}}' $WORKFLOW_API_ENDPOINT/workflow/execution | jq
+```
+
 #### `GET /workflow/execution`
 
 List all workflow executions.
@@ -814,10 +1042,23 @@ Resume a paused workflow.
 
 Workflow executions will pause when they encounter a WaitOperation. The WaitOperation is in the MIE operator library and is often used in workflows that need to wait for user input.
 
+Sample command:
+
+```
+WORKFLOW_API_ENDPOINT=...(you define this)...
+WORKFLOW_EXECUTION_ID=...(you define this)...
+WAITING_STAGE_NAME=`awscurl -X GET --region us-east-1 $WORKFLOW_API_ENDPOINT/workflow/execution/$WORKFLOW_EXECUTION_ID |  cut -f 2 -d "'" | perl -pe 's/"Definition.+?}]}}}",//g' | jq '.CurrentStage'`
+awscurl -X PUT --region us-east-1 -H "Content-Type: application/json" --data '{"WaitingStageName": '$WAITING_STAGE_NAME'}' $WORKFLOW_API_ENDPOINT/workflow/execution/$WORKFLOW_EXECUTION_ID 
+```
+
 Returns:
 
-
-
+```
+{
+  "Id": "$WORKFLOW_EXECUTION_ID",
+  "Status": "Resumed"
+}
+```
 
 #### `GET /workflow/execution/asset/{AssetId}`
 
@@ -873,6 +1114,15 @@ Raises:
 *	200: The workflow execution details returned successfully
 * 404: Not found
 * 500: Internal server error
+
+Sample command:
+
+```
+WORKFLOW_API_ENDPOINT=...
+WORKFLOW_NAME=...
+WORKFLOW_EXECUTION_ID=...
+awscurl -X GET --region us-west-2 $WORKFLOW_API_ENDPOINT/workflow/execution/$WORKFLOW_EXECUTION_ID | jq 
+```
 
 #### `POST /workflow/operation`
 
@@ -968,6 +1218,13 @@ Raises:
 * 200: All operations returned successfully
 * 500: Internal server error
 
+Sample command:
+
+```
+awscurl -X GET --region us-west-2 $WORKFLOW_API_ENDPOINT/workflow/operation \
+| jq -c '.[].Name' | sort
+```
+
 #### `DELETE /workflow/operation/{Name}`
 
 Delete an operation.
@@ -1038,6 +1295,14 @@ Raises:
 * 400: Bad Request - one of the input state machines was not found or was not valid
 * 409: Conflict
 * 500: Internal server error
+
+Sample command:
+
+```
+WORKFLOW_API_ENDPOINT=...
+STAGE_NAME=...
+awscurl -X POST --region us-west-2 -H "Content-Type: application/json" --data '{"Name":"'$STAGE_NAME'", "Operations": ["Thumbnail","Mediainfo"]}' $WORKFLOW_API_ENDPOINT/workflow/stage
+```
 
 #### `PUT /workflow/stage`
 
@@ -1111,9 +1376,24 @@ Raises:
 * 200: All operations returned successfully
 * 500: Internal server error
 
+Sample command to list all stages:
+
+```
+WORKFLOW_API_ENDPOINT=...
+awscurl --region us-west-2 $WORKFLOW_API_ENDPOINT/workflow/stage | jq -c '.[].Name' | sort
+```
+
+Sample command to list a specific stage:
+
+```
+WORKFLOW_API_ENDPOINT=...
+STAGE_NAME=...
+awscurl --region us-west-2 $WORKFLOW_API_ENDPOINT/workflow/stage/$STAGE_NAME | jq
+```
+
 #### `GET /workflow/list/operation/{OperatorName}`
 
-List all workflow defintions that contain an operator.
+List all workflow definitions that contain an operator.
 
 Returns:
 
@@ -1126,7 +1406,7 @@ Raises:
 
 #### `GET /workflow/list/stage/{StageName}`
 
-List all workflow defintions that contain a stage.
+List all workflow definitions that contain a stage.
 
 Returns:
 
@@ -1143,13 +1423,21 @@ Delete a stage.
 
 Returns:
 
-* Nothing
+* The deleted stage's definition.
 
 Raises:
 
 * 200: Stage deleted successfully
 * 404: Not found
 * 500: Internal server error
+
+Sample command:
+
+```
+WORKFLOW_API_ENDPOINT=...
+STAGE_NAME=...
+awscurl -X DELETE --region us-west-2 -H "Content-Type: application/json" $WORKFLOW_API_ENDPOINT/workflow/stage/$STAGE_NAME
+```
 
 #### `GET /workflow/stage/{Name}`
 
@@ -1171,13 +1459,20 @@ Delete a workflow.
 
 Returns:
 
-* Nothing
+* The definition of the deleted workflow.
 
 Raises:
 
 * 200: Workflow deleted successfully
 * 404: Not found
 * 500: Internal server error
+
+Sample command:
+```
+WORKFLOW_API_ENDPOINT=...
+WORKFLOW_NAME=...
+awscurl -X DELETE --region us-west-2  $WORKFLOW_API_ENDPOINT/workflow/$WORKFLOW_NAME | jq
+```
 
 #### `GET /workflow/{Name}`
 
@@ -1491,7 +1786,7 @@ Returns:
   }
 }
 ```
-# 8. Troubleshooting
+# 9. Troubleshooting
 
 ## How to activate AWS X-Ray request tracing for MIE
 
@@ -1575,7 +1870,7 @@ If you need to perform certain actions in response to workflow errors, then edit
 If an error occurs in the Step Function service that causes the state machine for an MIE workflow to be terminated immediately, then the `Catch` and `Retry` and **OperatorFailed** lambda will not be able to handle the error.  These types of errors can occur in a number of circumstances, such as when the Step Function history limit is exceeded, or the step function has been manually stopped.  Failure to handle these errors will put the workflow in a perpetually `Started` status in the MIE control plane. If this happens then you will need to manually remove the workflow from the `WorkflowExecution` DynamoDB table.
 
 
-# 9. Glossary
+# 10. Glossary
 
 ## Workflow API
 Provides a REST interface to start workflow, create, update and delete workflows and operators, and check the status of executed workflows.

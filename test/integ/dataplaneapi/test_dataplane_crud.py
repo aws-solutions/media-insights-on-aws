@@ -123,6 +123,30 @@ def test_dataplane_api(dataplane_api):
                                                                  asset=asset_id))
     print(retrieved_single_metadata)
 
+    # Validate asset checkout
+    print("Checking out asset {asset}".format(asset=asset_id))
+    checkout_response = api.checkout_asset(asset_id)
+    assert checkout_response.status_code == 200
+    
+    print("Verifying that we cannot check out the same asset twice")
+    checkout_response = api.checkout_asset(asset_id)
+    assert checkout_response.status_code == 500
+    
+    # Validate checkout list
+    print("Listing all checked out assets")
+    list_checkouts_response = api.list_checkouts()
+    assert list_checkouts_response.status_code == 200
+
+    # Validate asset checkin
+    print("Checking in asset {asset}".format(asset=asset_id))
+    checkin_response = api.checkin_asset(asset_id)
+    assert checkin_response.status_code == 200
+
+    print("Verifying that we cannot check in an asset that is not checked out.")
+    checkin_response = api.checkin_asset(asset_id)
+    assert checkin_response.status_code == 500
+
+
     # Delete specific metadata
 
     print("Deleting specific metadata for the asset: {asset}".format(asset=asset_id))

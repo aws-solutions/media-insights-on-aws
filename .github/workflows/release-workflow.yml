@@ -243,33 +243,11 @@ jobs:
           cd test/e2e
           ./run_e2e.sh
 
-  update-version-in-docs:
+  deploy-eu-west-1:
     needs:
       - test-eu-west-1
       - test-us-west-2
       - test-us-east-1
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out release branch
-        uses: actions/checkout@v2.3.4
-        with:
-          ref: release/v${{ github.event.inputs.version }}
-
-      - name: Initialize mandatory git config
-        run: |
-          git config user.name "GitHub Actions"
-          git config user.email noreply@github.com
-
-      - name: Update one click links
-        run: |
-          sed -i -e "s/v[0-9]\.[0-9]\.[0-9]/v${{ github.event.inputs.version }}/g" README.md
-          git add README.md
-          git commit -m "Update one-click links with new version"
-          git push origin release/v${{ github.event.inputs.version }}
-
-
-  deploy-eu-west-1:
-    needs: update-version-in-docs
     runs-on: ubuntu-latest
     steps:
       - name: Check out release branch
@@ -295,7 +273,10 @@ jobs:
 
 
   deploy-us-west-2:
-    needs: update-version-in-docs
+    needs:
+      - test-eu-west-1
+      - test-us-west-2
+      - test-us-east-1
     runs-on: ubuntu-latest
     steps:
       - name: Check out release branch
@@ -320,7 +301,10 @@ jobs:
           echo y | ./build-s3-dist.sh --no-layer --template-bucket $TEMPLATE_OUTPUT_BUCKET --code-bucket $DIST_OUTPUT_BUCKET --version $VERSION --region $REGION
 
   deploy-us-east-1:
-    needs: update-version-in-docs
+    needs:
+      - test-eu-west-1
+      - test-us-west-2
+      - test-us-east-1
     runs-on: ubuntu-latest
     steps:
       - name: Check out release branch

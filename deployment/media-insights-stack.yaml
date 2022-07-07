@@ -80,6 +80,84 @@ Mappings:
       FrameworkVersion: "%%VERSION%%"
 
 Resources:
+  # Encryption
+  MieKey:
+    Type: 'AWS::KMS::Key'
+    Properties:
+      Description: MIE provided KMS key for encryption
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+          Action: 'kms:*'
+          Resource: '*'
+        - Effect: Allow
+          Principal:
+              Service: "s3.amazonaws.com"
+          Action:
+            - 'kms:Decrypt'
+            - 'kms:GenerateDataKey*'
+          Resource: '*'
+          Condition:
+            StringEquals:
+              'aws:SourceAccount': !Ref 'AWS::AccountId'
+        - Effect: Allow
+          Principal:
+              Service: 'sns.amazonaws.com'
+          Action:
+            - 'kms:Decrypt'
+            - 'kms:GenerateDataKey*'
+          Resource: '*'
+          Condition:
+            StringEquals:
+              'aws:SourceAccount': !Ref 'AWS::AccountId'
+        - Effect: Allow
+          Principal:
+              Service: 'sqs.amazonaws.com'
+          Action:
+            - 'kms:Decrypt'
+            - 'kms:GenerateDataKey*'
+          Resource: '*'
+          Condition:
+            StringEquals:
+              'aws:SourceAccount': !Ref 'AWS::AccountId'
+        - Effect: Allow
+          Principal:
+              Service: 'dynamodb.amazonaws.com'
+          Action: # https://docs.aws.amazon.com/kms/latest/developerguide/services-dynamodb.html#dynamodb-customer-cmk-policy
+            - 'kms:Encrypt'
+            - 'kms:Decrypt'
+            - 'kms:ReEncrypt*'
+            - 'kms:GenerateDataKey*'
+            - 'kms:DescribeKey'
+            - 'kms:CreateGrant'
+          Resource: '*'
+          Condition:
+            StringEquals:
+              'aws:SourceAccount': !Ref 'AWS::AccountId'
+        - Effect: Allow
+          Principal:
+              Service: 'rekognition.amazonaws.com'
+          Action:
+            - 'kms:Encrypt'
+            - 'kms:Decrypt'
+            - 'kms:ReEncrypt*'
+            - 'kms:GenerateDataKey*'
+            - 'kms:DescribeKey'
+          Resource: '*'
+          Condition:
+            StringEquals:
+              'aws:SourceAccount': !Ref 'AWS::AccountId'
+  
+  MieKeyAlias:
+    Type: 'AWS::KMS::Alias'
+    Properties:
+      AliasName: !Sub alias/${AWS::StackName}
+      TargetKeyId: !Ref MieKey
+
   # Helper function - create a short UUID to avoid name conflicts
   MieHelperFunction:
     Type: AWS::Lambda::Function
@@ -225,6 +303,12 @@ Resources:
                       ":endpoints/*"
                     ]
                   ]
+              - Effect: Allow
+                Action:
+                  - "kms:GenerateDataKey"
+                  - "kms:Decrypt"
+                Resource:
+                  - "Fn::Sub": "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${MieKey}"
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -366,6 +450,10 @@ Resources:
                   - "xray:PutTraceSegments"
                   - "xray:PutTelemetryRecords"
                 Resource: "*"
+              - Effect: Allow
+                Action:
+                  - "kms:Decrypt"
+                Resource: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${MieKey}"
 
   OperationLambdaExecutionRole:
     Type: AWS::IAM::Role
@@ -518,14 +606,36 @@ Resources:
                   - "xray:PutTraceSegments"
                   - "xray:PutTelemetryRecords"
                 Resource: "*"
+              - Effect: Allow
+                Action:
+                  - "kms:Decrypt"
+                Resource: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${MieKey}"
 
+  StepFunctionLogGroup:
+    Type: "AWS::Logs::LogGroup"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W84
+            reason: "Log group data is encrypted by default in CloudWatch"        
+    Properties:
+      RetentionInDays: 14
+      LogGroupName:
+        'Fn::Join':
+          - "-"
+          - - !Sub "/aws/vendedlogs/states/${AWS::StackName}-StepFunctionLogGroup"
+            - !GetAtt GetShortUUID.Data
+      Tags:
+        - Key: "environment"
+          Value: "mie"
+        
   StepFunctionRole:
     Type: "AWS::IAM::Role"
     Metadata:
       cfn_nag:
         rules_to_suppress:
           - id: W11
-            reason: "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources"
+            reason: "The X-Ray and Cloudwatch policies use actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources and https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazoncloudwatchlogs.html"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -558,6 +668,17 @@ Resources:
                   - "xray:GetSamplingRules"
                   - "xray:GetSamplingTargets"
                 Resource: "*"
+              - "Effect": "Allow"
+                "Action":
+                    - "logs:CreateLogDelivery"
+                    - "logs:GetLogDelivery"
+                    - "logs:UpdateLogDelivery"
+                    - "logs:DeleteLogDelivery"
+                    - "logs:ListLogDeliveries"
+                    - "logs:PutResourcePolicy"
+                    - "logs:DescribeResourcePolicies"
+                    - "logs:DescribeLogGroups"
+                "Resource": "*"
 
   operatorFailedRole:
     Type: "AWS::IAM::Role"
@@ -647,6 +768,12 @@ Resources:
                         ":log-group:/aws/lambda/*",
                     ],
                   ]
+              - Effect: Allow
+                Action:
+                  - "kms:GenerateDataKey"
+                  - "kms:Decrypt"
+                Resource:
+                  - "Fn::Sub": "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${MieKey}"
 
   # Services - Dynamodb
 
@@ -661,7 +788,9 @@ Resources:
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
       SSESpecification:
+        SSEType: KMS
         SSEEnabled: true
+        KMSMasterKeyId: !Ref MieKeyAlias
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: Name
@@ -685,7 +814,9 @@ Resources:
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
       SSESpecification:
+        SSEType: KMS
         SSEEnabled: true
+        KMSMasterKeyId: !Ref MieKeyAlias
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: Name
@@ -709,7 +840,9 @@ Resources:
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
       SSESpecification:
+        SSEType: KMS
         SSEEnabled: true
+        KMSMasterKeyId: !Ref MieKeyAlias
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: Name
@@ -733,7 +866,9 @@ Resources:
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
       SSESpecification:
+        SSEType: KMS
         SSEEnabled: true
+        KMSMasterKeyId: !Ref MieKeyAlias
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: Name
@@ -757,7 +892,9 @@ Resources:
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
       SSESpecification:
+        SSEType: KMS
         SSEEnabled: true
+        KMSMasterKeyId: !Ref MieKeyAlias
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: Id
@@ -785,7 +922,9 @@ Resources:
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
       SSESpecification:
+        SSEType: KMS
         SSEEnabled: true
+        KMSMasterKeyId: !Ref MieKeyAlias
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: Id
@@ -828,14 +967,31 @@ Resources:
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
       SSESpecification:
+        SSEType: KMS
         SSEEnabled: true
+        KMSMasterKeyId: !Ref MieKeyAlias
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: AssetId
           AttributeType: S
+        - AttributeName: Locked
+          AttributeType: S
+        - AttributeName: LockedAt
+          AttributeType: N
       KeySchema:
         - AttributeName: AssetId
           KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: LockIndex
+          KeySchema:
+            - AttributeName: Locked
+              KeyType: HASH
+            - AttributeName: LockedAt
+              KeyType: RANGE
+          Projection:
+            NonKeyAttributes:
+              - LockedBy
+            ProjectionType: INCLUDE
       TableName: !Join ["", [Ref: "AWS::StackName", "DataplaneTable"]]
       StreamSpecification:
         StreamViewType: "NEW_AND_OLD_IMAGES"
@@ -852,7 +1008,8 @@ Resources:
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
-              SSEAlgorithm: AES256
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: !Ref MieKeyAlias
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -889,7 +1046,8 @@ Resources:
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
-              SSEAlgorithm: AES256
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: !Ref MieKeyAlias
       LoggingConfiguration:
         DestinationBucketName: !Ref DataplaneLogsBucket
         LogFilePrefix: "access_logs/"
@@ -932,7 +1090,7 @@ Resources:
   WorkflowExecutionEventTopic:
     Type: 'AWS::SNS::Topic'
     Properties:
-      KmsMasterKeyId: "alias/aws/sns"
+      KmsMasterKeyId: !Ref MieKeyAlias
 
   WorkflowExecutionEventTopicPolicy:
     Type: 'AWS::SNS::TopicPolicy'
@@ -967,7 +1125,7 @@ Resources:
             - WorkflowExecutionLambdaDeadLetterQueue
             - Arn
         maxReceiveCount: 1 # Don't retry if stage times out
-      KmsMasterKeyId: "alias/aws/sqs"
+      KmsMasterKeyId: !Ref MieKeyAlias
 
   SqsQueuePolicy:
     Type: AWS::SQS::QueuePolicy
@@ -982,7 +1140,7 @@ Resources:
         Statement:
         - Effect: Allow
           Principal:
-            AWS: !Ref 'AWS::AccountId'
+            Service: 'sns.amazonaws.com'
           Action:
           - sqs:SendMessage
           Resource: !GetAtt WorkflowExecutionEventQueue.Arn
@@ -1007,7 +1165,7 @@ Resources:
     Properties:
       QueueName: !Sub "${AWS::StackName}-WorkflowExecLambdaDLQ"
       MessageRetentionPeriod: 43200 # #Maximum, 12 hours in seconds.
-      KmsMasterKeyId: "alias/aws/sqs"
+      KmsMasterKeyId: !Ref MieKeyAlias
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1017,7 +1175,7 @@ Resources:
     Properties:
       QueueName: !Sub "${AWS::StackName}-StageExecDLQ"
       MessageRetentionPeriod: 43200 # #Maximum, 12 hours in seconds.
-      KmsMasterKeyId: "alias/aws/sqs"
+      KmsMasterKeyId: !Ref MieKeyAlias
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1034,7 +1192,7 @@ Resources:
             - StageExecutionDeadLetterQueue
             - Arn
         maxReceiveCount: 1 # Don't retry if stage times out
-      KmsMasterKeyId: "alias/aws/sqs"
+      KmsMasterKeyId: !Ref MieKeyAlias
       Tags:
         - Key: "environment"
           Value: "mie"
@@ -1569,6 +1727,7 @@ Resources:
           ]
         MediaInsightsEnginePython39Layer: !Ref MediaInsightsEnginePython39Layer
         FrameworkVersion: !FindInMap ["SourceCode", "General", "FrameworkVersion"]
+        KmsKeyId: !Ref MieKey
 
   Analytics:
     Type: "AWS::CloudFormation::Stack"
@@ -1595,6 +1754,7 @@ Resources:
             - StreamArn
         DynamoTableArn: !GetAtt DataplaneTable.Arn
         botoConfig: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/', !Ref "SolutionVersion", '"}']]
+        KmsId: !Ref MieKey
 
   # Workflow creation and execution API
   MediaInsightsWorkflowApi:
@@ -1616,6 +1776,7 @@ Resources:
         ShortUUID: !GetAtt GetShortUUID.Data
         StageExecutionQueueUrl: !Ref StageExecutionQueue
         StageExecutionRole: !GetAtt StepFunctionRole.Arn
+        StepFunctionLogGroupArn: !GetAtt StepFunctionLogGroup.Arn
         OperationTableName: !Ref OperationTable
         StageTableName: !Ref StageTable
         WorkflowExecutionTableName: !Ref WorkflowExecutionTable
@@ -1657,6 +1818,7 @@ Resources:
             ],
           ]
         FrameworkVersion: !FindInMap ["SourceCode", "General", "FrameworkVersion"]
+        KmsKeyId: !Ref MieKey
 
   OperatorLibrary:
     DependsOn:
@@ -1692,6 +1854,8 @@ Resources:
         CheckWaitOperationLambda: !GetAtt CheckWaitOperationLambda.Arn
         MediaConvertEndpoint: !GetAtt GetMediaConvertEndpoint.Data
         Boto3UserAgent: !Join ['', ['{"user_agent_extra": "AwsSolution/', !Ref "SolutionId", '/', !Ref "SolutionVersion", '"}']]
+        KmsAlias: !Ref MieKeyAlias
+        KmsKeyId: !Ref MieKey
 
   TestResources:
     Condition: DeployTestResourcesCondition
@@ -1856,3 +2020,28 @@ Outputs:
     Value: !FindInMap ["SourceCode", "General", "FrameworkVersion"]
     Export:
       Name: !Join [":", [!Ref "AWS::StackName", Version]]
+  MieKMSArn:
+    Description: ARN of the MIE KMS Key
+    Value: !GetAtt MieKey.Arn
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", MieKMSArn]]
+  MieKMSId:
+    Description: ID of the MIE KMS Key
+    Value: !GetAtt MieKey.KeyId
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", MieKMSId]]
+  MieKMSAlias:
+    Description: Alias of the MIE KMS Key
+    Value: !Ref MieKeyAlias
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", MieKMSAlias]]
+  MieSNSTopic:
+    Description: ARN of the MIE SNS Workflow Execution Topic
+    Value: !Ref WorkflowExecutionEventTopic
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", MieSNSTopic]]
+  MieSQSQueue:
+    Description: ARN of the MIE Workflow Execution Queue
+    Value: !GetAtt WorkflowExecutionEventQueue.Arn
+    Export:
+      Name: !Join [":", [!Ref "AWS::StackName", MieSQSQueue]]

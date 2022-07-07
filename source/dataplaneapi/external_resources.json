@@ -36,6 +36,10 @@
     "FrameworkVersion": {
       "Type": "String",
       "Description": "Version of the Media Insights Engine Framework"
+    },
+    "KmsKeyId": {
+      "Type": "String",
+      "Description": "ID of the stack KMS Key"
     }
   },
   "Conditions": {
@@ -117,6 +121,13 @@
                 {
                   "Effect": "Allow",
                   "Action": [
+                    "dynamodb:Query"
+                  ],
+                  "Resource": {"Fn::Sub": "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${DataplaneTableName}/index/LockIndex"}
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
                       "xray:PutTraceSegments",
                       "xray:PutTelemetryRecords"
                   ],
@@ -133,6 +144,14 @@
                   "Resource": {"Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*-APIHandler-*"},
                   "Effect": "Allow",
                   "Sid": "Logging"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "kms:Decrypt",
+                    "kms:GenerateDataKey"
+                  ],
+                  "Resource": {"Fn::Sub": "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}"}
                 }
               ]
             },

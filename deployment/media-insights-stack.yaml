@@ -240,6 +240,59 @@ Resources:
       ServiceToken: !GetAtt MieHelperFunction.Arn
       FunctionKey: "get_mediaconvert_endpoint"
 
+  AppRegistryAttributeGroup:
+    Type: "AWS::ServiceCatalogAppRegistry::AttributeGroup"
+    Properties:
+      Attributes:
+        ApplicationType: "AWS Solution"
+        Author: "Media and Entertainment"
+        Team: "Media and Entertainment"
+        Version: "%%VERSION%%"
+        SolutionID: "SO0163"
+        SolutionName: "Media Insights on AWS"
+      Name: "MediaAndEntertainmentSolutions"
+      Description: "Media Insights on AWS"
+      Tags:
+        SolutionId: "SO0109"
+
+  AppRegistryApp:
+    Type: "AWS::ServiceCatalogAppRegistry::Application"
+    Properties:
+      Name: "MediaInsightsOnAws"
+      Description: "Service Catalog application to track and manage all your resources. The SolutionId is SO0163 and SolutionVersion is v%%VERSION%%"
+      Tags:
+        ApplicationType: "AWS-Solutions"
+        SolutionDomain: "MediaAndEntertainment"
+        SolutionId: "SO0163"
+        SolutionName: "Media Insights on AWS"
+        SolutionVersion: "%%VERSION%%"
+    DependsOn:
+      - "AppRegistryAttributeGroup"
+
+  AppRegistryAppResourceAssociation:
+    Type: "AWS::ServiceCatalogAppRegistry::ResourceAssociation"
+    Properties:
+      Application:
+        Fn::GetAtt:
+          - "AppRegistryApp"
+          - "Id"
+      Resource:
+        Ref: "AWS::StackId"
+      ResourceType: "CFN_STACK"
+    DependsOn:
+      - "AppRegistryAttributeGroup"
+
+  AppRegistryAppAttributeGroupAssociation:
+    Type: "AWS::ServiceCatalogAppRegistry::AttributeGroupAssociation"
+    Properties:
+      Application:
+        Fn::GetAtt:
+          - "AppRegistryApp"
+          - "Id"
+      AttributeGroup:
+        Fn::GetAtt:
+          - "AppRegistryAttributeGroup"
+          - "Id"
 
   # IAM Roles
   MieHelperExecutionRole:

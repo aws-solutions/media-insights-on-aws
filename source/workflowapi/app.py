@@ -1938,7 +1938,7 @@ def create_workflow_execution(trigger, workflow_execution):
 
         Configuration = workflow_execution["Configuration"] if "Configuration" in workflow_execution  else {}
 
-        # BRANDON - make an asset
+        # make an asset
         dataplane = DataPlane()
         if create_asset is True:
             try:

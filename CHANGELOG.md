@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Added support for Appregistry for Service Catalog AppRegistry and AWS Systems Manager Application Manager by including resources in CloudFormation template
 
+### Changed:
+
+* Upgrade jsonschema version v2.6.0 -> v4.17.0
+* Upgrade aws-xray-sdk version v2.6.0 -> v2.10.0
+
 ## [5.0.0] - 2022-04-13
 
 ### Fixed:

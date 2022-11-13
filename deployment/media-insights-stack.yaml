@@ -1757,9 +1757,9 @@ Resources:
           "",
           [
             "https://",
-            !FindInMap ["SourceCode", "General", "GlobalS3Bucket"],
+            "%%GLOBAL_BUCKET_NAME%%",
             ".s3.amazonaws.com/",
-            !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
+            "aws-media-insights-engine/%%VERSION%%",
             "/media-insights-dataplane-api-stack.template",
           ],
         ]
@@ -1794,9 +1794,9 @@ Resources:
           "",
           [
             "https://",
-            !FindInMap [ "SourceCode", "General", "GlobalS3Bucket" ],
+            "%%GLOBAL_BUCKET_NAME%%",
             ".s3.amazonaws.com/",
-            !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
+            "aws-media-insights-engine/%%VERSION%%",
             "/media-insights-dataplane-streaming-stack.template",
           ],
         ]
@@ -1818,9 +1818,9 @@ Resources:
           "",
           [
             "https://",
-            !FindInMap [ "SourceCode", "General", "GlobalS3Bucket" ],
+            "%%GLOBAL_BUCKET_NAME%%",
             ".s3.amazonaws.com/",
-            !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
+            "aws-media-insights-engine/%%VERSION%%",
             "/media-insights-workflow-api-stack.template",
           ],
         ]
@@ -1884,9 +1884,9 @@ Resources:
           "",
           [
             "https://",
-            !FindInMap [ "SourceCode", "General", "GlobalS3Bucket" ],
+            "%%GLOBAL_BUCKET_NAME%%",
             ".s3.amazonaws.com/",
-            !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
+            "aws-media-insights-engine/%%VERSION%%",
             "/media-insights-operator-library.template",
           ],
         ]
@@ -1923,9 +1923,9 @@ Resources:
           "",
           [
             "https://",
-            !FindInMap [ "SourceCode", "General", "GlobalS3Bucket" ],
+            "%%GLOBAL_BUCKET_NAME%%",
             ".s3.amazonaws.com/",
-            !FindInMap ["SourceCode", "General", "TemplateKeyPrefix"],
+            "aws-media-insights-engine/%%VERSION%%",
             "/media-insights-test-operations-stack.template",
           ],
         ]

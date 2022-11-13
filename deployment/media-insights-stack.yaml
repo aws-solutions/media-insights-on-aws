@@ -5,17 +5,17 @@ Parameters:
   DeployTestResources:
     Description: Deploy test resources which contains lambdas required for integration and e2e testing
     Type: String
-    Default: No
+    Default: "No"
     AllowedValues:
-      - Yes
-      - No
+      - "Yes"
+      - "No"
   DeployAnalyticsPipeline:
     Type: String
     Description: Deploy a metadata streaming pipeline that can be consumed by downstream analytics plaforms
-    Default: Yes
+    Default: "Yes"
     AllowedValues:
-      - Yes
-      - No
+      - "Yes"
+      - "No"
   MaxConcurrentWorkflows:
     Type: Number
     Description: Maximum number of workflows to run concurrently.  When the maximum is reached, additional workflows are added to a wait queue.
@@ -24,10 +24,10 @@ Parameters:
   EnableXrayTrace:
     Description: Turn on Xray tracing on all entry points to the stack
     Type: String
-    Default: No
+    Default: "No"
     AllowedValues:
-      - Yes
-      - No
+      - "Yes"
+      - "No"
   ExternalBucketArn:
     Description: (Optional) If you intend to input media files from a bucket outside the MIE stack into MIE workflows, then specify the Amazon S3 ARN for those files here.
     Type: String
@@ -43,10 +43,10 @@ Parameters:
   SendAnonymousData:
     Description: (Optional) Send anonymous data about MIE performance to AWS to help improve the quality of this solution.
     Type: String
-    Default: Yes
+    Default: "Yes"
     AllowedValues:
-      - Yes
-      - No
+      - "Yes"
+      - "No"
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -2061,6 +2061,7 @@ Outputs:
       Name:
         !Join [":", [!Ref "AWS::StackName", MediaInsightsEnginePython39Layer]]
   AnalyticsStreamArn:
+    Condition: DeployAnalyticsPipelineCondition
     Description: Arn of the dataplane pipeline
     Value: !GetAtt Analytics.Outputs.analyticsStreamArn
     Export:

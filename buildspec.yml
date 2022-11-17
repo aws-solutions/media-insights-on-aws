@@ -37,3 +37,4 @@ artifacts:
       - deployment/**/*
       - CHANGELOG.md
       - buildspec.yml
+      - sonar-project.properties

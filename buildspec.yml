@@ -34,6 +34,7 @@ phases:
       - echo "Post build completed on `date`"
 artifacts:
   files:
+      - source/**/*
       - deployment/**/*
       - CHANGELOG.md
       - buildspec.yml

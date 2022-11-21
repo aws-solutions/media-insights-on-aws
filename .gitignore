@@ -40,3 +40,9 @@ private/
 # LambdaHelper builds
 source/lib/MediaInsightsEngineLambdaHelper/Media_Insights_Engine_Lambda_Helper.egg-info
 source/lib/MediaInsightsEngineLambdaHelper/build/*
+
+# Code Coverage reports
+coverage-reports
+
+.scannerwork
+.vscode

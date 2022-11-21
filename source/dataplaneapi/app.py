@@ -81,13 +81,6 @@ class DecimalEncoder(json.JSONEncoder):
             # Let the base class default method raise the TypeError
         return json.JSONEncoder.default(self, obj)
 
-
-def check_required_input(key, dict, objectname):
-    if key not in dict:
-        raise BadRequestError("Key '%s' is required in '%s' input" % (
-            key, objectname))
-
-
 def write_metadata_to_s3(bucket, key, data):
     encoded = json.dumps(data, cls=DecimalEncoder)
     try:

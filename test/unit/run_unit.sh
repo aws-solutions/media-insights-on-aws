@@ -20,7 +20,7 @@
 echo "------------------------------------------------------------------------------"
 echo "Creating a temporary Python virtualenv for this script"
 echo "------------------------------------------------------------------------------"
-python -c "import os; print (os.getenv('VIRTUAL_ENV'))" | grep -q None
+python3 -c "import os; print (os.getenv('VIRTUAL_ENV'))" | grep -q None
 if [ $? -ne 0 ]; then
     echo "ERROR: Do not run this script inside Virtualenv. Type \`deactivate\` and run again.";
     exit 1;
@@ -49,7 +49,7 @@ if [ "$1" = "" ]; then
 
 elif [ "$1" = "dataplaneapi" ]; then
     echo "Running dataplane unit tests"
-    pytest dataplaneapi/ -s -W ignore::DeprecationWarning -p no:cacheprovider --cov=../../source/dataplaneapi
+    pytest dataplaneapi/ -s -W ignore::DeprecationWarning -p no:cacheprovider --cov=../../source/dataplaneapi --cov-report=term --cov-report=xml:../../coverage-reports/coverage-dataplane.xml
     if [ $? -eq 0 ]; then
 	    exit 0
     else
@@ -57,7 +57,7 @@ elif [ "$1" = "dataplaneapi" ]; then
     fi
 elif [ "$1" = "workflowapi" ]; then
     echo "Running workflow unit tests"
-    pytest workflowapi/ -s -W ignore::DeprecationWarning -p no:cacheprovider --cov=../../source/workflowapi
+    pytest workflowapi/ -s -W ignore::DeprecationWarning -p no:cacheprovider --cov=../../source/workflowapi --cov-report=term --cov-report=xml:../../coverage-reports/coverage-workflowapi.xml
     if [ $? -eq 0 ]; then
 	    exit 0
     else

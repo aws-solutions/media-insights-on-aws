@@ -6,28 +6,16 @@
 
 # Run unit tests
 echo "Running unit tests"
-echo "cd ../source"
+
+echo "cd ../test/unit"
+cd ../test/unit
 echo "------------------------------------------------------------------------------"
-echo "Installing Dependencies And Testing Analysis"
+echo "Installing Dependencies And Testing WorkflowApi"
 echo "------------------------------------------------------------------------------"
-cd ../source/analysis
-npm install
-npm test
+./run_unit.sh workflowapi
+
 
 echo "------------------------------------------------------------------------------"
-echo "Installing Dependencies And Testing API"
+echo "Installing Dependencies And Testing DataplaneApi"
 echo "------------------------------------------------------------------------------"
-cd ../api
-npm install
-npm test
-
-echo "------------------------------------------------------------------------------"
-echo "Installing Dependencies And Testing Helper"
-echo "------------------------------------------------------------------------------"
-cd ../helper
-npm install
-#npm test
-
-echo "------------------------------------------------------------------------------"
-echo "Installing Dependencies And Testing Complete"
-echo "------------------------------------------------------------------------------"
+./run_unit.sh dataplaneapi

@@ -39,3 +39,4 @@ artifacts:
       - CHANGELOG.md
       - buildspec.yml
       - sonar-project.properties
+      - coverage-reports/*

@@ -15,7 +15,8 @@ phases:
   pre_build:
     commands:
       - echo "Installing dependencies and executing unit tests - `pwd`"
-      - cd deployment
+      - cd deployment && chmod +x ./run-unit-tests.sh && ./run-unit-tests.sh
+      - cd ..
       - echo "Installing dependencies and executing unit tests completed `date`"
   build:
     commands:

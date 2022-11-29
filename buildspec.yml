@@ -40,4 +40,3 @@ artifacts:
       - buildspec.yml
       - sonar-project.properties
       - coverage-reports/*
-      - test/unit/**/*

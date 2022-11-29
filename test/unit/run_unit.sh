@@ -43,22 +43,29 @@ echo "--------------------------------------------------------------------------
 echo "Setup test environment variables"
 echo "------------------------------------------------------------------------------"
 
+source_dir=`echo $PWD | sed "s/test\/unit//"`
+echo $source_dir
+
 if [ "$1" = "" ]; then
     echo "Invalid positional parameter. Must select dataplaneapi or workflowapi. Quitting."
     exit 1
 
 elif [ "$1" = "dataplaneapi" ]; then
     echo "Running dataplane unit tests"
-    pytest dataplaneapi/ -s -W ignore::DeprecationWarning -p no:cacheprovider --cov=../../source/dataplaneapi --cov-report=term --cov-report=xml:../../coverage-reports/coverage-dataplane.xml
+    coverage_report_path=$source_dir/coverage-reports/coverage-dataplane.xml
+    pytest dataplaneapi/ -s -W ignore::DeprecationWarning -p no:cacheprovider --cov=../../source/dataplaneapi --cov-report=term --cov-report=xml:$coverage_report_path
     if [ $? -eq 0 ]; then
+        sed -i -e "s,<source>$source_dir,<source>,g" $coverage_report_path
 	    exit 0
     else
 	    exit 1
     fi
 elif [ "$1" = "workflowapi" ]; then
     echo "Running workflow unit tests"
-    pytest workflowapi/ -s -W ignore::DeprecationWarning -p no:cacheprovider --cov=../../source/workflowapi --cov-report=term --cov-report=xml:../../coverage-reports/coverage-workflowapi.xml
+    coverage_report_path=$source_dir/coverage-reports/coverage-workflow.xml
+    pytest workflowapi/ -s -W ignore::DeprecationWarning -p no:cacheprovider --cov=../../source/workflowapi --cov-report=term --cov-report=xml:$coverage_report_path
     if [ $? -eq 0 ]; then
+        sed -i -e "s,<source>$source_dir,<source>,g" $coverage_report_path
 	    exit 0
     else
 	    exit 1

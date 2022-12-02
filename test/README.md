@@ -26,10 +26,12 @@ You can find each of these within the `test` directory of the framework.
 
 ### Unit Tests
 
-These tests are invoked by running the `run_unit.sh` script in the `test/unit` directory. The script takes a
+These tests are invoked by running the `run_unit.sh` script in the `test/unit` directory. The script optionally takes a
 positional argument for what component to run the tests on: 
 * `./run_unit.sh workflowapi` 
-* `./run_unit.sh dataplaneapi` 
+* `./run_unit.sh dataplaneapi`
+
+Otherwise it runs all available unit tests when no arguments are passed
 
 
 ### Integration tests

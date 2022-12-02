@@ -14,7 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Upgrade jsonschema version v2.6.0 -> v4.17.0
 * Upgrade aws-xray-sdk version v2.6.0 -> v2.11.0
-* Upgrade jsonpickle version v2.0.0 -> v2.2.0
+* Upgrade jsonpickle version v2.0.0 -> v3.0.0
+* Extend Unit tests and ensure it reaches Coverage threshold (80%)
+* Ensure `media-insights-stack.yaml` file uses quotes for `String` values
 
 ## [5.0.0] - 2022-04-13
 

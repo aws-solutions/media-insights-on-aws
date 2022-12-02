@@ -10,12 +10,6 @@ echo "Running unit tests"
 echo "cd ../test/unit"
 cd ../test/unit
 echo "------------------------------------------------------------------------------"
-echo "Installing Dependencies And Testing WorkflowApi"
+echo "Installing Dependencies And Testing Modules"
 echo "------------------------------------------------------------------------------"
-./run_unit.sh workflowapi
-
-
-echo "------------------------------------------------------------------------------"
-echo "Installing Dependencies And Testing DataplaneApi"
-echo "------------------------------------------------------------------------------"
-./run_unit.sh dataplaneapi
+./run_unit.sh

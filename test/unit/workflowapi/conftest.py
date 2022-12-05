@@ -72,15 +72,17 @@ def sfn_client_stub(mock_env_variables):
 
 @pytest.fixture
 def transcribe_client_stub(mock_env_variables):
-    from app import TRANSCRIBE_CLIENT
-    with Stubber(TRANSCRIBE_CLIENT) as stubber:
+    import app
+    client = app.get_transcribe_client()
+    with Stubber(client) as stubber:
         yield stubber
         stubber.assert_no_pending_responses()
 
 @pytest.fixture
 def translate_client_stub(mock_env_variables):
-    from app import TRANSLATE_CLIENT
-    with Stubber(TRANSLATE_CLIENT) as stubber:
+    import app
+    client = app.get_translate_client()
+    with Stubber(client) as stubber:
         yield stubber
         stubber.assert_no_pending_responses()
 

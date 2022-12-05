@@ -101,10 +101,10 @@ IAM_RESOURCE = boto3.resource('iam', config=config)
 LAMBDA_CLIENT = boto3.client("lambda", config=config)
 
 # Transcribe
-TRANSCRIBE_CLIENT = boto3.client('transcribe')#, region_name=os.environ['AWS_REGION'])
+TRANSCRIBE_CLIENT = None
 
 # Translate
-TRANSLATE_CLIENT = boto3.client('translate')#, region_name=os.environ['AWS_REGION'])
+TRANSLATE_CLIENT = None
 
 # Helper class to convert a DynamoDB item to JSON.
 
@@ -2433,6 +2433,18 @@ def update_workflow_execution_status(id, status, message):
 #
 # ================================================================================================
 
+def get_transcribe_client():
+    global TRANSCRIBE_CLIENT
+    if TRANSCRIBE_CLIENT is None:
+        TRANSCRIBE_CLIENT = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
+    return TRANSCRIBE_CLIENT
+
+def get_translate_client():
+    global TRANSLATE_CLIENT
+    if TRANSLATE_CLIENT is None:
+        TRANSLATE_CLIENT = boto3.client('translate', region_name=os.environ['AWS_REGION'])
+    return TRANSLATE_CLIENT
+
 @app.route('/service/transcribe/get_vocabulary', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
 def get_vocabulary():
     """ Get the description for an Amazon Transcribe custom vocabulary.
@@ -2446,11 +2458,11 @@ def get_vocabulary():
     """
     print('get_vocabulary request: '+app.current_request.raw_body.decode())
     vocabulary_name = json.loads(app.current_request.raw_body.decode())['vocabulary_name']
-    response = TRANSCRIBE_CLIENT.get_vocabulary(VocabularyName=vocabulary_name)
+    transcribe_client = get_transcribe_client()
+    response = transcribe_client.get_vocabulary(VocabularyName=vocabulary_name)
     # Convert time field to a format that is JSON serializable
     response['LastModifiedTime'] = response['LastModifiedTime'].isoformat()
     return response
-
 
 @app.route('/service/transcribe/download_vocabulary', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
 def download_vocabulary():
@@ -2484,7 +2496,7 @@ def download_vocabulary():
         500: ChaliceViewError - internal server error
     """
     print('download_vocabulary request: '+app.current_request.raw_body.decode())
-    transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
+    transcribe_client = get_transcribe_client()
     vocabulary_name = json.loads(app.current_request.raw_body.decode())['vocabulary_name']
     url = transcribe_client.get_vocabulary(VocabularyName=vocabulary_name)['DownloadUri']
     import urllib.request
@@ -2518,10 +2530,11 @@ def list_vocabularies():
     """
     # List all custom vocabularies
     print('list_vocabularies request: '+app.current_request.raw_body.decode())
-    response = TRANSCRIBE_CLIENT.list_vocabularies(MaxResults=100)
+    transcribe_client = get_transcribe_client()
+    response = transcribe_client.list_vocabularies(MaxResults=100)
     vocabularies = response['Vocabularies']
     while ('NextToken' in response):
-        response = TRANSCRIBE_CLIENT.list_vocabularies(MaxResults=100, NextToken=response['NextToken'])
+        response = transcribe_client.list_vocabularies(MaxResults=100, NextToken=response['NextToken'])
         vocabularies = vocabularies + response['Vocabularies']
     # Convert time field to a format that is JSON serializable
     for item in vocabularies:
@@ -2553,7 +2566,8 @@ def delete_vocabulary():
     # Delete the specified vocabulary if it exists
     print('delete_vocabulary request: '+app.current_request.raw_body.decode())
     vocabulary_name = json.loads(app.current_request.raw_body.decode())['vocabulary_name']
-    response = TRANSCRIBE_CLIENT.delete_vocabulary(VocabularyName=vocabulary_name)
+    transcribe_client = get_transcribe_client()
+    response = transcribe_client.delete_vocabulary(VocabularyName=vocabulary_name)
     return response
 
 
@@ -2584,7 +2598,8 @@ def create_vocabulary():
     print('create_vocabulary request: '+app.current_request.raw_body.decode())
     vocabulary_name = json.loads(app.current_request.raw_body.decode())['vocabulary_name']
     language_code = json.loads(app.current_request.raw_body.decode())['language_code']
-    response = TRANSCRIBE_CLIENT.create_vocabulary(
+    transcribe_client = get_transcribe_client()
+    response = transcribe_client.create_vocabulary(
         VocabularyName=vocabulary_name,
         LanguageCode=language_code,
         VocabularyFileUri=json.loads(app.current_request.raw_body.decode())['s3uri']
@@ -2604,10 +2619,11 @@ def list_language_models():
         See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.list_language_models>`_
     """
     print('list_language_models request: '+app.current_request.raw_body.decode())
-    response = TRANSCRIBE_CLIENT.list_language_models()
+    transcribe_client = get_transcribe_client()
+    response = transcribe_client.list_language_models()
     models = response['Models']
     while ('NextToken' in response):
-        response = TRANSCRIBE_CLIENT.list_language_models(MaxResults=100, NextToken=response['NextToken'])
+        response = transcribe_client.list_language_models(MaxResults=100, NextToken=response['NextToken'])
         models = models + response['Models']
     # Convert time field to a format that is JSON serializable
     for item in models:
@@ -2637,7 +2653,8 @@ def describe_language_model():
     """
     print('describe_language_model request: '+app.current_request.raw_body.decode())
     request_payload = dict(json.loads(app.current_request.raw_body.decode()))
-    response = TRANSCRIBE_CLIENT.describe_language_model(**request_payload)
+    transcribe_client = get_transcribe_client()
+    response = transcribe_client.describe_language_model(**request_payload)
     # Convert time field to a format that is JSON serializable
     response['LanguageModel']['CreateTime'] = response['LanguageModel']['CreateTime'].isoformat()
     response['LanguageModel']['LastModifiedTime'] = response['LanguageModel']['LastModifiedTime'].isoformat()
@@ -2666,7 +2683,8 @@ def get_terminology():
     """
     print('get_terminology request: '+app.current_request.raw_body.decode())
     terminology_name = json.loads(app.current_request.raw_body.decode())['terminology_name']
-    response = TRANSLATE_CLIENT.get_terminology(Name=terminology_name, TerminologyDataFormat='CSV')
+    translate_client = get_translate_client()
+    response = translate_client.get_terminology(Name=terminology_name, TerminologyDataFormat='CSV')
     # Remove response metadata since we don't need it
     del response['ResponseMetadata']
     # Convert time field to a format that is JSON serializable
@@ -2703,7 +2721,7 @@ def download_terminology():
     """
     # This function returns the specified terminology in CSV format, wrapped in a JSON formatted response.
     print('download_terminology request: '+app.current_request.raw_body.decode())
-    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
+    translate_client = get_translate_client()
     terminology_name = json.loads(app.current_request.raw_body.decode())['terminology_name']
     url = translate_client.get_terminology(Name=terminology_name, TerminologyDataFormat='CSV')['TerminologyDataLocation']['Location']
     import urllib.request
@@ -2725,7 +2743,8 @@ def list_terminologies():
     """
     # This function returns a list of saved terminologies
     print('list_terminologies request: '+app.current_request.raw_body.decode())
-    response = TRANSLATE_CLIENT.list_terminologies(MaxResults=100)
+    translate_client = get_translate_client()
+    response = translate_client.list_terminologies(MaxResults=100)
     terminologies = response['TerminologyPropertiesList']
     while ('NextToken' in response):
         response = TRANSLATE_CLIENT.list_terminologies(MaxResults=100, NextToken=response['NextToken'])
@@ -2763,7 +2782,8 @@ def delete_terminology():
     # Delete the specified terminology if it exists
     print('delete_terminology request: '+app.current_request.raw_body.decode())
     terminology_name = json.loads(app.current_request.raw_body.decode())['terminology_name']
-    response = TRANSLATE_CLIENT.delete_terminology(Name=terminology_name)
+    translate_client = get_translate_client()
+    response = translate_client.delete_terminology(Name=terminology_name)
     return response
 
 
@@ -2794,7 +2814,8 @@ def create_terminology():
     print('create_terminology request: '+app.current_request.raw_body.decode())
     terminology_name = json.loads(app.current_request.raw_body.decode())['terminology_name']
     terminology_csv = json.loads(app.current_request.raw_body.decode())['terminology_csv']
-    response = TRANSLATE_CLIENT.import_terminology(
+    translate_client = get_translate_client()
+    response = translate_client.import_terminology(
         Name=terminology_name,
         MergeStrategy='OVERWRITE',
         TerminologyData={'File': terminology_csv, 'Format':'CSV'}
@@ -2827,7 +2848,8 @@ def get_parallel_data():
     """
     print('get_parallel_data request: '+app.current_request.raw_body.decode())
     request_payload = dict(json.loads(app.current_request.raw_body.decode()))
-    response = TRANSLATE_CLIENT.get_parallel_data(**request_payload)
+    translate_client = get_translate_client()
+    response = translate_client.get_parallel_data(**request_payload)
 
     # Convert time field to a format that is JSON serializable
     response['ParallelDataProperties']['CreatedAt'] = response['ParallelDataProperties']['CreatedAt'].isoformat()
@@ -2863,7 +2885,7 @@ def download_parallel_data():
     """
     # This function returns the specified parallel_data in CSV format, wrapped in a JSON formatted response.
     print('download_parallel_data request: '+app.current_request.raw_body.decode())
-    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
+    translate_client = get_translate_client()
     request_payload = dict(json.loads(app.current_request.raw_body.decode()))
     url = translate_client.get_parallel_data(**request_payload)['DataLocation']['Location']
     import urllib.request
@@ -2885,10 +2907,11 @@ def list_parallel_data():
     """
     # This function returns a list of saved parallel_data
     print('list_parallel_data request: '+app.current_request.raw_body.decode())
-    response = TRANSLATE_CLIENT.list_parallel_data(MaxResults=100)
+    translate_client = get_translate_client()
+    response = translate_client.list_parallel_data(MaxResults=100)
     parallel_data = response['ParallelDataPropertiesList']
     while ('NextToken' in response):
-        response = TRANSLATE_CLIENT.list_parallel_data(MaxResults=100, NextToken=response['NextToken'])
+        response = translate_client.list_parallel_data(MaxResults=100, NextToken=response['NextToken'])
         parallel_data = parallel_data + response['ParallelDataPropertiesList']
     # Convert time field to a format that is JSON serializable
     for item in parallel_data:
@@ -2923,7 +2946,8 @@ def delete_parallel_data():
     # Delete the specified parallel_data if it exists
     print('delete_parallel_data request: '+app.current_request.raw_body.decode())
     request_payload = dict(json.loads(app.current_request.raw_body.decode()))
-    response = TRANSLATE_CLIENT.delete_parallel_data(**request_payload)
+    translate_client = get_translate_client()
+    response = translate_client.delete_parallel_data(**request_payload)
     return response
 
 
@@ -2958,7 +2982,8 @@ def create_parallel_data():
         500: ChaliceViewError - internal server error
     """
     request_payload = dict(json.loads(app.current_request.raw_body.decode()))
-    response = TRANSLATE_CLIENT.create_parallel_data(**request_payload)
+    translate_client = get_translate_client()
+    response = translate_client.create_parallel_data(**request_payload)
     return response
 
 # ================================================================================================

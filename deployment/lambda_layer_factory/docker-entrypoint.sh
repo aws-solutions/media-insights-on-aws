@@ -7,7 +7,6 @@ cat /packages/requirements.txt
 pip3.9 install -q -r /packages/requirements.txt -t /packages/lambda_layer-python-3.9/python/lib/python3.9/site-packages
 pip3.8 install -q -r /packages/requirements.txt -t /packages/lambda_layer-python-3.8/python/lib/python3.8/site-packages
 pip3.7 install -q -r /packages/requirements.txt -t /packages/lambda_layer-python-3.7/python/lib/python3.7/site-packages
-pip3.6 install -q -r /packages/requirements.txt -t /packages/lambda_layer-python-3.6/python/lib/python3.6/site-packages
 
 echo "================================================================================"
 echo "Installing MediaInfo package"
@@ -30,7 +29,6 @@ cd MediaInfo_DLL_GNU_FromSource/
 ./SO_Compile.sh > /dev/null
 echo "Finished building MediaInfo library files:"
 find /MediaInfo_DLL_GNU_FromSource/MediaInfoLib/Project/GNU/Library/.libs/
-cp /MediaInfo_DLL_GNU_FromSource/MediaInfoLib/Project/GNU/Library/.libs/* /packages/lambda_layer-python-3.6/python/ || exit 1
 cp /MediaInfo_DLL_GNU_FromSource/MediaInfoLib/Project/GNU/Library/.libs/* /packages/lambda_layer-python-3.7/python/ || exit 1
 cp /MediaInfo_DLL_GNU_FromSource/MediaInfoLib/Project/GNU/Library/.libs/* /packages/lambda_layer-python-3.8/python/ || exit 1
 cp /MediaInfo_DLL_GNU_FromSource/MediaInfoLib/Project/GNU/Library/.libs/* /packages/lambda_layer-python-3.9/python/ || exit 1
@@ -44,13 +42,9 @@ cd /packages/lambda_layer-python-3.8/
 zip -q -r /packages/lambda_layer-python3.8.zip .
 cd /packages/lambda_layer-python-3.7/
 zip -q -r /packages/lambda_layer-python3.7.zip .
-cd /packages/lambda_layer-python-3.6/
-zip -q -r /packages/lambda_layer-python3.6.zip .
 
 # Clean up build environment
 cd /packages/
-rm -rf /packages/pymediainfo-3.6/
-rm -rf /packages/lambda_layer-python-3.6/
 rm -rf /packages/pymediainfo-3.7/
 rm -rf /packages/lambda_layer-python-3.7/
 rm -rf /packages/pymediainfo-3.8/

@@ -101,10 +101,10 @@ IAM_RESOURCE = boto3.resource('iam', config=config)
 LAMBDA_CLIENT = boto3.client("lambda", config=config)
 
 # Transcribe
-TRANSCRIBE_CLIENT = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
+TRANSCRIBE_CLIENT = boto3.client('transcribe')#, region_name=os.environ['AWS_REGION'])
 
 # Translate
-TRANSLATE_CLIENT = boto3.client('translate', region_name=os.environ['AWS_REGION'])
+TRANSLATE_CLIENT = boto3.client('translate')#, region_name=os.environ['AWS_REGION'])
 
 # Helper class to convert a DynamoDB item to JSON.
 

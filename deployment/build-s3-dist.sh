@@ -231,8 +231,6 @@ if [[ ! -z "${NO_LAYER}" ]]; then
   echo "------------------------------------------------------------------------------"
   echo "Downloading Lambda Layers"
   echo "------------------------------------------------------------------------------"
-  echo "Downloading https://solutions-$region.$s3domain/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.6.zip"
-  wget -q https://solutions-"$region"."$s3domain"/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.6.zip -O media_insights_engine_lambda_layer_python3.6.zip
   echo "Downloading https://solutions-$region.$s3domain/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.7.zip" -O media_insights_engine_lambda_layer_python3.7.zip
   wget -q https://solutions-"$region"."$s3domain"/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.7.zip -O media_insights_engine_lambda_layer_python3.7.zip
   echo "Downloading https://solutions-$region.$s3domain/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.8.zip"
@@ -240,7 +238,6 @@ if [[ ! -z "${NO_LAYER}" ]]; then
   echo "Downloading https://solutions-$region.$s3domain/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.9.zip"
   wget -q https://solutions-"$region"."$s3domain"/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.9.zip -O media_insights_engine_lambda_layer_python3.9.zip
   echo "Copying Lambda layer zips to $dist_dir:"
-  mv media_insights_engine_lambda_layer_python3.6.zip "$regional_dist_dir"
   mv media_insights_engine_lambda_layer_python3.7.zip "$regional_dist_dir"
   mv media_insights_engine_lambda_layer_python3.8.zip "$regional_dist_dir"
   mv media_insights_engine_lambda_layer_python3.9.zip "$regional_dist_dir"
@@ -279,16 +276,13 @@ else
   echo "Running build-lambda-layer.sh:"
   rm -rf lambda_layer-python-* lambda_layer-python*.zip
   if `./build-lambda-layer.sh requirements.txt > /dev/null`; then
-    mv lambda_layer-python3.6.zip media_insights_engine_lambda_layer_python3.6.zip
     mv lambda_layer-python3.7.zip media_insights_engine_lambda_layer_python3.7.zip
     mv lambda_layer-python3.8.zip media_insights_engine_lambda_layer_python3.8.zip
     mv lambda_layer-python3.9.zip media_insights_engine_lambda_layer_python3.9.zip
-    rm -rf lambda_layer-python-3.6/ lambda_layer-python-3.7/ lambda_layer-python-3.8/ lambda_layer-python-3.9/
+    rm -rf lambda_layer-python-3.7/ lambda_layer-python-3.8/ lambda_layer-python-3.9/
     echo "Lambda layer build script completed.";
   else
     echo "WARNING: Lambda layer build script failed. We'll use a pre-built Lambda layers instead.";
-    echo "Downloading https://solutions-$region.$s3domain/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.6.zip"
-    wget -q https://solutions-"$region"."$s3domain"/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.6.zip -O media_insights_engine_lambda_layer_python3.6.zip
     echo "Downloading https://solutions-$region.$s3domain/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.7.zip" -O media_insights_engine_lambda_layer_python3.7.zip
     wget -q https://solutions-"$region"."$s3domain"/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.7.zip -O media_insights_engine_lambda_layer_python3.7.zip
     echo "Downloading https://solutions-$region.$s3domain/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.8.zip"
@@ -297,7 +291,6 @@ else
     wget -q https://solutions-"$region"."$s3domain"/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.9.zip -O media_insights_engine_lambda_layer_python3.9.zip
   fi
   echo "Copying Lambda layer zips to $regional_dist_dir:"
-  mv media_insights_engine_lambda_layer_python3.6.zip "$regional_dist_dir"
   mv media_insights_engine_lambda_layer_python3.7.zip "$regional_dist_dir"
   mv media_insights_engine_lambda_layer_python3.8.zip "$regional_dist_dir"
   mv media_insights_engine_lambda_layer_python3.9.zip "$regional_dist_dir"
@@ -769,7 +762,7 @@ rm -f $global_dist_dir/*.orig
 
 # Skip copy dist to S3 if building for solution builder because
 # that pipeline takes care of copying the dist in another script.
-if [ "$global_bucket" != "solutions-reference" ] && [ "$global_bucket" != "solutions-test-reference" && [ "$global_bucket" != "solutions-feature-reference" ]; then
+if [ "$global_bucket" != "solutions-reference" ] && [ "$global_bucket" != "solutions-test-reference" ] && [ "$global_bucket" != "solutions-feature-reference" ]; then
   echo "------------------------------------------------------------------------------"
   echo "Copy dist to S3"
   echo "------------------------------------------------------------------------------"

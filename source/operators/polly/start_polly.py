@@ -16,6 +16,7 @@ mie_config = json.loads(os.environ['botoConfig'])
 config = config.Config(**mie_config)
 polly = boto3.client('polly', config=config)
 s3 = boto3.client('s3', config=config)
+comprehend = boto3.client('comprehend')
 
 # TODO: Move voiceid to a user configurable variable
 
@@ -63,8 +64,6 @@ def lambda_handler(event, context):
 
     # Get language code of the translation, we should just pass this along in the event later
     try:
-        comprehend = boto3.client('comprehend')
-
         language = comprehend.detect_dominant_language(
             Text=translation
         )

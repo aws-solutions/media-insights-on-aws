@@ -69,7 +69,7 @@ def lambda_handler(event, context):
         workflow_id = str(operator_object.workflow_execution_id)
     except KeyError as e:
         operator_object.update_workflow_status("Error")
-        operator_object.add_workflow_metadata(MediaconvertError="Missing a required metadata key {e}".format(e=e))
+        operator_object.add_workflow_metadata(MediainfoError="Missing a required metadata key {e}".format(e=e))
         raise MasExecutionError(operator_object.return_output_object())
 
     # Adding in exception block for now since we aren't guaranteed an asset id will be present, should remove later

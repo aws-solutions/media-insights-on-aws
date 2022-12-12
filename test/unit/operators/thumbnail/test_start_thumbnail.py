@@ -1,94 +1,103 @@
-# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-# SPDX-License-Identifier: Apache-2.0
+import pytest
 
-###############################################################################
-# PURPOSE:
-#   This operator uses Mediaconvert to do three things:
-#     1) create a thumbnail for a video
-#     2) extract audio track from video
-#     3) transcode the video into an MP4 format supported by Rekognition
-#   For thumbnails, it will grab the frame from 7 seconds into the video.
-#   That position can be configured with the "ThumbnailPosition" argument.
-#   The transcode video is called a "proxy encode" and is used by Rekognition
-#   operators instead of the original video uploaded by a user.
-#
-# OUTPUT:
-#   Thumbnails and transcoded video will be saved to the following path:
-#       s3://" + $DATAPLANE_BUCKET + "/" + 'private/assets/' + asset_id + "/"
-#   The thumbnail filename will end with "_thumbnail.0000001.jpg".
-#   If the user specifies a thumbnail position that exceeds the video duration
-#   then a thumbnail will be created at time 0 and have a filename ending
-#   with end with "_thumbnail.0000000.jpg".
-#
-#   Thumbnail position can be controlled in the workflow configuration, like this:
-#   '"Thumbnail":{"Position":7, "Enabled":true}'
-#
-###############################################################################
-
-import os
-import boto3
-import json
-from botocore import config
-from aws_xray_sdk.core import xray_recorder
-from aws_xray_sdk.core import patch_all
-from MediaInsightsEngineLambdaHelper import MediaInsightsOperationHelper
-from MediaInsightsEngineLambdaHelper import MasExecutionError
-
-patch_all()
-
-region = os.environ['AWS_REGION']
-mie_config = json.loads(os.environ['botoConfig'])
-config = config.Config(**mie_config)
-
-mediaconvert_role = os.environ['mediaconvertRole']
-dataplane_bucket = os.environ['DATAPLANE_BUCKET']
-mediaconvert = boto3.client("mediaconvert", config=config, region_name=region)
-
-media_convert_client = None
-
-def get_mediaconvert_client():
-    mediaconvert_endpoint = os.environ["MEDIACONVERT_ENDPOINT"]
-    global media_convert_client
-    if media_convert_client is None:
-        media_convert_client = boto3.client("mediaconvert", region_name=region, endpoint_url=mediaconvert_endpoint)
-    return media_convert_client
-
-def lambda_handler(event, context):
-    print("We got the following event:\n", event)
-    operator_object = MediaInsightsOperationHelper(event)
-
-    try:
-        workflow_id = str(operator_object.workflow_execution_id)
-        input_bucket = operator_object.input["Media"]["Video"]["S3Bucket"]
-        input_key = operator_object.input["Media"]["Video"]["S3Key"]
-    except KeyError as e:
-        operator_object.update_workflow_status("Error")
-        operator_object.add_workflow_metadata(ThumbnailError="Missing a required metadata key {e}".format(e=e))
-        raise MasExecutionError(operator_object.return_output_object())
-
-    # Adding in exception block for now since we aren't guaranteed an asset id will be present, should remove later
-    try:
-        asset_id = operator_object.asset_id
-    except KeyError as e:
-        print("No asset id passed in with this workflow", e)
-        asset_id = ''
-    file_input = "s3://" + input_bucket + "/" + input_key
-    audio_destination = "s3://" + dataplane_bucket + "/" + 'private/assets/' + asset_id + "/workflows/" + workflow_id + "/"
-    thumbnail_destination = "s3://" + dataplane_bucket + "/" + 'private/assets/' + asset_id + "/"
-    proxy_destination = "s3://" + dataplane_bucket + "/" + 'private/assets/' + asset_id + "/"
-
-    # Get user-defined location for generic data file
-    if "ThumbnailPosition" in operator_object.configuration:
-        thumbnail_position = int(operator_object.configuration["ThumbnailPosition"])
-    else:
-        thumbnail_position = 7
-
-    customer_mediaconvert = get_mediaconvert_client()
+def test_input_parameter():
+    import thumbnail.start_thumbnail as lambda_function
+    import MediaInsightsEngineLambdaHelper
+    import helper
     
-    try:
-        response = customer_mediaconvert.create_job(
-            Role=mediaconvert_role,
-            Settings={
+    # Empty workflow id
+    operator_parameter = helper.get_operator_parameter()
+    del operator_parameter['WorkflowExecutionId']
+    
+    with pytest.raises(KeyError) as err:
+        lambda_function.lambda_handler(operator_parameter, {})
+    assert err.value.args[0] == 'WorkflowExecutionId'
+
+    # Empty S3Bucket
+    operator_parameter = helper.get_operator_parameter(
+        metadata={},
+        input = {
+            'Media': {
+                'Video': {
+                    'S3Bucket': 'test_bucket',
+                    'S3Key': 'test_key'
+                }
+            }
+        }
+    )
+    del operator_parameter['Input']['Media']['Video']['S3Bucket']
+    
+    with pytest.raises(MediaInsightsEngineLambdaHelper.MasExecutionError) as err:
+        lambda_function.lambda_handler(operator_parameter, {})
+    assert err.value.args[0]['Status'] == 'Error'
+    assert "Missing a required metadata key 'S3Bucket'" in err.value.args[0]['MetaData']['ThumbnailError']
+
+    # Empty S3Key
+    operator_parameter = helper.get_operator_parameter(
+        metadata={},
+        input = {
+            'Media': {
+                'Video': {
+                    'S3Bucket': 'test_bucket',
+                    'S3Key': 'test_key'
+                }
+            }
+        }
+    )
+    del operator_parameter['Input']['Media']['Video']['S3Key']
+    
+    with pytest.raises(MediaInsightsEngineLambdaHelper.MasExecutionError) as err:
+        lambda_function.lambda_handler(operator_parameter, {})
+    assert err.value.args[0]['Status'] == 'Error'
+    assert "Missing a required metadata key 'S3Key'" in err.value.args[0]['MetaData']['ThumbnailError']
+
+def test_create_job_error(mediaconvert_start_stub):
+    import thumbnail.start_thumbnail as lambda_function
+    import MediaInsightsEngineLambdaHelper
+    import helper
+    
+    # Empty workflow id
+    operator_parameter = helper.get_operator_parameter(
+        metadata={},
+        input = {
+            'Media': {
+                'Video': {
+                    'S3Bucket': 'test_bucket',
+                    'S3Key': 'test_key'
+                }
+            }
+        }
+    )
+
+    mediaconvert_start_stub.add_client_error('create_job')
+    
+    with pytest.raises(MediaInsightsEngineLambdaHelper.MasExecutionError) as err:
+        lambda_function.lambda_handler(operator_parameter, {})
+    assert err.value.args[0]['Status'] == 'Error'
+    assert err.value.args[0]['MetaData']['ThumbnailError'] == 'An error occurred () when calling the CreateJob operation: '
+
+def test_create_job_success(mediaconvert_start_stub):
+    import thumbnail.start_thumbnail as lambda_function
+    import helper
+    
+    # Empty workflow id
+    operator_parameter = helper.get_operator_parameter(
+        metadata={},
+        input = {
+            'Media': {
+                'Video': {
+                    'S3Bucket': 'test_bucket',
+                    'S3Key': 'test_key'
+                }
+            }
+        }
+    )
+
+    mediaconvert_start_stub.add_response(
+        'create_job',
+        expected_params = {
+            'Role': 'testMediaconvertRole',
+            'Settings': {
                 "OutputGroups": [
                     {
                         "CustomName": "thumbnail",
@@ -107,7 +116,7 @@ def lambda_handler(event, context):
                                         "Codec": "FRAME_CAPTURE",
                                         "FrameCaptureSettings": {
                                             "FramerateNumerator": 1,
-                                            "FramerateDenominator": thumbnail_position,
+                                            "FramerateDenominator": 7,
                                             "MaxCaptures": 2,
                                             "Quality": 80
                                         }
@@ -122,7 +131,7 @@ def lambda_handler(event, context):
                         "OutputGroupSettings": {
                             "Type": "FILE_GROUP_SETTINGS",
                             "FileGroupSettings": {
-                                "Destination": thumbnail_destination
+                                "Destination": "s3://testDataplaneBucket/private/assets/testAssetId/"
                             }
                         }
                     },
@@ -161,7 +170,7 @@ def lambda_handler(event, context):
                         "OutputGroupSettings": {
                             "Type": "FILE_GROUP_SETTINGS",
                             "FileGroupSettings": {
-                                "Destination": audio_destination
+                                "Destination": "s3://testDataplaneBucket/private/assets/testAssetId/workflows/testWorkflowId/"
                             }
                         }
                     },
@@ -254,7 +263,7 @@ def lambda_handler(event, context):
                         "OutputGroupSettings": {
                             "Type": "FILE_GROUP_SETTINGS",
                             "FileGroupSettings": {
-                                "Destination": proxy_destination
+                                "Destination": "s3://testDataplaneBucket/private/assets/testAssetId/"
                             }
                         }
                     }
@@ -270,19 +279,23 @@ def lambda_handler(event, context):
                     "VideoSelector": {
                         "ColorSpace": "FOLLOW"
                     },
-                    "FileInput": file_input
+                    "FileInput": "s3://test_bucket/test_key"
                 }]
             }
-        )
-
-    # TODO: Add support for boto client error handling
-    except Exception as e:
-        print("Exception:\n", e)
-        operator_object.update_workflow_status("Error")
-        operator_object.add_workflow_metadata(ThumbnailError=str(e))
-        raise MasExecutionError(operator_object.return_output_object())
-    else:
-        job_id = response['Job']['Id']
-        operator_object.update_workflow_status("Executing")
-        operator_object.add_workflow_metadata(MediaconvertJobId=job_id, MediaconvertInputFile=file_input, AssetId=asset_id, WorkflowExecutionId=workflow_id)
-        return operator_object.return_output_object()
+        },
+        service_response = {
+            'Job': {
+                'Id': 'testJobId',
+                'Role': 'testMediaconvertRole',
+                'Settings': {}
+            }
+        }
+    )
+    
+    response = lambda_function.lambda_handler(operator_parameter, {})
+    assert response['Status'] == 'Executing'
+    assert response['MetaData']['MediaconvertJobId'] == 'testJobId'
+    assert response['MetaData']['MediaconvertInputFile'] == 's3://test_bucket/test_key'
+    assert response['MetaData']['AssetId'] == 'testAssetId'
+    assert response['MetaData']['WorkflowExecutionId'] == 'testWorkflowId'
+    

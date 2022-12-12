@@ -107,7 +107,7 @@ def test_mediainfo_invalid_results():
     with pytest.raises(MediaInsightsEngineLambdaHelper.MasExecutionError) as err:
         lambda_function.lambda_handler(operator_parameter, {})
     assert err.value.args[0]['Status'] == 'Error'
-    assert err.value.args[0]['MetaData']['MediainfoError'] == "Unable to get Mediainfo results. {'Name': 'testName', 'AssetId': 'testAssetId', 'WorkflowExecutionId': 'testWorkflowId', 'Input': {'Media': {'Image': {'S3Bucket': 'test_bucket', 'S3Key': 'test_key'}}}, 'Configuration': {'Enabled': True, 'MediaType': 'testMedia'}, 'Status': 'Error', 'MetaData': {'MediainfoError': 'File does not contain valid video, audio, image, or text content'}, 'Media': {}}"
+    assert "Unable to get Mediainfo results." in err.value.args[0]['MetaData']['MediainfoError']
 
     # revert mocks
     MediaInfo.parse = original_function

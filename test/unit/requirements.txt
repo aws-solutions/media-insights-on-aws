@@ -8,5 +8,5 @@ chalice==1.27.3
 aws_xray_sdk==2.11.0
 pytest-cov==4.0.0
 simplejson==3.18.0
-pymediainfo==4.2.1
+pymediainfo==6.0.1
 nltk==3.7

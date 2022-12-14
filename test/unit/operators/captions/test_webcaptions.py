@@ -628,7 +628,7 @@ def test_check_polly_webcaptions_all_tasks_finished():
     assert lambda_function.dataplane.store_asset_metadata.call_args[0][2] == 'testWorkflowId'
     restore_mock(lambda_function, dataplane_functions)
 
-def test_check_polly_webcaptions_empty_collection(polly_client_stub):
+def test_check_polly_webcaptions_empty_collection():
     import captions.webcaptions as lambda_function
     from MediaInsightsEngineLambdaHelper import MasExecutionError
     import helper
@@ -649,6 +649,103 @@ def test_check_polly_webcaptions_empty_collection(polly_client_stub):
         lambda_function.check_polly_webcaptions(input_parameter, {})
     assert err.value.args[0]['Status'] == 'Error'
     assert err.value.args[0]['MetaData']['PollyCollectionError'] == "Missing a required metadata key 'PollyCollection'"
+    assert lambda_function.dataplane.retrieve_asset_metadata.call_count == 0
+    assert lambda_function.dataplane.generate_media_storage_path.call_count == 0
+    assert lambda_function.dataplane.store_asset_metadata.call_count == 0
+    restore_mock(lambda_function, dataplane_functions)
+
+def test_check_polly_webcaptions_error_handle(polly_client_stub):
+    import captions.webcaptions as lambda_function
+    from MediaInsightsEngineLambdaHelper import MasExecutionError
+    import helper
+
+    dataplane_functions = mock_dataplane(
+        lambda_function=lambda_function,
+        mock_store_response={
+            'Status': 'Success'
+        }
+    )
+
+    polly_client_stub.add_client_error('get_speech_synthesis_task')
+
+    input_parameter = helper.get_operator_parameter(
+        metadata={
+            'PollyCollection': [{
+                'TargetLAnguageCode': 'en',
+                'TranslationText': {'S3Bucket': 'test_bucket'},
+                'VoiceId': 'testVoiceId',
+                'PollyTaskId': 'testTaskId',
+                'PollyStatus': 'started',
+                'PollyAudio': {
+                    'S3Key': 'private/assets/testAssetId/workflows/testWorkflowId/audio_only_en.testTaskId.mp3',
+                    'S3Bucket': 'test_bucket'
+                }
+            }]
+        },
+        input = {
+            'MetaData': {
+                'TranscribeSourceLanguage': 'es'
+            }
+        }
+    )
+    with pytest.raises(MasExecutionError) as err:
+        lambda_function.check_polly_webcaptions(input_parameter, {})
+    assert err.value.args[0]['Status'] == 'Error'
+    assert err.value.args[0]['MetaData']['PollyCollectionError'] == 'Unable to get response from polly: An error occurred () when calling the GetSpeechSynthesisTask operation: '
+    assert lambda_function.dataplane.retrieve_asset_metadata.call_count == 0
+    assert lambda_function.dataplane.generate_media_storage_path.call_count == 0
+    assert lambda_function.dataplane.store_asset_metadata.call_count == 0
+    restore_mock(lambda_function, dataplane_functions)
+
+def test_check_polly_webcaptions_failed(polly_client_stub):
+    import captions.webcaptions as lambda_function
+    from MediaInsightsEngineLambdaHelper import MasExecutionError
+    import helper
+
+    dataplane_functions = mock_dataplane(
+        lambda_function=lambda_function,
+        mock_store_response={
+            'Status': 'Success'
+        }
+    )
+
+    polly_client_stub.add_response(
+        'get_speech_synthesis_task',
+        expected_params = {
+            'TaskId': 'testTaskId'
+        },
+        service_response = {
+            'SynthesisTask': {
+                'TaskStatus': 'failed',
+                'TaskStatusReason': 'testFailedReason'
+            }
+        }
+    )
+
+    input_parameter = helper.get_operator_parameter(
+        metadata={
+            'PollyCollection': [{
+                'TargetLAnguageCode': 'en',
+                'TranslationText': {'S3Bucket': 'test_bucket'},
+                'VoiceId': 'testVoiceId',
+                'PollyTaskId': 'testTaskId',
+                'PollyStatus': 'started',
+                'PollyAudio': {
+                    'S3Key': 'private/assets/testAssetId/workflows/testWorkflowId/audio_only_en.testTaskId.mp3',
+                    'S3Bucket': 'test_bucket'
+                }
+            }]
+        },
+        input = {
+            'MetaData': {
+                'TranscribeSourceLanguage': 'es'
+            }
+        }
+    )
+    with pytest.raises(MasExecutionError) as err:
+        lambda_function.check_polly_webcaptions(input_parameter, {})
+    assert err.value.args[0]['Status'] == 'Error'
+    assert err.value.args[0]['MetaData']['PollyCollectionError'] == 'Polly returned as failed: testFailedReason'
     assert lambda_function.dataplane.retrieve_asset_metadata.call_count == 0
     assert lambda_function.dataplane.generate_media_storage_path.call_count == 0
     assert lambda_function.dataplane.store_asset_metadata.call_count == 0

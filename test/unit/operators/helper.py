@@ -7,6 +7,7 @@ def get_operator_parameter(metadata = {}, input = {}, media = {}):
             'Enabled': True,
             'MediaType': 'testMedia',
             'TargetLanguageCode': 'en',
+            'TargetLanguageCodes': ['en'],
             'TranscribeLanguage': 'en',
             'VocabularyName': 'testVocabularyName',
             'LanguageModelName': 'testLanguageModelName',
@@ -16,7 +17,15 @@ def get_operator_parameter(metadata = {}, input = {}, media = {}):
             'LanguageOptions': ['en'],
             'CollectionId': 'testCollectionId',
             'Bucket': 'testBucket',
-            'Key': 'testKey'
+            'Key': 'testKey',
+            'TerminologyNames': [{
+                'Name': 'testTerminologyName',
+                'TargetLanguageCodes': ['en']
+            }],
+            'ParallelDataNames': [{
+                'Name': 'testParallelName',
+                'TargetLanguageCodes': ['en']
+            }]
         },
         'Status': 'testStatus',
         'MetaData': metadata,

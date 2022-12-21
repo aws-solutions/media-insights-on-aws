@@ -34,6 +34,8 @@ from MediaInsightsEngineLambdaHelper import MediaInsightsOperationHelper
 from MediaInsightsEngineLambdaHelper import MasExecutionError
 from MediaInsightsEngineLambdaHelper import DataPlane
 
+s3 = boto3.client('s3')
+
 patch_all()
 
 # Lambda function entrypoint:
@@ -84,7 +86,6 @@ def lambda_handler(event, context):
         raise MasExecutionError(operator_object.return_output_object())
 
     # Get metadata
-    s3 = boto3.client('s3')
     try:
         print("Getting data from s3://"+metadata_bucket+"/"+metadata_filename)
         data = s3.get_object(Bucket=metadata_bucket, Key=metadata_filename)

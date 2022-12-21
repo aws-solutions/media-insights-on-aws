@@ -19,7 +19,7 @@ region = os.environ['AWS_REGION']
 mie_config = json.loads(os.environ['botoConfig'])
 config = config.Config(**mie_config)
 transcribe = boto3.client("transcribe", config=config)
-
+s3 = boto3.client('s3', config=config)
 
 def lambda_handler(event, context):
     print("We got this event:\n", event)
@@ -73,7 +73,6 @@ def lambda_handler(event, context):
             print(text_only_transcript)
 
             dataplane = DataPlane()
-            s3 = boto3.client('s3', config=config)
 
             transcript_storage_path = dataplane.generate_media_storage_path(asset_id, workflow_id)
 

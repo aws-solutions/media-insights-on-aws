@@ -58,11 +58,9 @@ fi
 echo "------------------------------------------------------------------------------"
 echo "Building Lambda Layer zip file"
 echo "------------------------------------------------------------------------------"
-rm -rf ./lambda_layer-python-3.6/
 rm -rf ./lambda_layer-python-3.7/
 rm -rf ./lambda_layer-python-3.8/
 rm -rf ./lambda_layer-python-3.9/
-rm -f ./lambda_layer-python3.6.zip
 rm -f ./lambda_layer-python3.7.zip
 rm -f ./lambda_layer-python3.8.zip
 rm -f ./lambda_layer-python3.9.zip
@@ -70,7 +68,7 @@ docker build --tag=lambda_layer_factory:latest . 2>&1 > /dev/null
 if [ $? -eq 0 ]; then
   docker run --rm -v "$PWD":/packages lambda_layer_factory
 fi
-if [[ ! -f ./lambda_layer-python3.6.zip ]] || [[ ! -f ./lambda_layer-python3.7.zip ]] || [[ ! -f ./lambda_layer-python3.8.zip ]] || [[ ! -f ./lambda_layer-python3.9.zip ]]; then
+if [[ ! -f ./lambda_layer-python3.7.zip ]] || [[ ! -f ./lambda_layer-python3.8.zip ]] || [[ ! -f ./lambda_layer-python3.9.zip ]]; then
     echo "ERROR: Failed to build lambda layer zip file."
     exit 1
 fi
@@ -84,23 +82,20 @@ unzip -q -d lambda_layer-python-3.8 ./lambda_layer-python3.8.zip
 unzip -q -d lambda_layer-python-3.9 ./lambda_layer-python3.9.zip
 ZIPPED_LIMIT=50
 UNZIPPED_LIMIT=250
-UNZIPPED_SIZE_36=$(du -sm ./lambda_layer-python-3.6/ | cut -f 1)
-ZIPPED_SIZE_36=$(du -sm ./lambda_layer-python3.6.zip | cut -f 1)
 UNZIPPED_SIZE_37=$(du -sm ./lambda_layer-python-3.7/ | cut -f 1)
 ZIPPED_SIZE_37=$(du -sm ./lambda_layer-python3.7.zip | cut -f 1)
 UNZIPPED_SIZE_38=$(du -sm ./lambda_layer-python-3.8/ | cut -f 1)
 ZIPPED_SIZE_38=$(du -sm ./lambda_layer-python3.8.zip | cut -f 1)
 UNZIPPED_SIZE_39=$(du -sm ./lambda_layer-python-3.9/ | cut -f 1)
 ZIPPED_SIZE_39=$(du -sm ./lambda_layer-python3.9.zip | cut -f 1)
-rm -rf ./lambda_layer-python-3.6/
 rm -rf ./lambda_layer-python-3.7/
 rm -rf ./lambda_layer-python-3.8/
 rm -rf ./lambda_layer-python-3.9/
-if (( $UNZIPPED_SIZE_36 > $UNZIPPED_LIMIT || $ZIPPED_SIZE_36 > $ZIPPED_LIMIT || $UNZIPPED_SIZE_37 > $UNZIPPED_LIMIT || $ZIPPED_SIZE_37 > $ZIPPED_LIMIT || $UNZIPPED_SIZE_38 > $UNZIPPED_LIMIT || $ZIPPED_SIZE_38 > $ZIPPED_LIMIT || $UNZIPPED_SIZE_39 > $UNZIPPED_LIMIT || $ZIPPED_SIZE_39 > $ZIPPED_LIMIT)); then
+if (( $UNZIPPED_SIZE_37 > $UNZIPPED_LIMIT || $ZIPPED_SIZE_37 > $ZIPPED_LIMIT || $UNZIPPED_SIZE_38 > $UNZIPPED_LIMIT || $ZIPPED_SIZE_38 > $ZIPPED_LIMIT || $UNZIPPED_SIZE_39 > $UNZIPPED_LIMIT || $ZIPPED_SIZE_39 > $ZIPPED_LIMIT)); then
 	echo "ERROR: Deployment package exceeds AWS Lambda layer size limits.";
 	exit 1
 fi
-echo "Lambda layers have been saved to ./lambda_layer-python3.6.zip, ./lambda_layer-python3.7.zip, ./lambda_layer-python3.8.zip, and ./lambda_layer-python3.9.zip."
+echo "Lambda layers have been saved to ./lambda_layer-python3.7.zip, ./lambda_layer-python3.8.zip, and ./lambda_layer-python3.9.zip."
 
 if [ -n "$S3_FQDN" ]; then
     command -v aws > /dev/null
@@ -121,25 +116,12 @@ if [ -n "$S3_FQDN" ]; then
     echo "Publishing Lambda Layer to AWS account $ACCOUNT_ID"
     echo "------------------------------------------------------------------------------"
     LAMBDA_LAYERS_BUCKET=lambda-layers-$ACCOUNT_ID
-    LAYER_NAME_36=lambda_layer-python36
     LAYER_NAME_37=lambda_layer-python37
     LAYER_NAME_38=lambda_layer-python38
     LAYER_NAME_39=lambda_layer-python39
     # create temp working dir for zip files
     aws s3 mb s3://"$LAMBDA_LAYERS_BUCKET" > /dev/null
     # Warn user if layer already exists
-    aws lambda list-layer-versions --layer-name $LAYER_NAME_36 | grep -q "\"LayerVersions\": \["
-    if [ $? -eq 0 ]; then
-        echo "WARNING: AWS Layer with name $LAYER_NAME_36 already exists."
-        read -r -p "Are you sure you want to overwrite $LAYER_NAME_36? [y/N] " response
-        if [[ "$response" =~ ^([yY][eE][sS]|[yY])+$ ]]
-        then
-            aws s3 cp lambda_layer-python3.6.zip s3://"$LAMBDA_LAYERS_BUCKET"
-            aws lambda publish-layer-version --layer-name $LAYER_NAME_36 --content S3Bucket="$LAMBDA_LAYERS_BUCKET",S3Key=lambda_layer-python3.6.zip --compatible-runtimes python3.6
-            aws s3 rm s3://"$LAMBDA_LAYERS_BUCKET"/lambda_layer-python3.6.zip
-            arn36=$(aws lambda list-layer-versions --layer-name $LAYER_NAME_36 --output text --query 'LayerVersions[0].LayerVersionArn')
-        fi
-    fi
     aws lambda list-layer-versions --layer-name $LAYER_NAME_37 | grep "\"LayerVersions\": \["
     if [ $? -eq 0 ]; then
         echo "WARNING: AWS Layer with name $LAYER_NAME_37 already exists."
@@ -179,7 +161,6 @@ if [ -n "$S3_FQDN" ]; then
     # remove temp working dir for zip files
     aws s3 rb s3://"$LAMBDA_LAYERS_BUCKET"/ > /dev/null
     echo "Lambda layers have been published. Use the following ARNs to attach them to Lambda functions:"
-    echo "$arn36"
     echo "$arn37"
     echo "$arn38"
     echo "$arn39"

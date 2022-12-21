@@ -4,19 +4,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [5.1.0] - 2022-12-21
+## [5.1.0] - 2023-02-06
 
-### Added:
+### New:
 
-* Unit tests for all existing functionality to cover a minimum threshold of 80%
+* Added Unit tests for all existing functionality to cover a minimum threshold of 80%
+* Added AWS CDK infrastructure in source/cdk directory
+* Defined resources for AWS CDK stack in source/cdk/lib
+* Added snapshot test to source/cdk/test directory
 
-### Changed:
+### Changes:
 
 * Updated NodeJS Version from 12 to 14
-
-### Removed:
-
-* Lambda Layer references for deprecated Python version 3.6
+* Removed Lambda Layer references for deprecated Python version 3.6
+* Removed CloudFormation templates from deployment directory
+* Removed CloudFormation template source/operators/operator-library.yaml
+* Removed external\_resources.json from source/dataplaneapi/ and source/workflowapi/
+* Updated deployment/build-s3-dist.sh to `cdk synth` CloudFormation templates and perform clean-up on them
 
 
 ## [5.0.0] - 2022-04-13

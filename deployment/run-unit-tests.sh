@@ -7,6 +7,11 @@
 # Run unit tests
 echo "Running unit tests"
 
+echo "------------------------------------------------------------------------------"
+echo "Installing Dependencies And Testing CDK"
+echo "------------------------------------------------------------------------------"
+chmod +x ../source/cdk/run-tests.sh && ../source/cdk/run-tests.sh
+
 echo "cd ../test/unit"
 cd ../test/unit
 echo "------------------------------------------------------------------------------"

@@ -42,16 +42,12 @@ echo "mkdir -p $dist_source_dir"
 mkdir -p "$dist_source_dir"
 
 echo "------------------------------------------------------------------------------"
-echo "[Packing] Templates"
-echo "------------------------------------------------------------------------------"
-echo "copy yaml templates"
-cp "$orig_template_dir"/*.yaml "$dist_template_dir"/
-
-echo "------------------------------------------------------------------------------"
 echo "[Packing] Build Script"
 echo "------------------------------------------------------------------------------"
 echo "cp $orig_template_dir/build-s3-dist.sh $dist_template_dir"
 cp "$orig_template_dir"/build-s3-dist.sh "$dist_template_dir"
+echo "cp -R $orig_template_dir/cdk-solution-helper $dist_template_dir/"
+cp -R "$orig_template_dir"/cdk-solution-helper "$dist_template_dir"/
 
 echo "------------------------------------------------------------------------------"
 echo "[Packing] Source Folder"

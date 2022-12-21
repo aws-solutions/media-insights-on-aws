@@ -25,8 +25,6 @@
 #
 ###############################################################################
 
-trap cleanup_and_die SIGINT SIGTERM ERR
-
 usage() {
   msg "$msg"
   cat <<EOF
@@ -47,13 +45,13 @@ EOF
 }
 
 cleanup_and_die() {
-  trap - SIGINT SIGTERM ERR
   echo "Trapped signal."
   cleanup
   die 1
 }
 
 cleanup() {
+  trap - SIGINT SIGTERM ERR EXIT
   # Deactivate and remove the temporary python virtualenv used to run this script
   if [[ "$VIRTUAL_ENV" != "" ]];
   then
@@ -62,6 +60,7 @@ cleanup() {
     echo "Cleaning up complete"
     echo "------------------------------------------------------------------------------"
   fi
+  [ -n "$VENV" ] && [ -d "$VENV" ] && rm -rf "$VENV"
 }
 
 msg() {
@@ -69,10 +68,15 @@ msg() {
 }
 
 die() {
-  local msg=$1
+  local msg="$1"
   local code=${2-1} # default exit status 1
   msg "$msg"
   exit "$code"
+}
+
+do_cmd() {
+  echo "$*"
+  "$@" || die $?
 }
 
 parse_params() {
@@ -169,10 +173,12 @@ fi
 
 # Get reference for all important folders
 build_dir="$PWD"
+staging_dist_dir="$build_dir/staging"
 global_dist_dir="$build_dir/global-s3-assets"
 regional_dist_dir="$build_dir/regional-s3-assets"
 dist_dir="$build_dir/dist"
 source_dir="$build_dir/../source"
+cdk_dir="$source_dir/cdk"
 
 # Create and activate a temporary Python environment for this script.
 echo "------------------------------------------------------------------------------"
@@ -183,14 +189,17 @@ if [[ "$VIRTUAL_ENV" != "" ]]; then
     echo "ERROR: Do not run this script inside Virtualenv. Type \`deactivate\` and run again.";
     exit 1;
 fi
-echo "Using virtual python environment:"
-VENV=$(mktemp -d) && echo "$VENV"
 command -v python3 > /dev/null
 if [ $? -ne 0 ]; then
     echo "ERROR: install Python3 before running this script"
     exit 1
 fi
-python3 -m venv "$VENV"
+echo "Using virtual python environment:"
+VENV=$(mktemp -d) && echo "$VENV"
+python3 -m venv "$VENV" || die "ERROR: Couldn't create virtual python environment" 1
+
+trap cleanup_and_die SIGINT SIGTERM ERR EXIT
+
 source "$VENV"/bin/activate
 pip3 install wheel
 pip3 install --quiet boto3 chalice docopt pyyaml jsonschema aws_xray_sdk
@@ -626,10 +635,11 @@ fi
 [ -e .chalice/deployments ] && rm -rf .chalice/deployments
 
 echo "running chalice..."
-chalice package --merge-template external_resources.json dist
+chalice package dist
 echo "...chalice done"
-echo "cp ./dist/sam.json $global_dist_dir/media-insights-workflow-api-stack.template"
-cp dist/sam.json "$global_dist_dir"/media-insights-workflow-api-stack.template
+mkdir -p "$cdk_dir/dist"
+echo "cp ./dist/sam.json $cdk_dir/dist/media-insights-workflow-api-stack.template"
+cp dist/sam.json "$cdk_dir/dist/media-insights-workflow-api-stack.template"
 if [ $? -ne 0 ]; then
   echo "ERROR: Failed to build workflow api template"
   exit 1
@@ -683,9 +693,12 @@ fi
 # Otherwise, chalice will use the existing deployment package
 [ -e .chalice/deployments ] && rm -rf .chalice/deployments
 
-chalice package --merge-template external_resources.json dist
-echo "cp ./dist/sam.json $global_dist_dir/media-insights-dataplane-api-stack.template"
-cp dist/sam.json "$global_dist_dir"/media-insights-dataplane-api-stack.template
+echo "running chalice..."
+chalice package dist
+echo "...chalice done"
+mkdir -p "$cdk_dir/dist"
+echo "cp ./dist/sam.json $cdk_dir/dist/media-insights-dataplane-api-stack.template"
+cp dist/sam.json "$cdk_dir/dist/media-insights-dataplane-api-stack.template"
 if [ $? -ne 0 ]; then
   echo "ERROR: Failed to build dataplane api template"
   exit 1
@@ -731,12 +744,83 @@ echo "--------------------------------------------------------------------------
 echo "CloudFormation Templates"
 echo "------------------------------------------------------------------------------"
 
+echo "------------------------------------------------------------------------------"
+echo "Install dependencies for the cdk-solution-helper"
+echo "------------------------------------------------------------------------------"
+
+do_cmd cd $build_dir/cdk-solution-helper
+do_cmd npm install
+
+echo "------------------------------------------------------------------------------"
+echo "Synth CDK Project"
+echo "------------------------------------------------------------------------------"
+
+# Install the cdk package dependencies
+do_cmd cd "$cdk_dir"
+do_cmd npm install
+
+# Add local install to PATH
+export PATH=$(npm bin):$PATH
+# Check cdk version to verify installation
+current_cdkver=`cdk --version | grep -Eo '^[0-9]{1,2}\.[0-9]+\.[0-9]+'`
+echo CDK version $current_cdkver
+
+do_cmd npm run build       # build javascript from typescript to validate the code
+                           # cdk synth doesn't always detect issues in the typescript
+                           # and may succeed using old build files. This ensures we
+                           # have fresh javascript from a successful build
+
+
+echo "------------------------------------------------------------------------------"
+echo "Create Templates"
+echo "------------------------------------------------------------------------------"
+
+
+# Run 'cdk synth' to generate raw solution outputs
+do_cmd cdk context --clear
+do_cmd cdk synth -q --output="$staging_dist_dir"
+
+# Remove unnecessary output files
+do_cmd cd "$staging_dist_dir"
+rm -f tree.json manifest.json cdk.out
+
 echo "Preparing template files:"
-cp "$source_dir/operators/operator-library.yaml" "$global_dist_dir/media-insights-operator-library.template"
-cp "$build_dir/media-insights-stack.yaml" "$global_dist_dir/media-insights-stack.template"
-cp "$build_dir/media-insights-test-operations-stack.yaml" "$global_dist_dir/media-insights-test-operations-stack.template"
-cp "$build_dir/media-insights-dataplane-streaming-stack.template" "$global_dist_dir/media-insights-dataplane-streaming-stack.template"
+root_template=`basename *.assets.json .assets.json`
+rm *.assets.json
+do_cmd mv "${root_template}.template.json" "$global_dist_dir/${root_template}-stack.template"
+
+# Map nested template names generated by CDK to destination names
+declare -ar nested_stacks_names_src=( \
+  MediaInsightsWorkflowApi \
+  MediaInsightsDataplaneApiStack \
+  Analytics \
+  OperatorLibrary \
+  TestResources \
+)
+declare -ar nested_stacks_names_dst=( \
+  workflow-api-stack \
+  dataplane-api-stack \
+  dataplane-streaming-stack \
+  operator-library \
+  test-operations-stack \
+)
+
+for i in `seq 0 $((${#nested_stacks_names_src[@]} - 1))`; do
+  do_cmd mv \
+    *${nested_stacks_names_src[$i]}????????.nested.template.json \
+    "${global_dist_dir}/${root_template}-${nested_stacks_names_dst[$i]}.template"
+done
+
 find "$global_dist_dir"
+
+
+# Run the helper to clean-up the templates
+echo "Run the helper to clean-up the templates"
+echo "node $build_dir/cdk-solution-helper/index"
+node $build_dir/cdk-solution-helper/index \
+    || die "(cdk-solution-helper) ERROR: there is likely output above." $?
+
+
 echo "Updating template source bucket in template files with '$global_bucket'"
 echo "Updating code source bucket in template files with '$regional_bucket'"
 echo "Updating solution version in template files with '$version'"
@@ -744,21 +828,8 @@ new_global_bucket="s/%%GLOBAL_BUCKET_NAME%%/$global_bucket/g"
 new_regional_bucket="s/%%REGIONAL_BUCKET_NAME%%/$regional_bucket/g"
 new_version="s/%%VERSION%%/$version/g"
 # Update templates in place. Copy originals to [filename].orig
-sed -i.orig -e "$new_global_bucket" "$global_dist_dir/media-insights-stack.template"
-sed -i.orig -e "$new_regional_bucket" "$global_dist_dir/media-insights-stack.template"
-sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-stack.template"
-sed -i.orig -e "$new_global_bucket" "$global_dist_dir/media-insights-operator-library.template"
-sed -i.orig -e "$new_regional_bucket" "$global_dist_dir/media-insights-operator-library.template"
-sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-operator-library.template"
-sed -i.orig -e "$new_global_bucket" "$global_dist_dir/media-insights-test-operations-stack.template"
-sed -i.orig -e "$new_regional_bucket" "$global_dist_dir/media-insights-test-operations-stack.template"
-sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-test-operations-stack.template"
-sed -i.orig -e "$new_global_bucket" "$global_dist_dir/media-insights-dataplane-streaming-stack.template"
-sed -i.orig -e "$new_regional_bucket" "$global_dist_dir/media-insights-dataplane-streaming-stack.template"
-sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-dataplane-streaming-stack.template"
-sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-dataplane-api-stack.template"
-sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-workflow-api-stack.template"
-rm -f $global_dist_dir/*.orig
+sed -i.orig -e "$new_global_bucket" -e "$new_regional_bucket" -e "$new_version" "${global_dist_dir}"/*.template
+rm -f "${global_dist_dir}"/*.orig
 
 # Skip copy dist to S3 if building for solution builder because
 # that pipeline takes care of copying the dist in another script.

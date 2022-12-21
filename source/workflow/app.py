@@ -299,8 +299,8 @@ def check_wait_operation_lambda(event, context):
         workflow_execution = None
         # raise ChaliceViewError(
         operator_object.update_workflow_status("Error")
-        operator_object.add_workflow_metadata(WaitError="Unable to find Waiting workflow execution {} {e}".format(
-            operator_object.workflow_execution_id, e=str(e)))
+        operator_object.add_workflow_metadata(WaitError="Unable to find Waiting workflow execution {}".format(
+            operator_object.workflow_execution_id))
         raise MasExecutionError(operator_object.return_output_object())
 
     logger.info("workflow_execution: {}".format(

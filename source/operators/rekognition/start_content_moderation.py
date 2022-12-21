@@ -30,7 +30,6 @@ rek = boto3.client('rekognition', config=config)
 
 # Detect explicit or suggestive adult content in an image
 def detect_moderation_labels(bucket, key):
-    rek = boto3.client('rekognition')
     try:
         response = rek.detect_moderation_labels(Image={'S3Object':{'Bucket':bucket, 'Name':key}})
     except Exception as e:
@@ -42,7 +41,6 @@ def detect_moderation_labels(bucket, key):
 
 # Detect explicit or suggestive adult content in a video
 def start_content_moderation(bucket, key):
-    rek = boto3.client('rekognition')
     try:
         response = rek.start_content_moderation(
             Video={

@@ -17,11 +17,11 @@
 
 #################### Nothing for users to change below here ####################
 # Create and activate a temporary Python environment for this script.
+
 echo "------------------------------------------------------------------------------"
 echo "Creating a temporary Python virtualenv for this script"
 echo "------------------------------------------------------------------------------"
-python -c "import os; print (os.getenv('VIRTUAL_ENV'))" | grep -q None
-if [ $? -ne 0 ]; then
+if [ -n "${VIRTUAL_ENV:-}" ]; then 
     echo "ERROR: Do not run this script inside Virtualenv. Type \`deactivate\` and run again.";
     exit 1;
 fi
@@ -43,31 +43,31 @@ echo "--------------------------------------------------------------------------
 echo "Setup test environment variables"
 echo "------------------------------------------------------------------------------"
 
-if [ "$1" = "" ]; then
-    echo "Invalid positional parameter. Must select dataplaneapi or workflowapi. Quitting."
-    exit 1
-
-elif [ "$1" = "dataplaneapi" ]; then
-    echo "Running dataplane unit tests"
-    pytest dataplaneapi/ -s -W ignore::DeprecationWarning -p no:cacheprovider --cov=../../source/dataplaneapi
+source_dir=`echo $PWD | sed "s/\/test\/unit//"`
+if [ "$1" != "" ]; then
+    echo "Running $1 unit tests"
+    coverage_report_path="$source_dir/coverage-reports/coverage-source-$1.xml"
+    pytest "$1" -s -W ignore::DeprecationWarning -p no:cacheprovider --cov="$source_dir/source/$1" --cov-report=term-missing --cov-report=xml:$coverage_report_path
     if [ $? -eq 0 ]; then
-	    exit 0
+        sed -i.orig -e "s,<source>$source_dir,<source>,g" $coverage_report_path
+        rm -f $source_dir/coverage-reports/*.orig
     else
-	    exit 1
-    fi
-elif [ "$1" = "workflowapi" ]; then
-    echo "Running workflow unit tests"
-    pytest workflowapi/ -s -W ignore::DeprecationWarning -p no:cacheprovider --cov=../../source/workflowapi
-    if [ $? -eq 0 ]; then
-	    exit 0
-    else
-	    exit 1
+        exit 1
     fi
 else
-    echo "Invalid positional parameter. Quitting."
-    exit 1
+    echo "Running $1 all unit tests"
+    for folder in */ ; do
+        echo "Running ${folder/\//} unit tests"
+        coverage_report_path="$source_dir/coverage-reports/coverage-source-${folder/\//}.xml"
+        pytest "$folder" -s -W ignore::DeprecationWarning -p no:cacheprovider --cov="$source_dir/source/$folder" --cov-report=term --cov-report=xml:$coverage_report_path
+        if [ $? -eq 0 ]; then
+            sed -i.orig -e "s,<source>$source_dir,<source>,g" $coverage_report_path
+            rm -f $source_dir/coverage-reports/*.orig
+        else
+            exit 1
+        fi
+    done
 fi
-
 
 echo "------------------------------------------------------------------------------"
 echo "Cleaning up"

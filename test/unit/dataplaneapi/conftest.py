@@ -1,6 +1,7 @@
 import pytest
 from chalice.test import Client
 from botocore.stub import Stubber
+import boto3
 
 
 @pytest.fixture(autouse=True)
@@ -10,6 +11,7 @@ def mock_env_variables(monkeypatch):
     monkeypatch.setenv("DATAPLANE_BUCKET", "testDataplaneBucketName")
     monkeypatch.setenv("botoConfig", '{"user_agent_extra": "AwsSolution/SO0163/vX.X.X"}')
     monkeypatch.setenv("FRAMEWORK_VERSION", "v9.9.9")
+    monkeypatch.setenv("AWS_REGION", "us-east-1")
 
 
 @pytest.fixture
@@ -26,6 +28,12 @@ def s3_client_stub(mock_env_variables):
         yield stubber
         stubber.assert_no_pending_responses()
 
+@pytest.fixture
+def s3_resource_stub(mock_env_variables):
+    from app import s3_resource
+    with Stubber(s3_resource.meta.client) as stubber:
+        yield stubber
+        stubber.assert_no_pending_responses()
 
 @pytest.fixture
 def ddb_resource_stub(mock_env_variables):
@@ -34,3 +42,9 @@ def ddb_resource_stub(mock_env_variables):
         yield stubber
         stubber.assert_no_pending_responses()
 
+@pytest.fixture
+def ddb_client_stub(mock_env_variables):
+    from app import dynamo_client
+    with Stubber(dynamo_client) as stubber:
+        yield stubber
+        stubber.assert_no_pending_responses()

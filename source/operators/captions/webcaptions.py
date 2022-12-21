@@ -992,8 +992,6 @@ def vttToWebCaptions(operator_object, vttObject):
 
     webcaptions = []
 
-    # Get metadata
-    s3 = boto3.client('s3', config=config)
     try:
         print("Getting data from s3://"+vttObject["Bucket"]+"/"+vttObject["Key"])
         data = s3.get_object(Bucket=vttObject["Bucket"], Key=vttObject["Key"])

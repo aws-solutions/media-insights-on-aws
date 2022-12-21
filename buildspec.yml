@@ -15,7 +15,7 @@ phases:
   pre_build:
     commands:
       - echo "Installing dependencies and executing unit tests - `pwd`"
-      - cd deployment
+      - cd deployment && chmod +x ./run-unit-tests.sh && ./run-unit-tests.sh
       - echo "Installing dependencies and executing unit tests completed `date`"
   build:
     commands:
@@ -34,6 +34,9 @@ phases:
       - echo "Post build completed on `date`"
 artifacts:
   files:
+      - source/**/*
       - deployment/**/*
       - CHANGELOG.md
       - buildspec.yml
+      - sonar-project.properties
+      - coverage-reports/*

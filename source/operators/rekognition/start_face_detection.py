@@ -95,8 +95,7 @@ def lambda_handler(event, context):
         if "Status" not in metadata_upload:
             output_object.update_workflow_status("Error")
             output_object.add_workflow_metadata(
-                FaceDetectionError="Unable to upload metadata for {asset}: {error}".format(asset=asset_id,
-                                                                                           error=metadata_upload))
+                FaceDetectionError="Unable to upload metadata for asset: {asset}".format(asset=asset_id))
             raise MasExecutionError(output_object.return_output_object())
         else:
             if metadata_upload["Status"] == "Success":

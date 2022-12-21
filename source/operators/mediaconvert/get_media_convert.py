@@ -20,6 +20,14 @@ config = config.Config(**mie_config)
 
 mediaconvert = boto3.client("mediaconvert", config=config, region_name=region)
 
+media_convert_client = None
+
+def get_mediaconvert_client():
+    mediaconvert_endpoint = os.environ["MEDIACONVERT_ENDPOINT"]
+    global media_convert_client
+    if media_convert_client is None:
+        media_convert_client = boto3.client("mediaconvert", region_name=region, endpoint_url=mediaconvert_endpoint)
+    return media_convert_client
 
 def lambda_handler(event, context):
     print("We got the following event:\n", event)
@@ -41,8 +49,7 @@ def lambda_handler(event, context):
         print("No asset_id in this workflow")
         asset_id = ''
 
-    mediaconvert_endpoint = os.environ["MEDIACONVERT_ENDPOINT"]
-    customer_mediaconvert = boto3.client("mediaconvert", region_name=region, endpoint_url=mediaconvert_endpoint)
+    customer_mediaconvert = get_mediaconvert_client()
 
     try:
         response = customer_mediaconvert.get_job(Id=job_id)

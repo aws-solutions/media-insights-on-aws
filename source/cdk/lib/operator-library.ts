@@ -647,43 +647,6 @@ export class OperatorLibraryStack extends NestedStack {
             },
         });
 
-        const roles = [
-            genericDataLookupLambdaRole,
-            mediainfoLambdaRole,
-            mediaConvertLambdaRole,
-            transcribeRole,
-            captionsRole,
-            translateRole,
-            pollyRole,
-            comprehendS3Role,
-            comprehendRole,
-        ];
-
-        [
-            mediaConvertS3Role,
-            rekognitionLambdaRole,
-            ...roles,
-        ].map(role => role.node.defaultChild as iam.CfnRole).forEach(role => role.cfnOptions.metadata = {
-            Comment: "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty.",
-        });
-
-
-        // cfn_nag
-        [
-            rekognitionSNSRole,
-            rekognitionLambdaRole,
-        ].forEach(role => util.setNagSuppressRules(role, {
-            id: 'W11',
-            reason: "the policy actions used in this role require * resource"
-        }));
-
-
-        // cfn_nag
-        roles.forEach(role => util.setNagSuppressRules(role, {
-            id: 'W11',
-            reason: "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources",
-        }));
-
 
         //
         // Lambda functions
@@ -1670,6 +1633,70 @@ export class OperatorLibraryStack extends NestedStack {
             rekognitionLambdaRole,
         ].forEach(util.addMediaInsightsTag);
 
+        //
+        // Nag Rules
+        //
+
+        const roles = [
+            genericDataLookupLambdaRole,
+            mediainfoLambdaRole,
+            mediaConvertLambdaRole,
+            transcribeRole,
+            captionsRole,
+            translateRole,
+            pollyRole,
+            comprehendS3Role,
+            comprehendRole,
+        ];
+
+        [
+            mediaConvertS3Role,
+            rekognitionLambdaRole,
+            ...roles,
+        ].map(role => role.node.defaultChild as iam.CfnRole).forEach(role => role.cfnOptions.metadata = {
+            Comment: "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty.",
+        });
+
+
+        // cfn_nag / cdk_nag
+        [
+            rekognitionSNSRole,
+            rekognitionLambdaRole,
+        ].forEach(role => util.setNagSuppressRules(role, {
+            id: 'AwsSolutions-IAM5',
+            id2: 'W11',
+            reason: "the policy actions used in this role require * resource"
+        }));
+
+
+        // cfn_nag / cdk_nag
+        roles.forEach(role => util.setNagSuppressRules(role, {
+            id: 'AwsSolutions-IAM5',
+            id2: 'W11',
+            reason: "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources",
+        }));
+
+        // cdk_nag
+        [
+            genericDataLookupLambdaRole,
+            mediainfoLambdaRole,
+        ].forEach(role => util.setNagSuppressRules(role, {
+            id: 'AwsSolutions-IAM4',
+            reason: "Managed policies required for IAM role.",
+        }));
+
+        util.setNagSuppressRules(Mediainfo, {
+            id: 'AwsSolutions-L1',
+            reason: "The version of pymediainfo does not support latest runtime version",
+        });
+
+        [
+            mediaConvertS3Role,
+            translateS3Role,
+        ].forEach(role => util.setNagSuppressRules(role, {
+            id: 'AwsSolutions-IAM5',
+            reason: "Scoped down to S3 Bucket",
+        }));
 
     }
 

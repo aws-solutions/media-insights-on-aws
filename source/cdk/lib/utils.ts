@@ -24,20 +24,65 @@ import {
 } from 'aws-cdk-lib';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import { NagSuppressions } from 'cdk-nag';
 
 /**
  * Used with setNagSuppressRules to represent a cfn_nag rule.
  */
 export interface NagSuppressRule {
     readonly id: string;
+    readonly id2?: string;
     readonly reason: string;
 }
 
 /**
- * Creates a metadata property on resource to suppress cfn_nag rules.
- * Note: This overwrites the metadata with a new object.
+ * Creates a metadata property on resource to suppress cfn_nag and/or cdk_nag rules.
  */
 export function setNagSuppressRules(resource: IResource | CfnResource, ...rules: NagSuppressRule[]): void {
+    const cfn_rules: NagSuppressRule[] = rules.filter((rule) => isCfnNagId(rule.id) || isCfnNagId(rule.id2)).map(
+        (rule) => {
+            return {
+                id: isCfnNagId(rule.id) ? rule.id : rule.id2!,
+                reason: rule.reason,
+            }
+        }
+    );
+    const cdk_rules: NagSuppressRule[] = rules.filter((rule) => isCdkNagId(rule.id) || isCdkNagId(rule.id2)).map(
+        (rule) => {
+            return {
+                id: isCdkNagId(rule.id) ? rule.id : rule.id2!,
+                reason: rule.reason,
+            }
+        }
+    );
+
+    if (cfn_rules.length != 0) {
+        setCfnNagSuppressRules(resource, cfn_rules);
+    }
+
+    if (cdk_rules.length != 0) {
+        setCdkNagSuppressRules(resource, cdk_rules);
+    }
+}
+
+/**
+ * Returns true if the id looks like a CDK nag id.
+ */
+function isCdkNagId(id: string | undefined): boolean {
+    return (id || "").startsWith("AwsSolutions-");
+}
+
+/**
+ * Returns true if the id is not empty and doesn't look like a CDK nag id.
+ */
+function isCfnNagId(id: string | undefined): boolean {
+    return !isCdkNagId(id) && (id || "").length !== 0;
+}
+
+/**
+ * Creates a metadata property on resource to suppress cfn_nag rules.
+ */
+function setCfnNagSuppressRules(resource: IResource | CfnResource, rules: NagSuppressRule[]): void {
     // We need the underlying CfnResource so get it if we have a IResource.
     const cfn: CfnResource = resource instanceof CfnResource ? resource : resource.node.defaultChild as CfnResource;
     // Add metadata representing the rules to suppress.
@@ -46,6 +91,13 @@ export function setNagSuppressRules(resource: IResource | CfnResource, ...rules:
             rules_to_suppress: rules,
         },
     }, cfn.cfnOptions.metadata);
+}
+
+/**
+ * Creates a metadata property on resource to suppress cdk_nag rules.
+ */
+function setCdkNagSuppressRules(resource: IConstruct | IConstruct[], rules: NagSuppressRule[]): void {
+    NagSuppressions.addResourceSuppressions(resource, rules, true);
 }
 
 /**

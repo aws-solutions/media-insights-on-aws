@@ -729,6 +729,16 @@ Object {
       "Type": "AWS::Lambda::Function",
     },
     "TestExecutionRole": Object {
+      "Metadata": Object {
+        "cdk_nag": Object {
+          "rules_to_suppress": Array [
+            Object {
+              "id": "AwsSolutions-IAM5",
+              "reason": "Resource ARNs are not generated at the time of policy creation",
+            },
+          ],
+        },
+      },
       "Properties": Object {
         "AssumeRolePolicyDocument": Object {
           "Statement": Array [

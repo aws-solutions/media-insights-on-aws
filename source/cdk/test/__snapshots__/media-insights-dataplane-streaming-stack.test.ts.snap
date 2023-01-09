@@ -40,6 +40,16 @@ Object {
   },
   "Resources": Object {
     "AnalyticsStream": Object {
+      "Metadata": Object {
+        "cdk_nag": Object {
+          "rules_to_suppress": Array [
+            Object {
+              "id": "AwsSolutions-KDS3",
+              "reason": "Customer managed key is being used to encrypt Kinesis Data Stream",
+            },
+          ],
+        },
+      },
       "Properties": Object {
         "RetentionPeriodHours": 24,
         "ShardCount": Object {
@@ -162,6 +172,14 @@ Object {
     },
     "LambdaStreamRole": Object {
       "Metadata": Object {
+        "cdk_nag": Object {
+          "rules_to_suppress": Array [
+            Object {
+              "id": "AwsSolutions-IAM5",
+              "reason": "The policy applies to all resources - can't be scoped to a specific resource",
+            },
+          ],
+        },
         "cfn_nag": Object {
           "rules_to_suppress": Array [
             Object {
@@ -291,6 +309,16 @@ Object {
       "Type": "AWS::IAM::Role",
     },
     "LambdaStreamRoleDefaultPolicy": Object {
+      "Metadata": Object {
+        "cdk_nag": Object {
+          "rules_to_suppress": Array [
+            Object {
+              "id": "AwsSolutions-IAM5",
+              "reason": "The policy applies to all resources - can't be scoped to a specific resource",
+            },
+          ],
+        },
+      },
       "Properties": Object {
         "PolicyDocument": Object {
           "Statement": Array [

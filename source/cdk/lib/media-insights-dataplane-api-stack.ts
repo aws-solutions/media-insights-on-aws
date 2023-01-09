@@ -145,16 +145,15 @@ export class DataplaneApiStack extends cdk.NestedStack {
 
         const cfnApiHandlerRole = template.getResource('ApiHandlerRole') as iam.CfnRole;
 
-        // cfn_nag
+        // cfn_nag / cdk_nag
         cfnApiHandlerRole.cfnOptions.metadata = {
-            cfn_nag: {
-                rules_to_suppress: [{
-                    id: 'W11',
-                    reason: "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources",
-                }],
-            },
             Comment: "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty.",
         };
+        util.setNagSuppressRules(cfnApiHandlerRole, {
+            id: 'W11',
+            id2: 'AwsSolutions-IAM5',
+            reason: "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources",
+        });
 
         cfnApiHandlerRole.policies = [{
             policyDocument: {

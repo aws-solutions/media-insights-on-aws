@@ -42,6 +42,7 @@ import { WorkflowApiStack } from './media-insights-workflow-api-stack';
 import { AnalyticsStack } from './media-insights-dataplane-streaming-stack';
 import { OperatorLibraryStack } from './operator-library';
 import { TestResourcesStack } from './media-insights-test-operations-stack';
+import { NagSuppressions } from 'cdk-nag';
 import * as util from './utils';
 
 export interface MediaInsightsNestedStacks {
@@ -331,19 +332,22 @@ export class MediaInsightsStack extends Stack {
         //
 
         const dataplaneLogsBucket = new s3.Bucket(this, 'DataplaneLogsBucket', {
+            enforceSSL: true,
             accessControl: s3.BucketAccessControl.LOG_DELIVERY_WRITE,
             encryption: s3.BucketEncryption.S3_MANAGED,
             blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
         });
 
-        // cfn_nag
+        // cfn_nag / cdk_nag
         util.setNagSuppressRules(dataplaneLogsBucket,
-            { id: "W35", reason: "Used to store access logs for other buckets" },
+            { id: "W35", id2: "AwsSolutions-S1", reason: "Used to store access logs for other buckets" },
             { id: "W51", reason: "Bucket is private and does not need a bucket policy" },
         );
 
         const dataplaneBucket = new s3.Bucket(this, 'Dataplane', {
+            enforceSSL: true,
             encryptionKey: keyAlias,
+            blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
             serverAccessLogsBucket: dataplaneLogsBucket,
             serverAccessLogsPrefix: "access_logs/",
             cors: [{
@@ -384,17 +388,6 @@ export class MediaInsightsStack extends Stack {
         });
 
         dataplaneBucket.node.addDependency(dataplaneLogsBucket);
-        dataplaneBucket.addToResourcePolicy(new iam.PolicyStatement({
-            effect: iam.Effect.DENY,
-            principals: [new iam.AnyPrincipal()],
-            actions: ['*'],
-            resources: [`${dataplaneBucket.bucketArn}/*`],
-            conditions: {
-                Bool: {
-                    ['aws:SecureTransport']: false
-                }
-            },
-        }));
 
 
         //
@@ -440,13 +433,24 @@ export class MediaInsightsStack extends Stack {
             queueName: `${Aws.STACK_NAME}-WorkflowExecLambdaDLQ`,
             retentionPeriod: Duration.hours(12),
             encryptionMasterKey: keyAlias,
+            enforceSSL: true,
         });
 
         const stageExecutionDeadLetterQueue = new sqs.Queue(this, 'StageExecutionDeadLetterQueue', {
             queueName: `${Aws.STACK_NAME}-StageExecDLQ`,
             retentionPeriod: Duration.hours(12),
             encryptionMasterKey: keyAlias,
+            enforceSSL: true,
         });
+
+
+        // cdk_nag
+        NagSuppressions.addResourceSuppressions([
+            workflowExecutionLambdaDeadLetterQueue,
+            stageExecutionDeadLetterQueue,
+        ], [
+            { id: 'AwsSolutions-SQS3', reason: "The SQS queue is a dead-letter queue (DLQ)" },
+        ]);
 
         const workflowExecutionEventQueue = new sqs.Queue(this, 'WorkflowExecutionEventQueue', {
             deadLetterQueue: {
@@ -454,6 +458,7 @@ export class MediaInsightsStack extends Stack {
                 maxReceiveCount: 1, // Don't retry if stage times out
             },
             encryptionMasterKey: keyAlias,
+            enforceSSL: true,
         });
 
         const stageExecutionQueue = new sqs.Queue(this, 'StageExecutionQueue', {
@@ -465,6 +470,7 @@ export class MediaInsightsStack extends Stack {
                 maxReceiveCount: 1, // Don't retry if stage times out
             },
             encryptionMasterKey: keyAlias,
+            enforceSSL: true,
         });
 
         const sqsQueuePolicy = new sqs.QueuePolicy(this, 'SqsQueuePolicy', {
@@ -547,6 +553,11 @@ export class MediaInsightsStack extends Stack {
                 }),
             },
         });
+
+        // cdk_nag
+        NagSuppressions.addResourceSuppressions(helperExecutionRole, [
+            { id: 'AwsSolutions-IAM5', reason: "Resource ARNs are not generated at the time of policy creation", },
+        ]);
 
         const stageExecutionRole = new iam.Role(this, 'StageExecutionRole', {
             assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
@@ -820,6 +831,11 @@ export class MediaInsightsStack extends Stack {
                 }),
             },
         });
+
+        // cdk_nag
+        NagSuppressions.addResourceSuppressions(anonymousDataCustomResourceRole, [
+            { id: 'AwsSolutions-IAM5', reason: "Resource ARNs are not generated at the time of policy creation", },
+        ]);
 
 
         //
@@ -1124,6 +1140,7 @@ export class MediaInsightsStack extends Stack {
             runtime: lambda.Runtime.PYTHON_3_9,
             timeout: Duration.seconds(900),
         });
+        completeStageLambda.node.addDependency(workflowSchedulerLambda);
 
         const filterOperationLambda = new lambda.Function(this, 'FilterOperationLambda', {
             environment: {
@@ -1422,18 +1439,21 @@ export class MediaInsightsStack extends Stack {
         [stageExecutionRole, operationLambdaExecutionRole, operatorFailedRole]
             .forEach(role => util.setNagSuppressRules(role, {
                 id: 'W11',
+                id2: 'AwsSolutions-IAM5',
                 reason: "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources",
             }));
 
         // cfn_nag
         util.setNagSuppressRules(stepFunctionRole, {
             id: 'W11',
+            id2: 'AwsSolutions-IAM5',
             reason: "The X-Ray and Cloudwatch policies use actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources and https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazoncloudwatchlogs.html",
         });
 
         // cfn_nag
         util.setNagSuppressRules(workflowExecutionStreamLambdaRole, {
             id: 'W11',
+            id2: 'AwsSolutions-IAM5',
             reason: "Lambda requires ability to write to cloudwatch *, as configured in the default AWS lambda execution role.",
         });
 

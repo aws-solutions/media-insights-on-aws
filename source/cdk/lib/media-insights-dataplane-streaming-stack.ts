@@ -189,7 +189,7 @@ export class AnalyticsStack extends NestedStack {
         ].forEach(util.addMediaInsightsTag);
 
         //
-        // cfn_nag rules
+        // cfn_nag / cdk_nag rules
         //
 
         util.setNagSuppressRules(dynamoDBStreamingFunction,
@@ -205,7 +205,13 @@ export class AnalyticsStack extends NestedStack {
 
         util.setNagSuppressRules(lambdaStreamRole, {
             id: 'W11',
+            id2: 'AwsSolutions-IAM5',
             reason: "The policy applies to all resources - can't be scoped to a specific resource",
+        });
+
+        util.setNagSuppressRules(analyticsStream, {
+            id: 'AwsSolutions-KDS3',
+            reason: "Customer managed key is being used to encrypt Kinesis Data Stream",
         });
     }
 

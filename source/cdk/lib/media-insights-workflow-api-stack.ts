@@ -259,6 +259,7 @@ export class WorkflowApiStack extends cdk.NestedStack {
         util.setNagSuppressRules(cfnApiHandlerRole,
             {
                 id: "W11",
+                id2: "AwsSolutions-IAM5",
                 reason: "The X-Ray, Transcribe, and Translate policies cannot be scoped to a specific resource."
             },
             {
@@ -463,6 +464,7 @@ export class WorkflowApiStack extends cdk.NestedStack {
         // cfn_nag
         util.setNagSuppressRules(cfnWorkflowCustomResourceRole, {
             id: "W11",
+            id2: "AwsSolutions-IAM5",
             reason: "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources",
         });
 

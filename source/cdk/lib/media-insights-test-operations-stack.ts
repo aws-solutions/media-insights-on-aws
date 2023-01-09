@@ -118,6 +118,11 @@ export class TestResourcesStack extends NestedStack {
             },
         });
 
+        // cdk_nag
+        util.setNagSuppressRules(testExecutionRole, {
+            id: 'AwsSolutions-IAM5', reason: "Resource ARNs are not generated at the time of policy creation",
+        });
+
         // Tag
         util.addMediaInsightsTag(testExecutionRole);
 

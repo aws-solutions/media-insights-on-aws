@@ -727,6 +727,16 @@ Object {
       "Type": "AWS::Lambda::Function",
     },
     "AnonymousDataCustomResourceRole": Object {
+      "Metadata": Object {
+        "cdk_nag": Object {
+          "rules_to_suppress": Array [
+            Object {
+              "id": "AwsSolutions-IAM5",
+              "reason": "Resource ARNs are not generated at the time of policy creation",
+            },
+          ],
+        },
+      },
       "Properties": Object {
         "AssumeRolePolicyDocument": Object {
           "Statement": Array [
@@ -988,6 +998,7 @@ Object {
       "DependsOn": Array [
         "OperationLambdaExecutionRoleDefaultPolicy",
         "OperationLambdaExecutionRole",
+        "WorkflowSchedulerLambda",
       ],
       "Metadata": Object {
         "cfn_nag": Object {
@@ -1112,6 +1123,7 @@ Object {
     "Dataplane": Object {
       "DeletionPolicy": "Retain",
       "DependsOn": Array [
+        "DataplaneLogsBucketPolicy",
         "DataplaneLogsBucket",
       ],
       "Properties": Object {
@@ -1202,6 +1214,12 @@ Object {
           },
           "LogFilePrefix": "access_logs/",
         },
+        "PublicAccessBlockConfiguration": Object {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true,
+        },
         "Tags": Array [
           Object {
             "Key": "environment",
@@ -1215,6 +1233,14 @@ Object {
     "DataplaneLogsBucket": Object {
       "DeletionPolicy": "Retain",
       "Metadata": Object {
+        "cdk_nag": Object {
+          "rules_to_suppress": Array [
+            Object {
+              "id": "AwsSolutions-S1",
+              "reason": "Used to store access logs for other buckets",
+            },
+          ],
+        },
         "cfn_nag": Object {
           "rules_to_suppress": Array [
             Object {
@@ -1255,8 +1281,66 @@ Object {
       "Type": "AWS::S3::Bucket",
       "UpdateReplacePolicy": "Retain",
     },
+    "DataplaneLogsBucketPolicy": Object {
+      "Metadata": Object {
+        "cdk_nag": Object {
+          "rules_to_suppress": Array [
+            Object {
+              "id": "AwsSolutions-S1",
+              "reason": "Used to store access logs for other buckets",
+            },
+          ],
+        },
+      },
+      "Properties": Object {
+        "Bucket": Object {
+          "Ref": "DataplaneLogsBucket",
+        },
+        "PolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": "s3:*",
+              "Condition": Object {
+                "Bool": Object {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": Object {
+                "AWS": "*",
+              },
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
+                    "DataplaneLogsBucket",
+                    "Arn",
+                  ],
+                },
+                Object {
+                  "Fn::Join": Array [
+                    "",
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
+                          "DataplaneLogsBucket",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
     "DataplanePolicy": Object {
       "DependsOn": Array [
+        "DataplaneLogsBucketPolicy",
         "DataplaneLogsBucket",
       ],
       "Properties": Object {
@@ -1266,30 +1350,38 @@ Object {
         "PolicyDocument": Object {
           "Statement": Array [
             Object {
-              "Action": "*",
+              "Action": "s3:*",
               "Condition": Object {
                 "Bool": Object {
-                  "aws:SecureTransport": false,
+                  "aws:SecureTransport": "false",
                 },
               },
               "Effect": "Deny",
               "Principal": Object {
                 "AWS": "*",
               },
-              "Resource": Object {
-                "Fn::Join": Array [
-                  "",
-                  Array [
-                    Object {
-                      "Fn::GetAtt": Array [
-                        "Dataplane",
-                        "Arn",
-                      ],
-                    },
-                    "/*",
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
+                    "Dataplane",
+                    "Arn",
                   ],
-                ],
-              },
+                },
+                Object {
+                  "Fn::Join": Array [
+                    "",
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
+                          "Dataplane",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
             },
           ],
           "Version": "2012-10-17",
@@ -1808,53 +1900,6 @@ Object {
       "Type": "AWS::CloudFormation::Stack",
       "UpdateReplacePolicy": "Delete",
     },
-    "MediaInsightsEnginePython36Layer": Object {
-      "DeletionPolicy": "Retain",
-      "Properties": Object {
-        "CompatibleRuntimes": Array [
-          "python3.6",
-        ],
-        "Content": Object {
-          "S3Bucket": Object {
-            "Fn::Join": Array [
-              "-",
-              Array [
-                Object {
-                  "Fn::FindInMap": Array [
-                    "SourceCode",
-                    "General",
-                    "RegionalS3Bucket",
-                  ],
-                },
-                Object {
-                  "Ref": "AWS::Region",
-                },
-              ],
-            ],
-          },
-          "S3Key": Object {
-            "Fn::Join": Array [
-              "/",
-              Array [
-                Object {
-                  "Fn::FindInMap": Array [
-                    "SourceCode",
-                    "General",
-                    "CodeKeyPrefix",
-                  ],
-                },
-                "media_insights_engine_lambda_layer_python3.6.zip",
-              ],
-            ],
-          },
-        },
-        "Description": "Boto3 and MediaInsightsEngineLambdaHelper packages for Python 3.6",
-        "LayerName": "media-insights-engine-python36",
-        "LicenseInfo": "Apache-2.0",
-      },
-      "Type": "AWS::Lambda::LayerVersion",
-      "UpdateReplacePolicy": "Retain",
-    },
     "MediaInsightsEnginePython37Layer": Object {
       "DeletionPolicy": "Retain",
       "Properties": Object {
@@ -2178,6 +2223,16 @@ Object {
       "UpdateReplacePolicy": "Delete",
     },
     "MieHelperExecutionRole": Object {
+      "Metadata": Object {
+        "cdk_nag": Object {
+          "rules_to_suppress": Array [
+            Object {
+              "id": "AwsSolutions-IAM5",
+              "reason": "Resource ARNs are not generated at the time of policy creation",
+            },
+          ],
+        },
+      },
       "Properties": Object {
         "AssumeRolePolicyDocument": Object {
           "Statement": Array [
@@ -2516,6 +2571,14 @@ def handler(event, context):
     },
     "OperationLambdaExecutionRole": Object {
       "Metadata": Object {
+        "cdk_nag": Object {
+          "rules_to_suppress": Array [
+            Object {
+              "id": "AwsSolutions-IAM5",
+              "reason": "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources",
+            },
+          ],
+        },
         "cfn_nag": Object {
           "rules_to_suppress": Array [
             Object {
@@ -2755,6 +2818,16 @@ def handler(event, context):
       "Type": "AWS::IAM::Role",
     },
     "OperationLambdaExecutionRoleDefaultPolicy": Object {
+      "Metadata": Object {
+        "cdk_nag": Object {
+          "rules_to_suppress": Array [
+            Object {
+              "id": "AwsSolutions-IAM5",
+              "reason": "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources",
+            },
+          ],
+        },
+      },
       "Properties": Object {
         "PolicyDocument": Object {
           "Statement": Array [
@@ -3100,6 +3173,16 @@ def handler(event, context):
     },
     "StageExecutionDeadLetterQueue": Object {
       "DeletionPolicy": "Delete",
+      "Metadata": Object {
+        "cdk_nag": Object {
+          "rules_to_suppress": Array [
+            Object {
+              "id": "AwsSolutions-SQS3",
+              "reason": "The SQS queue is a dead-letter queue (DLQ)",
+            },
+          ],
+        },
+      },
       "Properties": Object {
         "KmsMasterKeyId": Object {
           "Fn::Join": Array [
@@ -3145,6 +3228,39 @@ def handler(event, context):
       },
       "Type": "AWS::SQS::Queue",
       "UpdateReplacePolicy": "Delete",
+    },
+    "StageExecutionDeadLetterQueuePolicy": Object {
+      "Properties": Object {
+        "PolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": "sqs:*",
+              "Condition": Object {
+                "Bool": Object {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": Object {
+                "AWS": "*",
+              },
+              "Resource": Object {
+                "Fn::GetAtt": Array [
+                  "StageExecutionDeadLetterQueue",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Queues": Array [
+          Object {
+            "Ref": "StageExecutionDeadLetterQueue",
+          },
+        ],
+      },
+      "Type": "AWS::SQS::QueuePolicy",
     },
     "StageExecutionQueue": Object {
       "DeletionPolicy": "Delete",
@@ -3204,8 +3320,49 @@ def handler(event, context):
       "Type": "AWS::SQS::Queue",
       "UpdateReplacePolicy": "Delete",
     },
+    "StageExecutionQueuePolicy": Object {
+      "Properties": Object {
+        "PolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": "sqs:*",
+              "Condition": Object {
+                "Bool": Object {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": Object {
+                "AWS": "*",
+              },
+              "Resource": Object {
+                "Fn::GetAtt": Array [
+                  "StageExecutionQueue",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Queues": Array [
+          Object {
+            "Ref": "StageExecutionQueue",
+          },
+        ],
+      },
+      "Type": "AWS::SQS::QueuePolicy",
+    },
     "StageExecutionRole": Object {
       "Metadata": Object {
+        "cdk_nag": Object {
+          "rules_to_suppress": Array [
+            Object {
+              "id": "AwsSolutions-IAM5",
+              "reason": "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources",
+            },
+          ],
+        },
         "cfn_nag": Object {
           "rules_to_suppress": Array [
             Object {
@@ -3407,6 +3564,16 @@ def handler(event, context):
       "Type": "AWS::IAM::Role",
     },
     "StageExecutionRoleDefaultPolicy": Object {
+      "Metadata": Object {
+        "cdk_nag": Object {
+          "rules_to_suppress": Array [
+            Object {
+              "id": "AwsSolutions-IAM5",
+              "reason": "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources",
+            },
+          ],
+        },
+      },
       "Properties": Object {
         "PolicyDocument": Object {
           "Statement": Array [
@@ -3757,6 +3924,14 @@ def handler(event, context):
     },
     "StepFunctionRole": Object {
       "Metadata": Object {
+        "cdk_nag": Object {
+          "rules_to_suppress": Array [
+            Object {
+              "id": "AwsSolutions-IAM5",
+              "reason": "The X-Ray and Cloudwatch policies use actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources and https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazoncloudwatchlogs.html",
+            },
+          ],
+        },
         "cfn_nag": Object {
           "rules_to_suppress": Array [
             Object {
@@ -4174,6 +4349,24 @@ def handler(event, context):
         "PolicyDocument": Object {
           "Statement": Array [
             Object {
+              "Action": "sqs:*",
+              "Condition": Object {
+                "Bool": Object {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": Object {
+                "AWS": "*",
+              },
+              "Resource": Object {
+                "Fn::GetAtt": Array [
+                  "WorkflowExecutionEventQueue",
+                  "Arn",
+                ],
+              },
+            },
+            Object {
               "Action": "sqs:SendMessage",
               "Condition": Object {
                 "ArnEquals": Object {
@@ -4294,6 +4487,16 @@ def handler(event, context):
     },
     "WorkflowExecutionLambdaDeadLetterQueue": Object {
       "DeletionPolicy": "Delete",
+      "Metadata": Object {
+        "cdk_nag": Object {
+          "rules_to_suppress": Array [
+            Object {
+              "id": "AwsSolutions-SQS3",
+              "reason": "The SQS queue is a dead-letter queue (DLQ)",
+            },
+          ],
+        },
+      },
       "Properties": Object {
         "KmsMasterKeyId": Object {
           "Fn::Join": Array [
@@ -4340,8 +4543,49 @@ def handler(event, context):
       "Type": "AWS::SQS::Queue",
       "UpdateReplacePolicy": "Delete",
     },
+    "WorkflowExecutionLambdaDeadLetterQueuePolicy": Object {
+      "Properties": Object {
+        "PolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": "sqs:*",
+              "Condition": Object {
+                "Bool": Object {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": Object {
+                "AWS": "*",
+              },
+              "Resource": Object {
+                "Fn::GetAtt": Array [
+                  "WorkflowExecutionLambdaDeadLetterQueue",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Queues": Array [
+          Object {
+            "Ref": "WorkflowExecutionLambdaDeadLetterQueue",
+          },
+        ],
+      },
+      "Type": "AWS::SQS::QueuePolicy",
+    },
     "WorkflowExecutionStreamLambdaRole": Object {
       "Metadata": Object {
+        "cdk_nag": Object {
+          "rules_to_suppress": Array [
+            Object {
+              "id": "AwsSolutions-IAM5",
+              "reason": "Lambda requires ability to write to cloudwatch *, as configured in the default AWS lambda execution role.",
+            },
+          ],
+        },
         "cfn_nag": Object {
           "rules_to_suppress": Array [
             Object {
@@ -4894,6 +5138,14 @@ def handler(event, context):
     },
     "operatorFailedRole": Object {
       "Metadata": Object {
+        "cdk_nag": Object {
+          "rules_to_suppress": Array [
+            Object {
+              "id": "AwsSolutions-IAM5",
+              "reason": "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources",
+            },
+          ],
+        },
         "cfn_nag": Object {
           "rules_to_suppress": Array [
             Object {
@@ -4974,6 +5226,16 @@ def handler(event, context):
       "Type": "AWS::IAM::Role",
     },
     "operatorFailedRoleDefaultPolicy": Object {
+      "Metadata": Object {
+        "cdk_nag": Object {
+          "rules_to_suppress": Array [
+            Object {
+              "id": "AwsSolutions-IAM5",
+              "reason": "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources",
+            },
+          ],
+        },
+      },
       "Properties": Object {
         "PolicyDocument": Object {
           "Statement": Array [

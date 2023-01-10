@@ -10,7 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Unit tests for all existing functionality to cover a minimum threshold of 80%
 
- ### Removed:
+### Changed:
+
+* Updated NodeJS Version from 12 to 14
+
+### Removed:
 
 * Lambda Layer references for deprecated Python version 3.6
 

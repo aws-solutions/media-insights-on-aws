@@ -8,7 +8,7 @@ version: 0.2
 phases:
   install:
     runtime-versions:
-      nodejs: 12
+      nodejs: 14
       python: 3.9
     commands:
       - echo "nothing to do in install"

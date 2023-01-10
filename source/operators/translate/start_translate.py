@@ -83,10 +83,10 @@ def lambda_handler(event, context):
         return operator_object.return_output_object()
 
     # Tell the NLTK data loader to look for files in /tmp/
-    nltk.data.path.append("/tmp/")
+    nltk.data.path.append("/tmp/") #nosec
     # Download NLTK tokenizers to /tmp/
     # We use /tmp because that's where AWS Lambda provides write access to the local file system.
-    nltk.download('punkt', download_dir='/tmp/')
+    nltk.download('punkt', download_dir='/tmp/') #nosec
     # Create language tokenizer according to user-specified source language.
     # Default to English.
     if source_lang == 'fr':

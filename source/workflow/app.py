@@ -597,7 +597,7 @@ def update_workflow_execution_status(id, status, message):
     :param status: The new status of the workflow execution
 
     """
-    logger.info("Update workflow execution {} set status = {}".format(id, status))
+    logger.info("Update workflow execution {} set status = {}".format(id, status)) #nosec
     execution_table = DYNAMO_CLIENT.Table(WORKFLOW_EXECUTION_TABLE_NAME)
 
     if status == awsmie.WORKFLOW_STATUS_ERROR:

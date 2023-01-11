@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed:
 
-* Update requests package to v2.28.1
+* Updated python packages
 
 ## [5.0.0] - 2022-04-13
 

@@ -17,7 +17,7 @@ Object {
       ],
     },
   },
-  "Description": "aws-media-insights-engine version %%VERSION%%. This AWS CloudFormation template provisions the REST API for the Media Insights Engine data plane",
+  "Description": "media-insights-on-aws version %%VERSION%%. This AWS CloudFormation template provisions the REST API for the Media Insights on AWS data plane",
   "Outputs": Object {
     "APIHandlerArn": Object {
       "Value": Object {

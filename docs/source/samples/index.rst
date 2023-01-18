@@ -1,4 +1,4 @@
 Sample Applications
 ===================
 
-Below are a collection of MIE sample applications.
+Below are a collection of MI sample applications.

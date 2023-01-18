@@ -7,7 +7,7 @@
 # PURPOSE: This script runs our pytest integration test suite.
 #
 # PRELIMINARY:
-#  You must have a functioning MIE deployment. Set the required environment variables; see the testing readme for more
+#  You must have a functioning MI deployment. Set the required environment variables; see the testing readme for more
 #  details.
 #
 # USAGE:
@@ -16,15 +16,15 @@
 ###############################################################################
 # User-defined environment variables
 
-if [ -z MIE_REGION ]
+if [ -z REGION ]
 then
-    echo "You must set the AWS region your MIE stack is install in under the env variable 'MIE_REGION'. Quitting."
+    echo "You must set the AWS region your MI stack is install in under the env variable 'REGION'. Quitting."
     exit
 fi
 
-if [ -z MIE_STACK_NAME ]
+if [ -z MI_STACK_NAME ]
 then
-    echo "You must set the name of your MIE stack under the env variable 'MIE_STACK_NAME'. Quitting."
+    echo "You must set the name of your MI stack under the env variable 'MI_STACK_NAME'. Quitting."
     exit
 fi
 

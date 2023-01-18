@@ -37,7 +37,7 @@ Object {
       ],
     },
   },
-  "Description": "(SO0163) - aws-media-insights-engine version %%VERSION%%. This is the base AWS CloudFormation template that provisions Media Insights Engine services and provides parameters for user configurable MIE settings.",
+  "Description": "(SO0163) - media-insights-on-aws version %%VERSION%%. This is the base AWS CloudFormation template that provisions Media Insights on AWS services and provides parameters for user configurable MI settings.",
   "Mappings": Object {
     "ServiceprincipalMap": Object {
       "af-south-1": Object {
@@ -139,11 +139,11 @@ Object {
     },
     "SourceCode": Object {
       "General": Object {
-        "CodeKeyPrefix": "aws-media-insights-engine/%%VERSION%%",
+        "CodeKeyPrefix": "media-insights-on-aws/%%VERSION%%",
         "FrameworkVersion": "%%VERSION%%",
         "GlobalS3Bucket": "%%GLOBAL_BUCKET_NAME%%",
         "RegionalS3Bucket": "%%REGIONAL_BUCKET_NAME%%",
-        "TemplateKeyPrefix": "aws-media-insights-engine/%%VERSION%%",
+        "TemplateKeyPrefix": "media-insights-on-aws/%%VERSION%%",
       },
     },
   },
@@ -433,7 +433,7 @@ Object {
       },
     },
     "Version": Object {
-      "Description": "Media Insights Engine Version",
+      "Description": "Media Insights on AWS Version",
       "Export": Object {
         "Name": Object {
           "Fn::Join": Array [

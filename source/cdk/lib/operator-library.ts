@@ -63,7 +63,7 @@ export interface OperatorLibraryStackProps extends NestedStackProps {
  */
 export class OperatorLibraryStack extends NestedStack {
     constructor(scope: Construct, id: string, props: OperatorLibraryStackProps) {
-        super(scope, id, { ...props, description: "aws-media-insights-engine version %%VERSION%%. This AWS CloudFormation template provisions the Media Insights Engine operator library." });
+        super(scope, id, { ...props, description: "media-insights-on-aws version %%VERSION%%. This AWS CloudFormation template provisions the Media Insights on AWS operator library." });
         this.templateOptions.templateFormatVersion = '2010-09-09';
 
         //

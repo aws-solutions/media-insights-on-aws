@@ -4,10 +4,10 @@
 ###############################################################################
 # PURPOSE:
 #   JSON datasets can be precomputed and uploaded along with their associated
-#   media files to MIE. This lambda function is an operator that puts that
+#   media files to MI. This lambda function is an operator that puts that
 #   precomputed data into DynamoDB. Don't forget to extend the Elasticsearch
 #   consumer (source/consumers/elastic/lambda_handler.py) if you want said data
-#   to be added to Elasticsearch so it can be searched and rendered on the MIE
+#   to be added to Elasticsearch so it can be searched and rendered on the MI
 #   front-end.
 #
 # USAGE:
@@ -21,7 +21,7 @@
 #   curl -k -X POST -H "Authorization: $MIE_ACCESS_TOKEN" -H "Content-Type: application/json" --data '{"Name":"MieCompleteWorkflow","Configuration":{"defaultVideoStage":{"GenericDataLookup":{"Bucket": "myBucket", "Key":"test-media/My Video.json","Enabled":true}}},"Input":{"Media":{"Video":{"S3Bucket":"'$DATAPLANE_BUCKET'","S3Key":"My Video.mp4"}}}}'  $WORKFLOW_API_ENDPOINT/workflow/execution
 #
 #  For instructions on getting $MIE_ACCESS_TOKEN, see:
-#  https://github.com/awslabs/aws-media-insights-engine/blob/master/IMPLEMENTATION_GUIDE.md#step-6-test-your-operator
+#  https://github.com/aws-solutions/media-insights-on-aws/blob/master/IMPLEMENTATION_GUIDE.md#step-6-test-your-operator
 
 #
 ###############################################################################

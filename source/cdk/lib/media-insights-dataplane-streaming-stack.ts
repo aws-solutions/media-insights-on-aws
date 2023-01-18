@@ -59,7 +59,7 @@ export class AnalyticsStack extends NestedStack {
     readonly analyticsStream: kinesis.Stream;
 
     constructor(scope: Construct, id: string, props: AnalyticsStackProps) {
-        super(scope, id, { ...props, description: "aws-media-insights-engine version %%VERSION%%. This AWS CloudFormation template defines resources for the analytics streaming pipeline." });
+        super(scope, id, { ...props, description: "media-insights-on-aws version %%VERSION%%. This AWS CloudFormation template defines resources for the analytics streaming pipeline." });
         this.templateOptions.templateFormatVersion = '2010-09-09';
 
         //

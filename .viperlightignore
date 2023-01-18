@@ -8,7 +8,7 @@ node_modules/
 package-lock.json
 CODE_OF_CONDUCT.md
 CONTRIBUTING.md
-docs/assets/images/MIE-architecture-diagram.pptx
+docs/assets/images/MI-architecture-diagram.pptx
 .github/workflows/pr-workflow.yml:21
 .github/workflows/pr-workflow.yml:22
 .github/workflows/release-workflow.yml:28

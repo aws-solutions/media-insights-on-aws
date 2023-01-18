@@ -1,7 +1,7 @@
-# Media Insights Engine Lambda Helper
+# Media Insights on AWS Lambda Helper
 
 This package serves as a helper library for developing the lambda functions that compose an operator
-in the Media Insights Engine application.
+in the Media Insights on AWS application.
 
 Classes are provided for 4 common needs:
 

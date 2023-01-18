@@ -3,7 +3,7 @@
 exports[`Snapshot media-insights-workflow-api stack test 1`] = `
 Object {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "aws-media-insights-engine version %%VERSION%%. This AWS CloudFormation template provisions the REST API for the Media Insights Engine control plane",
+  "Description": "media-insights-on-aws version %%VERSION%%. This AWS CloudFormation template provisions the REST API for the Media Insights on AWS control plane",
   "Outputs": Object {
     "APIHandlerArn": Object {
       "Value": Object {
@@ -2429,10 +2429,10 @@ Raises:
                 "consumes": Array [
                   "application/json",
                 ],
-                "description": "- Gets the current MIE system configuration parameter settings
+                "description": "- Gets the current MI system configuration parameter settings
 
 Returns:
-    A list of dict containing the current MIE system configuration key-value pairs.
+    A list of dict containing the current MI system configuration key-value pairs.
 
     .. code-block:: python
 
@@ -2461,7 +2461,7 @@ Raises:
                     "sigv4": Array [],
                   },
                 ],
-                "summary": "Get the current MIE system configuration",
+                "summary": "Get the current MI system configuration",
                 "x-amazon-apigateway-integration": Object {
                   "contentHandling": "CONVERT_TO_TEXT",
                   "httpMethod": "POST",
@@ -2526,7 +2526,7 @@ Raises:
                 "consumes": Array [
                   "application/json",
                 ],
-                "description": "- Updates the MIE system configuration with a new parameter or changes the value of
+                "description": "- Updates the MI system configuration with a new parameter or changes the value of
   existing parameters
 
 Body:
@@ -3946,8 +3946,8 @@ before returning control to the invoker, while asynchronous operators return con
 when the operation is successfully initiated, but not complete. Asynchronous operators require
 an additional monitoring task to check the status of the operation.
 
-For more information on how to implemenent lambdas to be used in MIE operators, please
-refer to the MIE Developer Quick Start.
+For more information on how to implemenent lambdas to be used in MI operators, please
+refer to the MI Developer Quick Start.
 
 
 

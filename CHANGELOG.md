@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Removed CloudFormation template source/operators/operator-library.yaml
 * Removed external\_resources.json from source/dataplaneapi/ and source/workflowapi/
 * Updated deployment/build-s3-dist.sh to `cdk synth` CloudFormation templates and perform clean-up on them
+* Updated Solution name from "Media Insights Engine" to "Media Insights on AWS" and "MIE" references to "MI"
 
 ## [5.0.1] - 2023-01-11
 

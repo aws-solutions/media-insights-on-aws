@@ -4,7 +4,7 @@
 ###############################################################################
 # PURPOSE:
 #   Lambda function to check the status of a Rekognition job and save that job's
-#   data to the MIE dataplane when the job is complete.
+#   data to the MI dataplane when the job is complete.
 ###############################################################################
 
 import os

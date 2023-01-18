@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.abspath('../source'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'Media Insights Engine'
+project = 'Media Insights on AWS'
 copyright = '2019, burkleaa, brandold, ianwow'
 author = 'burkleaa, brandold, ianwow'
 
@@ -49,9 +49,9 @@ html_theme = 'smithy'
 html_theme_path = ['./theme']
 # html_theme_options = {'ga_id': os.environ.get('_CHALICE_GA_ID', '')}
 
-html_title = 'AWS Media Insights Engine'
+html_title = 'Media Insights on AWS'
 # A shorter title for the navigation bar.  Default is the same as html_title.
-html_short_title = 'MIE'
+html_short_title = 'MI'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

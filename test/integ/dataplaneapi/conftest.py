@@ -21,8 +21,8 @@ def testing_env_variables():
         test_env_vars = {
             'MEDIA_PATH': os.environ['TEST_MEDIA_PATH'],
             'SAMPLE_IMAGE': os.environ['SAMPLE_IMAGE'],
-            'REGION': os.environ['MIE_REGION'],
-            'MIE_STACK_NAME': os.environ['MIE_STACK_NAME'],
+            'REGION': os.environ['REGION'],
+            'MI_STACK_NAME': os.environ['MI_STACK_NAME'],
             'ACCESS_KEY': os.environ['AWS_ACCESS_KEY_ID'],
             'SECRET_KEY': os.environ['AWS_SECRET_ACCESS_KEY']
             }
@@ -43,7 +43,7 @@ def stack_resources(testing_env_variables):
     # is the dataplane api and bucket present?
 
     client = boto3.client('cloudformation', region_name=testing_env_variables['REGION'])
-    response = client.describe_stacks(StackName=testing_env_variables['MIE_STACK_NAME'])
+    response = client.describe_stacks(StackName=testing_env_variables['MI_STACK_NAME'])
     outputs = response['Stacks'][0]['Outputs']
 
     for output in outputs:

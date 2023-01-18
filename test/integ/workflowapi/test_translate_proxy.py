@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 ###############################################################################
-# Integration testing for the MIE service proxy API for Amazon Translate
+# Integration testing for the MI service proxy API for Amazon Translate
 #
 # PRECONDITIONS:
-# MIE base stack must be deployed in your AWS account
+# MI base stack must be deployed in your AWS account
 #
 # Boto3 will raise a deprecation warning (known issue). It's safe to ignore.
 #
@@ -20,7 +20,7 @@ import json
 import pytest
 import os
 
-@pytest.mark.skipif(os.environ['MIE_REGION'] not in ["us-west-2", "us-east-1", "eu-west-1"], reason="Parallel Data is not supported in this region")
+@pytest.mark.skipif(os.environ['REGION'] not in ["us-west-2", "us-east-1", "eu-west-1"], reason="Parallel Data is not supported in this region")
 def test_parallel_data(workflow_api, stack_resources, testing_env_variables):
     workflow_api = workflow_api()
 

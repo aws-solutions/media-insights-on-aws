@@ -7,7 +7,7 @@
 # PURPOSE: This script runs our pytest unit test suite.
 #
 # PRELIMINARY:
-#  You must have a functioning MIE deployment. Set the required environment variables; see the testing readme for more
+#  You must have a functioning MI deployment. Set the required environment variables; see the testing readme for more
 #  details.
 #
 # USAGE:

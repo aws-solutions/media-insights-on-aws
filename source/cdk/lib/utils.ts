@@ -128,7 +128,7 @@ export class SourceCodeHelper {
             mapping: {
                 General: {
                     RegionalS3Bucket: "%%REGIONAL_BUCKET_NAME%%",
-                    CodeKeyPrefix: "aws-media-insights-engine/%%VERSION%%",
+                    CodeKeyPrefix: "media-insights-on-aws/%%VERSION%%",
                     ...map,
                 }
             }

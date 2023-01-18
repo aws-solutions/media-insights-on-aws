@@ -3,11 +3,11 @@
 exports[`Snapshot media-insights-dataplane-streaming stack test 1`] = `
 Object {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "aws-media-insights-engine version %%VERSION%%. This AWS CloudFormation template defines resources for the analytics streaming pipeline.",
+  "Description": "media-insights-on-aws version %%VERSION%%. This AWS CloudFormation template defines resources for the analytics streaming pipeline.",
   "Mappings": Object {
     "SourceCode": Object {
       "General": Object {
-        "CodeKeyPrefix": "aws-media-insights-engine/%%VERSION%%",
+        "CodeKeyPrefix": "media-insights-on-aws/%%VERSION%%",
         "RegionalS3Bucket": "%%REGIONAL_BUCKET_NAME%%",
       },
     },

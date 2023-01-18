@@ -146,7 +146,7 @@ def lambda_handler(event, context):
         operator_object.add_workflow_metadata(TranslateError="Unable to get response from translate: {e}".format(e=str(e)))
         raise MasExecutionError(operator_object.return_output_object())
     translated_text = translated_text + ' ' + translation_chunk["TranslatedText"]
-    # Put final result into a JSON object because the MIE dataplane requires it to be so.
+    # Put final result into a JSON object because the MI dataplane requires it to be so.
     translation_result = {}
     translation_result["TranslatedText"] = translated_text
     translation_result["SourceLanguageCode"] = source_lang

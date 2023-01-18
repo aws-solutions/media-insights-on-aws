@@ -41,7 +41,7 @@ aws lambda list-layer-versions --layer-name lambda_layer-python39 --output text 
 
 To validate that the Lambda layer includes certain libraries, for example `pymediainfo`, do this:
 ```
-cd .../aws-media-insights-engine/
+cd .../media-insights-on-aws/
 PYTHONPATH=./source/lib/MediaInsightsEngineLambdaHelper/ python3 -c "import pymediainfo"
 ```
 If you do not see a ModuleNotFoundError then the layer contains library is missing from the layer.

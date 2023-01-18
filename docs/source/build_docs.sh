@@ -5,7 +5,7 @@
 # documentation from docstrings in source/dataplaneapi/api.py and
 # source/workflowapi/api.py. Output docs will be saved to docs/source/output/.
 #
-# This output is manually copied to the MIE gh-pages hosting branch
+# This output is manually copied to the MI gh-pages hosting branch
 #
 #
 # PRELIMINARY:
@@ -24,8 +24,7 @@ echo "--------------------------------------------------------------------------
 source_dir="../../source"
 docs_dir=`pwd`
 
-python -c "import os; print (os.getenv('VIRTUAL_ENV'))" | grep -q None
-if [ $? -ne 0 ]; then
+if [ -n "${VIRTUAL_ENV:-}" ]; then 
     echo "ERROR: Do not run this script inside Virtualenv. Type \`deactivate\` and run again.";
     exit 1;
 fi
@@ -44,7 +43,7 @@ rm -rf build
 rm -rf dist
 rm -rf Media_Insights_Engine_Lambda_Helper.egg-info
 python3 setup.py bdist_wheel > /dev/null
-pip install dist/Media_Insights_Engine_Lambda_Helper-0.0.4-py3-none-any.whl
+pip install dist/Media_Insights_Engine_Lambda_Helper-1.0.0-py3-none-any.whl
 
 
 if [ $? -ne 0 ]; then
@@ -52,6 +51,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+export STEP_FUNCTION_LOG_GROUP_ARN="test"
 export WORKFLOW_SCHEDULER_LAMBDA_ARN="test"
 export OPERATOR_FAILED_LAMBDA_ARN="test"
 export FILTER_OPERATION_LAMBDA_ARN="test"

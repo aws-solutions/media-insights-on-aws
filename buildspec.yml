@@ -2,7 +2,7 @@ version: 0.2
 
 ###############################################################################
 # DO NOT MODIFY THIS FILE.
-# This file is used by the build pipeline for the [MIE solution](https://aws.amazon.com/solutions/implementations/aws-media-insights-engine/).
+# This file is used by the build pipeline for the [MI solution](https://aws.amazon.com/solutions/implementations/media-insights-on-aws/).
 ###############################################################################
 
 phases:

@@ -63,7 +63,7 @@ export class MediaInsightsStack extends Stack {
     readonly nestedStacks: MediaInsightsNestedStacks;
 
     constructor(scope: Construct, id: string, props?: StackProps) {
-        super(scope, id, { ...props, description: '(SO0163) - aws-media-insights-engine version %%VERSION%%. This is the base AWS CloudFormation template that provisions Media Insights Engine services and provides parameters for user configurable MIE settings.' });
+        super(scope, id, { ...props, description: '(SO0163) - media-insights-on-aws version %%VERSION%%. This is the base AWS CloudFormation template that provisions Media Insights on AWS services and provides parameters for user configurable MI settings.' });
         this.templateOptions.templateFormatVersion = '2010-09-09';
 
         //
@@ -151,7 +151,7 @@ export class MediaInsightsStack extends Stack {
 
         const sourceCodeMap = new util.SourceCodeHelper(this, {
             GlobalS3Bucket: "%%GLOBAL_BUCKET_NAME%%",
-            TemplateKeyPrefix: "aws-media-insights-engine/%%VERSION%%",
+            TemplateKeyPrefix: "media-insights-on-aws/%%VERSION%%",
             FrameworkVersion: "%%VERSION%%",
         });
 
@@ -1516,7 +1516,7 @@ export class MediaInsightsStack extends Stack {
             value: testResourcesStack.stackId,
         });
         new CfnOutput(this, 'Version', {
-            description: "Media Insights Engine Version",
+            description: "Media Insights on AWS Version",
             value: sourceCodeMap.findInMap("FrameworkVersion"),
             exportName: Fn.join(':', [Aws.STACK_NAME, 'Version']),
         });

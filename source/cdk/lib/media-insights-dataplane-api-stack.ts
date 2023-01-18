@@ -35,7 +35,7 @@ interface FunctionEnvironmentProperty {
 export class DataplaneApiStack extends cdk.NestedStack {
 
     constructor(scope: Construct, id: string, props: cdk.NestedStackProps) {
-        super(scope, id, { ...props, description: "aws-media-insights-engine version %%VERSION%%. This AWS CloudFormation template provisions the REST API for the Media Insights Engine data plane" });
+        super(scope, id, { ...props, description: "media-insights-on-aws version %%VERSION%%. This AWS CloudFormation template provisions the REST API for the Media Insights on AWS data plane" });
         this.templateOptions.templateFormatVersion = '2010-09-09';
 
 

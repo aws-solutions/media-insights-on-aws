@@ -8,7 +8,7 @@ setuptools.setup(
     version="1.0.0",
     author="AWS Solutions Builder",
     author_email="redacted@example.com",
-    description="Helper classes for developing Media Insights Engine Lambda Functions",
+    description="Helper classes for developing Media Insights on AWS Lambda Functions",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://code.amazon.com/packages/MediaInsightsEngine",

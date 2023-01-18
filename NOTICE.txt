@@ -1,4 +1,4 @@
-Media Insights Engine
+Media Insights on AWS
 
 Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 

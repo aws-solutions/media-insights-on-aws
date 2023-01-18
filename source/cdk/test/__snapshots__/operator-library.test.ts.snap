@@ -17,11 +17,11 @@ Object {
       ],
     },
   },
-  "Description": "aws-media-insights-engine version %%VERSION%%. This AWS CloudFormation template provisions the Media Insights Engine operator library.",
+  "Description": "media-insights-on-aws version %%VERSION%%. This AWS CloudFormation template provisions the Media Insights on AWS operator library.",
   "Mappings": Object {
     "SourceCode": Object {
       "General": Object {
-        "CodeKeyPrefix": "aws-media-insights-engine/%%VERSION%%",
+        "CodeKeyPrefix": "media-insights-on-aws/%%VERSION%%",
         "RegionalS3Bucket": "%%REGIONAL_BUCKET_NAME%%",
       },
     },

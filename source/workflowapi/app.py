@@ -181,7 +181,7 @@ def version():
 def create_system_configuration_api():
     """ Add a new system configuration parameter
 
-    - Updates the MIE system configuration with a new parameter or changes the value of
+    - Updates the MI system configuration with a new parameter or changes the value of
       existing parameters
 
     Body:
@@ -235,12 +235,12 @@ def create_system_configuration_api():
 
 @app.route('/system/configuration', cors=True, methods=['GET'], authorizer=authorizer)
 def get_system_configuration_api():
-    """ Get the current MIE system configuration
+    """ Get the current MI system configuration
 
-    - Gets the current MIE system configuration parameter settings
+    - Gets the current MI system configuration parameter settings
 
     Returns:
-        A list of dict containing the current MIE system configuration key-value pairs.
+        A list of dict containing the current MI system configuration key-value pairs.
 
         .. code-block:: python
 
@@ -294,8 +294,8 @@ def create_operation_api():
     when the operation is successfully initiated, but not complete. Asynchronous operators require
     an additional monitoring task to check the status of the operation.
 
-    For more information on how to implemenent lambdas to be used in MIE operators, please
-    refer to the MIE Developer Quick Start.
+    For more information on how to implemenent lambdas to be used in MI operators, please
+    refer to the MI Developer Quick Start.
 
 
 
@@ -456,10 +456,10 @@ def create_operation(operation):
         #  InvokeFunction, put that in the StepFunctionRole definition in
         #  media-insights-stack.yaml and remove the following code block. Inline
         #  policies have length limitations which will prevent users from adding
-        #  more than about 35 new operators via the MIE workflow api. Tag based
+        #  more than about 35 new operators via the MI workflow api. Tag based
         #  policies will not have any such limitation.
 
-        # Skip the inline policy creation for operators packaged with MIE.
+        # Skip the inline policy creation for operators packaged with MI.
         # The inline policy is not needed for those operators because the
         # StepFunctionRole has already been defined with permission to invoke
         # those Lambdas (see media-insigts-stack.yaml).
@@ -852,7 +852,7 @@ def delete_operation(Name, Force):
             #  InvokeFunction, put that in the StepFunctionRole definition in
             #  media-insights-stack.yaml and remove the following code block. Inline
             #  policies have length limitations which will prevent users from adding
-            #  more than about 35 new operators via the MIE workflow api. Tag based
+            #  more than about 35 new operators via the MI workflow api. Tag based
             #  policies will not have any such limitation.
 
             if not ("OperatorLibrary" in operation["StartLambdaArn"] or "start-wait-operation" in operation["StartLambdaArn"]):

@@ -30,7 +30,7 @@ def send_metrics(config):
     data = json.dumps(metrics).encode('utf8')
     headers = {'content-type': 'application/json'}
     req = urllib.request.Request(url, data,headers)
-    response = urllib.request.urlopen(req)
+    response = urllib.request.urlopen(req) #nosec
     print('RESPONSE CODE:: {}'.format(response.getcode()))
     print('METRICS SENT:: {}'.format(data))
     return

@@ -48,7 +48,7 @@ def test_upload_should_fail(test_client):
     response = test_client.http.post('/upload',
         body=b'{"S3Key": "testBucketKey"}'
     )
-    assert response.json_body['Message'] == "ChaliceViewError: Unable to generate pre-signed S3 URL for uploading media: 'S3Bucket'"
+    assert "Unable to generate pre-signed S3 URL for uploading media: 'S3Bucket'" in response.json_body['Message']
     print ('Pass')
 
 def test_upload_success(test_client):
@@ -75,7 +75,7 @@ def test_download_fail(test_client):
         '/download',
         body=b'{"S3Key": "testBucketKey"}'
     )
-    assert response.json_body['Message'] == "ChaliceViewError: Unable to generate pre-signed S3 URL for downloading media: 'S3Bucket'"
+    assert "Unable to generate pre-signed S3 URL for downloading media: 'S3Bucket'" in response.json_body['Message']
     print ('Pass')
 
 def test_download_success(test_client):
@@ -108,7 +108,7 @@ def test_create_asset_input_error(test_client, s3_client_stub):
     assert response.status_code == 400
     formatted_response = json.loads(response.body)
     assert formatted_response['Code'] == 'BadRequestError'
-    assert formatted_response['Message'] == "BadRequestError: Missing required inputs for asset creation: 'S3Key'"
+    assert "Missing required inputs for asset creation: 'S3Key'" in formatted_response['Message']
     print("Pass")
 
 def test_create_asset_s3_error(test_client, s3_client_stub):

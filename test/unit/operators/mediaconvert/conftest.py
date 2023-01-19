@@ -12,6 +12,7 @@ def mock_env_variables(monkeypatch):
     monkeypatch.setenv('mediaconvertRole', 'testMediaconvertRole')
     monkeypatch.setenv('AWS_REGION', 'us-west-2')
     monkeypatch.setenv('MEDIACONVERT_ENDPOINT', 'https://test.mediaconvert.endpoint')
+    monkeypatch.setenv("AWS_DEFAULT_REGION", "us-east-1")
 
 @pytest.fixture
 def mediaconvert_start_stub(mock_env_variables):

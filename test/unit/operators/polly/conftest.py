@@ -8,6 +8,7 @@ def mock_env_variables(monkeypatch):
     monkeypatch.syspath_prepend('./operators/')
     monkeypatch.setenv("botoConfig", '{"user_agent_extra": "AwsSolution/SO0163/vX.X.X"}')
     monkeypatch.setenv('AWS_XRAY_CONTEXT_MISSING', 'LOG_ERROR')
+    monkeypatch.setenv("AWS_DEFAULT_REGION", "us-east-1")
 
 @pytest.fixture()
 def polly_start_stub():

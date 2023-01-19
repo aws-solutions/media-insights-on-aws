@@ -9,6 +9,10 @@ def mock_env_variables(monkeypatch):
     monkeypatch.setenv('DataplaneEndpoint', 'testDataplaneEndpoint')
     monkeypatch.setenv('AWS_XRAY_CONTEXT_MISSING', 'LOG_ERROR')
     monkeypatch.setenv('AWS_REGION', 'us-west-2')
+    monkeypatch.setenv("AWS_DEFAULT_REGION", "us-east-1")
+    monkeypatch.setenv("AWS_ACCESS_KEY_ID", "test")
+    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "test")
+    monkeypatch.setenv("AWS_SESSION_TOKEN", "test")
 
 @pytest.fixture
 def s3_client_stub(mock_env_variables):

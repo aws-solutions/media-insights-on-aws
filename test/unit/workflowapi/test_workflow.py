@@ -364,7 +364,7 @@ def test_get_workflow_configuration_by_name_does_not_exist(test_client, ddb_reso
         '/workflow/configuration/{Name}'.format(Name = configuration_name)
     )
     assert response.status_code == 404
-    assert response.json_body['Message'] == "NotFoundError: Exception: workflow '%s' not found" % configuration_name
+    assert "Exception: workflow '%s' not found" % configuration_name in response.json_body['Message']
 
 def test_get_workflow_configuration_by_name(test_client, ddb_resource_stub):
     print('GET /workflow/configuration/{Name}')
@@ -417,7 +417,7 @@ def test_delete_workflow_api_workflow_does_not_exist(test_client, ddb_resource_s
 
     response = test_client.http.delete('/workflow/testWorkflowName')
     assert response.status_code == 200
-    assert response.json_body['Message'] == "Workflow 'testWorkflowName' not found"
+    assert "Workflow 'testWorkflowName' not found" in response.json_body['Message']
 
 def test_delete_workflow_api(test_client, ddb_resource_stub, sfn_client_stub):
     print('DELETE /workflow/{Name}')

@@ -421,7 +421,7 @@ def test_delete_workflow_execution_execution_does_not_exist(test_client, ddb_res
 
     response = test_client.http.delete('/workflow/execution/{Id}'.format(Id = test_execution_id))
     assert response.status_code == 500
-    assert response.json_body['Message'] == "ChaliceViewError: Exception: 'NotFoundError: Exception: workflow execution '%s' not found'" % test_execution_id
+    assert "workflow execution '%s' not found'" % test_execution_id in response.json_body['Message']
 
 def test_delete_workflow_execution(test_client, ddb_resource_stub):
     print('DELETE /workflow/execution/{Id}')

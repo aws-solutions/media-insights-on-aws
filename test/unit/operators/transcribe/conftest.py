@@ -10,6 +10,7 @@ def mock_env_variables(monkeypatch):
     monkeypatch.setenv('AWS_XRAY_CONTEXT_MISSING', 'LOG_ERROR')
     monkeypatch.setenv('AWS_REGION', 'us-west-2')
     monkeypatch.setenv('DataplaneEndpoint', 'testDataplaneEndpoint')
+    monkeypatch.setenv("AWS_DEFAULT_REGION", "us-east-1")
 
 @pytest.fixture()
 def transcribe_start_stub():

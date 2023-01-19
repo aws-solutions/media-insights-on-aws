@@ -13,6 +13,7 @@ def mock_env_variables(monkeypatch):
     monkeypatch.setenv('AWS_REGION', 'us-west-2')
     monkeypatch.setenv('DataplaneEndpoint', 'testDataplaneEndpoint')
     monkeypatch.setenv('MEDIACONVERT_ENDPOINT', 'https://test.mediaconvert.endpoint')
+    monkeypatch.setenv("AWS_DEFAULT_REGION", "us-east-1")
 
 @pytest.fixture
 def translate_client_stub(mock_env_variables):

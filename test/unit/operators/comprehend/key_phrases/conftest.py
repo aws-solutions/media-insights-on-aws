@@ -12,6 +12,7 @@ def mock_env_variables(monkeypatch):
     monkeypatch.setenv('comprehendRole', 'testComprehendRole10')
     monkeypatch.setenv('AWS_REGION', 'us-west-2')
     monkeypatch.setenv('KmsId', 'testKmsId')
+    monkeypatch.setenv("AWS_DEFAULT_REGION", "us-east-1")
 
 @pytest.fixture
 def comprehend_start_key_phrases(mock_env_variables):

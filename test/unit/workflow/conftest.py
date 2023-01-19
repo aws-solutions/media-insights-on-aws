@@ -17,6 +17,7 @@ def mock_env_variables(monkeypatch):
     monkeypatch.setenv('SYSTEM_TABLE_NAME', 'testSystemTable')
     monkeypatch.setenv('DEFAULT_MAX_CONCURRENT_WORKFLOWS', '1')
     monkeypatch.setenv('ShortUUID', 'shortuuid')
+    monkeypatch.setenv("AWS_DEFAULT_REGION", "us-east-1")
 
 @pytest.fixture
 def dynamo_client_stub(mock_env_variables):

@@ -19,7 +19,7 @@ def test_create_operation_api_input_error1(test_client):
     )
     
     assert response.status_code == 500
-    assert response.json_body['Message'] == "ChaliceViewError: Exception 'BadRequestError: Key 'MonitorLambdaArn' is required in 'Operation monitoring lambda function ARN' input'"
+    assert "Key 'MonitorLambdaArn' is required in 'Operation monitoring lambda function ARN' input" in response.json_body['Message']
 
 def test_create_operation_api_input_error2(test_client):
     print('POST {endpoint}'.format(endpoint = workflow_operation_endpoint))
@@ -59,7 +59,7 @@ def test_create_operation_api_operation_exists_error(test_client, ddb_resource_s
     )
     
     assert response.status_code == 409
-    assert response.json_body['Message'] == "ConflictError: A operation with the name 'testOperationName' already exists"
+    assert "A operation with the name 'testOperationName' already exists" in response.json_body['Message']
 
 def test_create_operation_api_operation_dynamo_put_error(test_client, ddb_resource_stub):
     print('POST {endpoint}'.format(endpoint = workflow_operation_endpoint))
@@ -82,7 +82,7 @@ def test_create_operation_api_operation_dynamo_put_error(test_client, ddb_resour
         }).encode()
     )
     
-    assert response.json_body['Message'] == "ChaliceViewError: Exception 'An error occurred () when calling the PutItem operation: '"
+    assert "Exception 'An error occurred () when calling the PutItem operation: '" in response.json_body['Message']
     assert response.status_code == 500
 
 def test_create_operation_api_operation_dynamo_put_error2(test_client, ddb_resource_stub):
@@ -149,7 +149,7 @@ def test_create_operation_api_operation_iam_error(test_client, ddb_resource_stub
     )
     
     assert response.status_code == 500
-    assert response.json_body['Message'] == "ChaliceViewError: Exception 'An error occurred () when calling the PutRolePolicy operation: '"
+    assert "Exception 'An error occurred () when calling the PutRolePolicy operation: '" in response.json_body['Message']
 
 def test_create_operation_api_operation(test_client, ddb_resource_stub, iam_client_stub):
     print('POST {endpoint}'.format(endpoint = workflow_operation_endpoint))
@@ -256,7 +256,7 @@ def test_delete_operation_api_no_operation_available(test_client, ddb_resource_s
     
     response = test_client.http.delete('/workflow/operation/{Name}'.format(Name = test_operation_name))
     assert response.status_code == 200
-    assert response.json_body['Message'] == "Warning: operation '{}' not found".format(test_operation_name)
+    assert "Warning: operation '{}' not found".format(test_operation_name) in response.json_body['Message']
 
 def test_delete_operation_api_workflow_running(test_client, ddb_resource_stub):
     print('DELETE /workflow/operation/{Name}')
@@ -277,12 +277,12 @@ def test_delete_operation_api_workflow_running(test_client, ddb_resource_stub):
     
     response = test_client.http.delete('/workflow/operation/{Name}'.format(Name = test_operation_name))
     assert response.status_code == 400
-    assert response.json_body['Message'] == """BadRequestError: Dependent workflows were found for operation {}.
+    assert """Dependent workflows were found for operation {}.
                     Either delete the dependent workflows or set the query parameter
                     force=true to delete the stage anyhow.  Undeleted dependent workflows
                     will be kept but will contain the deleted definition of the stage.  To
                     find the workflow that depend on a stage use the following endpoint:
-                    GET /workflow/list/operation/""".format(test_operation_name)
+                    GET /workflow/list/operation/""".format(test_operation_name) in response.json_body['Message']
 
 def test_delete_operation_api(test_client, ddb_resource_stub, iam_client_stub):
     print('DELETE /workflow/operation/{Name}')

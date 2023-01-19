@@ -13,3 +13,4 @@ def mock_env_variables(monkeypatch):
     monkeypatch.setenv('DataplaneEndpoint', 'testDataplaneEndpoint')
     monkeypatch.setenv('REKOGNITION_SNS_TOPIC_ARN', 'testRekognitionSNSTopicArn')
     monkeypatch.setenv('REKOGNITION_ROLE_ARN', 'testRekognitionRoleArn')
+    monkeypatch.setenv("AWS_DEFAULT_REGION", "us-east-1")

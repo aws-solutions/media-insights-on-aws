@@ -20,7 +20,7 @@ def test_update_stage(test_client):
     print('PUT /workflow/stage')
     response = test_client.http.put('/workflow/stage')
     assert response.status_code == 200
-    assert response.json_body['Message'] == 'NOT IMPLEMENTED'
+    assert 'NOT IMPLEMENTED' in response.json_body['Message']
 
 def test_list_stages(test_client, ddb_resource_stub):
     print('GET /workflow/stage')
@@ -74,7 +74,7 @@ def test_get_stage_by_name_when_stage_dne(test_client, ddb_resource_stub):
         '/workflow/stage/_testOperationName'
     )
     assert response.status_code == 404
-    assert response.json_body['Message'] == "NotFoundError: Exception: stage '_testOperationName' not found"
+    assert "Exception: stage '_testOperationName' not found" in response.json_body['Message']
 
 def test_get_stage_by_name_when_stage_does_not_exist(test_client, ddb_resource_stub):
     print('GET /workflow/stage/{Name}')

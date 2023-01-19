@@ -8,6 +8,7 @@ def mock_env_variables(monkeypatch):
     monkeypatch.setenv('StreamName', 'testStreamName')
     monkeypatch.setenv('AWS_XRAY_CONTEXT_MISSING', 'LOG_ERROR')
     monkeypatch.setenv('TOPIC_ARN', 'testTopicArn')
+    monkeypatch.setenv("AWS_DEFAULT_REGION", "us-east-1")
 
 @pytest.fixture
 def sns_client_stub(mock_env_variables):

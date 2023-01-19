@@ -28,6 +28,7 @@ def mock_env_variables(monkeypatch):
     monkeypatch.setenv("botoConfig", '{"user_agent_extra": "AwsSolution/SO0163/vX.X.X"}')
     monkeypatch.setenv("FRAMEWORK_VERSION", "v9.9.9")
     monkeypatch.setenv("AWS_REGION", "us-east-1")
+    monkeypatch.setenv("AWS_DEFAULT_REGION", "us-east-1")
 
 @pytest.fixture
 def test_client(mock_env_variables):

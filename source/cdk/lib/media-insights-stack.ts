@@ -37,6 +37,7 @@ import * as subscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
 import * as sqs from 'aws-cdk-lib/aws-sqs';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as targets from 'aws-cdk-lib/aws-events-targets';
+import * as appregistry from 'aws-cdk-lib/aws-servicecatalogappregistry'
 import { DataplaneApiStack } from './media-insights-dataplane-api-stack';
 import { WorkflowApiStack } from './media-insights-workflow-api-stack';
 import { AnalyticsStack } from './media-insights-dataplane-streaming-stack';
@@ -1409,6 +1410,134 @@ export class MediaInsightsStack extends Stack {
             testResourcesStack,
         };
 
+        //
+        // ServiceCatalog AppRegistry
+        //
+
+        // main application
+        const application = new appregistry.CfnApplication(
+            this,
+            'Application',
+            {
+                name: Fn.join(
+                    '-',
+                    [
+                        'media-insights-on-aws',
+                        Aws.REGION,
+                        Aws.ACCOUNT_ID,
+                        Aws.STACK_NAME
+                    ]
+                ),
+                description: 'Service Catalog application to track and manage all your resources for the solution Media Insights on AWS',
+                tags: {
+                    'Solutions:SolutionID': "SO0163",
+                    'Solutions:SolutionName': "Media Insights on AWS",
+                    'Solutions:SolutionVersion': "%%VERSION%%",
+                    'Solutions:ApplicationType': "AWS-Solutions",
+                }
+            }
+        );
+
+        function createCfnResourceAssociation(scope: Construct, id: string, props: appregistry.CfnResourceAssociationProps) {
+            return new appregistry.CfnResourceAssociation(scope, id, props);
+        }
+
+        // main stack association to main application
+        createCfnResourceAssociation(
+            this,
+            'AppRegistryApplicationStackAssociation',
+            {
+                application: application.attrId,
+                resource: Aws.STACK_ID,
+                resourceType: 'CFN_STACK'
+            },
+        );
+
+        // dataplane stack association to main application
+        createCfnResourceAssociation(
+            this,
+            'AppRegistryApplicationStackAssociationNestedStackDataplane',
+            {
+                application: application.attrId,
+                resource: this.nestedStacks.dataplaneApiStack.stackId,
+                resourceType: 'CFN_STACK'
+            },
+        );
+
+        // analytics stack association to main application
+        createCfnResourceAssociation(
+            this,
+            'AppRegistryApplicationStackAssociationNestedStackAnalytics',
+            {
+                application: application.attrId,
+                resource: this.nestedStacks.analyticsStack.stackId,
+                resourceType: 'CFN_STACK'
+            },
+        );
+
+        // workflow stack association to main application
+        createCfnResourceAssociation(
+            this,
+            'AppRegistryApplicationStackAssociationNestedStackWorkflow',
+            {
+                application: application.attrId,
+                resource: this.nestedStacks.workflowApiStack.stackId,
+                resourceType: 'CFN_STACK'
+            },
+        );
+
+        // operator library stack association to main application
+        createCfnResourceAssociation(
+            this,
+            'AppRegistryApplicationStackAssociationNestedStackOperator',
+            {
+                application: application.attrId,
+                resource: this.nestedStacks.operatorLibraryStack.stackId,
+                resourceType: 'CFN_STACK'
+            },
+        );
+
+        // test resources stack association to main application
+        createCfnResourceAssociation(
+            this,
+            'AppRegistryApplicationStackAssociationNestedStackTestResources',
+            {
+                application: application.attrId,
+                resource: this.nestedStacks.testResourcesStack.stackId,
+                resourceType: 'CFN_STACK'
+            },
+        );
+
+        // default application attributes
+        const defaultApplicationAttributes = new appregistry.CfnAttributeGroup(
+            this,
+            'DefaultApplicationAttributes',
+            {
+                name: Fn.join('-', [ Aws.REGION, Aws.STACK_NAME ]),
+                description: 'Attribute group for solution information',
+                attributes: {
+                    ApplicationType: 'AWS-Solutions',
+                    Version: '%%VERSION%%',
+                    SolutionID: 'SO0163',
+                    SolutionName: 'Media Insights on AWS'
+                }
+            }
+        );
+
+        function createCfnAttributeGroupAssociation(scope: Construct, id: string, props: appregistry.CfnAttributeGroupAssociationProps) {
+            return new appregistry.CfnAttributeGroupAssociation(scope, id, props);
+        }
+
+        // application attribute association
+        createCfnAttributeGroupAssociation(
+            this,
+            'AppRegistryApplicationAttributeAssociation',
+            {
+                application: application.attrId,
+                attributeGroup: defaultApplicationAttributes.attrId
+            },
+        );
+
         // SendAnonymousData
         const anonymousDataUuid = new CustomResource(this, 'AnonymousDataUuid', {
             resourceType: "Custom::UUID",
@@ -1485,7 +1614,7 @@ export class MediaInsightsStack extends Stack {
             description: "REST API ID for dataplane API",
             value: `${dataplaneApiStack.nestedStackResource!.getAtt('Outputs.RestAPIId')}`,
             exportName: Fn.join(':', [Aws.STACK_NAME, 'DataplaneApiId']),
-        });workflowApiStack
+        });
         new CfnOutput(this, 'WorkflowCustomResourceArn', {
             description: "Custom resource for creating operations, stages and workflows using CloudFormation",
             value: `${workflowApiStack.nestedStackResource!.getAtt('Outputs.WorkflowCustomResourceArn')}`,

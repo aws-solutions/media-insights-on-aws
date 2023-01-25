@@ -1,3 +1,5 @@
+.vscode
+
 deployment/media-analysis-dataplane-api-stack.yaml
 venv/
 **/dist
@@ -30,6 +32,7 @@ deployment/lambda_layer_factory/lambda_layer-python-*
 *~staging*
 *~release*
 test/unit/.coverage
+docs/source/output
 
 scratch/
 deployment/build.sh

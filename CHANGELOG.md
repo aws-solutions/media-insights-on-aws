@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Added AWS CDK infrastructure in source/cdk directory
 * Defined resources for AWS CDK stack in source/cdk/lib
 * Added snapshot test to source/cdk/test directory
+* Added ServiceCatalog AppRegistry Application into CDK infrastructure
 
 ### Changes:
 

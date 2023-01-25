@@ -870,6 +870,142 @@ Object {
       "Type": "Custom::AnonymousMetric",
       "UpdateReplacePolicy": "Delete",
     },
+    "AppRegistryApplicationAttributeAssociation": Object {
+      "Properties": Object {
+        "Application": Object {
+          "Fn::GetAtt": Array [
+            "Application",
+            "Id",
+          ],
+        },
+        "AttributeGroup": Object {
+          "Fn::GetAtt": Array [
+            "DefaultApplicationAttributes",
+            "Id",
+          ],
+        },
+      },
+      "Type": "AWS::ServiceCatalogAppRegistry::AttributeGroupAssociation",
+    },
+    "AppRegistryApplicationStackAssociation": Object {
+      "Properties": Object {
+        "Application": Object {
+          "Fn::GetAtt": Array [
+            "Application",
+            "Id",
+          ],
+        },
+        "Resource": Object {
+          "Ref": "AWS::StackId",
+        },
+        "ResourceType": "CFN_STACK",
+      },
+      "Type": "AWS::ServiceCatalogAppRegistry::ResourceAssociation",
+    },
+    "AppRegistryApplicationStackAssociationNestedStackAnalytics": Object {
+      "Properties": Object {
+        "Application": Object {
+          "Fn::GetAtt": Array [
+            "Application",
+            "Id",
+          ],
+        },
+        "Resource": Object {
+          "Ref": "Analytics",
+        },
+        "ResourceType": "CFN_STACK",
+      },
+      "Type": "AWS::ServiceCatalogAppRegistry::ResourceAssociation",
+    },
+    "AppRegistryApplicationStackAssociationNestedStackDataplane": Object {
+      "Properties": Object {
+        "Application": Object {
+          "Fn::GetAtt": Array [
+            "Application",
+            "Id",
+          ],
+        },
+        "Resource": Object {
+          "Ref": "MediaInsightsDataplaneApiStack",
+        },
+        "ResourceType": "CFN_STACK",
+      },
+      "Type": "AWS::ServiceCatalogAppRegistry::ResourceAssociation",
+    },
+    "AppRegistryApplicationStackAssociationNestedStackOperator": Object {
+      "Properties": Object {
+        "Application": Object {
+          "Fn::GetAtt": Array [
+            "Application",
+            "Id",
+          ],
+        },
+        "Resource": Object {
+          "Ref": "OperatorLibrary",
+        },
+        "ResourceType": "CFN_STACK",
+      },
+      "Type": "AWS::ServiceCatalogAppRegistry::ResourceAssociation",
+    },
+    "AppRegistryApplicationStackAssociationNestedStackTestResources": Object {
+      "Properties": Object {
+        "Application": Object {
+          "Fn::GetAtt": Array [
+            "Application",
+            "Id",
+          ],
+        },
+        "Resource": Object {
+          "Ref": "TestResources",
+        },
+        "ResourceType": "CFN_STACK",
+      },
+      "Type": "AWS::ServiceCatalogAppRegistry::ResourceAssociation",
+    },
+    "AppRegistryApplicationStackAssociationNestedStackWorkflow": Object {
+      "Properties": Object {
+        "Application": Object {
+          "Fn::GetAtt": Array [
+            "Application",
+            "Id",
+          ],
+        },
+        "Resource": Object {
+          "Ref": "MediaInsightsWorkflowApi",
+        },
+        "ResourceType": "CFN_STACK",
+      },
+      "Type": "AWS::ServiceCatalogAppRegistry::ResourceAssociation",
+    },
+    "Application": Object {
+      "Properties": Object {
+        "Description": "Service Catalog application to track and manage all your resources for the solution Media Insights on AWS",
+        "Name": Object {
+          "Fn::Join": Array [
+            "-",
+            Array [
+              "media-insights-on-aws",
+              Object {
+                "Ref": "AWS::Region",
+              },
+              Object {
+                "Ref": "AWS::AccountId",
+              },
+              Object {
+                "Ref": "AWS::StackName",
+              },
+            ],
+          ],
+        },
+        "Tags": Object {
+          "Solutions:ApplicationType": "AWS-Solutions",
+          "Solutions:SolutionID": "SO0163",
+          "Solutions:SolutionName": "Media Insights on AWS",
+          "Solutions:SolutionVersion": "%%VERSION%%",
+        },
+      },
+      "Type": "AWS::ServiceCatalogAppRegistry::Application",
+    },
     "CheckWaitOperationLambda": Object {
       "DependsOn": Array [
         "OperationLambdaExecutionRoleDefaultPolicy",
@@ -1500,6 +1636,31 @@ Object {
       },
       "Type": "AWS::DynamoDB::Table",
       "UpdateReplacePolicy": "Delete",
+    },
+    "DefaultApplicationAttributes": Object {
+      "Properties": Object {
+        "Attributes": Object {
+          "ApplicationType": "AWS-Solutions",
+          "SolutionID": "SO0163",
+          "SolutionName": "Media Insights on AWS",
+          "Version": "%%VERSION%%",
+        },
+        "Description": "Attribute group for solution information",
+        "Name": Object {
+          "Fn::Join": Array [
+            "-",
+            Array [
+              Object {
+                "Ref": "AWS::Region",
+              },
+              Object {
+                "Ref": "AWS::StackName",
+              },
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::ServiceCatalogAppRegistry::AttributeGroup",
     },
     "FilterOperationLambda": Object {
       "DependsOn": Array [

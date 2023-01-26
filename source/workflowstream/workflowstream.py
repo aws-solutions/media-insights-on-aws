@@ -27,6 +27,7 @@ config = Config(**mie_config)
 topic_arn = os.environ['TOPIC_ARN']
 sns = boto3.client('sns', config=config)
 
+
 def deserialize(data):
     if isinstance(data, list):
         return [deserialize(v) for v in data]
@@ -39,7 +40,8 @@ def deserialize(data):
     else:
         return data
 
-def lambda_handler(event, context):
+
+def lambda_handler(event, _context):
 
     for record in event["Records"]:
 
@@ -64,7 +66,6 @@ def lambda_handler(event, context):
                 message["Globals"] = new["Globals"]
                 message["Configuration"] = new["Configuration"]
                 message["Created"] = new["Created"]
-                #message["StateMachineExecutionArn"] = new["StateMachineExecutionArn"]
                 logger.info(f"Publishing the following message: {message}")
                 try:
                     response = sns.publish(
@@ -79,7 +80,5 @@ def lambda_handler(event, context):
                     logger.info(f"Successfully published message to SNS: {response}")
             else:
                 logger.info("Workflow status was not changed: Nothing to do")
-        if event_type == "INSERT":
-            logger.info("event_type == INSERT: Nothing to do")
-        if event_type == "REMOVE":
-            logger.info("event_type == REMOVE: Nothing to do")
+        elif event_type in ("INSERT", "REMOVE"):
+            logger.info("event_type == {}: Nothing to do".format(event_type))

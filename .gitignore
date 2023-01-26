@@ -24,6 +24,7 @@ deployment/templateUrl.txt
 deployment/lambda_layer_factory/*.whl
 deployment/lambda_layer_factory/*.zip
 deployment/lambda_layer_factory/lambda_layer-python-*
+.scannerwork/
 *__pycache__/
 *.DS_Store
 *.iml

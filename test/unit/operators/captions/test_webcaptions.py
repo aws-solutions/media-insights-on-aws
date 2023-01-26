@@ -1,17 +1,19 @@
-import pytest, json
+import pytest
+import json
 from unittest.mock import MagicMock
 from botocore.response import StreamingBody
 from io import BytesIO
 
-def mock_dataplane(lambda_function, mock_retrieve_response = {}, mock_store_response = {}, mock_generate_response = {}):
+
+def mock_dataplane(lambda_function, mock_retrieve_response={}, mock_store_response={}, mock_generate_response={}):
     retrieve_function = lambda_function.dataplane.retrieve_asset_metadata
-    lambda_function.dataplane.retrieve_asset_metadata = MagicMock(return_value = mock_retrieve_response)
+    lambda_function.dataplane.retrieve_asset_metadata = MagicMock(return_value=mock_retrieve_response)
 
     store_function = lambda_function.dataplane.store_asset_metadata
-    lambda_function.dataplane.store_asset_metadata = MagicMock(return_value = mock_store_response)
+    lambda_function.dataplane.store_asset_metadata = MagicMock(return_value=mock_store_response)
 
     generate_function = lambda_function.dataplane.generate_media_storage_path
-    lambda_function.dataplane.generate_media_storage_path = MagicMock(return_value = mock_generate_response)
+    lambda_function.dataplane.generate_media_storage_path = MagicMock(return_value=mock_generate_response)
 
     return {
         'retrieve': retrieve_function,
@@ -19,10 +21,12 @@ def mock_dataplane(lambda_function, mock_retrieve_response = {}, mock_store_resp
         'generate': generate_function
     }
 
+
 def restore_mock(lambda_function, original_dataplane_functions):
     lambda_function.dataplane.retrieve_asset_metadata = original_dataplane_functions['retrieve']
     lambda_function.dataplane.store_asset_metadata = original_dataplane_functions['store']
     lambda_function.dataplane.generate_media_storage_path = original_dataplane_functions['generate']
+
 
 def test_web_captions_empty_transcript():
     import captions.webcaptions as lambda_function
@@ -70,8 +74,9 @@ def test_web_captions_empty_transcript():
     assert lambda_function.dataplane.store_asset_metadata.call_args[1]['operator_name'] == 'WebCaptions_en'
     assert lambda_function.dataplane.store_asset_metadata.call_args[1]['workflow_id'] == 'testWorkflowId'
     assert lambda_function.dataplane.store_asset_metadata.call_args[1]['results'] == {'WebCaptions': [{'start': 2.0, 'caption': 'transcribed text', 'wordConfidence': [{'w': 'transcribed text', 'c': 1.0}], 'end': 3.0}]}
-    assert lambda_function.dataplane.store_asset_metadata.call_args[1]['paginate'] == False
+    assert lambda_function.dataplane.store_asset_metadata.call_args[1]['paginate'] is False
     restore_mock(lambda_function, original_functions)
+
 
 def test_create_srt_empty_target_language():
     import captions.webcaptions as lambda_function
@@ -86,16 +91,16 @@ def test_create_srt_empty_target_language():
         }
     )
     del input_parameter['Configuration']['TargetLanguageCodes']
-    
+
     with pytest.raises(MasExecutionError) as err:
         lambda_function.create_srt(input_parameter, {})
 
     assert err.value.args[0]['Status'] == 'Error'
     assert err.value.args[0]['MetaData']['WebCaptionsError'] == "Missing a required metadata key 'TargetLanguageCodes'"
 
+
 def test_create_srt(s3_resource_stub):
     import captions.webcaptions as lambda_function
-    from MediaInsightsEngineLambdaHelper import MasExecutionError
     import helper
 
     dataplane_functions = mock_dataplane(
@@ -124,12 +129,12 @@ def test_create_srt(s3_resource_stub):
 
     s3_resource_stub.add_response(
         'put_object',
-        expected_params = {
+        expected_params={
             'Bucket': 'test_bucket',
             'Key': 'test_keyCaptions_en.srt',
             'Body': '1\n00:00:02,000 --> 00:00:03,000\ntranscribed text\n\n'
         },
-        service_response = {}
+        service_response={}
     )
 
     input_parameter = helper.get_operator_parameter(
@@ -139,7 +144,7 @@ def test_create_srt(s3_resource_stub):
             }
         }
     )
-    
+
     response = lambda_function.create_srt(input_parameter, {})
     assert response['Status'] == 'Complete'
     assert lambda_function.dataplane.retrieve_asset_metadata.call_count == 1
@@ -165,6 +170,7 @@ def test_create_srt(s3_resource_stub):
     assert lambda_function.dataplane.generate_media_storage_path.call_args[0][1] == 'testWorkflowId'
     restore_mock(lambda_function, dataplane_functions)
 
+
 def test_create_vtt_empty_target_language():
     import captions.webcaptions as lambda_function
     from MediaInsightsEngineLambdaHelper import MasExecutionError
@@ -178,12 +184,13 @@ def test_create_vtt_empty_target_language():
         }
     )
     del input_parameter['Configuration']['TargetLanguageCodes']
-    
+
     with pytest.raises(MasExecutionError) as err:
         lambda_function.create_vtt(input_parameter, {})
 
     assert err.value.args[0]['Status'] == 'Error'
     assert err.value.args[0]['MetaData']['WebCaptionsError'] == "Missing a required metadata key 'TargetLanguageCodes'"
+
 
 def test_create_vtt(s3_resource_stub):
     import captions.webcaptions as lambda_function
@@ -215,12 +222,12 @@ def test_create_vtt(s3_resource_stub):
 
     s3_resource_stub.add_response(
         'put_object',
-        expected_params = {
+        expected_params={
             'Bucket': 'test_bucket',
             'Key': 'test_keyCaptions_en.vtt',
             'Body': 'WEBVTT\n\n00:00:02.000 --> 00:00:03.000\ntranscribed text\n\n'
         },
-        service_response = {}
+        service_response={}
     )
 
     input_parameter = helper.get_operator_parameter(
@@ -230,7 +237,7 @@ def test_create_vtt(s3_resource_stub):
             }
         }
     )
-    
+
     response = lambda_function.create_vtt(input_parameter, {})
     assert response['Status'] == 'Complete'
     assert lambda_function.dataplane.retrieve_asset_metadata.call_count == 1
@@ -255,6 +262,7 @@ def test_create_vtt(s3_resource_stub):
     assert lambda_function.dataplane.generate_media_storage_path.call_args[0][0] == 'testAssetId'
     assert lambda_function.dataplane.generate_media_storage_path.call_args[0][1] == 'testWorkflowId'
     restore_mock(lambda_function, dataplane_functions)
+
 
 def test_start_translate_webcaptions(s3_client_stub, translate_client_stub):
     import captions.webcaptions as lambda_function
@@ -286,27 +294,27 @@ def test_start_translate_webcaptions(s3_client_stub, translate_client_stub):
 
     s3_client_stub.add_response(
         'put_object',
-        expected_params = {
+        expected_params={
             'Bucket': 'test_bucket',
             'Key': 'test_keywebcaptions_translate_input/transcript_with_caption_markers.txt',
             'Body': 'transcribed text'
         },
-        service_response = {}
+        service_response={}
     )
 
     s3_client_stub.add_response(
         'put_object',
-        expected_params = {
+        expected_params={
             'Bucket': 'test_bucket',
             'Key': 'test_keywebcaptions_translate_output//foo',
             'Body': 'foo'
         },
-        service_response = {}
+        service_response={}
     )
-    
+
     translate_client_stub.add_response(
         'start_text_translation_job',
-        expected_params = json.loads('''{
+        expected_params=json.loads('''{
             "JobName": "MIE_testAssetId_testWorkflowId_en",
             "InputDataConfig": {
                 "S3Uri": "s3://test_bucket/test_keywebcaptions_translate_input/",
@@ -321,7 +329,7 @@ def test_start_translate_webcaptions(s3_client_stub, translate_client_stub):
             "TerminologyNames": ["testTerminologyName"],
             "ParallelDataNames": ["testParallelName"]
         }'''),
-        service_response = {
+        service_response={
             'JobId': 'testJobId'
         }
     )
@@ -334,7 +342,7 @@ def test_start_translate_webcaptions(s3_client_stub, translate_client_stub):
             }
         }
     )
-    
+
     response = lambda_function.start_translate_webcaptions(input_parameter, {})
 
     assert response['Status'] == 'testStatus'
@@ -349,6 +357,7 @@ def test_start_translate_webcaptions(s3_client_stub, translate_client_stub):
     assert lambda_function.dataplane.retrieve_asset_metadata.call_args[1]['operator_name'] == 'WebCaptions_es'
     restore_mock(lambda_function, dataplane_functions)
 
+
 def test_check_translate_webcaptions_same_source_and_target():
     import captions.webcaptions as lambda_function
     import helper
@@ -361,9 +370,10 @@ def test_check_translate_webcaptions_same_source_and_target():
             }
         }
     )
-    
+
     response = lambda_function.check_translate_webcaptions(input_parameter, {})
     assert response['Status'] == 'Complete'
+
 
 def test_check_translate_webcaptions(translate_client_stub, s3_resource_stub):
     import captions.webcaptions as lambda_function
@@ -395,10 +405,10 @@ def test_check_translate_webcaptions(translate_client_stub, s3_resource_stub):
 
     translate_client_stub.add_response(
         'describe_text_translation_job',
-        expected_params = {
+        expected_params={
             'JobId': 'testJobId'
         },
-        service_response = {
+        service_response={
             'TextTranslationJobProperties': {
                 'JobStatus': 'COMPLETED'
             }
@@ -407,10 +417,10 @@ def test_check_translate_webcaptions(translate_client_stub, s3_resource_stub):
 
     translate_client_stub.add_response(
         'describe_text_translation_job',
-        expected_params = {
+        expected_params={
             'JobId': 'testJobId'
         },
-        service_response = {
+        service_response={
             'TextTranslationJobProperties': {
                 'OutputDataConfig': {
                     'S3Uri': 's3://test_bucket/test_key'
@@ -423,25 +433,25 @@ def test_check_translate_webcaptions(translate_client_stub, s3_resource_stub):
 
     s3_resource_stub.add_response(
         'list_objects',
-        expected_params = {
+        expected_params={
             'Bucket': 'test_bucket',
             'Prefix': 'test_key/',
             'Delimiter': '/'
         },
-        service_response = {
+        service_response={
             'Contents': [
-                { 'Key': 'en.test_key1.srt' }
+                {'Key': 'en.test_key1.srt'}
             ]
         }
     )
 
     s3_resource_stub.add_response(
         'get_object',
-        expected_params = {
+        expected_params={
             'Bucket': 'test_bucket',
             'Key': 'en.test_key1.srt',
         },
-        service_response = {
+        service_response={
             'Body': StreamingBody(
                 BytesIO('testTranslationOutput'.encode('utf-8')),
                 len('testTranslationOutput')
@@ -451,12 +461,12 @@ def test_check_translate_webcaptions(translate_client_stub, s3_resource_stub):
 
     s3_resource_stub.add_response(
         'put_object',
-        expected_params = {
+        expected_params={
             'Body': 'testTranslationOutput',
             'Bucket': 'test_bucket',
             'Key': 'test_keytranslation_en.txt'
         },
-        service_response = {}
+        service_response={}
     )
 
     input_parameter = helper.get_operator_parameter(
@@ -469,7 +479,7 @@ def test_check_translate_webcaptions(translate_client_stub, s3_resource_stub):
             }
         }
     )
-    
+
     response = lambda_function.check_translate_webcaptions(input_parameter, {})
     assert response['Status'] == 'Complete'
     assert response['MetaData']['AssetId'] == 'testAssetId'
@@ -493,6 +503,7 @@ def test_check_translate_webcaptions(translate_client_stub, s3_resource_stub):
         }]
     }
     restore_mock(lambda_function, dataplane_functions)
+
 
 def test_start_polly_webcaptions(polly_client_stub):
     import captions.webcaptions as lambda_function
@@ -530,10 +541,10 @@ def test_start_polly_webcaptions(polly_client_stub):
 
     polly_client_stub.add_response(
         'describe_voices',
-        expected_params = {
+        expected_params={
             'LanguageCode': 'en-GB'
         },
-        service_response = {
+        service_response={
             'Voices': [{
                 'Id': 'testVoiceId'
             }]
@@ -542,7 +553,7 @@ def test_start_polly_webcaptions(polly_client_stub):
 
     polly_client_stub.add_response(
         'start_speech_synthesis_task',
-        expected_params = {
+        expected_params={
             'OutputFormat': 'mp3',
             'OutputS3BucketName': 'test_bucket',
             'OutputS3KeyPrefix': 'private/assets/testAssetId/workflows/testWorkflowId/audio_only_en',
@@ -550,7 +561,7 @@ def test_start_polly_webcaptions(polly_client_stub):
             'TextType': 'text',
             'VoiceId': 'testVoiceId'
         },
-        service_response = {
+        service_response={
             'SynthesisTask': {
                 'TaskId': 'testTaskId'
             }
@@ -567,7 +578,7 @@ def test_start_polly_webcaptions(polly_client_stub):
             }
         }
     )
-    
+
     response = lambda_function.start_polly_webcaptions(input_parameter, {})
     assert response['Status'] == 'Executing'
     assert response['MetaData']['PollyCollection'][0]['TargetLanguageCode'] == 'en'
@@ -585,6 +596,7 @@ def test_start_polly_webcaptions(polly_client_stub):
     assert lambda_function.dataplane.retrieve_asset_metadata.call_args[0][0] == 'testAssetId'
     assert lambda_function.dataplane.retrieve_asset_metadata.call_args[1]['operator_name'] == 'WebCaptions_en'
     restore_mock(lambda_function, dataplane_functions)
+
 
 def test_check_polly_webcaptions_all_tasks_finished():
     import captions.webcaptions as lambda_function
@@ -611,13 +623,13 @@ def test_check_polly_webcaptions_all_tasks_finished():
                 }
             }]
         },
-        input = {
+        input={
             'MetaData': {
                 'TranscribeSourceLanguage': 'es'
             }
         }
     )
-    
+
     response = lambda_function.check_polly_webcaptions(input_parameter, {})
     assert response['Status'] == 'Complete'
     assert lambda_function.dataplane.retrieve_asset_metadata.call_count == 0
@@ -627,6 +639,7 @@ def test_check_polly_webcaptions_all_tasks_finished():
     assert lambda_function.dataplane.store_asset_metadata.call_args[0][1] == 'testName'
     assert lambda_function.dataplane.store_asset_metadata.call_args[0][2] == 'testWorkflowId'
     restore_mock(lambda_function, dataplane_functions)
+
 
 def test_check_polly_webcaptions_empty_collection():
     import captions.webcaptions as lambda_function
@@ -639,7 +652,7 @@ def test_check_polly_webcaptions_empty_collection():
 
     input_parameter = helper.get_operator_parameter(
         metadata={},
-        input = {
+        input={
             'MetaData': {
                 'TranscribeSourceLanguage': 'es'
             }
@@ -653,6 +666,7 @@ def test_check_polly_webcaptions_empty_collection():
     assert lambda_function.dataplane.generate_media_storage_path.call_count == 0
     assert lambda_function.dataplane.store_asset_metadata.call_count == 0
     restore_mock(lambda_function, dataplane_functions)
+
 
 def test_check_polly_webcaptions_error_handle(polly_client_stub):
     import captions.webcaptions as lambda_function
@@ -682,7 +696,7 @@ def test_check_polly_webcaptions_error_handle(polly_client_stub):
                 }
             }]
         },
-        input = {
+        input={
             'MetaData': {
                 'TranscribeSourceLanguage': 'es'
             }
@@ -696,6 +710,7 @@ def test_check_polly_webcaptions_error_handle(polly_client_stub):
     assert lambda_function.dataplane.generate_media_storage_path.call_count == 0
     assert lambda_function.dataplane.store_asset_metadata.call_count == 0
     restore_mock(lambda_function, dataplane_functions)
+
 
 def test_check_polly_webcaptions_failed(polly_client_stub):
     import captions.webcaptions as lambda_function
@@ -711,10 +726,10 @@ def test_check_polly_webcaptions_failed(polly_client_stub):
 
     polly_client_stub.add_response(
         'get_speech_synthesis_task',
-        expected_params = {
+        expected_params={
             'TaskId': 'testTaskId'
         },
-        service_response = {
+        service_response={
             'SynthesisTask': {
                 'TaskStatus': 'failed',
                 'TaskStatusReason': 'testFailedReason'
@@ -736,7 +751,7 @@ def test_check_polly_webcaptions_failed(polly_client_stub):
                 }
             }]
         },
-        input = {
+        input={
             'MetaData': {
                 'TranscribeSourceLanguage': 'es'
             }
@@ -750,6 +765,7 @@ def test_check_polly_webcaptions_failed(polly_client_stub):
     assert lambda_function.dataplane.generate_media_storage_path.call_count == 0
     assert lambda_function.dataplane.store_asset_metadata.call_count == 0
     restore_mock(lambda_function, dataplane_functions)
+
 
 def test_check_polly_webcaptions_unknown_status(polly_client_stub):
     import captions.webcaptions as lambda_function
@@ -765,10 +781,10 @@ def test_check_polly_webcaptions_unknown_status(polly_client_stub):
 
     polly_client_stub.add_response(
         'get_speech_synthesis_task',
-        expected_params = {
+        expected_params={
             'TaskId': 'testTaskId'
         },
-        service_response = {
+        service_response={
             'SynthesisTask': {
                 'TaskStatus': 'unknown_status',
                 'TaskStatusReason': 'testFailedReason'
@@ -790,7 +806,7 @@ def test_check_polly_webcaptions_unknown_status(polly_client_stub):
                 }
             }]
         },
-        input = {
+        input={
             'MetaData': {
                 'TranscribeSourceLanguage': 'es'
             }
@@ -805,7 +821,8 @@ def test_check_polly_webcaptions_unknown_status(polly_client_stub):
     assert lambda_function.dataplane.store_asset_metadata.call_count == 0
     restore_mock(lambda_function, dataplane_functions)
 
-def test_check_polly_webcaptions_failed(polly_client_stub):
+
+def test_check_polly_webcaptions_failed2(polly_client_stub):
     import captions.webcaptions as lambda_function
     from MediaInsightsEngineLambdaHelper import MasExecutionError
     import helper
@@ -819,10 +836,10 @@ def test_check_polly_webcaptions_failed(polly_client_stub):
 
     polly_client_stub.add_response(
         'get_speech_synthesis_task',
-        expected_params = {
+        expected_params={
             'TaskId': 'testTaskId'
         },
-        service_response = {
+        service_response={
             'SynthesisTask': {
                 'TaskStatus': 'failed',
                 'TaskStatusReason': 'testFailedReason'
@@ -844,7 +861,7 @@ def test_check_polly_webcaptions_failed(polly_client_stub):
                 }
             }]
         },
-        input = {
+        input={
             'MetaData': {
                 'TranscribeSourceLanguage': 'es'
             }
@@ -859,6 +876,7 @@ def test_check_polly_webcaptions_failed(polly_client_stub):
     assert lambda_function.dataplane.store_asset_metadata.call_count == 0
     restore_mock(lambda_function, dataplane_functions)
 
+
 def test_check_polly_webcaptions(polly_client_stub):
     import captions.webcaptions as lambda_function
     import helper
@@ -872,10 +890,10 @@ def test_check_polly_webcaptions(polly_client_stub):
 
     polly_client_stub.add_response(
         'get_speech_synthesis_task',
-        expected_params = {
+        expected_params={
             'TaskId': 'testTaskId'
         },
-        service_response = {
+        service_response={
             'SynthesisTask': {
                 'TaskStatus': 'completed',
                 'OutputUri': 'testOutputUri'
@@ -897,13 +915,13 @@ def test_check_polly_webcaptions(polly_client_stub):
                 }
             }]
         },
-        input = {
+        input={
             'MetaData': {
                 'TranscribeSourceLanguage': 'es'
             }
         }
     )
-    
+
     response = lambda_function.check_polly_webcaptions(input_parameter, {})
     assert response['Status'] == 'Complete'
     assert lambda_function.dataplane.retrieve_asset_metadata.call_count == 0
@@ -914,17 +932,18 @@ def test_check_polly_webcaptions(polly_client_stub):
     assert lambda_function.dataplane.store_asset_metadata.call_args[0][2] == 'testWorkflowId'
     restore_mock(lambda_function, dataplane_functions)
 
+
 def test_vttToWebCaptions(s3_client_stub):
     import captions.webcaptions as lambda_function
     import helper
 
     s3_client_stub.add_response(
         'get_object',
-        expected_params = {
+        expected_params={
             'Bucket': 'test_bucket',
             'Key': 'test_key'
         },
-        service_response = {
+        service_response={
             'Body': StreamingBody(
                 BytesIO('WEBVTT\n\n00:00:02.000 --> 00:00:03.000\ntranscribed text\n\n'.encode('utf-8')),
                 len('WEBVTT\n\n00:00:02.000 --> 00:00:03.000\ntranscribed text\n\n')
@@ -934,14 +953,14 @@ def test_vttToWebCaptions(s3_client_stub):
 
     input_parameter = helper.get_operator_parameter(
         metadata={},
-        input = {
+        input={
             'MetaData': {
                 'TranscribeSourceLanguage': 'es'
             }
         }
     )
-    
-    response = lambda_function.vttToWebCaptions(
+
+    response = lambda_function.vtt_to_web_captions(
         input_parameter,
         {
             'Bucket': 'test_bucket',

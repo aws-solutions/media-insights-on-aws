@@ -18,29 +18,30 @@
 import requests
 import json
 
-def send(event, context, responseStatus, responseData, physicalResourceId=None, noEcho=False):
-    responseUrl = event['ResponseURL']
 
-    responseBody = {}
-    responseBody['Status'] = responseStatus
-    responseBody['Reason'] = 'See the details in CloudWatch Log Stream: ' + context.log_stream_name
-    responseBody['PhysicalResourceId'] = physicalResourceId or context.log_stream_name
-    responseBody['StackId'] = event['StackId']
-    responseBody['RequestId'] = event['RequestId']
-    responseBody['LogicalResourceId'] = event['LogicalResourceId']
-    responseBody['NoEcho'] = noEcho
-    responseBody['Data'] = responseData
+def send(event, context, response_status, response_data, physical_resource_id=None, no_echo=False):
+    response_url = event['ResponseURL']
 
-    json_responseBody = json.dumps(responseBody)
+    response_body = {}
+    response_body['Status'] = response_status
+    response_body['Reason'] = 'See the details in CloudWatch Log Stream: ' + context.log_stream_name
+    response_body['PhysicalResourceId'] = physical_resource_id or context.log_stream_name
+    response_body['StackId'] = event['StackId']
+    response_body['RequestId'] = event['RequestId']
+    response_body['LogicalResourceId'] = event['LogicalResourceId']
+    response_body['NoEcho'] = no_echo
+    response_body['Data'] = response_data
+
+    json_response_body = json.dumps(response_body)
 
     headers = {
-        'content-type' : '',
-        'content-length' : str(len(json_responseBody))
+        'content-type': '',
+        'content-length': str(len(json_response_body))
     }
 
     try:
-        response = requests.put(responseUrl,
-                                data=json_responseBody,
+        response = requests.put(response_url,
+                                data=json_response_body,
                                 headers=headers)
         print("Status code: " + response.reason)
     except Exception as e:

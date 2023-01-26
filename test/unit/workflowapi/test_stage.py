@@ -1,5 +1,6 @@
 from helper import *
 
+
 def test_create_stage(test_client, ddb_resource_stub):
     print('POST /workflow/stage')
 
@@ -16,36 +17,38 @@ def test_create_stage(test_client, ddb_resource_stub):
     )
     assert response.status_code == 200
 
+
 def test_update_stage(test_client):
     print('PUT /workflow/stage')
     response = test_client.http.put('/workflow/stage')
     assert response.status_code == 200
     assert 'NOT IMPLEMENTED' in response.json_body['Message']
 
+
 def test_list_stages(test_client, ddb_resource_stub):
     print('GET /workflow/stage')
 
     ddb_resource_stub.add_response(
         'scan',
-        expected_params = {
+        expected_params={
             'TableName': 'testStageTable'
         },
-        service_response = {
-            'LastEvaluatedKey': { 'S': { 'S': 'lastKey' } },
+        service_response={
+            'LastEvaluatedKey': {'S': {'S': 'lastKey'}},
             'Items': [{
-                'Name': { 'S': 'stage1' }
+                'Name': {'S': 'stage1'}
             }]
         }
     )
     ddb_resource_stub.add_response(
         'scan',
-        expected_params = {
+        expected_params={
             'TableName': 'testStageTable',
-            'ExclusiveStartKey': { 'S': 'lastKey' }
+            'ExclusiveStartKey': {'S': 'lastKey'}
         },
-        service_response = {
+        service_response={
             'Items': [{
-                'Name': {'S': 'stage2' }
+                'Name': {'S': 'stage2'}
             }]
         }
     )
@@ -56,12 +59,13 @@ def test_list_stages(test_client, ddb_resource_stub):
     assert response.json_body[0]['Name'] == 'stage1'
     assert response.json_body[1]['Name'] == 'stage2'
 
+
 def test_get_stage_by_name_when_stage_dne(test_client, ddb_resource_stub):
-    print('GET /workflow/stage/{Name}')
+    print('GET /workflow/stage/{name}')
 
     stub_get_stage(
         ddb_resource_stub,
-        optional_input = {
+        optional_input={
             'TableName': 'testStageTable',
             'Key': {
                 'Name': '_' + test_operation_name
@@ -76,12 +80,13 @@ def test_get_stage_by_name_when_stage_dne(test_client, ddb_resource_stub):
     assert response.status_code == 404
     assert "Exception: stage '_testOperationName' not found" in response.json_body['Message']
 
+
 def test_get_stage_by_name_when_stage_does_not_exist(test_client, ddb_resource_stub):
-    print('GET /workflow/stage/{Name}')
+    print('GET /workflow/stage/{name}')
 
     stub_get_stage(
         ddb_resource_stub,
-        optional_input = {
+        optional_input={
             'TableName': 'testStageTable',
             'Key': {
                 'Name': '_' + test_operation_name
@@ -89,7 +94,7 @@ def test_get_stage_by_name_when_stage_does_not_exist(test_client, ddb_resource_s
         },
         optional_output={
             'Item': {
-                'Name': { 'S': '_testOperationName' }
+                'Name': {'S': '_testOperationName'}
             }
         }
     )
@@ -100,34 +105,35 @@ def test_get_stage_by_name_when_stage_does_not_exist(test_client, ddb_resource_s
     assert response.status_code == 200
     assert response.json_body['Name'] == '_testOperationName'
 
+
 def test_delete_stage(test_client, ddb_resource_stub):
-    print('DELETE /workflow/stage/{Name}')
-    
+    print('DELETE /workflow/stage/{name}')
+
     stub_get_stage(ddb_resource_stub)
     ddb_resource_stub.add_response(
         'scan',
-        expected_params = {
+        expected_params={
             'TableName': 'testWorkflowTable',
             'FilterExpression': botocore.stub.ANY,
             'ConsistentRead': True
         },
-        service_response = { 'Items': [] }
+        service_response={'Items': []}
     )
     stub_delete_stage(ddb_resource_stub)
     ddb_resource_stub.add_response(
         'scan',
-        expected_params = {
+        expected_params={
             'TableName': 'testWorkflowTable',
             'FilterExpression': botocore.stub.ANY,
             'ConsistentRead': True
         },
-        service_response = { 'Items': [{
-            'Name': {'S':'workflow1'}
-        }] }
+        service_response={'Items': [{
+            'Name': {'S': 'workflow1'}
+        }]}
     )
     ddb_resource_stub.add_response(
         'update_item',
-        expected_params = {
+        expected_params={
             'TableName': 'testWorkflowTable',
             'Key': {
                 'Name': 'workflow1'
@@ -138,7 +144,7 @@ def test_delete_stage(test_client, ddb_resource_stub):
             },
             'ReturnValues': 'UPDATED_NEW'
         },
-        service_response = {}
+        service_response={}
     )
 
     response = test_client.http.delete('/workflow/stage/_testOperationName')

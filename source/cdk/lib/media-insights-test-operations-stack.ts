@@ -16,7 +16,6 @@ import {
     ArnFormat,
     Aws,
     CfnElement,
-    CfnOutput,
     CfnParameter,
     Duration,
     Fn,
@@ -170,7 +169,7 @@ export class TestResourcesStack extends NestedStack {
             // Outputs
             //
 
-            new CfnOutput(scope, id, {
+            util.createCfnOutput(scope, id, {
                 value: func.functionArn,
             });
 

@@ -16,6 +16,8 @@ import {
     Aws,
     CfnCondition,
     CfnMapping,
+    CfnOutput,
+    CfnOutputProps,
     CfnResource,
     Fn,
     IResource,
@@ -188,4 +190,13 @@ export function cleanUpLogicalId(logicalId: string): string {
         .replace(/NestedStack.*NestedStackResource/, '')
         .replace(/^(CustomResource|TestLambda)/, '')
         .replace(/[A-F0-9]{8}([A-Z][a-z][a-z])?$/, (_, m1) => (m1 || '').replace(/^Ref$/, ''));
+}
+
+/**
+* Creates an CfnOutput value for the stack.
+* @param scope The parent construct.
+* @param props CfnOutput properties.
+*/
+export function createCfnOutput(scope: Construct, id: string, props: CfnOutputProps): CfnOutput {
+    return new CfnOutput(scope, id, props);
 }

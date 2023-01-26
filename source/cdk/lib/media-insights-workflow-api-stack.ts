@@ -593,7 +593,8 @@ export class WorkflowApiStack extends cdk.NestedStack {
             },
         }];
 
-        new cdk.CfnOutput(this, 'WorkflowCustomResourceArn', {
+
+        util.createCfnOutput(this, 'WorkflowCustomResourceArn', {
             value: `${workflowCustomResource.getAtt('Arn')}`,
         });
 

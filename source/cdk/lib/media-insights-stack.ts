@@ -17,7 +17,6 @@ import {
     Aws,
     CfnCondition,
     CfnElement,
-    CfnOutput,
     CfnParameter,
     CustomResource,
     Duration,
@@ -348,6 +347,7 @@ export class MediaInsightsStack extends Stack {
         const dataplaneBucket = new s3.Bucket(this, 'Dataplane', {
             enforceSSL: true,
             encryptionKey: keyAlias,
+            encryption: s3.BucketEncryption.KMS,
             blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
             serverAccessLogsBucket: dataplaneLogsBucket,
             serverAccessLogsPrefix: "access_logs/",
@@ -433,6 +433,7 @@ export class MediaInsightsStack extends Stack {
         const workflowExecutionLambdaDeadLetterQueue = new sqs.Queue(this, 'WorkflowExecutionLambdaDeadLetterQueue', {
             queueName: `${Aws.STACK_NAME}-WorkflowExecLambdaDLQ`,
             retentionPeriod: Duration.hours(12),
+            encryption: sqs.QueueEncryption.KMS,
             encryptionMasterKey: keyAlias,
             enforceSSL: true,
         });
@@ -440,6 +441,7 @@ export class MediaInsightsStack extends Stack {
         const stageExecutionDeadLetterQueue = new sqs.Queue(this, 'StageExecutionDeadLetterQueue', {
             queueName: `${Aws.STACK_NAME}-StageExecDLQ`,
             retentionPeriod: Duration.hours(12),
+            encryption: sqs.QueueEncryption.KMS,
             encryptionMasterKey: keyAlias,
             enforceSSL: true,
         });
@@ -458,6 +460,7 @@ export class MediaInsightsStack extends Stack {
                 queue: workflowExecutionLambdaDeadLetterQueue,
                 maxReceiveCount: 1, // Don't retry if stage times out
             },
+            encryption: sqs.QueueEncryption.KMS,
             encryptionMasterKey: keyAlias,
             enforceSSL: true,
         });
@@ -470,6 +473,7 @@ export class MediaInsightsStack extends Stack {
                 queue: stageExecutionDeadLetterQueue,
                 maxReceiveCount: 1, // Don't retry if stage times out
             },
+            encryption: sqs.QueueEncryption.KMS,
             encryptionMasterKey: keyAlias,
             enforceSSL: true,
         });
@@ -855,7 +859,7 @@ export class MediaInsightsStack extends Stack {
             // e.g., "Python39"
             const LangXY = langXY.replace(/^[a-z]/, x => x.toUpperCase());
             // e.g., "Python 3.9"
-            const Lang_X_Y = runtimeStr.replace(/[0-9]/, x => ` ${x}`).replace(/^[a-z]/, x => x.toUpperCase());
+            const Lang_X_Y = runtimeStr.replace(/\d/, x => ` ${x}`).replace(/^[a-z]/, x => x.toUpperCase());
 
             return new lambda.LayerVersion(scope, `MediaInsightsEngine${LangXY}Layer`, {
                 removalPolicy: RemovalPolicy.RETAIN,
@@ -1590,86 +1594,86 @@ export class MediaInsightsStack extends Stack {
         // Outputs
         //
 
-        new CfnOutput(this, 'OperatorLibraryStack', {
+        util.createCfnOutput(this, 'OperatorLibraryStack', {
             description: "Nested cloudformation stack that contains the MIE operator library",
             value: operatorLibraryStack.stackName,
             exportName: Fn.join(':', [Aws.STACK_NAME, 'OperatorLibraryStack']),
         });
-        new CfnOutput(this, 'DataplaneBucket', {
+        util.createCfnOutput(this, 'DataplaneBucket', {
             description: "Bucket used to store transfomred media object from workflow execution",
             value: dataplaneBucket.bucketName,
             exportName: Fn.join(':', [Aws.STACK_NAME, 'DataplaneBucket']),
         });
-        new CfnOutput(this, 'DataplaneApiEndpoint', {
+        util.createCfnOutput(this, 'DataplaneApiEndpoint', {
             description: "Endpoint for data persistence API",
             value:  `${dataplaneApiStack.nestedStackResource!.getAtt('Outputs.EndpointURL')}`,
             exportName: Fn.join(':', [Aws.STACK_NAME, 'DataplaneApiEndpoint']),
         });
-        new CfnOutput(this, 'DataPlaneHandlerArn', {
+        util.createCfnOutput(this, 'DataPlaneHandlerArn', {
             description: "API Handler Lambda ARN for dataplane.",
             value:  `${dataplaneApiStack.nestedStackResource!.getAtt('Outputs.APIHandlerArn')}`,
             exportName: Fn.join(':', [Aws.STACK_NAME, 'DataPlaneHandlerArn']),
         });
-        new CfnOutput(this, 'DataplaneApiRestID', {
+        util.createCfnOutput(this, 'DataplaneApiRestID', {
             description: "REST API ID for dataplane API",
             value: `${dataplaneApiStack.nestedStackResource!.getAtt('Outputs.RestAPIId')}`,
             exportName: Fn.join(':', [Aws.STACK_NAME, 'DataplaneApiId']),
         });
-        new CfnOutput(this, 'WorkflowCustomResourceArn', {
+        util.createCfnOutput(this, 'WorkflowCustomResourceArn', {
             description: "Custom resource for creating operations, stages and workflows using CloudFormation",
             value: `${workflowApiStack.nestedStackResource!.getAtt('Outputs.WorkflowCustomResourceArn')}`,
             exportName: Fn.join(':', [Aws.STACK_NAME, 'WorkflowCustomResourceArn']),
         });
-        new CfnOutput(this, 'WorkflowApiEndpoint', {
+        util.createCfnOutput(this, 'WorkflowApiEndpoint', {
             description: "Endpoint for workflow Creation, Execution and Monitoring API",
             value: `${workflowApiStack.nestedStackResource!.getAtt('Outputs.EndpointURL')}`,
             exportName: Fn.join(':', [Aws.STACK_NAME, 'WorkflowApiEndpoint']),
         });
-        new CfnOutput(this, 'WorkflowApiRestID', {
+        util.createCfnOutput(this, 'WorkflowApiRestID', {
             description: "REST API ID for workflow API",
             value: `${workflowApiStack.nestedStackResource!.getAtt('Outputs.RestAPIId')}`,
             exportName: Fn.join(':', [Aws.STACK_NAME, 'WorkflowApiId']),
         });
-        new CfnOutput(this, 'MediaInsightsEnginePython39LayerArn', {
+        util.createCfnOutput(this, 'MediaInsightsEnginePython39LayerArn', {
             description: "Lambda layer for Python libraries",
             value: python39Layer.layerVersionArn,
             exportName: Fn.join(':', [Aws.STACK_NAME, 'MediaInsightsEnginePython39Layer']),
         });
-        new CfnOutput(this, 'AnalyticsStreamArn', {
+        util.createCfnOutput(this, 'AnalyticsStreamArn', {
             description: "Arn of the dataplane pipeline",
             value: analyticsStack.analyticsStream.streamArn,
             exportName: Fn.join(':', [Aws.STACK_NAME, 'AnalyticsStreamArn']),
         });
-        new CfnOutput(this, 'TestStack', {
+        util.createCfnOutput(this, 'TestStack', {
             condition: deployTestResourcesCondition,
             value: testResourcesStack.stackId,
         });
-        new CfnOutput(this, 'Version', {
+        util.createCfnOutput(this, 'Version', {
             description: "Media Insights on AWS Version",
             value: sourceCodeMap.findInMap("FrameworkVersion"),
             exportName: Fn.join(':', [Aws.STACK_NAME, 'Version']),
         });
-        new CfnOutput(this, 'MieKMSArn', {
+        util.createCfnOutput(this, 'MieKMSArn', {
             description: "ARN of the MIE KMS Key",
             value: mieKey.keyArn,
             exportName: Fn.join(':', [Aws.STACK_NAME, 'MieKMSArn']),
         });
-        new CfnOutput(this, 'MieKMSId', {
+        util.createCfnOutput(this, 'MieKMSId', {
             description: "ID of the MIE KMS Key",
             value: mieKey.keyId,
             exportName: Fn.join(':', [Aws.STACK_NAME, 'MieKMSId']),
         });
-        new CfnOutput(this, 'MieKMSAlias', {
+        util.createCfnOutput(this, 'MieKMSAlias', {
             description: "Alias of the MIE KMS Key",
             value: keyAlias.aliasName,
             exportName: Fn.join(':', [Aws.STACK_NAME, 'MieKMSAlias']),
         });
-        new CfnOutput(this, 'MieSNSTopic', {
+        util.createCfnOutput(this, 'MieSNSTopic', {
             description: "ARN of the MIE SNS Workflow Execution Topic",
             value: workflowExecutionEventTopic.topicArn,
             exportName: Fn.join(':', [Aws.STACK_NAME, 'MieSNSTopic']),
         });
-        new CfnOutput(this, 'MieSQSQueue', {
+        util.createCfnOutput(this, 'MieSQSQueue', {
             description: "ARN of the MIE Workflow Execution Queue",
             value: workflowExecutionEventQueue.queueArn,
             exportName: Fn.join(':', [Aws.STACK_NAME, 'MieSQSQueue']),

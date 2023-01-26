@@ -22,6 +22,7 @@ mediaconvert = boto3.client("mediaconvert", config=config, region_name=region)
 
 media_convert_client = None
 
+
 def get_mediaconvert_client():
     mediaconvert_endpoint = os.environ["MEDIACONVERT_ENDPOINT"]
     global media_convert_client
@@ -29,7 +30,8 @@ def get_mediaconvert_client():
         media_convert_client = boto3.client("mediaconvert", region_name=region, endpoint_url=mediaconvert_endpoint)
     return media_convert_client
 
-def lambda_handler(event, context):
+
+def lambda_handler(event, _context):
     print("We got the following event:\n", event)
 
     operator_object = MediaInsightsOperationHelper(event)
@@ -45,7 +47,7 @@ def lambda_handler(event, context):
 
     try:
         asset_id = operator_object.asset_id
-    except KeyError as e:
+    except KeyError:
         print("No asset_id in this workflow")
         asset_id = ''
 
@@ -93,4 +95,3 @@ def lambda_handler(event, context):
                     response=response),
                 MediaconvertJobId=job_id)
             raise MasExecutionError(operator_object.return_output_object())
-

@@ -17,7 +17,6 @@ import {
     Aws,
     CfnCondition,
     CfnElement,
-    CfnOutput,
     CfnParameter,
     CustomResource,
     Duration,
@@ -271,6 +270,7 @@ export class OperatorLibraryStack extends NestedStack {
             inlinePolicies: {
                 GenericDataLookupLambdaAccess: new iam.PolicyDocument({
                     statements: [
+                        policyLogEvents,
                         policyS3ReadWrite,
                         policyS3Read,
                         policyInvokeDataPlaneHandler,
@@ -290,6 +290,7 @@ export class OperatorLibraryStack extends NestedStack {
             inlinePolicies: {
                 mediainfoLambdaAccess: new iam.PolicyDocument({
                     statements: [
+                        policyLogEvents,
                         policyS3ReadWrite,
                         policyS3Read,
                         policyInvokeDataPlaneHandler,
@@ -1295,7 +1296,7 @@ export class OperatorLibraryStack extends NestedStack {
 
             // Export operator names as outputs
 
-            new CfnOutput(scope, outputName, {
+            util.createCfnOutput(scope, outputName, {
                 description: props.Description,
                 value: `${custom.getAtt('Name')}`,
                 exportName: Fn.join(':', [Aws.STACK_NAME, exportName]),

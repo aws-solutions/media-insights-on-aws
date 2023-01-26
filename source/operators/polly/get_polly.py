@@ -18,7 +18,7 @@ polly = boto3.client('polly', config=config)
 s3 = boto3.client("s3", config=config)
 
 
-def lambda_handler(event, context):
+def lambda_handler(event, _context):
 
     print("We got this event:\n", event)
 
@@ -52,10 +52,10 @@ def lambda_handler(event, context):
             # TODO: Store job details as metadata in dataplane
 
             uri = polly_response["SynthesisTask"]["OutputUri"]
-            file = uri.split("/")[5]
+            file_name = uri.split("/")[5]
             folder = uri.split("/")[4]
             bucket = uri.split("/")[3]
-            key = folder + "/" + file
+            key = folder + "/" + file_name
 
             operator_object.add_workflow_metadata(PollyJobId=task_id)
             operator_object.add_media_object("Audio", bucket, key)
@@ -68,13 +68,7 @@ def lambda_handler(event, context):
             operator_object.update_workflow_status("Executing")
             return operator_object.return_output_object()
 
-        elif polly_status == "failed":
+        else:  # "failed"
             operator_object.update_workflow_status("Error")
             operator_object.add_workflow_metadata(PollyError="Polly returned as failed: {e}".format(e=str(polly_response["SynthesisTask"]["TaskStatusReason"])))
             raise MasExecutionError(operator_object.return_output_object())
-        else:
-            operator_object.update_workflow_status("Error")
-            operator_object.add_workflow_metadata(PollyError="Polly returned as failed: {e}".format(e=str(polly_response["SynthesisTask"]["TaskStatusReason"])))
-            raise MasExecutionError(operator_object.return_output_object())
-
-

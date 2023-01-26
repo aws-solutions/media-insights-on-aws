@@ -1,43 +1,44 @@
 from helper import *
 
+
 def test_create_workflow(test_client, sfn_client_stub, ddb_resource_stub):
-    print('POST /workflow')    
-    
+    print('POST /workflow')
+
     stub_get_stage(
         ddb_resource_stub,
-        optional_input = {
+        optional_input={
             'TableName': 'testStageTable',
             'Key': {
                 'Name': '_testOperationName1'
             }
         },
-        optional_output = {
+        optional_output={
             'Item': {
-                'Name': { 'S': '_testOperationName1' },
-                'Definition': { 'S': '{"stage":"definition","StartAt":"_testOperationName1","States":{"_testOperation1": {"End":true}}}' }
+                'Name': {'S': '_testOperationName1'},
+                'Definition': {'S': '{"stage":"definition","StartAt":"_testOperationName1","States":{"_testOperation1": {"End":true}}}'}
             }
         }
     )
 
     stub_get_stage(
         ddb_resource_stub,
-        optional_input = {
+        optional_input={
             'TableName': 'testStageTable',
             'Key': {
                 'Name': '_testOperationName2'
             }
         },
-        optional_output = {
+        optional_output={
             'Item': {
-                'Name': { 'S': '_testOperationName2' },
-                'Definition': { 'S': '{"stage":"definition","StartAt":"_testOperationName2","States":{"_testOperation2": "End"}}' }
+                'Name': {'S': '_testOperationName2'},
+                'Definition': {'S': '{"stage":"definition","StartAt":"_testOperationName2","States":{"_testOperation2": "End"}}'}
             }
         }
     )
 
     sfn_client_stub.add_response(
         'create_state_machine',
-        expected_params = {
+        expected_params={
             'name': 'testWorkflowName-test1234',
             'definition': '{"StartAt": "_testOperationName1", "States": {"_testOperation1": {"Next": "_testOperationName2"}, "_testOperation2": "End"}}',
             'roleArn': 'testExecutionRole/role',
@@ -57,7 +58,7 @@ def test_create_workflow(test_client, sfn_client_stub, ddb_resource_stub):
                 'value': 'mie'
             }]
         },
-        service_response = {
+        service_response={
             'stateMachineArn': 'sma',
             'creationDate': '1'
         }
@@ -65,7 +66,7 @@ def test_create_workflow(test_client, sfn_client_stub, ddb_resource_stub):
 
     ddb_resource_stub.add_response(
         'put_item',
-        expected_params = {
+        expected_params={
             'TableName': 'testWorkflowTable',
             'Item': {
                 'Name': 'testWorkflowName',
@@ -91,7 +92,7 @@ def test_create_workflow(test_client, sfn_client_stub, ddb_resource_stub):
                 '#workflow_name': 'Name'
             }
         },
-        service_response = {}
+        service_response={}
     )
 
     response = test_client.http.post(
@@ -113,35 +114,36 @@ def test_create_workflow(test_client, sfn_client_stub, ddb_resource_stub):
     )
     assert response.status_code == 200
 
+
 def test_update_workflow(test_client, ddb_resource_stub, sfn_client_stub):
     print('PUT /workflow')
 
     ddb_resource_stub.add_response(
         'get_item',
-        expected_params = {
+        expected_params={
             'TableName': 'testWorkflowTable',
             'Key': {
                 'Name': 'testWorkflowName'
             }
         },
-        service_response = {
+        service_response={
             'Item': {
-                'Name': {'S':'testWorkflowName'},
-                'StartAt': {'S':'_testOperationName1'},
-                'Version': {'S':'v0'},
-                'Created': {'S':'1'},
-                'Revisions': {'S':'1'},
-                'ResourceType': {'S':'WORKFLOW'},
-                'ApiVersion': {'S':'3.0.0'},
-                'StateMachineArn': {'S':'sma'},
-                'Operations': { 'L': []},
-                'StaleOperations': { 'L': []},
-                'StaleStages': { 'L': []},
+                'Name': {'S': 'testWorkflowName'},
+                'StartAt': {'S': '_testOperationName1'},
+                'Version': {'S': 'v0'},
+                'Created': {'S': '1'},
+                'Revisions': {'S': '1'},
+                'ResourceType': {'S': 'WORKFLOW'},
+                'ApiVersion': {'S': '3.0.0'},
+                'StateMachineArn': {'S': 'sma'},
+                'Operations': {'L': []},
+                'StaleOperations': {'L': []},
+                'StaleStages': {'L': []},
                 'Stages': {
                     'M': {
                         '_testOperationName1': {
                             'M': {
-                                'Next': {'S':'_testOperationName2'}
+                                'Next': {'S': '_testOperationName2'}
                             }
                         },
                         '_testOperationName2': {
@@ -157,16 +159,16 @@ def test_update_workflow(test_client, ddb_resource_stub, sfn_client_stub):
 
     stub_get_stage(
         ddb_resource_stub,
-        optional_input = {
+        optional_input={
             'TableName': 'testStageTable',
             'Key': {
                 'Name': '_testOperationName1'
             }
         },
-        optional_output = {
+        optional_output={
             'Item': {
-                'Name': { 'S': '_testOperationName1' },
-                'Definition': { 'S': '{"stage":"definition","StartAt":"_testOperationName1","States":{"_testOperation1": {"End":true}}}' },
+                'Name': {'S': '_testOperationName1'},
+                'Definition': {'S': '{"stage":"definition","StartAt":"_testOperationName1","States":{"_testOperation1": {"End":true}}}'},
                 'Operations': {'L': []}
             }
         }
@@ -174,36 +176,36 @@ def test_update_workflow(test_client, ddb_resource_stub, sfn_client_stub):
 
     stub_get_stage(
         ddb_resource_stub,
-        optional_input = {
+        optional_input={
             'TableName': 'testStageTable',
             'Key': {
                 'Name': '_testOperationName2'
             }
         },
-        optional_output = {
+        optional_output={
             'Item': {
-                'Name': { 'S': '_testOperationName2' },
-                'Definition': { 'S': '{"stage":"definition","StartAt":"_testOperationName2","States":{"_testOperation2": "End"}}' },
-                'Operations': { 'L': [] }
+                'Name': {'S': '_testOperationName2'},
+                'Definition': {'S': '{"stage":"definition","StartAt":"_testOperationName2","States":{"_testOperation2": "End"}}'},
+                'Operations': {'L': []}
             }
         }
     )
 
     sfn_client_stub.add_response(
         'update_state_machine',
-        expected_params = {
+        expected_params={
             'stateMachineArn': botocore.stub.ANY,
             'definition': botocore.stub.ANY,
             'roleArn': 'testExecutionRole/role',
         },
-        service_response = {
+        service_response={
             'updateDate': '1'
         }
     )
 
     ddb_resource_stub.add_response(
         'put_item',
-        expected_params = {
+        expected_params={
             'TableName': 'testWorkflowTable',
             'Item': {
                 'Name': 'testWorkflowName',
@@ -223,42 +225,43 @@ def test_update_workflow(test_client, ddb_resource_stub, sfn_client_stub):
                 'StateMachineArn': 'sma'
             }
         },
-        service_response = {}
+        service_response={}
     )
 
     response = test_client.http.put(
         '/workflow',
-        body = json.dumps({
+        body=json.dumps({
             'Name': 'testWorkflowName',
         }).encode()
     )
 
     assert response.status_code == 200
 
+
 def test_list_workflows(test_client, ddb_resource_stub):
     print('GET /workflow')
 
     ddb_resource_stub.add_response(
         'scan',
-        expected_params = {
+        expected_params={
             'TableName': 'testWorkflowTable'
         },
-        service_response = {
-            'LastEvaluatedKey': {'S': {'S':'lastKey'}},
+        service_response={
+            'LastEvaluatedKey': {'S': {'S': 'lastKey'}},
             'Items': [{
-                'Name': {'S':'testWorkflowName1'}
+                'Name': {'S': 'testWorkflowName1'}
             }]
         }
     )
     ddb_resource_stub.add_response(
         'scan',
-        expected_params = {
+        expected_params={
             'TableName': 'testWorkflowTable',
-            'ExclusiveStartKey': {'S':'lastKey'}
+            'ExclusiveStartKey': {'S': 'lastKey'}
         },
-        service_response = {
+        service_response={
             'Items': [{
-                'Name': {'S':'testWorkflowName2'}
+                'Name': {'S': 'testWorkflowName2'}
             }]
         }
     )
@@ -267,17 +270,18 @@ def test_list_workflows(test_client, ddb_resource_stub):
     assert response.status_code == 200
     assert len(response.json_body) == 2
 
+
 def test_list_workflows_by_operator(test_client, ddb_resource_stub):
-    print('GET /workflow/list/operation/{OperatorName}')
+    print('GET /workflow/list/operation/{operator_name}')
 
     ddb_resource_stub.add_response(
         'scan',
-        expected_params = {
+        expected_params={
             'TableName': 'testWorkflowTable',
             'FilterExpression': botocore.stub.ANY,
             'ConsistentRead': True
         },
-        service_response = {
+        service_response={
             'LastEvaluatedKey': {'S': {'S': 'lastKey'}},
             'Items': [{
                 'Name': {'S': 'operator1'}
@@ -287,11 +291,11 @@ def test_list_workflows_by_operator(test_client, ddb_resource_stub):
 
     ddb_resource_stub.add_response(
         'scan',
-        expected_params = {
+        expected_params={
             'TableName': 'testWorkflowTable',
             'ExclusiveStartKey': {'S': 'lastKey'}
         },
-        service_response = {
+        service_response={
             'Items': [{
                 'Name': {'S': 'operator2'}
             }]
@@ -306,33 +310,34 @@ def test_list_workflows_by_operator(test_client, ddb_resource_stub):
     assert response.json_body[0]['Name'] == 'operator1'
     assert response.json_body[1]['Name'] == 'operator2'
 
+
 def test_list_workflows_by_stage(test_client, ddb_resource_stub):
     print('GET /workflow/list/stage')
 
     ddb_resource_stub.add_response(
         'scan',
-        expected_params = {
+        expected_params={
             'TableName': 'testWorkflowTable',
             'FilterExpression': botocore.stub.ANY,
             'ConsistentRead': True
         },
-        service_response = {
-            'LastEvaluatedKey': {'S': {'S':'lastKey'}},
+        service_response={
+            'LastEvaluatedKey': {'S': {'S': 'lastKey'}},
             'Items': [{
-                'Name': {'S':'stage1'}
+                'Name': {'S': 'stage1'}
             }]
         }
     )
 
     ddb_resource_stub.add_response(
         'scan',
-        expected_params = {
+        expected_params={
             'TableName': 'testWorkflowTable',
-            'ExclusiveStartKey': {'S':'lastKey'}
+            'ExclusiveStartKey': {'S': 'lastKey'}
         },
-        service_response = {
+        service_response={
             'Items': [{
-                'Name': {'S':'stage2'}
+                'Name': {'S': 'stage2'}
             }]
         }
     )
@@ -343,49 +348,51 @@ def test_list_workflows_by_stage(test_client, ddb_resource_stub):
     assert response.json_body[0]['Name'] == 'stage1'
     assert response.json_body[1]['Name'] == 'stage2'
 
+
 def test_get_workflow_configuration_by_name_does_not_exist(test_client, ddb_resource_stub):
-    print('GET /workflow/configuration/{Name}')
+    print('GET /workflow/configuration/{name}')
 
     configuration_name = 'testConfigurationName'
 
     ddb_resource_stub.add_response(
         'get_item',
-        expected_params = {
+        expected_params={
             'TableName': 'testWorkflowTable',
             'Key': {
                 'Name': configuration_name
             }
         },
-        service_response = {
+        service_response={
         }
     )
 
     response = test_client.http.get(
-        '/workflow/configuration/{Name}'.format(Name = configuration_name)
+        '/workflow/configuration/{Name}'.format(Name=configuration_name)
     )
     assert response.status_code == 404
     assert "Exception: workflow '%s' not found" % configuration_name in response.json_body['Message']
 
+
 def test_get_workflow_configuration_by_name(test_client, ddb_resource_stub):
-    print('GET /workflow/configuration/{Name}')
+    print('GET /workflow/configuration/{name}')
 
     configuration_name = 'testConfigurationName'
 
     ddb_resource_stub.add_response(
         'get_item',
-        expected_params = {
+        expected_params={
             'TableName': 'testWorkflowTable',
             'Key': {
                 'Name': configuration_name
             }
         },
-        service_response = {
+        service_response={
             'Item': {
                 'Stages': {
                     'M': {
                         'stage1': {
                             'M': {
-                                'Configuration': {'S':'stage1_config'}
+                                'Configuration': {'S': 'stage1_config'}
                             }
                         }
                     }
@@ -395,64 +402,66 @@ def test_get_workflow_configuration_by_name(test_client, ddb_resource_stub):
     )
 
     response = test_client.http.get(
-        '/workflow/configuration/{Name}'.format(Name = configuration_name)
+        '/workflow/configuration/{Name}'.format(Name=configuration_name)
     )
     assert response.status_code == 200
     assert response.json_body['stage1'] == 'stage1_config'
 
+
 def test_delete_workflow_api_workflow_does_not_exist(test_client, ddb_resource_stub, sfn_client_stub):
-    print('DELETE /workflow/{Name}')
+    print('DELETE /workflow/{name}')
 
     ddb_resource_stub.add_response(
         'get_item',
-        expected_params = {
+        expected_params={
             'TableName': 'testWorkflowTable',
             'Key': {
                 'Name': 'testWorkflowName'
             },
             'ConsistentRead': True
         },
-        service_response = {}
+        service_response={}
     )
 
     response = test_client.http.delete('/workflow/testWorkflowName')
     assert response.status_code == 200
     assert "Workflow 'testWorkflowName' not found" in response.json_body['Message']
 
+
 def test_delete_workflow_api(test_client, ddb_resource_stub, sfn_client_stub):
-    print('DELETE /workflow/{Name}')
+    print('DELETE /workflow/{name}')
 
     ddb_resource_stub.add_response(
         'get_item',
-        expected_params = {
+        expected_params={
             'TableName': 'testWorkflowTable',
             'Key': {
                 'Name': 'testWorkflowName'
             },
             'ConsistentRead': True
         },
-        service_response = {
+        service_response={
             'Item': {
-                'StateMachineArn': {'S':'stateMachineArn'}
+                'StateMachineArn': {'S': 'stateMachineArn'}
             }
         }
     )
     sfn_client_stub.add_response(
         'delete_state_machine',
-        expected_params = {
+        expected_params={
             'stateMachineArn': 'stateMachineArn'
         },
-        service_response = {}
+        service_response={}
     )
     ddb_resource_stub.add_response(
         'delete_item',
-        expected_params = {
+        expected_params={
             'TableName': 'testWorkflowTable',
             'Key': {
                 'Name': 'testWorkflowName'
             },
         },
-        service_response = {}
+        service_response={}
     )
 
     response = test_client.http.delete('/workflow/testWorkflowName')

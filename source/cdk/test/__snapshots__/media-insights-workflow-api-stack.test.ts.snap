@@ -2950,7 +2950,7 @@ Raises:
                 },
               },
             },
-            "/workflow/configuration/{Name}": Object {
+            "/workflow/configuration/{name}": Object {
               "get": Object {
                 "consumes": Array [
                   "application/json",
@@ -2965,7 +2965,7 @@ Raises:
                 "parameters": Array [
                   Object {
                     "in": "path",
-                    "name": "Name",
+                    "name": "name",
                     "required": true,
                     "type": "string",
                   },
@@ -3235,7 +3235,7 @@ Raises:
                 },
               },
             },
-            "/workflow/execution/asset/{AssetId}": Object {
+            "/workflow/execution/asset/{asset_id}": Object {
               "get": Object {
                 "consumes": Array [
                   "application/json",
@@ -3250,7 +3250,7 @@ Raises:
                 "parameters": Array [
                   Object {
                     "in": "path",
-                    "name": "AssetId",
+                    "name": "asset_id",
                     "required": true,
                     "type": "string",
                   },
@@ -3333,7 +3333,7 @@ Raises:
                 },
               },
             },
-            "/workflow/execution/status/{Status}": Object {
+            "/workflow/execution/status/{status}": Object {
               "get": Object {
                 "consumes": Array [
                   "application/json",
@@ -3348,7 +3348,7 @@ Raises:
                 "parameters": Array [
                   Object {
                     "in": "path",
-                    "name": "Status",
+                    "name": "status",
                     "required": true,
                     "type": "string",
                   },
@@ -3431,7 +3431,7 @@ Raises:
                 },
               },
             },
-            "/workflow/execution/{Id}": Object {
+            "/workflow/execution/{id}": Object {
               "delete": Object {
                 "consumes": Array [
                   "application/json",
@@ -3445,7 +3445,7 @@ Raises:
                 "parameters": Array [
                   Object {
                     "in": "path",
-                    "name": "Id",
+                    "name": "id",
                     "required": true,
                     "type": "string",
                   },
@@ -3496,7 +3496,7 @@ Raises:
                 "parameters": Array [
                   Object {
                     "in": "path",
-                    "name": "Id",
+                    "name": "id",
                     "required": true,
                     "type": "string",
                   },
@@ -3613,7 +3613,7 @@ Raises:
                 "parameters": Array [
                   Object {
                     "in": "path",
-                    "name": "Id",
+                    "name": "id",
                     "required": true,
                     "type": "string",
                   },
@@ -3651,7 +3651,7 @@ Raises:
                 },
               },
             },
-            "/workflow/list/operation/{OperatorName}": Object {
+            "/workflow/list/operation/{operator_name}": Object {
               "get": Object {
                 "consumes": Array [
                   "application/json",
@@ -3665,7 +3665,7 @@ Raises:
                 "parameters": Array [
                   Object {
                     "in": "path",
-                    "name": "OperatorName",
+                    "name": "operator_name",
                     "required": true,
                     "type": "string",
                   },
@@ -3748,7 +3748,7 @@ Raises:
                 },
               },
             },
-            "/workflow/list/stage/{StageName}": Object {
+            "/workflow/list/stage/{stage_name}": Object {
               "get": Object {
                 "consumes": Array [
                   "application/json",
@@ -3762,7 +3762,7 @@ Raises:
                 "parameters": Array [
                   Object {
                     "in": "path",
-                    "name": "StageName",
+                    "name": "stage_name",
                     "required": true,
                     "type": "string",
                   },
@@ -4067,7 +4067,7 @@ Raises:
                 },
               },
             },
-            "/workflow/operation/{Name}": Object {
+            "/workflow/operation/{name}": Object {
               "delete": Object {
                 "consumes": Array [
                   "application/json",
@@ -4082,7 +4082,7 @@ Raises:
                 "parameters": Array [
                   Object {
                     "in": "path",
-                    "name": "Name",
+                    "name": "name",
                     "required": true,
                     "type": "string",
                   },
@@ -4133,7 +4133,7 @@ Raises:
                 "parameters": Array [
                   Object {
                     "in": "path",
-                    "name": "Name",
+                    "name": "name",
                     "required": true,
                     "type": "string",
                   },
@@ -4430,7 +4430,7 @@ Raises:
                 },
               },
             },
-            "/workflow/stage/{Name}": Object {
+            "/workflow/stage/{name}": Object {
               "delete": Object {
                 "consumes": Array [
                   "application/json",
@@ -4446,7 +4446,7 @@ Raises:
                 "parameters": Array [
                   Object {
                     "in": "path",
-                    "name": "Name",
+                    "name": "name",
                     "required": true,
                     "type": "string",
                   },
@@ -4497,7 +4497,7 @@ Raises:
                 "parameters": Array [
                   Object {
                     "in": "path",
-                    "name": "Name",
+                    "name": "name",
                     "required": true,
                     "type": "string",
                   },
@@ -4580,7 +4580,7 @@ Raises:
                 },
               },
             },
-            "/workflow/{Name}": Object {
+            "/workflow/{name}": Object {
               "delete": Object {
                 "consumes": Array [
                   "application/json",
@@ -4594,7 +4594,7 @@ Raises:
                 "parameters": Array [
                   Object {
                     "in": "path",
-                    "name": "Name",
+                    "name": "name",
                     "required": true,
                     "type": "string",
                   },
@@ -4645,7 +4645,7 @@ Raises:
                 "parameters": Array [
                   Object {
                     "in": "path",
-                    "name": "Name",
+                    "name": "name",
                     "required": true,
                     "type": "string",
                   },

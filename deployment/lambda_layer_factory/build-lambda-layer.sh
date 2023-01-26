@@ -76,7 +76,6 @@ echo "--------------------------------------------------------------------------
 echo "Verifying the Lambda layer meets AWS size limits"
 echo "------------------------------------------------------------------------------"
 # See https://docs.aws.amazon.com/lambda/latest/dg/limits.html
-unzip -q -d lambda_layer-python-3.6 ./lambda_layer-python3.6.zip
 unzip -q -d lambda_layer-python-3.7 ./lambda_layer-python3.7.zip
 unzip -q -d lambda_layer-python-3.8 ./lambda_layer-python3.8.zip
 unzip -q -d lambda_layer-python-3.9 ./lambda_layer-python3.9.zip

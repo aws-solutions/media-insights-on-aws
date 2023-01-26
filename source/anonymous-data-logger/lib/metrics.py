@@ -33,4 +33,3 @@ def send_metrics(config):
     response = urllib.request.urlopen(req) #nosec
     print('RESPONSE CODE:: {}'.format(response.getcode()))
     print('METRICS SENT:: {}'.format(data))
-    return

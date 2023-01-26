@@ -45,8 +45,8 @@ run_cdk_project_test() {
 echo "Running unit tests"
 
 # Get reference for source folder
-slnroot_dir="$(dirname "$(dirname "$cdk_dir")")"
-coverage_reports_top_path="$slnroot_dir/coverage-reports"
+slnroot_dir="$(dirname "$cdk_dir")"
+coverage_reports_top_path="$slnroot_dir/test/coverage-reports"
 
 # Test the CDK project
 run_cdk_project_test "$cdk_dir"

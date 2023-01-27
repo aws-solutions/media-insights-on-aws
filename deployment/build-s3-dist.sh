@@ -51,7 +51,7 @@ cleanup_and_die() {
 }
 
 cleanup() {
-  trap - SIGINT SIGTERM ERR EXIT
+  trap - SIGINT SIGTERM EXIT
   # Deactivate and remove the temporary python virtualenv used to run this script
   if [[ "$VIRTUAL_ENV" != "" ]];
   then
@@ -198,7 +198,7 @@ echo "Using virtual python environment:"
 VENV=$(mktemp -d) && echo "$VENV"
 python3 -m venv "$VENV" || die "ERROR: Couldn't create virtual python environment" 1
 
-trap cleanup_and_die SIGINT SIGTERM ERR EXIT
+trap cleanup_and_die SIGINT SIGTERM EXIT
 
 source "$VENV"/bin/activate
 pip3 install wheel
@@ -760,7 +760,7 @@ do_cmd cd "$cdk_dir"
 do_cmd npm install
 
 # Add local install to PATH
-export PATH=$(npm bin):$PATH
+export PATH=$(npm exec -c 'echo $PATH')
 # Check cdk version to verify installation
 current_cdkver=`cdk --version | grep -Eo '^[0-9]{1,2}\.[0-9]+\.[0-9]+'`
 echo CDK version $current_cdkver
@@ -782,7 +782,7 @@ do_cmd cdk synth -q --output="$staging_dist_dir"
 
 # Remove unnecessary output files
 do_cmd cd "$staging_dist_dir"
-rm -f tree.json manifest.json cdk.out
+rm -f tree.json manifest.json cdk.out *.csv
 
 echo "Preparing template files:"
 root_template=`basename *.assets.json .assets.json`
@@ -831,9 +831,13 @@ new_version="s/%%VERSION%%/$version/g"
 sed -i.orig -e "$new_global_bucket" -e "$new_regional_bucket" -e "$new_version" "${global_dist_dir}"/*.template
 rm -f "${global_dist_dir}"/*.orig
 
+# Remove temporary staging directory if it is empty. Ignore failure to delete if it is not empty.
+cd "$build_dir"
+rmdir "$staging_dist_dir" || true
+
 # Skip copy dist to S3 if building for solution builder because
 # that pipeline takes care of copying the dist in another script.
-if [ "$global_bucket" != "solutions-reference" ] && [ "$global_bucket" != "solutions-test-reference" ]; then
+if [[ ! "$global_bucket" =~ solutions(-[a-z]+)?-reference ]]; then
   echo "------------------------------------------------------------------------------"
   echo "Copy dist to S3"
   echo "------------------------------------------------------------------------------"

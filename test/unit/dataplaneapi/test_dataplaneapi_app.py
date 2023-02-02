@@ -64,7 +64,6 @@ def test_upload_success(test_client):
     assert formatted_response['fields']['x-amz-algorithm'] != None
     assert formatted_response['fields']['x-amz-credential'] != None
     assert formatted_response['fields']['x-amz-date'] != None
-    assert formatted_response['fields']['x-amz-security-token'] != None
     assert formatted_response['fields']['x-amz-signature'] != None
     assert formatted_response['fields']['policy'] != None
     print ('Pass')

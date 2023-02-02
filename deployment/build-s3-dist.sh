@@ -280,7 +280,7 @@ else
   mv requirements.txt requirements.txt.old
   cat requirements.txt.old | grep -v "Media_Insights_Engine_Lambda_Helper" > requirements.txt
   echo "/packages/$file" >> requirements.txt;
-  # Build Lambda layer zip files and rename them to the filenames expected by media-insights-stack.yaml. The Lambda layer build script runs in Docker.
+  # Build Lambda layer zip files and rename them to the filenames expected by the stack. The Lambda layer build script runs in Docker.
   # If Docker is not installed, then we'll use prebuilt Lambda layer zip files.
   echo "Running build-lambda-layer.sh:"
   rm -rf lambda_layer-python-* lambda_layer-python*.zip
@@ -760,7 +760,14 @@ do_cmd cd "$cdk_dir"
 do_cmd npm install
 
 # Add local install to PATH
-export PATH=$(npm exec -c 'echo $PATH')
+if npm exec -c 'echo' &>/dev/null
+then
+  # npm exec is supported; use it to set the path
+  export PATH=$(npm exec -c 'echo $PATH')
+else
+  # fall back to npm bin for older npm versions
+  export PATH=$(npm bin):$PATH
+fi
 # Check cdk version to verify installation
 current_cdkver=`cdk --version | grep -Eo '^[0-9]{1,2}\.[0-9]+\.[0-9]+'`
 echo CDK version $current_cdkver
@@ -897,11 +904,11 @@ if [[ ! "$global_bucket" =~ solutions(-[a-z]+)?-reference ]]; then
 
   echo ""
   echo "Template to deploy:"
-  echo "TEMPLATE='"https://"$global_bucket"."$s3domain"/media-insights-on-aws/"$version"/media-insights-stack.template"'"
+  echo "TEMPLATE='"https://"$global_bucket"."$s3domain"/media-insights-on-aws/"$version"/${root_template}-stack.template"'"
 
   # Save the template URI for test automation scripts:
   touch templateUrl.txt
-  echo "https://"$global_bucket"."$s3domain"/media-insights-on-aws/"$version"/media-insights-stack.template" > templateUrl.txt
+  echo "https://"$global_bucket"."$s3domain"/media-insights-on-aws/"$version"/${root_template}-stack.template" > templateUrl.txt
 fi
 
 cleanup

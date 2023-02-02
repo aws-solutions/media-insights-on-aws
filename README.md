@@ -21,9 +21,9 @@ You can deploy MI in your AWS account with the following Cloud Formation templat
 
 Region| Launch
 ------|-----
-US East (N. Virginia) | [![Launch in us-east-1](docs/assets/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=mi&templateURL=https://solutions-reference.s3.amazonaws.com/aws-media-insights-engine/latest/media-insights-stack.template)
-US West (Oregon) | [![Launch in us-west-2](docs/assets/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=mi&templateURL=https://solutions-reference.s3.amazonaws.com/aws-media-insights-engine/latest/media-insights-stack.template)
-EU West (Ireland) | [![Launch in eu-west-1](docs/assets/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks/new?stackName=mi&templateURL=https://solutions-reference.s3.amazonaws.com/aws-media-insights-engine/latest/media-insights-stack.template)
+US East (N. Virginia) | [![Launch in us-east-1](docs/assets/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=mi&templateURL=https://solutions-reference.s3.amazonaws.com/media-insights-on-aws/latest/media-insights-on-aws-stack.template)
+US West (Oregon) | [![Launch in us-west-2](docs/assets/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=mi&templateURL=https://solutions-reference.s3.amazonaws.com/media-insights-on-aws/latest/media-insights-on-aws-stack.template)
+EU West (Ireland) | [![Launch in eu-west-1](docs/assets/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks/new?stackName=mi&templateURL=https://solutions-reference.s3.amazonaws.com/media-insights-on-aws/latest/media-insights-on-aws-stack.template)
 
 The Cloud Formation options for these one-click deploys are described in the [installation parameters](#installation-parameters) section.
 
@@ -120,7 +120,7 @@ The AWS CloudFormation template provisions the following resources:
    **Execution flow:** The Amazon Kinesis Data Streams provides an interface for external applications to access data stored in the MI data plane. This interface is appropriate for feeding downstream data stores, such as the Amazon Elasticsearch Service or Amazon Neptune, that support specialized data access patterns required by end-user applications. In order to feed a downstream data store, you must implement a consumer (e.g. an AWS Lambda function) that consumes records from the data stream and performs the necessary extract, transform, and load (ETL) tasks needed for the external application.
 
 
-> **NOTE:** The ETL tasks that feed downstream data stores are entirely use-case dependent and therefore must be user-defined. The [Implementation Guide](IMPLEMENTATION_GUIDE.md) includes detailed instructions for implementing ETL functions in MI.
+> **NOTE:** The ETL tasks that feed downstream data stores are entirely use-case dependent and therefore must be user-defined. The [Implementation Guide](https://docs.aws.amazon.com/solutions/latest/media-insights-on-aws/developer-guide.html) includes detailed instructions for implementing ETL functions in MI.
 
 ### Architecture components:
 
@@ -164,7 +164,7 @@ The AWS CloudFormation template provisions the following resources:
 
 * **Data plane pipeline:** This pipeline stores metadata for an asset that can be retrieved using an object's `AssetId` and `Metadata` type. Writing data to the pipeline initiates a copy of the data to be stored in Kinesis Data Streams. This data stream is the interface that end-user applications can connect to use data stored in the MI data plane.
 
-* **Data pipeline consumers:** Changes to the data plane DynamoDB table are reflected in an Amazon Kinesis data stream. For each record in that stream, data pipeline consumers perform the necessary extract, transform, and load (ETL) tasks needed to replicate data, such as media metadata, to the data stores used by external applications. These ETL tasks are entirely use-case dependent and therefore must be user-defined. The  [Implementation Guide](IMPLEMENTATION_GUIDE.md) includes detailed instructions for implementing data pipeline consumers.
+* **Data pipeline consumers:** Changes to the data plane DynamoDB table are reflected in an Amazon Kinesis data stream. For each record in that stream, data pipeline consumers perform the necessary extract, transform, and load (ETL) tasks needed to replicate data, such as media metadata, to the data stores used by external applications. These ETL tasks are entirely use-case dependent and therefore must be user-defined. The  [Implementation Guide](https://docs.aws.amazon.com/solutions/latest/media-insights-on-aws/developer-guide.html) includes detailed instructions for implementing data pipeline consumers.
 
 
 # Installation Parameters
@@ -191,7 +191,7 @@ Join our Gitter chat at [https://gitter.im/awslabs/aws-media-insights-engine](ht
 
 [![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/awslabs/aws-media-insights-engine)
 
-For instructions on how to build applications with MI, read the API reference and builder's guide in the [Implementation Guide](IMPLEMENTATION_GUIDE.md).
+For instructions on how to build applications with MI, read the API reference and builder's guide in the [Implementation Guide](https://docs.aws.amazon.com/solutions/latest/media-insights-on-aws/developer-guide.html).
 
 ## Security
 
@@ -199,7 +199,7 @@ MI uses AWS_IAM to authorize REST API requests. The following screenshot shows h
 
 <img src="docs/assets/images/sample_postman.png" width=600>
 
-For more information, see the [Implementation Guide](IMPLEMENTATION_GUIDE.md#step-6-test-your-new-workflow-and-operator).
+For more information, see the [Implementation Guide](https://docs.aws.amazon.com/solutions/latest/media-insights-on-aws/developer-guide.html).
 
 ### S3 Macie
 

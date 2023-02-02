@@ -19,7 +19,7 @@ import { AwsSolutionsChecks } from 'cdk-nag';
 const app = new App();
 new MediaInsightsStack(
     app,
-    'media-insights'
+    'media-insights-on-aws'
 );
 
 //cdk nag

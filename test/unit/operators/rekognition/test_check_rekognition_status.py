@@ -1,7 +1,7 @@
 from check_rekognition_test_tool import CheckRekognitionTestTool
 
 def test_check_content_moderation_status():
-    import rekognition.check_content_moderation_status as lambda_function
+    import rekognition.check_rekognition_status as lambda_function
     import MediaInsightsEngineLambdaHelper
     import helper
 
@@ -38,7 +38,7 @@ def test_check_celebrity_recognition_status():
     except Exception as e:
         raise e
 
-def test_():
+def test_check_face_detection_status():
     import rekognition.check_face_detection_status as lambda_function
     import MediaInsightsEngineLambdaHelper
     import helper

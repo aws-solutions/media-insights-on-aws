@@ -1,6 +1,6 @@
 from start_rekognition_test_tool import StartRekognitionTestTool
 
-def test_check_content_moderation_status():
+def test_start_celebrity_recognition():
     import rekognition.start_celebrity_recognition as lambda_function
     import MediaInsightsEngineLambdaHelper
     import helper
@@ -21,7 +21,7 @@ def test_check_content_moderation_status():
         raise e
 
 def test_start_content_moderation():
-    import rekognition.start_content_moderation as lambda_function
+    import rekognition.start_rekognition as lambda_function
     import MediaInsightsEngineLambdaHelper
     import helper
 

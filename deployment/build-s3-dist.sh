@@ -536,8 +536,8 @@ echo "creating lambda packages"
 zip -q -r9 generic_data_lookup.zip generic_data_lookup.py
 zip -q -r9 start_celebrity_recognition.zip start_celebrity_recognition.py
 zip -q -r9 check_celebrity_recognition_status.zip check_celebrity_recognition_status.py
-zip -q -r9 start_content_moderation.zip start_content_moderation.py
-zip -q -r9 check_content_moderation_status.zip check_content_moderation_status.py
+zip -q -r9 start_rekognition.zip start_rekognition.py
+zip -q -r9 check_content_moderation_status.zip check_rekognition_status.py
 zip -q -r9 start_face_detection.zip start_face_detection.py
 zip -q -r9 check_face_detection_status.zip check_face_detection_status.py
 zip -q -r9 start_face_search.zip start_face_search.py

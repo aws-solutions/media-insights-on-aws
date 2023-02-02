@@ -876,8 +876,8 @@ export class OperatorLibraryStack extends NestedStack {
             }
         });
 
-        const startContentModeration = createLambdaFunction(this, 'startContentModeration', "start_content_moderation.zip", 120, {
-            handler: "start_content_moderation.lambda_handler",
+        const startContentModeration = createLambdaFunction(this, 'startContentModeration', "start_rekognition.zip", 120, {
+            handler: "start_rekognition.lambda_handler",
             role: rekognitionLambdaRole,
             tracing: lambda.Tracing.PASS_THROUGH,
             environment: {
@@ -891,7 +891,7 @@ export class OperatorLibraryStack extends NestedStack {
         });
 
         const checkContentModeration = createLambdaFunction(this, 'checkContentModeration', "check_content_moderation_status.zip", 120, {
-            handler: "check_content_moderation_status.lambda_handler",
+            handler: "check_rekognition_status.lambda_handler",
             role: rekognitionLambdaRole,
             tracing: lambda.Tracing.PASS_THROUGH,
             environment: {

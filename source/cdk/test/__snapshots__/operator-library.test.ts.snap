@@ -3491,7 +3491,7 @@ Object {
             },
           },
         },
-        "Handler": "check_content_moderation_status.lambda_handler",
+        "Handler": "check_rekognition_status.lambda_handler",
         "Layers": Array [
           Object {
             "Ref": "referencetoMiTestStackMediaInsightsEnginePython39Layer",
@@ -6532,7 +6532,7 @@ Object {
                     "CodeKeyPrefix",
                   ],
                 },
-                "start_content_moderation.zip",
+                "start_rekognition.zip",
               ],
             ],
           },
@@ -6560,7 +6560,7 @@ Object {
             },
           },
         },
-        "Handler": "start_content_moderation.lambda_handler",
+        "Handler": "start_rekognition.lambda_handler",
         "Layers": Array [
           Object {
             "Ref": "referencetoMiTestStackMediaInsightsEnginePython39Layer",

@@ -21,6 +21,6 @@ jobs:
           role-duration-seconds: 900
           role-session-name: OIDCSession
       - name: Run CodeBuild
-        uses: aws-actions/aws-codebuild-run-build@v1
+        uses: aws-actions/aws-codebuild-run-build@v1.0.8
         with:
           project-name: ${{ secrets.DISPATCHER_CODEBUILD_PROJECT_NAME }}

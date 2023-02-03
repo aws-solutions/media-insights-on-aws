@@ -1,25 +1,27 @@
 import pytest
 from botocore.stub import Stubber
 
+
 def test_empty_event_status():
-    import rekognition.start_person_tracking as lambda_function
+    import rekognition.start_rekognition as lambda_function
     import MediaInsightsEngineLambdaHelper
     import helper
 
     input_parameter = helper.get_operator_parameter(metadata={})
 
     with pytest.raises(MediaInsightsEngineLambdaHelper.MasExecutionError) as err:
-        lambda_function.lambda_handler(input_parameter,{})
+        lambda_function.start_person_tracking(input_parameter, {})
     assert err.value.args[0]['Status'] == 'Error'
     assert err.value.args[0]['MetaData']['PersonTrackingError'] == 'No valid inputs'
 
+
 def test_image():
-    import rekognition.start_person_tracking as lambda_function
+    import rekognition.start_rekognition as lambda_function
     import helper
 
     input_parameter = helper.get_operator_parameter(
         metadata={},
-        input = {
+        input={
             'Media': {
                 'Image': {
                     'S3Bucket': 'test_bucket',
@@ -29,17 +31,18 @@ def test_image():
         }
     )
 
-    response = lambda_function.lambda_handler(input_parameter,{})
+    response = lambda_function.start_person_tracking(input_parameter, {})
     assert response['Status'] == 'Complete'
     assert response['MetaData']['WorkflowExecutionId'] == 'testWorkflowId'
 
+
 def test_video():
-    import rekognition.start_person_tracking as lambda_function
+    import rekognition.start_rekognition as lambda_function
     import helper
 
     input_parameter = helper.get_operator_parameter(
         metadata={},
-        input = {
+        input={
             'Media': {
                 'Video': {
                     'S3Bucket': 'test_bucket',
@@ -53,7 +56,7 @@ def test_video():
         stubber.assert_no_pending_responses()
         stubber.add_response(
             'start_person_tracking',
-            expected_params = {
+            expected_params={
                 'Video': {
                     'S3Object': {
                         'Bucket': 'test_bucket',
@@ -65,12 +68,12 @@ def test_video():
                     'RoleArn': 'testRekognitionRoleArn'
                 }
             },
-            service_response = {
+            service_response={
                 'JobId': 'testJobId'
             }
         )
 
-        response = lambda_function.lambda_handler(input_parameter,{})
+        response = lambda_function.start_person_tracking(input_parameter, {})
         assert response['Status'] == 'Executing'
         assert response['MetaData']['JobId'] == 'testJobId'
         assert response['MetaData']['AssetId'] == 'testAssetId'

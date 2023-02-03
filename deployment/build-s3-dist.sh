@@ -534,25 +534,9 @@ echo "creating lambda packages"
 # All the Python dependencies for Rekognition functions are in the Lambda layer, so
 # we can deploy the zipped source file without dependencies.
 zip -q -r9 generic_data_lookup.zip generic_data_lookup.py
-zip -q -r9 start_celebrity_recognition.zip start_celebrity_recognition.py
-zip -q -r9 check_celebrity_recognition_status.zip check_celebrity_recognition_status.py
 zip -q -r9 start_rekognition.zip start_rekognition.py
-zip -q -r9 check_content_moderation_status.zip check_rekognition_status.py
-zip -q -r9 start_face_detection.zip start_face_detection.py
-zip -q -r9 check_face_detection_status.zip check_face_detection_status.py
+zip -q -r9 check_rekognition_status.zip check_rekognition_status.py
 zip -q -r9 start_face_search.zip start_face_search.py
-zip -q -r9 check_face_search_status.zip check_face_search_status.py
-zip -q -r9 start_label_detection.zip start_label_detection.py
-zip -q -r9 check_label_detection_status.zip check_label_detection_status.py
-zip -q -r9 start_person_tracking.zip start_person_tracking.py
-zip -q -r9 check_person_tracking_status.zip check_person_tracking_status.py
-zip -q -r9 start_text_detection.zip start_text_detection.py
-zip -q -r9 check_text_detection_status.zip check_text_detection_status.py
-zip -q -r9 check_text_detection_status.zip check_text_detection_status.py
-zip -q -r9 start_technical_cue_detection.zip start_technical_cue_detection.py
-zip -q -r9 check_technical_cue_status.zip check_technical_cue_status.py
-zip -q -r9 start_shot_detection.zip start_shot_detection.py
-zip -q -r9 check_shot_detection_status.zip check_shot_detection_status.py
 mv -f ./*.zip "$regional_dist_dir"
 
 # ------------------------------------------------------------------------------"

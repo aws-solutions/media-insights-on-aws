@@ -793,8 +793,8 @@ export class OperatorLibraryStack extends NestedStack {
 
         // Rekognition
 
-        const startTechnicalCueDetection = createLambdaFunction(this, 'startTechnicalCueDetection', "start_technical_cue_detection.zip", 120, {
-            handler: "start_technical_cue_detection.lambda_handler",
+        const startTechnicalCueDetection = createLambdaFunction(this, 'startTechnicalCueDetection', "start_rekognition.zip", 120, {
+            handler: "start_rekognition.start_technical_cue_detection",
             role: rekognitionLambdaRole,
             tracing: lambda.Tracing.PASS_THROUGH,
             environment: {
@@ -807,8 +807,8 @@ export class OperatorLibraryStack extends NestedStack {
             }
         });
 
-        const checkTechnicalCueDetection = createLambdaFunction(this, 'checkTechnicalCueDetection', "check_technical_cue_status.zip", 120, {
-            handler: "check_technical_cue_status.lambda_handler",
+        const checkTechnicalCueDetection = createLambdaFunction(this, 'checkTechnicalCueDetection', "check_rekognition_status.zip", 120, {
+            handler: "check_rekognition_status.check_technical_cue_status",
             role: rekognitionLambdaRole,
             tracing: lambda.Tracing.PASS_THROUGH,
             environment: {
@@ -821,8 +821,8 @@ export class OperatorLibraryStack extends NestedStack {
             }
         });
 
-        const startShotDetection = createLambdaFunction(this, 'startShotDetection', "start_shot_detection.zip", 120, {
-            handler: "start_shot_detection.lambda_handler",
+        const startShotDetection = createLambdaFunction(this, 'startShotDetection', "start_rekognition.zip", 120, {
+            handler: "start_rekognition.start_shot_detection",
             role: rekognitionLambdaRole,
             tracing: lambda.Tracing.PASS_THROUGH,
             environment: {
@@ -835,8 +835,8 @@ export class OperatorLibraryStack extends NestedStack {
             }
         });
 
-        const checkShotDetection = createLambdaFunction(this, 'checkShotDetection', "check_shot_detection_status.zip", 120, {
-            handler: "check_shot_detection_status.lambda_handler",
+        const checkShotDetection = createLambdaFunction(this, 'checkShotDetection', "check_rekognition_status.zip", 120, {
+            handler: "check_rekognition_status.check_shot_detection_status",
             role: rekognitionLambdaRole,
             tracing: lambda.Tracing.PASS_THROUGH,
             environment: {
@@ -849,8 +849,8 @@ export class OperatorLibraryStack extends NestedStack {
             }
         });
 
-        const startCelebrityRecognition = createLambdaFunction(this, 'startCelebrityRecognition', "start_celebrity_recognition.zip", 120, {
-            handler: "start_celebrity_recognition.lambda_handler",
+        const startCelebrityRecognition = createLambdaFunction(this, 'startCelebrityRecognition', "start_rekognition.zip", 120, {
+            handler: "start_rekognition.start_celebrity_recognition",
             role: rekognitionLambdaRole,
             tracing: lambda.Tracing.PASS_THROUGH,
             environment: {
@@ -863,8 +863,8 @@ export class OperatorLibraryStack extends NestedStack {
             }
         });
 
-        const checkCelebrityRecognition = createLambdaFunction(this, 'checkCelebrityRecognition', "check_celebrity_recognition_status.zip", 120, {
-            handler: "check_celebrity_recognition_status.lambda_handler",
+        const checkCelebrityRecognition = createLambdaFunction(this, 'checkCelebrityRecognition', "check_rekognition_status.zip", 120, {
+            handler: "check_rekognition_status.check_celebrity_recognition_status",
             role: rekognitionLambdaRole,
             tracing: lambda.Tracing.PASS_THROUGH,
             environment: {
@@ -877,7 +877,7 @@ export class OperatorLibraryStack extends NestedStack {
         });
 
         const startContentModeration = createLambdaFunction(this, 'startContentModeration', "start_rekognition.zip", 120, {
-            handler: "start_rekognition.lambda_handler",
+            handler: "start_rekognition.start_content_moderation",
             role: rekognitionLambdaRole,
             tracing: lambda.Tracing.PASS_THROUGH,
             environment: {
@@ -890,8 +890,8 @@ export class OperatorLibraryStack extends NestedStack {
             }
         });
 
-        const checkContentModeration = createLambdaFunction(this, 'checkContentModeration', "check_content_moderation_status.zip", 120, {
-            handler: "check_rekognition_status.lambda_handler",
+        const checkContentModeration = createLambdaFunction(this, 'checkContentModeration', "check_rekognition_status.zip", 120, {
+            handler: "check_rekognition_status.check_content_moderation_status",
             role: rekognitionLambdaRole,
             tracing: lambda.Tracing.PASS_THROUGH,
             environment: {
@@ -903,8 +903,8 @@ export class OperatorLibraryStack extends NestedStack {
             }
         });
 
-        const startFaceDetection = createLambdaFunction(this, 'startFaceDetection', "start_face_detection.zip", 120, {
-            handler: "start_face_detection.lambda_handler",
+        const startFaceDetection = createLambdaFunction(this, 'startFaceDetection', "start_rekognition.zip", 120, {
+            handler: "start_rekognition.start_face_detection",
             role: rekognitionLambdaRole,
             tracing: lambda.Tracing.PASS_THROUGH,
             memorySize: 256,
@@ -918,8 +918,8 @@ export class OperatorLibraryStack extends NestedStack {
             }
         });
 
-        const checkFaceDetection = createLambdaFunction(this, 'checkFaceDetection', "check_face_detection_status.zip", 300, {
-            handler: "check_face_detection_status.lambda_handler",
+        const checkFaceDetection = createLambdaFunction(this, 'checkFaceDetection', "check_rekognition_status.zip", 300, {
+            handler: "check_rekognition_status.check_face_detection_status",
             role: rekognitionLambdaRole,
             tracing: lambda.Tracing.PASS_THROUGH,
             memorySize: 512,
@@ -947,8 +947,8 @@ export class OperatorLibraryStack extends NestedStack {
             }
         });
 
-        const checkFaceSearch = createLambdaFunction(this, 'checkFaceSearch', "check_face_search_status.zip", 120, {
-            handler: "check_face_search_status.lambda_handler",
+        const checkFaceSearch = createLambdaFunction(this, 'checkFaceSearch', "check_rekognition_status.zip", 120, {
+            handler: "check_rekognition_status.check_face_search_status",
             role: rekognitionLambdaRole,
             tracing: lambda.Tracing.PASS_THROUGH,
             memorySize: 256,
@@ -961,8 +961,8 @@ export class OperatorLibraryStack extends NestedStack {
             }
         });
 
-        const startTextDetection = createLambdaFunction(this, 'startTextDetection', "start_text_detection.zip", 120, {
-            handler: "start_text_detection.lambda_handler",
+        const startTextDetection = createLambdaFunction(this, 'startTextDetection', "start_rekognition.zip", 120, {
+            handler: "start_rekognition.start_text_detection",
             role: rekognitionLambdaRole,
             tracing: lambda.Tracing.PASS_THROUGH,
             environment: {
@@ -975,8 +975,8 @@ export class OperatorLibraryStack extends NestedStack {
             }
         });
 
-        const checkTextDetection = createLambdaFunction(this, 'checkTextDetection', "check_text_detection_status.zip", 240, {
-            handler: "check_text_detection_status.lambda_handler",
+        const checkTextDetection = createLambdaFunction(this, 'checkTextDetection', "check_rekognition_status.zip", 240, {
+            handler: "check_rekognition_status.check_text_detection_status",
             role: rekognitionLambdaRole,
             tracing: lambda.Tracing.PASS_THROUGH,
             memorySize: 256,
@@ -989,8 +989,8 @@ export class OperatorLibraryStack extends NestedStack {
             }
         });
 
-        const startLabelDetection = createLambdaFunction(this, 'startLabelDetection', "start_label_detection.zip", 120, {
-            handler: "start_label_detection.lambda_handler",
+        const startLabelDetection = createLambdaFunction(this, 'startLabelDetection', "start_rekognition.zip", 120, {
+            handler: "start_rekognition.start_label_detection",
             role: rekognitionLambdaRole,
             tracing: lambda.Tracing.PASS_THROUGH,
             environment: {
@@ -1003,8 +1003,8 @@ export class OperatorLibraryStack extends NestedStack {
             }
         });
 
-        const checkLabelDetection = createLambdaFunction(this, 'checkLabelDetection', "check_label_detection_status.zip", 240, {
-            handler: "check_label_detection_status.lambda_handler",
+        const checkLabelDetection = createLambdaFunction(this, 'checkLabelDetection', "check_rekognition_status.zip", 240, {
+            handler: "check_rekognition_status.check_label_detection_status",
             role: rekognitionLambdaRole,
             tracing: lambda.Tracing.PASS_THROUGH,
             memorySize: 256,
@@ -1017,8 +1017,8 @@ export class OperatorLibraryStack extends NestedStack {
             }
         });
 
-        const startPersonTracking = createLambdaFunction(this, 'startPersonTracking', "start_person_tracking.zip", 120, {
-            handler: "start_person_tracking.lambda_handler",
+        const startPersonTracking = createLambdaFunction(this, 'startPersonTracking', "start_rekognition.zip", 120, {
+            handler: "start_rekognition.start_person_tracking",
             role: rekognitionLambdaRole,
             tracing: lambda.Tracing.PASS_THROUGH,
             environment: {
@@ -1029,8 +1029,8 @@ export class OperatorLibraryStack extends NestedStack {
             }
         });
 
-        const checkPersonTracking = createLambdaFunction(this, 'checkPersonTracking', "check_person_tracking_status.zip", 120, {
-            handler: "check_person_tracking_status.lambda_handler",
+        const checkPersonTracking = createLambdaFunction(this, 'checkPersonTracking', "check_rekognition_status.zip", 120, {
+            handler: "check_rekognition_status.check_person_tracking_status",
             role: rekognitionLambdaRole,
             tracing: lambda.Tracing.PASS_THROUGH,
             memorySize: 256,

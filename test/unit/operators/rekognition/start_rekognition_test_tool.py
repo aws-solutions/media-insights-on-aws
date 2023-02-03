@@ -2,19 +2,23 @@ import pytest
 from botocore.stub import Stubber
 from unittest.mock import MagicMock
 
+
 class StartRekognitionTestTool:
     def __init__(
         self,
         subject_under_test,
+        lambda_handler,
         MasExecutionError,
         parameter_helper,
         error_key,
         image_rekognition_function_name,
         video_rekognition_function_name,
-        image_stub_function = None,
-        video_stub_function = None):
+        image_stub_function=None,
+        video_stub_function=None
+    ):
 
         self.subject_under_test = subject_under_test
+        self.lambda_handler = lambda_handler
         self.MasExecutionError = MasExecutionError
         self.parameter_helper = parameter_helper
         self.image_rekognition_function_name = image_rekognition_function_name
@@ -23,10 +27,10 @@ class StartRekognitionTestTool:
         self.video_stub_function = video_stub_function
         self.error_key = error_key
         self.original_dataplane_function = None
-    
-    def start_mock(self, mock_response = {}):
+
+    def start_mock(self, mock_response={}):
         self.original_dataplane_function = self.subject_under_test.DataPlane.store_asset_metadata
-        self.subject_under_test.DataPlane.store_asset_metadata = MagicMock(return_value = mock_response)
+        self.subject_under_test.DataPlane.store_asset_metadata = MagicMock(return_value=mock_response)
 
     def reset_subject_under_test(self):
         self.subject_under_test.output_object = self.subject_under_test.OutputHelper(self.subject_under_test.operator_name)
@@ -44,8 +48,8 @@ class StartRekognitionTestTool:
         image_output = {}
         stub.add_response(
             self.image_rekognition_function_name,
-            expected_params = image_input,
-            service_response = image_output
+            expected_params=image_input,
+            service_response=image_output
         )
 
     def default_video_stub_function(self, stub):
@@ -66,8 +70,8 @@ class StartRekognitionTestTool:
 
         stub.add_response(
             self.video_rekognition_function_name,
-            expected_params = video_input,
-            service_response = video_output
+            expected_params=video_input,
+            service_response=video_output
         )
 
     def run_tests(self):
@@ -79,17 +83,17 @@ class StartRekognitionTestTool:
             self.test_process_image_invalid_status(stubber)
             self.test_process_image_failed_status(stubber)
             self.test_process_image_success_status(stubber)
-    
+
     def test_parameter_validation(self):
         with pytest.raises(self.MasExecutionError) as err:
-            self.subject_under_test.lambda_handler({}, {})
+            self.lambda_handler({}, {})
         assert err.value.args[0]['Status'] == 'Error'
         assert err.value.args[0]['MetaData'][self.error_key] == 'No valid inputs'
         self.reset_subject_under_test()
-    
+
     def test_process_video(self, stub):
         input_paramter = self.parameter_helper.get_operator_parameter(
-            input = {
+            input={
                 'Media': {
                     'Video': {
                         'S3Bucket': 'test_bucket',
@@ -103,7 +107,7 @@ class StartRekognitionTestTool:
         else:
             self.default_video_stub_function(stub)
 
-        response = self.subject_under_test.lambda_handler(input_paramter, {})
+        response = self.lambda_handler(input_paramter, {})
         assert response['Status'] == 'Executing'
         assert response['MetaData']['JobId'] == 'testJobId'
         assert response['MetaData']['AssetId'] == 'testAssetId'
@@ -114,7 +118,7 @@ class StartRekognitionTestTool:
         self.start_mock({
         })
         input_paramter = self.parameter_helper.get_operator_parameter(
-            input = {
+            input={
                 'Media': {
                     'Image': {
                         'S3Bucket': 'test_bucket',
@@ -130,7 +134,7 @@ class StartRekognitionTestTool:
             self.default_image_stub_function(stub)
 
         with pytest.raises(self.MasExecutionError) as err:
-            self.subject_under_test.lambda_handler(input_paramter, {})
+            self.lambda_handler(input_paramter, {})
         assert err.value.args[0]['Status'] == 'Error'
         assert err.value.args[0]['MetaData'][self.error_key] == 'Unable to upload metadata for asset: testAssetId'
         assert self.subject_under_test.DataPlane.store_asset_metadata.call_count == 1
@@ -139,13 +143,13 @@ class StartRekognitionTestTool:
         assert self.subject_under_test.DataPlane.store_asset_metadata.call_args[0][2] == 'testWorkflowId'
         assert self.subject_under_test.DataPlane.store_asset_metadata.call_args[0][3] == {}
         self.reset_subject_under_test()
-    
+
     def test_process_image_failed_status(self, stub):
         self.start_mock({
             'Status': 'Failed'
         })
         input_paramter = self.parameter_helper.get_operator_parameter(
-            input = {
+            input={
                 'Media': {
                     'Image': {
                         'S3Bucket': 'test_bucket',
@@ -161,7 +165,7 @@ class StartRekognitionTestTool:
             self.default_image_stub_function(stub)
 
         with pytest.raises(self.MasExecutionError) as err:
-            self.subject_under_test.lambda_handler(input_paramter, {})
+            self.lambda_handler(input_paramter, {})
         assert err.value.args[0]['Status'] == 'Error'
         assert err.value.args[0]['MetaData'][self.error_key] == 'Unable to upload metadata for asset: testAssetId'
         assert self.subject_under_test.DataPlane.store_asset_metadata.call_count == 1
@@ -170,13 +174,13 @@ class StartRekognitionTestTool:
         assert self.subject_under_test.DataPlane.store_asset_metadata.call_args[0][2] == 'testWorkflowId'
         assert self.subject_under_test.DataPlane.store_asset_metadata.call_args[0][3] == {}
         self.reset_subject_under_test()
-    
+
     def test_process_image_invalid_status(self, stub):
         self.start_mock({
             'Status': 'Invalid'
         })
         input_paramter = self.parameter_helper.get_operator_parameter(
-            input = {
+            input={
                 'Media': {
                     'Image': {
                         'S3Bucket': 'test_bucket',
@@ -192,7 +196,7 @@ class StartRekognitionTestTool:
             self.default_image_stub_function(stub)
 
         with pytest.raises(self.MasExecutionError) as err:
-            self.subject_under_test.lambda_handler(input_paramter, {})
+            self.lambda_handler(input_paramter, {})
         assert err.value.args[0]['Status'] == 'Error'
         assert err.value.args[0]['MetaData'][self.error_key] == 'Unable to upload metadata for asset: testAssetId'
         assert self.subject_under_test.DataPlane.store_asset_metadata.call_count == 1
@@ -201,13 +205,13 @@ class StartRekognitionTestTool:
         assert self.subject_under_test.DataPlane.store_asset_metadata.call_args[0][2] == 'testWorkflowId'
         assert self.subject_under_test.DataPlane.store_asset_metadata.call_args[0][3] == {}
         self.reset_subject_under_test()
-    
+
     def test_process_image_success_status(self, stub):
         self.start_mock({
             'Status': 'Success'
         })
         input_paramter = self.parameter_helper.get_operator_parameter(
-            input = {
+            input={
                 'Media': {
                     'Image': {
                         'S3Bucket': 'test_bucket',
@@ -222,7 +226,7 @@ class StartRekognitionTestTool:
         else:
             self.default_image_stub_function(stub)
 
-        response = self.subject_under_test.lambda_handler(input_paramter, {})
+        response = self.lambda_handler(input_paramter, {})
         assert response['Status'] == 'Complete'
         assert self.subject_under_test.DataPlane.store_asset_metadata.call_count == 1
         assert self.subject_under_test.DataPlane.store_asset_metadata.call_args[0][0] == 'testAssetId'

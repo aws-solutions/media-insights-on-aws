@@ -3366,7 +3366,7 @@ Object {
                     "CodeKeyPrefix",
                   ],
                 },
-                "check_celebrity_recognition_status.zip",
+                "check_rekognition_status.zip",
               ],
             ],
           },
@@ -3391,7 +3391,7 @@ Object {
             },
           },
         },
-        "Handler": "check_celebrity_recognition_status.lambda_handler",
+        "Handler": "check_rekognition_status.check_celebrity_recognition_status",
         "Layers": Array [
           Object {
             "Ref": "referencetoMiTestStackMediaInsightsEnginePython39Layer",
@@ -3466,7 +3466,7 @@ Object {
                     "CodeKeyPrefix",
                   ],
                 },
-                "check_content_moderation_status.zip",
+                "check_rekognition_status.zip",
               ],
             ],
           },
@@ -3491,7 +3491,7 @@ Object {
             },
           },
         },
-        "Handler": "check_rekognition_status.lambda_handler",
+        "Handler": "check_rekognition_status.check_content_moderation_status",
         "Layers": Array [
           Object {
             "Ref": "referencetoMiTestStackMediaInsightsEnginePython39Layer",
@@ -3566,7 +3566,7 @@ Object {
                     "CodeKeyPrefix",
                   ],
                 },
-                "check_face_detection_status.zip",
+                "check_rekognition_status.zip",
               ],
             ],
           },
@@ -3591,7 +3591,7 @@ Object {
             },
           },
         },
-        "Handler": "check_face_detection_status.lambda_handler",
+        "Handler": "check_rekognition_status.check_face_detection_status",
         "Layers": Array [
           Object {
             "Ref": "referencetoMiTestStackMediaInsightsEnginePython39Layer",
@@ -3667,7 +3667,7 @@ Object {
                     "CodeKeyPrefix",
                   ],
                 },
-                "check_face_search_status.zip",
+                "check_rekognition_status.zip",
               ],
             ],
           },
@@ -3692,7 +3692,7 @@ Object {
             },
           },
         },
-        "Handler": "check_face_search_status.lambda_handler",
+        "Handler": "check_rekognition_status.check_face_search_status",
         "Layers": Array [
           Object {
             "Ref": "referencetoMiTestStackMediaInsightsEnginePython39Layer",
@@ -3768,7 +3768,7 @@ Object {
                     "CodeKeyPrefix",
                   ],
                 },
-                "check_label_detection_status.zip",
+                "check_rekognition_status.zip",
               ],
             ],
           },
@@ -3793,7 +3793,7 @@ Object {
             },
           },
         },
-        "Handler": "check_label_detection_status.lambda_handler",
+        "Handler": "check_rekognition_status.check_label_detection_status",
         "Layers": Array [
           Object {
             "Ref": "referencetoMiTestStackMediaInsightsEnginePython39Layer",
@@ -3869,7 +3869,7 @@ Object {
                     "CodeKeyPrefix",
                   ],
                 },
-                "check_person_tracking_status.zip",
+                "check_rekognition_status.zip",
               ],
             ],
           },
@@ -3894,7 +3894,7 @@ Object {
             },
           },
         },
-        "Handler": "check_person_tracking_status.lambda_handler",
+        "Handler": "check_rekognition_status.check_person_tracking_status",
         "Layers": Array [
           Object {
             "Ref": "referencetoMiTestStackMediaInsightsEnginePython39Layer",
@@ -3970,7 +3970,7 @@ Object {
                     "CodeKeyPrefix",
                   ],
                 },
-                "check_shot_detection_status.zip",
+                "check_rekognition_status.zip",
               ],
             ],
           },
@@ -3998,7 +3998,7 @@ Object {
             },
           },
         },
-        "Handler": "check_shot_detection_status.lambda_handler",
+        "Handler": "check_rekognition_status.check_shot_detection_status",
         "Layers": Array [
           Object {
             "Ref": "referencetoMiTestStackMediaInsightsEnginePython39Layer",
@@ -4073,7 +4073,7 @@ Object {
                     "CodeKeyPrefix",
                   ],
                 },
-                "check_technical_cue_status.zip",
+                "check_rekognition_status.zip",
               ],
             ],
           },
@@ -4101,7 +4101,7 @@ Object {
             },
           },
         },
-        "Handler": "check_technical_cue_status.lambda_handler",
+        "Handler": "check_rekognition_status.check_technical_cue_status",
         "Layers": Array [
           Object {
             "Ref": "referencetoMiTestStackMediaInsightsEnginePython39Layer",
@@ -4176,7 +4176,7 @@ Object {
                     "CodeKeyPrefix",
                   ],
                 },
-                "check_text_detection_status.zip",
+                "check_rekognition_status.zip",
               ],
             ],
           },
@@ -4201,7 +4201,7 @@ Object {
             },
           },
         },
-        "Handler": "check_text_detection_status.lambda_handler",
+        "Handler": "check_rekognition_status.check_text_detection_status",
         "Layers": Array [
           Object {
             "Ref": "referencetoMiTestStackMediaInsightsEnginePython39Layer",
@@ -6429,7 +6429,7 @@ Object {
                     "CodeKeyPrefix",
                   ],
                 },
-                "start_celebrity_recognition.zip",
+                "start_rekognition.zip",
               ],
             ],
           },
@@ -6457,7 +6457,7 @@ Object {
             },
           },
         },
-        "Handler": "start_celebrity_recognition.lambda_handler",
+        "Handler": "start_rekognition.start_celebrity_recognition",
         "Layers": Array [
           Object {
             "Ref": "referencetoMiTestStackMediaInsightsEnginePython39Layer",
@@ -6560,7 +6560,7 @@ Object {
             },
           },
         },
-        "Handler": "start_rekognition.lambda_handler",
+        "Handler": "start_rekognition.start_content_moderation",
         "Layers": Array [
           Object {
             "Ref": "referencetoMiTestStackMediaInsightsEnginePython39Layer",
@@ -6735,7 +6735,7 @@ Object {
                     "CodeKeyPrefix",
                   ],
                 },
-                "start_face_detection.zip",
+                "start_rekognition.zip",
               ],
             ],
           },
@@ -6763,7 +6763,7 @@ Object {
             },
           },
         },
-        "Handler": "start_face_detection.lambda_handler",
+        "Handler": "start_rekognition.start_face_detection",
         "Layers": Array [
           Object {
             "Ref": "referencetoMiTestStackMediaInsightsEnginePython39Layer",
@@ -7140,7 +7140,7 @@ Object {
                     "CodeKeyPrefix",
                   ],
                 },
-                "start_label_detection.zip",
+                "start_rekognition.zip",
               ],
             ],
           },
@@ -7168,7 +7168,7 @@ Object {
             },
           },
         },
-        "Handler": "start_label_detection.lambda_handler",
+        "Handler": "start_rekognition.start_label_detection",
         "Layers": Array [
           Object {
             "Ref": "referencetoMiTestStackMediaInsightsEnginePython39Layer",
@@ -7243,7 +7243,7 @@ Object {
                     "CodeKeyPrefix",
                   ],
                 },
-                "start_person_tracking.zip",
+                "start_rekognition.zip",
               ],
             ],
           },
@@ -7265,7 +7265,7 @@ Object {
             },
           },
         },
-        "Handler": "start_person_tracking.lambda_handler",
+        "Handler": "start_rekognition.start_person_tracking",
         "Layers": Array [
           Object {
             "Ref": "referencetoMiTestStackMediaInsightsEnginePython39Layer",
@@ -7340,7 +7340,7 @@ Object {
                     "CodeKeyPrefix",
                   ],
                 },
-                "start_shot_detection.zip",
+                "start_rekognition.zip",
               ],
             ],
           },
@@ -7368,7 +7368,7 @@ Object {
             },
           },
         },
-        "Handler": "start_shot_detection.lambda_handler",
+        "Handler": "start_rekognition.start_shot_detection",
         "Layers": Array [
           Object {
             "Ref": "referencetoMiTestStackMediaInsightsEnginePython39Layer",
@@ -7443,7 +7443,7 @@ Object {
                     "CodeKeyPrefix",
                   ],
                 },
-                "start_technical_cue_detection.zip",
+                "start_rekognition.zip",
               ],
             ],
           },
@@ -7471,7 +7471,7 @@ Object {
             },
           },
         },
-        "Handler": "start_technical_cue_detection.lambda_handler",
+        "Handler": "start_rekognition.start_technical_cue_detection",
         "Layers": Array [
           Object {
             "Ref": "referencetoMiTestStackMediaInsightsEnginePython39Layer",
@@ -7546,7 +7546,7 @@ Object {
                     "CodeKeyPrefix",
                   ],
                 },
-                "start_text_detection.zip",
+                "start_rekognition.zip",
               ],
             ],
           },
@@ -7574,7 +7574,7 @@ Object {
             },
           },
         },
-        "Handler": "start_text_detection.lambda_handler",
+        "Handler": "start_rekognition.start_text_detection",
         "Layers": Array [
           Object {
             "Ref": "referencetoMiTestStackMediaInsightsEnginePython39Layer",

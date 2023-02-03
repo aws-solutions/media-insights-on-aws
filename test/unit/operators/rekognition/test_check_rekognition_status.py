@@ -1,12 +1,16 @@
 from check_rekognition_test_tool import CheckRekognitionTestTool
 
+
 def test_check_content_moderation_status():
     import rekognition.check_rekognition_status as lambda_function
     import MediaInsightsEngineLambdaHelper
     import helper
 
+    lambda_handler = lambda_function.check_content_moderation_status
+
     test_tool = CheckRekognitionTestTool(
         lambda_function,
+        lambda_handler,
         MediaInsightsEngineLambdaHelper.MasExecutionError,
         helper,
         'get_content_moderation',
@@ -19,13 +23,17 @@ def test_check_content_moderation_status():
     except Exception as e:
         raise e
 
+
 def test_check_celebrity_recognition_status():
-    import rekognition.check_celebrity_recognition_status as lambda_function
+    import rekognition.check_rekognition_status as lambda_function
     import MediaInsightsEngineLambdaHelper
     import helper
 
+    lambda_handler = lambda_function.check_celebrity_recognition_status
+
     test_tool = CheckRekognitionTestTool(
         lambda_function,
+        lambda_handler,
         MediaInsightsEngineLambdaHelper.MasExecutionError,
         helper,
         'get_celebrity_recognition',
@@ -38,13 +46,17 @@ def test_check_celebrity_recognition_status():
     except Exception as e:
         raise e
 
+
 def test_check_face_detection_status():
-    import rekognition.check_face_detection_status as lambda_function
+    import rekognition.check_rekognition_status as lambda_function
     import MediaInsightsEngineLambdaHelper
     import helper
 
+    lambda_handler = lambda_function.check_face_detection_status
+
     test_tool = CheckRekognitionTestTool(
         lambda_function,
+        lambda_handler,
         MediaInsightsEngineLambdaHelper.MasExecutionError,
         helper,
         'get_face_detection',
@@ -57,13 +69,17 @@ def test_check_face_detection_status():
     except Exception as e:
         raise e
 
+
 def test_check_face_search_status():
-    import rekognition.check_face_search_status as lambda_function
+    import rekognition.check_rekognition_status as lambda_function
     import MediaInsightsEngineLambdaHelper
     import helper
 
+    lambda_handler = lambda_function.check_face_search_status
+
     test_tool = CheckRekognitionTestTool(
         lambda_function,
+        lambda_handler,
         MediaInsightsEngineLambdaHelper.MasExecutionError,
         helper,
         'get_face_search',
@@ -76,13 +92,17 @@ def test_check_face_search_status():
     except Exception as e:
         raise e
 
+
 def test_check_label_detection_status():
-    import rekognition.check_label_detection_status as lambda_function
+    import rekognition.check_rekognition_status as lambda_function
     import MediaInsightsEngineLambdaHelper
     import helper
 
+    lambda_handler = lambda_function.check_label_detection_status
+
     test_tool = CheckRekognitionTestTool(
         lambda_function,
+        lambda_handler,
         MediaInsightsEngineLambdaHelper.MasExecutionError,
         helper,
         'get_label_detection',
@@ -95,13 +115,17 @@ def test_check_label_detection_status():
     except Exception as e:
         raise e
 
+
 def test_check_person_tracking_status():
-    import rekognition.check_person_tracking_status as lambda_function
+    import rekognition.check_rekognition_status as lambda_function
     import MediaInsightsEngineLambdaHelper
     import helper
 
+    lambda_handler = lambda_function.check_person_tracking_status
+
     test_tool = CheckRekognitionTestTool(
         lambda_function,
+        lambda_handler,
         MediaInsightsEngineLambdaHelper.MasExecutionError,
         helper,
         'get_person_tracking',
@@ -114,13 +138,17 @@ def test_check_person_tracking_status():
     except Exception as e:
         raise e
 
+
 def test_check_shot_detection_status():
-    import rekognition.check_shot_detection_status as lambda_function
+    import rekognition.check_rekognition_status as lambda_function
     import MediaInsightsEngineLambdaHelper
     import helper
 
+    lambda_handler = lambda_function.check_shot_detection_status
+
     test_tool = CheckRekognitionTestTool(
         lambda_function,
+        lambda_handler,
         MediaInsightsEngineLambdaHelper.MasExecutionError,
         helper,
         'get_segment_detection',
@@ -133,13 +161,17 @@ def test_check_shot_detection_status():
     except Exception as e:
         raise e
 
+
 def test_check_technical_cue_status():
-    import rekognition.check_technical_cue_status as lambda_function
+    import rekognition.check_rekognition_status as lambda_function
     import MediaInsightsEngineLambdaHelper
     import helper
 
+    lambda_handler = lambda_function.check_technical_cue_status
+
     test_tool = CheckRekognitionTestTool(
         lambda_function,
+        lambda_handler,
         MediaInsightsEngineLambdaHelper.MasExecutionError,
         helper,
         'get_segment_detection',
@@ -152,13 +184,17 @@ def test_check_technical_cue_status():
     except Exception as e:
         raise e
 
+
 def test_check_text_detection_status():
-    import rekognition.check_text_detection_status as lambda_function
+    import rekognition.check_rekognition_status as lambda_function
     import MediaInsightsEngineLambdaHelper
     import helper
 
+    lambda_handler = lambda_function.check_text_detection_status
+
     test_tool = CheckRekognitionTestTool(
         lambda_function,
+        lambda_handler,
         MediaInsightsEngineLambdaHelper.MasExecutionError,
         helper,
         'get_text_detection',

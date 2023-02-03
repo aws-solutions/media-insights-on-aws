@@ -1,12 +1,16 @@
 from start_rekognition_test_tool import StartRekognitionTestTool
 
+
 def test_start_celebrity_recognition():
-    import rekognition.start_celebrity_recognition as lambda_function
+    import rekognition.start_rekognition as lambda_function
     import MediaInsightsEngineLambdaHelper
     import helper
 
+    lambda_handler = lambda_function.start_celebrity_recognition
+
     test_tool = StartRekognitionTestTool(
         lambda_function,
+        lambda_handler,
         MediaInsightsEngineLambdaHelper.MasExecutionError,
         helper,
         'CelebrityRecognitionError',
@@ -20,13 +24,17 @@ def test_start_celebrity_recognition():
     except Exception as e:
         raise e
 
+
 def test_start_content_moderation():
     import rekognition.start_rekognition as lambda_function
     import MediaInsightsEngineLambdaHelper
     import helper
 
+    lambda_handler = lambda_function.start_content_moderation
+
     test_tool = StartRekognitionTestTool(
         lambda_function,
+        lambda_handler,
         MediaInsightsEngineLambdaHelper.MasExecutionError,
         helper,
         'ContentModerationError',
@@ -40,15 +48,18 @@ def test_start_content_moderation():
     except Exception as e:
         raise e
 
+
 def test_start_face_detection():
-    import rekognition.start_face_detection as lambda_function
+    import rekognition.start_rekognition as lambda_function
     import MediaInsightsEngineLambdaHelper
     import helper
+
+    lambda_handler = lambda_function.start_face_detection
 
     def video_stub_function(stub):
         stub.add_response(
             'start_face_detection',
-            expected_params = {
+            expected_params={
                 'Video': {
                     'S3Object': {
                         'Bucket': 'test_bucket',
@@ -61,11 +72,12 @@ def test_start_face_detection():
                 },
                 'FaceAttributes': 'ALL'
             },
-            service_response = {'JobId': 'testJobId'}
+            service_response={'JobId': 'testJobId'}
         )
 
     test_tool = StartRekognitionTestTool(
         lambda_function,
+        lambda_handler,
         MediaInsightsEngineLambdaHelper.MasExecutionError,
         helper,
         'FaceDetectionError',
@@ -81,15 +93,18 @@ def test_start_face_detection():
     except Exception as e:
         raise e
 
+
 def test_start_face_search():
     import rekognition.start_face_search as lambda_function
     import MediaInsightsEngineLambdaHelper
     import helper
 
+    lambda_handler = lambda_function.lambda_handler
+
     def image_stub_function(stub):
         stub.add_response(
             'search_faces_by_image',
-            expected_params = {
+            expected_params={
                 'CollectionId': 'testCollectionId',
                 'Image': {
                     'S3Object': {
@@ -98,18 +113,18 @@ def test_start_face_search():
                     }
                 }
             },
-            service_response = {}
+            service_response={}
         )
-    
+
     def video_stub_function(stub):
         stub.add_response(
             'describe_collection',
-            expected_params = {'CollectionId': 'testCollectionId'},
-            service_response = {}
+            expected_params={'CollectionId': 'testCollectionId'},
+            service_response={}
         )
         stub.add_response(
             'start_face_search',
-            expected_params = {
+            expected_params={
                 'Video': {
                     'S3Object': {
                         'Bucket': 'test_bucket',
@@ -122,13 +137,14 @@ def test_start_face_search():
                     'RoleArn': 'testRekognitionRoleArn'
                 }
             },
-            service_response = {
+            service_response={
                 'JobId': 'testJobId'
             }
         )
 
     test_tool = StartRekognitionTestTool(
         lambda_function,
+        lambda_handler,
         MediaInsightsEngineLambdaHelper.MasExecutionError,
         helper,
         'FaceSearchError',
@@ -144,13 +160,17 @@ def test_start_face_search():
     except Exception as e:
         raise e
 
+
 def test_start_label_detection():
-    import rekognition.start_label_detection as lambda_function
+    import rekognition.start_rekognition as lambda_function
     import MediaInsightsEngineLambdaHelper
     import helper
 
+    lambda_handler = lambda_function.start_label_detection
+
     test_tool = StartRekognitionTestTool(
         lambda_function,
+        lambda_handler,
         MediaInsightsEngineLambdaHelper.MasExecutionError,
         helper,
         'LabelDetectionError',
@@ -164,15 +184,18 @@ def test_start_label_detection():
     except Exception as e:
         raise e
 
+
 def test_start_shot_detection():
-    import rekognition.start_shot_detection as lambda_function
+    import rekognition.start_rekognition as lambda_function
     import MediaInsightsEngineLambdaHelper
     import helper
+
+    lambda_handler = lambda_function.start_shot_detection
 
     def video_stub_function(stub):
         stub.add_response(
             'start_segment_detection',
-            expected_params = {
+            expected_params={
                 'Video': {
                     'S3Object': {
                         'Bucket': 'test_bucket',
@@ -185,11 +208,12 @@ def test_start_shot_detection():
                 },
                 'SegmentTypes': ['SHOT']
             },
-            service_response = {'JobId': 'testJobId'}
+            service_response={'JobId': 'testJobId'}
         )
 
     test_tool = StartRekognitionTestTool(
         lambda_function,
+        lambda_handler,
         MediaInsightsEngineLambdaHelper.MasExecutionError,
         helper,
         'LabelDetectionError',
@@ -205,13 +229,17 @@ def test_start_shot_detection():
     except Exception as e:
         raise e
 
+
 def test_start_text_detection():
-    import rekognition.start_text_detection as lambda_function
+    import rekognition.start_rekognition as lambda_function
     import MediaInsightsEngineLambdaHelper
     import helper
 
+    lambda_handler = lambda_function.start_text_detection
+
     test_tool = StartRekognitionTestTool(
         lambda_function,
+        lambda_handler,
         MediaInsightsEngineLambdaHelper.MasExecutionError,
         helper,
         'TextDetectionError',

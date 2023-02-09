@@ -26,7 +26,12 @@ def testing_env_variables():
             'MI_STACK_NAME': os.environ['MI_STACK_NAME'],
             'ACCESS_KEY': os.environ['AWS_ACCESS_KEY_ID'],
             'SECRET_KEY': os.environ['AWS_SECRET_ACCESS_KEY']
-            }
+        }
+
+        # Optional session token may be set if we are using temporary STS credentials.
+        session_token = os.environ.get('AWS_SESSION_TOKEN', '')
+        if len(session_token):
+            test_env_vars['SESSION_TOKEN'] = session_token
 
     except KeyError as e:
         logging.error("ERROR: Missing a required environment variable for testing: {variable}".format(variable=e))
@@ -86,7 +91,8 @@ class WorkflowAPI:
     def __init__(self, stack_resources, testing_env_variables):
         self.env_vars = testing_env_variables
         self.stack_resources = stack_resources
-        self.auth = AWS4Auth(testing_env_variables['ACCESS_KEY'], testing_env_variables['SECRET_KEY'], testing_env_variables['REGION'], 'execute-api')
+        self.auth = AWS4Auth(testing_env_variables['ACCESS_KEY'], testing_env_variables['SECRET_KEY'], testing_env_variables['REGION'], 'execute-api',
+                             session_token=testing_env_variables.get('SESSION_TOKEN'))
 
     # Workflow Methods
 
@@ -160,7 +166,8 @@ class DataplaneAPI:
     def __init__(self, stack_resources, testing_env_variables):
         self.env_vars = testing_env_variables
         self.stack_resources = stack_resources
-        self.auth = AWS4Auth(testing_env_variables['ACCESS_KEY'], testing_env_variables['SECRET_KEY'], testing_env_variables['REGION'], 'execute-api')
+        self.auth = AWS4Auth(testing_env_variables['ACCESS_KEY'], testing_env_variables['SECRET_KEY'], testing_env_variables['REGION'], 'execute-api',
+                             session_token=testing_env_variables.get('SESSION_TOKEN'))
 
     # Dataplane methods
 

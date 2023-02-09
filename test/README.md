@@ -46,6 +46,10 @@ You also need to set the following environment variables:
 * `AWS_ACCESS_KEY_ID` - A valid AWS Access Key
 * `AWS_SECRET_ACCESS_KEY` - A valid AWS Secret Access Key
 
+If you are using temporary STS credentials, you also need to set the session token:
+
+* `AWS_SESSION_TOKEN` - For use with STS temporary credentials
+
 *Note, the IAM credentials you specify must belong to an IAM principal that
 has administrator permissions on the MI API's.  
 
@@ -66,6 +70,10 @@ You also need to set the following environment variables:
 * `MI_STACK_NAME` - The name of your MI Cloudformation stack
 * `AWS_ACCESS_KEY_ID` - A valid AWS Access Key
 * `AWS_SECRET_ACCESS_KEY` - A valid AWS Secret Access Key
+
+If you are using temporary STS credentials, you also need to set the session token:
+
+* `AWS_SESSION_TOKEN` - For use with STS temporary credentials
 
 *Note, the IAM credentials you specify must belong to an IAM principal that
 has administrator permissions on the MI API's.  

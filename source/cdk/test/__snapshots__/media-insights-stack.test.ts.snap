@@ -39,104 +39,7 @@ Object {
   },
   "Description": "(SO0163) - media-insights-on-aws version %%VERSION%%. This is the base AWS CloudFormation template that provisions Media Insights on AWS services and provides parameters for user configurable MI settings.",
   "Mappings": Object {
-    "ServiceprincipalMap": Object {
-      "af-south-1": Object {
-        "states": "states.af-south-1.amazonaws.com",
-      },
-      "ap-east-1": Object {
-        "states": "states.ap-east-1.amazonaws.com",
-      },
-      "ap-northeast-1": Object {
-        "states": "states.ap-northeast-1.amazonaws.com",
-      },
-      "ap-northeast-2": Object {
-        "states": "states.ap-northeast-2.amazonaws.com",
-      },
-      "ap-northeast-3": Object {
-        "states": "states.ap-northeast-3.amazonaws.com",
-      },
-      "ap-south-1": Object {
-        "states": "states.ap-south-1.amazonaws.com",
-      },
-      "ap-south-2": Object {
-        "states": "states.ap-south-2.amazonaws.com",
-      },
-      "ap-southeast-1": Object {
-        "states": "states.ap-southeast-1.amazonaws.com",
-      },
-      "ap-southeast-2": Object {
-        "states": "states.ap-southeast-2.amazonaws.com",
-      },
-      "ap-southeast-3": Object {
-        "states": "states.ap-southeast-3.amazonaws.com",
-      },
-      "ca-central-1": Object {
-        "states": "states.ca-central-1.amazonaws.com",
-      },
-      "cn-north-1": Object {
-        "states": "states.cn-north-1.amazonaws.com",
-      },
-      "cn-northwest-1": Object {
-        "states": "states.cn-northwest-1.amazonaws.com",
-      },
-      "eu-central-1": Object {
-        "states": "states.eu-central-1.amazonaws.com",
-      },
-      "eu-north-1": Object {
-        "states": "states.eu-north-1.amazonaws.com",
-      },
-      "eu-south-1": Object {
-        "states": "states.eu-south-1.amazonaws.com",
-      },
-      "eu-south-2": Object {
-        "states": "states.eu-south-2.amazonaws.com",
-      },
-      "eu-west-1": Object {
-        "states": "states.eu-west-1.amazonaws.com",
-      },
-      "eu-west-2": Object {
-        "states": "states.eu-west-2.amazonaws.com",
-      },
-      "eu-west-3": Object {
-        "states": "states.eu-west-3.amazonaws.com",
-      },
-      "me-central-1": Object {
-        "states": "states.me-central-1.amazonaws.com",
-      },
-      "me-south-1": Object {
-        "states": "states.me-south-1.amazonaws.com",
-      },
-      "sa-east-1": Object {
-        "states": "states.sa-east-1.amazonaws.com",
-      },
-      "us-east-1": Object {
-        "states": "states.us-east-1.amazonaws.com",
-      },
-      "us-east-2": Object {
-        "states": "states.us-east-2.amazonaws.com",
-      },
-      "us-gov-east-1": Object {
-        "states": "states.us-gov-east-1.amazonaws.com",
-      },
-      "us-gov-west-1": Object {
-        "states": "states.us-gov-west-1.amazonaws.com",
-      },
-      "us-iso-east-1": Object {
-        "states": "states.amazonaws.com",
-      },
-      "us-iso-west-1": Object {
-        "states": "states.amazonaws.com",
-      },
-      "us-isob-east-1": Object {
-        "states": "states.amazonaws.com",
-      },
-      "us-west-1": Object {
-        "states": "states.us-west-1.amazonaws.com",
-      },
-      "us-west-2": Object {
-        "states": "states.us-west-2.amazonaws.com",
-      },
-    },
+    "ServiceprincipalMap": "[REMOVED]",
     "SourceCode": Object {
       "General": Object {
         "CodeKeyPrefix": "media-insights-on-aws/%%VERSION%%",
@@ -163,6 +66,7 @@ Object {
   },
   "Outputs": Object {
     "AnalyticsStreamArn": Object {
+      "Condition": "DeployAnalyticsPipelineCondition",
       "Description": "Arn of the dataplane pipeline",
       "Export": Object {
         "Name": Object {
@@ -903,6 +807,7 @@ Object {
       "Type": "AWS::ServiceCatalogAppRegistry::ResourceAssociation",
     },
     "AppRegistryApplicationStackAssociationNestedStackAnalytics": Object {
+      "Condition": "DeployAnalyticsPipelineCondition",
       "Properties": Object {
         "Application": Object {
           "Fn::GetAtt": Array [
@@ -948,6 +853,7 @@ Object {
       "Type": "AWS::ServiceCatalogAppRegistry::ResourceAssociation",
     },
     "AppRegistryApplicationStackAssociationNestedStackTestResources": Object {
+      "Condition": "DeployTestResourcesCondition",
       "Properties": Object {
         "Application": Object {
           "Fn::GetAtt": Array [

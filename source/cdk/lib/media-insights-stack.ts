@@ -1469,7 +1469,7 @@ export class MediaInsightsStack extends Stack {
         );
 
         // analytics stack association to main application
-        createCfnResourceAssociation(
+        const analyticsStackAssociation = createCfnResourceAssociation(
             this,
             'AppRegistryApplicationStackAssociationNestedStackAnalytics',
             {
@@ -1478,6 +1478,7 @@ export class MediaInsightsStack extends Stack {
                 resourceType: 'CFN_STACK'
             },
         );
+        analyticsStackAssociation.cfnOptions.condition = deployAnalyticsCondition;
 
         // workflow stack association to main application
         createCfnResourceAssociation(
@@ -1502,7 +1503,7 @@ export class MediaInsightsStack extends Stack {
         );
 
         // test resources stack association to main application
-        createCfnResourceAssociation(
+        const testResourceStackAssociation = createCfnResourceAssociation(
             this,
             'AppRegistryApplicationStackAssociationNestedStackTestResources',
             {
@@ -1511,6 +1512,7 @@ export class MediaInsightsStack extends Stack {
                 resourceType: 'CFN_STACK'
             },
         );
+        testResourceStackAssociation.cfnOptions.condition = deployTestResourcesCondition;
 
         // default application attributes
         const defaultApplicationAttributes = new appregistry.CfnAttributeGroup(
@@ -1643,6 +1645,7 @@ export class MediaInsightsStack extends Stack {
             description: "Arn of the dataplane pipeline",
             value: analyticsStack.analyticsStream.streamArn,
             exportName: Fn.join(':', [Aws.STACK_NAME, 'AnalyticsStreamArn']),
+            condition: deployAnalyticsCondition,
         });
         util.createCfnOutput(this, 'TestStack', {
             condition: deployTestResourcesCondition,

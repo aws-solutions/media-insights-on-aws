@@ -3,6 +3,12 @@ name: pr-workflow
 on:
   pull_request:
     types: [opened, synchronize]
+    branches:
+      - development
+      - mainline
+      - feature/**
+      - release/**
+
 
 jobs:
   build-us-west-2:
@@ -66,6 +72,12 @@ jobs:
           cd $GITHUB_WORKSPACE
           cd test/unit
           ./run_unit.sh
+      - name: Run CDK Unit Tests
+        run: |
+          cd $GITHUB_WORKSPACE
+          cd source/cdk
+          npm install
+          npm test
       - name: Run integ tests
         run: |
           cd $GITHUB_WORKSPACE

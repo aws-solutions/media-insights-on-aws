@@ -24,6 +24,21 @@ expect.addSnapshotSerializer({
     serialize: (val) => val.replace(regexHashedFileName, replaceHashedName),
 });
 
+// Mappings.ServiceprincipalMap can change as new regions are added.
+// Look for an object that looks like the following:
+//    {
+//      "{region}": {
+//        "states": "states.{region}.amazonaws.com"
+//      },
+//      ...
+//    }
+//
+// Just pick a known value for {region} (i.e., "us-east-1")
+expect.addSnapshotSerializer({
+    test: (val) => val && typeof val === 'object' && typeof (val['us-east-1'] || {}).states === 'string',
+    serialize: (_) => '"[REMOVED]"',
+});
+
 test('Snapshot media-insights root stack test', () => {
     const app = new App();
     // WHEN

@@ -37,7 +37,7 @@ Object {
       ],
     },
   },
-  "Description": "(SO0163) - media-insights-on-aws version %%VERSION%%. This is the base AWS CloudFormation template that provisions Media Insights on AWS services and provides parameters for user configurable MI settings.",
+  "Description": "(SO0163) - media-insights-on-aws version %%VERSION%%. This is the base AWS CloudFormation template that provisions Media Insights on AWS services and provides parameters for user configurable settings.",
   "Mappings": Object {
     "ServiceprincipalMap": "[REMOVED]",
     "SourceCode": Object {
@@ -193,7 +193,7 @@ Object {
       },
     },
     "MieKMSAlias": Object {
-      "Description": "Alias of the MIE KMS Key",
+      "Description": "Alias of the Media Insights on AWS KMS Key",
       "Export": Object {
         "Name": Object {
           "Fn::Join": Array [
@@ -220,7 +220,7 @@ Object {
       },
     },
     "MieKMSArn": Object {
-      "Description": "ARN of the MIE KMS Key",
+      "Description": "ARN of the Media Insights on AWS KMS Key",
       "Export": Object {
         "Name": Object {
           "Fn::Join": Array [
@@ -242,7 +242,7 @@ Object {
       },
     },
     "MieKMSId": Object {
-      "Description": "ID of the MIE KMS Key",
+      "Description": "ID of the Media Insights on AWS KMS Key",
       "Export": Object {
         "Name": Object {
           "Fn::Join": Array [
@@ -261,7 +261,7 @@ Object {
       },
     },
     "MieSNSTopic": Object {
-      "Description": "ARN of the MIE SNS Workflow Execution Topic",
+      "Description": "ARN of the Media Insights on AWS SNS Workflow Execution Topic",
       "Export": Object {
         "Name": Object {
           "Fn::Join": Array [
@@ -280,7 +280,7 @@ Object {
       },
     },
     "MieSQSQueue": Object {
-      "Description": "ARN of the MIE Workflow Execution Queue",
+      "Description": "ARN of the Media Insights on AWS Workflow Execution Queue",
       "Export": Object {
         "Name": Object {
           "Fn::Join": Array [
@@ -302,7 +302,7 @@ Object {
       },
     },
     "OperatorLibraryStack": Object {
-      "Description": "Nested cloudformation stack that contains the MIE operator library",
+      "Description": "Nested cloudformation stack that contains the Media Insights on AWS operator library",
       "Export": Object {
         "Name": Object {
           "Fn::Join": Array [
@@ -461,7 +461,7 @@ Object {
     },
     "ExternalBucketArn": Object {
       "Default": "",
-      "Description": "(Optional) If you intend to input media files from a bucket outside the MIE stack into MIE workflows, then specify the Amazon S3 ARN for those files here.",
+      "Description": "(Optional) If you intend to input media files from a bucket outside the stack into the workflows, then specify the Amazon S3 ARN for those files here.",
       "Type": "String",
     },
     "MaxConcurrentWorkflows": Object {
@@ -476,7 +476,7 @@ Object {
         "No",
       ],
       "Default": "Yes",
-      "Description": "(Optional) Send anonymous data about MIE performance to AWS to help improve the quality of this solution.",
+      "Description": "(Optional) Send anonymous data about Media Insights on AWS performance to AWS to help improve the quality of this solution.",
       "Type": "String",
     },
     "SolutionId": Object {
@@ -2504,7 +2504,7 @@ def handler(event, context):
     "MieKey": Object {
       "DeletionPolicy": "Retain",
       "Properties": Object {
-        "Description": "MIE provided KMS key for encryption",
+        "Description": "Media Insights on AWS provided KMS key for encryption",
         "EnableKeyRotation": true,
         "KeyPolicy": Object {
           "Statement": Array [

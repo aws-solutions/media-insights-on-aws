@@ -67,7 +67,7 @@ Object {
       "Type": "String",
     },
     "FrameworkVersion": Object {
-      "Description": "Version of the Media Insights Engine Framework",
+      "Description": "Version of the Media Insights on AWS Framework",
       "Type": "String",
     },
     "HistoryTableName": Object {
@@ -79,7 +79,7 @@ Object {
       "Type": "String",
     },
     "MediaInsightsEnginePython39Layer": Object {
-      "Description": "Arn of the MIE Python 3.9 lambda layer",
+      "Description": "Arn of the Media Insights on AWS Python 3.9 lambda layer",
       "Type": "String",
     },
     "OperationTableName": Object {
@@ -95,7 +95,7 @@ Object {
       "Type": "String",
     },
     "SqsQueueArn": Object {
-      "Description": "Arn of the MIE workflow queue",
+      "Description": "Arn of the Media Insights on AWS workflow queue",
       "Type": "String",
     },
     "StageExecutionQueueUrl": Object {
@@ -2429,7 +2429,7 @@ Raises:
                 "consumes": Array [
                   "application/json",
                 ],
-                "description": "- Gets the current MI system configuration parameter settings
+                "description": "- Gets the current system configuration parameter settings
 
 Returns:
     A list of dict containing the current MI system configuration key-value pairs.
@@ -2461,7 +2461,7 @@ Raises:
                     "sigv4": Array [],
                   },
                 ],
-                "summary": "Get the current MI system configuration",
+                "summary": "Get the current system configuration",
                 "x-amazon-apigateway-integration": Object {
                   "contentHandling": "CONVERT_TO_TEXT",
                   "httpMethod": "POST",
@@ -2526,7 +2526,7 @@ Raises:
                 "consumes": Array [
                   "application/json",
                 ],
-                "description": "- Updates the MI system configuration with a new parameter or changes the value of
+                "description": "- Updates the system configuration with a new parameter or changes the value of
   existing parameters
 
 Body:

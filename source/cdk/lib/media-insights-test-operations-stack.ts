@@ -33,7 +33,7 @@ import * as util from './utils'
  */
 export interface TestResourcesStackProps extends NestedStackProps {
     /**
-     * Media Insights lambda layer that contains basic python dependencies
+     * Media Insights on AWS lambda layer that contains basic python dependencies
      * for boto3, chalice, control plane and dataplane
      */
     readonly python39Layer: lambda.ILayerVersion;

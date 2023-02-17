@@ -798,7 +798,7 @@ Object {
       "Type": "String",
     },
     "ExternalBucketArn": Object {
-      "Description": "The ARN for Amazon S3 resources that exist outside the MIE stack which may need to be used as inputs to MIE workflows",
+      "Description": "The ARN for Amazon S3 resources that exist outside the stack which may need to be used as inputs to the workflows",
       "Type": "String",
     },
     "MediaConvertEndpoint": Object {
@@ -810,7 +810,7 @@ Object {
       "Type": "String",
     },
     "WorkflowCustomResourceArn": Object {
-      "Description": "ARN of the Media insights custom resource that handles creating operations, stages and workflows",
+      "Description": "ARN of the Media insights on AWS custom resource that handles creating operations, stages and workflows",
       "Type": "String",
     },
     "referencetoMiTestStackMediaInsightsEnginePython37Layer": Object {

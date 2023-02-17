@@ -1,7 +1,7 @@
 #!/bin/bash
 ###############################################################################
 # DO NOT MODIFY THIS FILE.
-# This file is used by the build pipeline for the [MI solution](https://aws.amazon.com/solutions/implementations/media-insights-on-aws/).
+# This file is used by the build pipeline for the [Media Insights on AWS solution](https://aws.amazon.com/solutions/implementations/media-insights-on-aws/).
 ###############################################################################
 #
 # This assumes all of the OS-level configuration has been completed and git repo has already been cloned

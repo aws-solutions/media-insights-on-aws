@@ -1,6 +1,6 @@
 ###############################################################################
 #
-# PURPOSE: This code sample shows how to list MI workflows using a
+# PURPOSE: This code sample shows how to list Media Insights on AWS workflows using a
 #   sigv4 signed request to the workflow execution REST API in the Media
 #   Insights on AWS.
 #

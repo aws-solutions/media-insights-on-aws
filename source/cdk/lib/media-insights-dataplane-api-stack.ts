@@ -55,7 +55,7 @@ export class DataplaneApiStack extends cdk.NestedStack {
 
         const externalBucketArn = new cdk.CfnParameter(this, 'ExternalBucketArn', {
             type: 'String',
-            description: "The ARN for Amazon S3 resources that exist outside the MIE stack which may need to be used as inputs to MIE workflows.",
+            description: "The ARN for Amazon S3 resources that exist outside the stack which may need to be used as inputs to the workflows.",
         });
 
         const dataplaneBucketName = new cdk.CfnParameter(this, 'DataplaneBucketName', {
@@ -75,7 +75,7 @@ export class DataplaneApiStack extends cdk.NestedStack {
 
         const mediaInsightsEnginePython39Layer = new cdk.CfnParameter(this, 'MediaInsightsEnginePython39Layer', {
             type: 'String',
-            description: "Arn of the MIE Python 3.9 lambda layer",
+            description: "Arn of the Media Insights on AWS Python 3.9 lambda layer",
         });
 
         const tracingConfigMode = new cdk.CfnParameter(this, 'TracingConfigMode', {
@@ -85,7 +85,7 @@ export class DataplaneApiStack extends cdk.NestedStack {
 
         const frameworkVersion = new cdk.CfnParameter(this, 'FrameworkVersion', {
             type: 'String',
-            description: "Version of the Media Insights Engine Framework",
+            description: "Version of the Media Insights on AWS Framework",
         });
 
         const kmsKeyId = new cdk.CfnParameter(this, 'KmsKeyId', {

@@ -5,7 +5,7 @@
 # documentation from docstrings in source/dataplaneapi/api.py and
 # source/workflowapi/api.py. Output docs will be saved to docs/source/output/.
 #
-# This output is manually copied to the MI gh-pages hosting branch
+# This output is manually copied to the Media Insights on AWS gh-pages hosting branch
 #
 #
 # PRELIMINARY:

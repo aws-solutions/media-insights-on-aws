@@ -199,7 +199,7 @@ def version():
 def create_system_configuration_api():
     """ Add a new system configuration parameter
 
-    - Updates the MI system configuration with a new parameter or changes the value of
+    - Updates the system configuration with a new parameter or changes the value of
       existing parameters
 
     Body:
@@ -253,9 +253,9 @@ def create_system_configuration_api():
 
 @app.route('/system/configuration', cors=True, methods=['GET'], authorizer=authorizer)
 def get_system_configuration_api():
-    """ Get the current MI system configuration
+    """ Get the current system configuration
 
-    - Gets the current MI system configuration parameter settings
+    - Gets the current system configuration parameter settings
 
     Returns:
         A list of dict containing the current MI system configuration key-value pairs.

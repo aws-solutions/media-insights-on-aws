@@ -54,7 +54,7 @@ export interface MediaInsightsNestedStacks {
 }
 
 /**
- * The root CloudFormation stack for the Media Insights Solution.
+ * The root CloudFormation stack for the Media Insights on AWS Solution.
  */
 export class MediaInsightsStack extends Stack {
     /**
@@ -63,7 +63,7 @@ export class MediaInsightsStack extends Stack {
     readonly nestedStacks: MediaInsightsNestedStacks;
 
     constructor(scope: Construct, id: string, props?: StackProps) {
-        super(scope, id, { ...props, description: '(SO0163) - media-insights-on-aws version %%VERSION%%. This is the base AWS CloudFormation template that provisions Media Insights on AWS services and provides parameters for user configurable MI settings.' });
+        super(scope, id, { ...props, description: '(SO0163) - media-insights-on-aws version %%VERSION%%. This is the base AWS CloudFormation template that provisions Media Insights on AWS services and provides parameters for user configurable settings.' });
         this.templateOptions.templateFormatVersion = '2010-09-09';
 
         //
@@ -95,7 +95,7 @@ export class MediaInsightsStack extends Stack {
             allowedValues: [ 'Yes', 'No' ],
         });
         const externalBucketArn = new CfnParameter(this, 'ExternalBucketArn', {
-            description: "(Optional) If you intend to input media files from a bucket outside the MIE stack into MIE workflows, then specify the Amazon S3 ARN for those files here.",
+            description: "(Optional) If you intend to input media files from a bucket outside the stack into the workflows, then specify the Amazon S3 ARN for those files here.",
             type: 'String',
             default: "",
         });
@@ -110,7 +110,7 @@ export class MediaInsightsStack extends Stack {
             default: "%%VERSION%%",
         });
         const sendAnonymousData = new CfnParameter(this, 'SendAnonymousData', {
-            description: "(Optional) Send anonymous data about MIE performance to AWS to help improve the quality of this solution.",
+            description: "(Optional) Send anonymous data about Media Insights on AWS performance to AWS to help improve the quality of this solution.",
             type: 'String',
             default: 'Yes',
             allowedValues: [ 'Yes', 'No' ],
@@ -160,7 +160,7 @@ export class MediaInsightsStack extends Stack {
         //
 
         const mieKey = new kms.Key(this, 'MieKey', {
-            description: "MIE provided KMS key for encryption",
+            description: "Media Insights on AWS provided KMS key for encryption",
             enableKeyRotation: true,
             policy: new iam.PolicyDocument({
                 statements: [
@@ -1597,7 +1597,7 @@ export class MediaInsightsStack extends Stack {
         //
 
         util.createCfnOutput(this, 'OperatorLibraryStack', {
-            description: "Nested cloudformation stack that contains the MIE operator library",
+            description: "Nested cloudformation stack that contains the Media Insights on AWS operator library",
             value: operatorLibraryStack.stackName,
             exportName: Fn.join(':', [Aws.STACK_NAME, 'OperatorLibraryStack']),
         });
@@ -1657,27 +1657,27 @@ export class MediaInsightsStack extends Stack {
             exportName: Fn.join(':', [Aws.STACK_NAME, 'Version']),
         });
         util.createCfnOutput(this, 'MieKMSArn', {
-            description: "ARN of the MIE KMS Key",
+            description: "ARN of the Media Insights on AWS KMS Key",
             value: mieKey.keyArn,
             exportName: Fn.join(':', [Aws.STACK_NAME, 'MieKMSArn']),
         });
         util.createCfnOutput(this, 'MieKMSId', {
-            description: "ID of the MIE KMS Key",
+            description: "ID of the Media Insights on AWS KMS Key",
             value: mieKey.keyId,
             exportName: Fn.join(':', [Aws.STACK_NAME, 'MieKMSId']),
         });
         util.createCfnOutput(this, 'MieKMSAlias', {
-            description: "Alias of the MIE KMS Key",
+            description: "Alias of the Media Insights on AWS KMS Key",
             value: keyAlias.aliasName,
             exportName: Fn.join(':', [Aws.STACK_NAME, 'MieKMSAlias']),
         });
         util.createCfnOutput(this, 'MieSNSTopic', {
-            description: "ARN of the MIE SNS Workflow Execution Topic",
+            description: "ARN of the Media Insights on AWS SNS Workflow Execution Topic",
             value: workflowExecutionEventTopic.topicArn,
             exportName: Fn.join(':', [Aws.STACK_NAME, 'MieSNSTopic']),
         });
         util.createCfnOutput(this, 'MieSQSQueue', {
-            description: "ARN of the MIE Workflow Execution Queue",
+            description: "ARN of the Media Insights on AWS Workflow Execution Queue",
             value: workflowExecutionEventQueue.queueArn,
             exportName: Fn.join(':', [Aws.STACK_NAME, 'MieSQSQueue']),
         });

@@ -61,11 +61,11 @@ Object {
       "Type": "String",
     },
     "ExternalBucketArn": Object {
-      "Description": "The ARN for Amazon S3 resources that exist outside the MIE stack which may need to be used as inputs to MIE workflows.",
+      "Description": "The ARN for Amazon S3 resources that exist outside the stack which may need to be used as inputs to the workflows.",
       "Type": "String",
     },
     "FrameworkVersion": Object {
-      "Description": "Version of the Media Insights Engine Framework",
+      "Description": "Version of the Media Insights on AWS Framework",
       "Type": "String",
     },
     "KmsKeyId": Object {
@@ -73,7 +73,7 @@ Object {
       "Type": "String",
     },
     "MediaInsightsEnginePython39Layer": Object {
-      "Description": "Arn of the MIE Python 3.9 lambda layer",
+      "Description": "Arn of the Media Insights on AWS Python 3.9 lambda layer",
       "Type": "String",
     },
     "TracingConfigMode": Object {

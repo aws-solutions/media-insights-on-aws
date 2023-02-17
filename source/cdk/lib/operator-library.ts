@@ -41,17 +41,17 @@ export interface OperatorLibraryStackProps extends NestedStackProps {
      */
     readonly kmsKey: kms.Key;
     /**
-     * Media insights lambda layer (python3.9) containing basic python
+     * Media insights on AWS lambda layer (python3.9) containing basic python
      * dependencies for boto3, chalice, control plane and dataplane
      */
     readonly python39Layer: lambda.ILayerVersion;
     /**
-     * Media insights lambda layer (python3.8) containing basic python
+     * Media insights on AWS lambda layer (python3.8) containing basic python
      * dependencies for boto3, chalice, control plane and dataplane
      */
     readonly python38Layer: lambda.ILayerVersion;
     /**
-     * Media insights lambda layer (python3.7) containing basic python
+     * Media insights on AWS lambda layer (python3.7) containing basic python
      * dependencies for boto3, chalice, control plane and dataplane
      */
     readonly python37Layer: lambda.ILayerVersion;
@@ -85,7 +85,7 @@ export class OperatorLibraryStack extends NestedStack {
         });
         const externalBucketArn = new CfnParameter(this, 'ExternalBucketArn', {
             type: 'String',
-            description: "The ARN for Amazon S3 resources that exist outside the MIE stack which may need to be used as inputs to MIE workflows",
+            description: "The ARN for Amazon S3 resources that exist outside the stack which may need to be used as inputs to the workflows",
         });
         const dataPlaneHandlerArn = new CfnParameter(this, 'DataPlaneHandlerArn', {
             type: 'String',
@@ -93,7 +93,7 @@ export class OperatorLibraryStack extends NestedStack {
         });
         const workflowCustomResourceArn = new CfnParameter(this, 'WorkflowCustomResourceArn', {
             type: 'String',
-            description: "ARN of the Media insights custom resource that handles creating operations, stages and workflows",
+            description: "ARN of the Media insights on AWS custom resource that handles creating operations, stages and workflows",
         });
         const startWaitOperationLambda = new CfnParameter(this, 'StartWaitOperationLambda', {
             type: 'String',

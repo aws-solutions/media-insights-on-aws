@@ -8,7 +8,7 @@
 #
 # USAGE:
 #  ./build-s3-dist.sh [-h] [-v] [--no-layer] --template-bucket {TEMPLATE_BUCKET} --code-bucket {CODE_BUCKET} --version {VERSION} --region {REGION} --profile {PROFILE}
-#    TEMPLATE_BUCKET should be the name for the S3 bucket location where MI
+#    TEMPLATE_BUCKET should be the name for the S3 bucket location where Media Insights on AWS
 #      cloud formation templates should be saved.
 #    CODE_BUCKET should be the name for the S3 bucket location where cloud
 #      formation templates should find Lambda source code packages.
@@ -224,7 +224,7 @@ echo "mkdir -p $regional_dist_dir"
 mkdir -p "$regional_dist_dir"
 
 echo "------------------------------------------------------------------------------"
-echo "Building MIHelper package"
+echo "Building Media Insights on AWS Helper package"
 echo "------------------------------------------------------------------------------"
 
 cd "$source_dir"/lib/MediaInsightsEngineLambdaHelper || exit 1
@@ -261,15 +261,15 @@ else
   rm -f Media_Insights_Engine*.whl
   cp -R "$source_dir"/lib/MediaInsightsEngineLambdaHelper .
   cd MediaInsightsEngineLambdaHelper/ || exit 1
-  echo "Building MI Lambda Helper python library"
+  echo "Building Media Insights on AWS Lambda Helper python library"
   python3 setup.py bdist_wheel > /dev/null
   cp dist/*.whl ../
   cp dist/*.whl "$source_dir"/lib/MediaInsightsEngineLambdaHelper/dist/
-  echo "MI Lambda Helper python library is at $source_dir/lib/MediaInsightsEngineLambdaHelper/dist/"
+  echo "Media Insights on AWS Lambda Helper python library is at $source_dir/lib/MediaInsightsEngineLambdaHelper/dist/"
   cd "$source_dir"/lib/MediaInsightsEngineLambdaHelper/dist/ || exit 1
   ls -1 "$(pwd)"/*.whl
   if [ $? -ne 0 ]; then
-    echo "ERROR: Failed to build MI Lambda Helper python library"
+    echo "ERROR: Failed to build Media Insights on AWS Lambda Helper python library"
     exit 1
   fi
   cd "$build_dir"/lambda_layer_factory/ || exit 1
@@ -863,23 +863,24 @@ if [[ ! "$global_bucket" =~ solutions(-[a-z]+)?-reference ]]; then
   echo "** secured (not world-writeable, public access blocked) before continuing.   **"
   echo "*******************************************************************************"
   echo "*******************************************************************************"
-  echo "PROCEED WITH UPLOAD? (y/n) [n]: "
-  read input
+  read -p "PROCEED WITH UPLOAD? (y/n) [n]: " input
   if [ "$input" != "y" ] ; then
       echo "Upload aborted."
       exit
   fi
 
+  solution_name=media-insights-on-aws
+
   echo "=========================================================================="
-  echo "Deploying $solution_name version $version to bucket $bucket-$region"
+  echo "Deploying $solution_name version $version to bucket ${regional_bucket}-$region"
   echo "=========================================================================="
   echo "Templates: ${global_bucket}/$solution_name/$version/"
   echo "Lambda code: ${regional_bucket}-${region}/$solution_name/$version/"
   echo "---"
 
   set -x
-  aws s3 sync $global_dist_dir s3://$global_bucket/media-insights-on-aws/$version/ $(if [ ! -z $profile ]; then echo "--profile $profile"; fi)
-  aws s3 sync $regional_dist_dir s3://${regional_bucket}-${region}/media-insights-on-aws/$version/ $(if [ ! -z $profile ]; then echo "--profile $profile"; fi)
+  aws s3 sync $global_dist_dir s3://$global_bucket/${solution_name}/$version/ $(if [ ! -z $profile ]; then echo "--profile $profile"; fi)
+  aws s3 sync $regional_dist_dir s3://${regional_bucket}-${region}/${solution_name}/$version/ $(if [ ! -z $profile ]; then echo "--profile $profile"; fi)
   set +x
 
   echo "------------------------------------------------------------------------------"
@@ -888,11 +889,11 @@ if [[ ! "$global_bucket" =~ solutions(-[a-z]+)?-reference ]]; then
 
   echo ""
   echo "Template to deploy:"
-  echo "TEMPLATE='"https://"$global_bucket"."$s3domain"/media-insights-on-aws/"$version"/${root_template}-stack.template"'"
+  echo "TEMPLATE='https://${global_bucket}.${s3domain}/${solution_name}/${version}/${root_template}-stack.template'"
 
   # Save the template URI for test automation scripts:
   touch templateUrl.txt
-  echo "https://"$global_bucket"."$s3domain"/media-insights-on-aws/"$version"/${root_template}-stack.template" > templateUrl.txt
+  echo "https://${global_bucket}.${s3domain}/${solution_name}/${version}/${root_template}-stack.template" > templateUrl.txt
 fi
 
 cleanup

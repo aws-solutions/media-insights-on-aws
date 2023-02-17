@@ -174,7 +174,7 @@ export class SourceCodeHelper {
 }
 
 /**
- * Tag the construct with the media insights environment tag.
+ * Tag the construct with the media insights on aws environment tag.
  */
 export function addMediaInsightsTag(scope: IConstruct): void {
     Tags.of(scope).add('environment', 'mie');

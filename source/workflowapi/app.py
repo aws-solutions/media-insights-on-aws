@@ -1,6 +1,6 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-
 # SPDX-License-Identifier: Apache-2.0
+
 from chalice import Chalice
 from chalice import IAMAuthorizer
 from chalice import NotFoundError, BadRequestError, ChaliceViewError, ConflictError

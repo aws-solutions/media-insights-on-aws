@@ -39,6 +39,11 @@ artifacts:
       - source/**/*
       - deployment/**/*
       - CHANGELOG.md
+      - README.md
+      - LICENSE.txt
+      - NOTICE.txt
+      - CODE_OF_CONDUCT.md
+      - CONTRIBUTING.md
       - buildspec.yml
       - sonar-project.properties
-      - coverage-reports/*
+      - .github/**/*

@@ -71,7 +71,7 @@ def get_status(event, get_rek_status, metadata_error_key):
     is_paginated = "PageToken" in metadata
 
     # Read and persist 10 reko pages per invocation of this Lambda
-    for _page_number in range(11):
+    for _ in range(11):
         # Get reko results
         print("job id: " + job_id + " page token: " + pagination_token)
         try:

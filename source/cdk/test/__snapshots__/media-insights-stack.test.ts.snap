@@ -2701,6 +2701,16 @@ def handler(event, context):
                   },
                 },
                 Object {
+                  "Action": "lambda:InvokeFunction",
+                  "Effect": "Allow",
+                  "Resource": Object {
+                    "Fn::GetAtt": Array [
+                      "WorkflowSchedulerLambda",
+                      "Arn",
+                    ],
+                  },
+                },
+                Object {
                   "Action": "states:StartExecution",
                   "Condition": Object {
                     "StringEquals": Object {
@@ -2830,16 +2840,6 @@ def handler(event, context):
                       ],
                     },
                   ],
-                },
-                Object {
-                  "Action": "lambda:InvokeFunction",
-                  "Effect": "Allow",
-                  "Resource": Object {
-                    "Fn::GetAtt": Array [
-                      "WorkflowSchedulerLambda",
-                      "Arn",
-                    ],
-                  },
                 },
                 Object {
                   "Action": Array [

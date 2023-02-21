@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Added AWS CDK infrastructure in source/cdk directory
 * Added ServiceCatalog AppRegistry Application
 
-### Changes:
+### Changed
 
 * Removed Lambda Layer references for deprecated Python version 3.6
 * Removed CloudFormation templates from deployment directory
@@ -74,7 +74,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security:
 
 * Upgrade python runtimes for lambda functions from python 3.8 to 3.9. (#647)
-* Support encryption options for the create_parallel_data function in Amazon Transcribe (#599). This change altered the Workflow API in a way that is not backwards compatible.
+* Support encryption options for the create\_parallel\_data function in Amazon Transcribe (#599). This change altered the Workflow API in a way that is not backwards compatible.
 * Relocate MIE lambda layers (#676)
 
 ## [3.0.4] - 2021-11-8
@@ -101,9 +101,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed:
 
 * Fix a pagination bug that prevented the control plane from handling more than 50 concurrent workflow executions (#609)
-
-### Documentation:
-
 * Fix an error in the documentation for building MIE from scratch (#602)
 
 ### Security:
@@ -129,11 +126,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [3.0.1] - 2021-07-22
 
-### Documentation:
-
-* Sphinx generated API documentation copied to the Implementation Guide (#532)
-
-### Security:
+### Security
 
 * Validate SSL certificates when making calls to API Gateway (#525)
 * Update Python modules known to have possible security implications (#526)
@@ -141,6 +134,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### CI/CD Automation:
 
+* Sphinx generated API documentation copied to the Implementation Guide (#532)
 * Add a one-click deploy option for the AWS region in eu-west-1 Ireland (#536)
 
 ## [3.0.0] - 2021-06-25
@@ -163,12 +157,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Upgrade urllib version (#490, 491)
 
-### CI/CD Automation:
+### Changed
 
 * Validate S3 bucket ownership before uploading build artifacts (#499)
-
-### Documentation:
-
 * The implementation guide now explains about how to start workflows programmatically and provides Python code samples for doing so. These examples can be used to set up an S3 trigger for workflow execution. (#489)
 
 ## [2.0.5] - 2021-04-09
@@ -187,13 +178,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Allow user-specified KMS keys for Comprehend (#407, #409)
 
-### CI/CD Automation:
+### Changed
 
 * Resolve cfn nag failures and warnings (#393, #440)
 * Resolve viperlight failures and warnings (#418)
-
-### Documentation:
-
 * Fix broken hyperlink to Implementation Guide (#385)
 * Document uninstall instructions (#412)
 * Apply feedback from tech writing (#416)
@@ -211,7 +199,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Enhance strategies for achieving least privilege (#383)
 * (#393) Enhance strategies for achieving least privilege
 
-### Documentation:
+### Fixed
 
 * Fix broken links in the Implementation Guide (#385)
 
@@ -228,11 +216,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Added the default MaxConcurrentWorkflow configuration to the table used for storing system configuration. (#360)
 * Improved the robustness of asset reprocessing. (#369)
 
-### CI/CD Automation:
+### Changed
 
 * Added status badges for automated tests to README.
 
-### Documentation:
+### Added
 
 * Added Implementation Guide for MIE, including new info about the kinesis data stream and limitations with the /workflow/operation API resource. (#353)
 
@@ -263,7 +251,7 @@ Also added a new GitHub Pages site that contains API reference documentation (ht
 
 * Implemented a security mechanism that allows the StepFunction role to be scoped down to MIE specific lambdas (#291)
 
-### Documentation:
+### Added
 
 * New documentation website that is hosted on Github Pages (#295)
 
@@ -300,6 +288,7 @@ The new release pipelines enable the MIE development team to easily accept Pull 
 * New "Scheduled" build, test, deploy, workflow (#323)
 * New "Release" workflow (#323)
 * Added code coverage analysis to unit tests (#323)
+Version bumped MIE helper lib
 
 ### Security:
 
@@ -308,11 +297,6 @@ The new release pipelines enable the MIE development team to easily accept Pull 
 ### Fixed:
 
 * Fix bug in retrieve asset metadata method in the MIE helper lib (#299)
-
-### Misc:
-
-Version bumped MIE helper lib
-
 
 ## [2.0.0] - 2020-12-04
 
@@ -331,13 +315,14 @@ Version 2.0.0 of the Media Insights Engine introduces some significant changes a
 
 * Add X-Ray tracing to MIE stack (#252)
 
-### CI/CD Automation:
+### Changed
 
 * Multiple deployments of the framework supported in one region (#260)
 * Tiered test strategy in place (unit, integ, e2e) (#253)
 * IAM authentication support for tests #266 (#266)
+* Updated documentation on how to test the framework (#266)
 
-### Fixed:
+### Fixed
 
 * Removed the IAM tag condition for step functions execution; this was causing a rollback failure (#190)
 * Version locked the s3 signature version to s3v4 in the dataplane API (#255)
@@ -345,9 +330,9 @@ Version 2.0.0 of the Media Insights Engine introduces some significant changes a
 * Version locked dependencies for the MIE lambda layer build script (#263)
 * Added a function to only patch modules for xray if on AWS compute (#266)
 
-### Documentation:
+### Removed
 
-* Updated documentation on how to test the framework (#266)
+* Removed stale pipeline configs
 
 ### CI/CD Automation:
 
@@ -365,15 +350,15 @@ This release (v1.0.0) focuses on removing cruft and reorganizing the core MIE fr
   * Major version rev indicates incompatiblity with previous front-ends
 
 * New security features:
-  * Support for AWS_IAM
+  * Support for AWS\_IAM
 
 * New installation options
   * Option 1: Install front-end only
   * Option 2: Install front-end / back-end bundle
 
-### Documentation:
+### Changed
 
-* IMPLEMENTATION_GUIDE.md moved to front-end repo.
+* IMPLEMENTATION\_GUIDE.md moved to front-end repo.
 
 
 ## [0.1.8] - 2020-06-22
@@ -384,7 +369,7 @@ This release (v1.0.0) focuses on removing cruft and reorganizing the core MIE fr
 
 * You will have two new Video operations to choose from in the workflow configuration dialog. You can detect both technical cues and shots.
 
-### Documentation:
+### Changed
 
 * General reformatting of the readme page.
 * Additional steps on the installation of MIE are now available.
@@ -399,7 +384,7 @@ This release includes a new feature for reprocessing videos and an important bug
 
 * The analysis view in the GUI includes a new link to “Perform Additional Analysis”, as shown in the screenshot below. This link takes you to the upload page where you can run a different workflow configuration without uploading the video again. The resulting analysis data will be saved using the same asset id.
 
-### Documentation:
+### Changed
 
 * Users are encouraged to join the MIE public chat forum on Gitter. This forum was created to foster communication between MIE users external to AWS.
 
@@ -418,14 +403,11 @@ This release includes new operators, cost optimizations, improved documentation 
 * MediaInfo: codec info and other file metadata is searchable and shown in the GUI under the video player
 * Transcode: MIE leverages MediaConvert to support many more video and image formats including Flash, Quicktime, MXF, and MKV. See https://docs.aws.amazon.com/mediaconvert/latest/ug/reference-codecs-containers.html for a full list of supported video formats.
 
-### Cost:
+### Changed
 
 * Reduced cost by deploying the free tier for Elasticsearch
-* Pricing information for MIE resources is now included in README.md (https://github.com/awslabs/aws-media-insights-engine/blob/master/README.md)
-
-### Documentation:
-
-* The Developer guide is now included in IMPLEMENTATION_GUIDE.md (https://github.com/awslabs/aws-media-insights-engine/blob/master/IMPLEMENTATION_GUIDE.md)
+* Pricing information for MIE resources is now included in README.md <https://github.com/awslabs/aws-media-insights-engine/blob/master/README.md>
+* The Developer guide is now included in IMPLEMENTATION\_GUIDE.md <https://github.com/awslabs/aws-media-insights-engine/blob/master/IMPLEMENTATION_GUIDE.md>
 
 ### Security:
 
@@ -446,14 +428,14 @@ This Media Insights Engine Beta 0.1.5 release includes changes necessary to supp
 ### New:
 
 * The key to supporting 2 hour videos was to allow step functions to pass a pagination token from one "check status" Lambda invocation to another. Now, Rekognition operators will persist 10 pages at a time, then stop and pass the pagination token to the step function so it can repeatedly restart the "check status" Lambda until there are no more pages left to read.
-* Prior to this release, Rekognition operators would timeout when trying to save large quantities of paged results, which was often the case with label_detection and face_detection.
+* Prior to this release, Rekognition operators would timeout when trying to save large quantities of paged results, which was often the case with label\_detection and face\_detection.
 * Increase timeouts and memory allocations for Lambda functions based on test results from a 2 hour movie.
 * Add API documentation to README
 * Split input text in the translate operator so it does not exceed the 5000 characters max allowed by AWS Translate service limit.
 * Split bulk elasticsearch inserts in order to avoid exceeding max payload size
 * If data is empty, skip ES insert. Data is often empty for operators like content moderation when processing non-explicit videos.
 
-### GUI changes:
+### Changed
 
 * Remove unusued GUI artifacts for Polly and AutoML.
 * Fix autofill for 1Password on the Login form
@@ -461,8 +443,5 @@ This Media Insights Engine Beta 0.1.5 release includes changes necessary to supp
 * Allow analysis button to open in new tab
 * Fade delete alert after 5 seconds
 * Change workflow configuration form so users only have to set the language for Transcribe and Translate once. Used to be that users would have to set that language preference twice, but now, since both Transcribe and Translate use the same source language, users can just specify this option once.
-
-### CloudFormation template changes:
-
 * Make the Cloudfront URL a clickable link in the outputs from both the webapp CF template and the base stack template.
 * Update the email template for the Cognito invite message so it includes a link to the stack.

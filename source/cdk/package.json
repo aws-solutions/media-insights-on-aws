@@ -1,6 +1,12 @@
 {
     "name": "media-insights-on-aws",
     "version": "5.1.0",
+    "description": "Synthesize templates for Media Insights on AWS using AWS Cloud Development Kit (CDK).",
+    "license": "Apache-2.0",
+    "author": {
+        "name": "Amazon Web Services",
+        "url": "https://aws.amazon.com/solutions"
+    },
     "bin": {
         "media-insights": "bin/media-insights.js"
     },
@@ -8,8 +14,6 @@
         "type": "git",
         "url": "https://github.com/aws-solutions/media-insights-on-aws"
     },
-    "author": "AWS Solution Builders",
-    "license": "Apache-2.0",
     "scripts": {
         "cleanup": "tsc --build ./ --clean && cdk context --clear && rm -rf node_modules dist cdk.out coverage && rm -f package-lock.json",
         "cleanup:tsc": "tsc --build ./ --clean",

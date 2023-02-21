@@ -26,6 +26,7 @@ orig_source_dir="$orig_template_dir/../source"
 dist_dir="$orig_template_dir/open-source/"$1""
 dist_template_dir="$dist_dir/deployment"
 dist_source_dir="$dist_dir/source"
+dist_github_dir="$dist_dir/.github"
 
 echo "------------------------------------------------------------------------------"
 echo "[Init] Clean old open-source folder"
@@ -72,6 +73,16 @@ echo "cp $orig_template_dir/../CONTRIBUTING.md $dist_dir"
 cp $orig_template_dir/../CONTRIBUTING.md $dist_dir
 echo "cp $orig_template_dir/../CHANGELOG.md $dist_dir"
 cp $orig_template_dir/../CHANGELOG.md $dist_dir
+
+echo "------------------------------------------------------------------------------"
+echo "[Packing] .github"
+echo "------------------------------------------------------------------------------"
+echo "mkdir -p $dist_github_dir"
+mkdir -p "$dist_github_dir"
+echo "cp $orig_template_dir/../.github/PULL_REQUEST_TEMPLATE.md $dist_github_dir/"
+cp "$orig_template_dir/../.github/PULL_REQUEST_TEMPLATE.md" "$dist_github_dir/"
+echo "cp -R $orig_template_dir/../.github/ISSUE_TEMPLATE $dist_github_dir/"
+cp -R "$orig_template_dir/../.github/ISSUE_TEMPLATE" "$dist_github_dir/"
 
 echo "------------------------------------------------------------------------------"
 echo "[Packing] Remove compiled python and node.js files"

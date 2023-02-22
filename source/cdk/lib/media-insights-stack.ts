@@ -333,6 +333,7 @@ export class MediaInsightsStack extends Stack {
 
         const dataplaneLogsBucket = new s3.Bucket(this, 'DataplaneLogsBucket', {
             enforceSSL: true,
+            versioned: true,
             accessControl: s3.BucketAccessControl.LOG_DELIVERY_WRITE,
             encryption: s3.BucketEncryption.S3_MANAGED,
             blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
@@ -346,6 +347,7 @@ export class MediaInsightsStack extends Stack {
 
         const dataplaneBucket = new s3.Bucket(this, 'Dataplane', {
             enforceSSL: true,
+            versioned: true,
             encryptionKey: keyAlias,
             encryption: s3.BucketEncryption.KMS,
             blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,

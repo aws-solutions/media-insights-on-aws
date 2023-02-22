@@ -1268,6 +1268,9 @@ Object {
             "Value": "mie",
           },
         ],
+        "VersioningConfiguration": Object {
+          "Status": "Enabled",
+        },
       },
       "Type": "AWS::S3::Bucket",
       "UpdateReplacePolicy": "Retain",
@@ -1319,6 +1322,9 @@ Object {
             "Value": "mie",
           },
         ],
+        "VersioningConfiguration": Object {
+          "Status": "Enabled",
+        },
       },
       "Type": "AWS::S3::Bucket",
       "UpdateReplacePolicy": "Retain",

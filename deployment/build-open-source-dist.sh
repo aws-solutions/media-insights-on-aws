@@ -47,6 +47,8 @@ echo "[Packing] Build Script"
 echo "------------------------------------------------------------------------------"
 echo "cp $orig_template_dir/build-s3-dist.sh $dist_template_dir"
 cp "$orig_template_dir"/build-s3-dist.sh "$dist_template_dir"
+echo "cp $orig_template_dir/run-unit-tests.sh $dist_template_dir"
+cp "$orig_template_dir"/run-unit-tests.sh "$dist_template_dir"
 echo "cp -R $orig_template_dir/cdk-solution-helper $dist_template_dir/"
 cp -R "$orig_template_dir"/cdk-solution-helper "$dist_template_dir"/
 

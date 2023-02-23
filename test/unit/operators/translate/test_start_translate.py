@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 import pytest, json
 from botocore.response import StreamingBody
 from io import BytesIO
@@ -52,6 +55,7 @@ def test_input_parameter():
     with pytest.raises(MediaInsightsEngineLambdaHelper.MasExecutionError) as err:
         lambda_function.lambda_handler(operator_parameter, {})
     assert err.value.args[0]['Status'] == 'Error'
+
     assert "No valid inputs 'S3Key'" in err.value.args[0]['MetaData']['TranslateError']
 
 def test_target_language_not_provided():

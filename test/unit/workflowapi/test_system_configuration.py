@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 system_configuration_endpoint = '/system/configuration'
 
 def test_create_system_configuration_api_input_error(test_client):

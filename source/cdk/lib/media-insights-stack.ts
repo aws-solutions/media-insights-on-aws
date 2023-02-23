@@ -333,6 +333,7 @@ export class MediaInsightsStack extends Stack {
 
         const dataplaneLogsBucket = new s3.Bucket(this, 'DataplaneLogsBucket', {
             enforceSSL: true,
+            versioned: true,
             accessControl: s3.BucketAccessControl.LOG_DELIVERY_WRITE,
             encryption: s3.BucketEncryption.S3_MANAGED,
             blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
@@ -346,6 +347,7 @@ export class MediaInsightsStack extends Stack {
 
         const dataplaneBucket = new s3.Bucket(this, 'Dataplane', {
             enforceSSL: true,
+            versioned: true,
             encryptionKey: keyAlias,
             encryption: s3.BucketEncryption.KMS,
             blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
@@ -564,96 +566,98 @@ export class MediaInsightsStack extends Stack {
             { id: 'AwsSolutions-IAM5', reason: "Resource ARNs are not generated at the time of policy creation", },
         ]);
 
+        const lambdaRolePolicyStatements = [
+            new iam.PolicyStatement({
+                effect: iam.Effect.ALLOW,
+                actions: ['states:StartExecution'],
+                resources: [
+                    Stack.of(this).formatArn({
+                        service: 'states',
+                        resource: 'stateMachine',
+                        resourceName: '*',
+                        arnFormat: ArnFormat.COLON_RESOURCE_NAME,
+                    })
+                ],
+                conditions: {
+                    StringEquals: {
+                        ['aws:ResourceTag/environment']: 'mie'
+                    }
+                }
+            }),
+            new iam.PolicyStatement({
+                effect: iam.Effect.ALLOW,
+                actions: [
+                    "dynamodb:GetItem",
+                    "dynamodb:Query",
+                    "dynamodb:Scan",
+                    "dynamodb:DescribeTable",
+                    "dynamodb:BatchGetItem",
+                    "dynamodb:GetRecords",
+                    "dynamodb:DescribeLimits",
+                    "dynamodb:PutItem",
+                    "dynamodb:UpdateItem",
+                    "dynamodb:DeleteItem",
+                    "dynamodb:BatchWriteItem",
+                ],
+                resources: [
+                    workflowTable.tableArn,
+                    workflowExecutionTable.tableArn,
+                    `${workflowExecutionTable.tableArn}/index/*`,
+                    systemTable.tableArn,
+                ],
+            }),
+            new iam.PolicyStatement({
+                effect: iam.Effect.ALLOW,
+                actions: [
+                    'logs:CreateLogGroup',
+                    'logs:CreateLogStream',
+                    'logs:PutLogEvents',
+                ],
+                resources: [
+                    Stack.of(this).formatArn({
+                        service: 'logs',
+                        resource: 'log-group',
+                        resourceName: '/aws/lambda/*',
+                        arnFormat: ArnFormat.COLON_RESOURCE_NAME,
+                    })
+                ],
+            }),
+            new iam.PolicyStatement({
+                effect: iam.Effect.ALLOW,
+                actions: [
+                    "sqs:DeleteMessage",
+                    "sqs:ListQueues",
+                    "sqs:ChangeMessageVisibility",
+                    "sqs:ReceiveMessage",
+                    "sqs:SendMessage",
+                ],
+                resources: [
+                    stageExecutionQueue.queueArn,
+                    workflowExecutionLambdaDeadLetterQueue.queueArn,
+                ],
+            }),
+            new iam.PolicyStatement({
+                effect: iam.Effect.ALLOW,
+                actions: [
+                    "xray:PutTraceSegments",
+                    "xray:PutTelemetryRecords",
+                ],
+                resources: ['*'],
+            }),
+            new iam.PolicyStatement({
+                effect: iam.Effect.ALLOW,
+                actions: ['kms:Decrypt'],
+                resources: [
+                    mieKey.keyArn
+                ],
+            }),
+        ];
+
         const stageExecutionRole = new iam.Role(this, 'StageExecutionRole', {
             assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
             inlinePolicies: {
                 [`${Aws.STACK_NAME}-stage-execution-lambda`]: new iam.PolicyDocument({
-                    statements: [
-                        new iam.PolicyStatement({
-                            effect: iam.Effect.ALLOW,
-                            actions: ['states:StartExecution'],
-                            resources: [
-                                Stack.of(this).formatArn({
-                                    service: 'states',
-                                    resource: 'stateMachine',
-                                    resourceName: '*',
-                                    arnFormat: ArnFormat.COLON_RESOURCE_NAME,
-                                })
-                            ],
-                            conditions: {
-                                StringEquals: {
-                                    ['aws:ResourceTag/environment']: 'mie'
-                                }
-                            }
-                        }),
-                        new iam.PolicyStatement({
-                            effect: iam.Effect.ALLOW,
-                            actions: [
-                                "dynamodb:GetItem",
-                                "dynamodb:Query",
-                                "dynamodb:Scan",
-                                "dynamodb:DescribeTable",
-                                "dynamodb:BatchGetItem",
-                                "dynamodb:GetRecords",
-                                "dynamodb:DescribeLimits",
-                                "dynamodb:PutItem",
-                                "dynamodb:UpdateItem",
-                                "dynamodb:DeleteItem",
-                                "dynamodb:BatchWriteItem",
-                            ],
-                            resources: [
-                                workflowTable.tableArn,
-                                workflowExecutionTable.tableArn,
-                                `${workflowExecutionTable.tableArn}/index/*`,
-                                systemTable.tableArn,
-                            ],
-                        }),
-                        new iam.PolicyStatement({
-                            effect: iam.Effect.ALLOW,
-                            actions: [
-                                'logs:CreateLogGroup',
-                                'logs:CreateLogStream',
-                                'logs:PutLogEvents',
-                            ],
-                            resources: [
-                                Stack.of(this).formatArn({
-                                    service: 'logs',
-                                    resource: 'log-group',
-                                    resourceName: '/aws/lambda/*',
-                                    arnFormat: ArnFormat.COLON_RESOURCE_NAME,
-                                })
-                            ],
-                        }),
-                        new iam.PolicyStatement({
-                            effect: iam.Effect.ALLOW,
-                            actions: [
-                                "sqs:DeleteMessage",
-                                "sqs:ListQueues",
-                                "sqs:ChangeMessageVisibility",
-                                "sqs:ReceiveMessage",
-                                "sqs:SendMessage",
-                            ],
-                            resources: [
-                                stageExecutionQueue.queueArn,
-                                workflowExecutionLambdaDeadLetterQueue.queueArn,
-                            ],
-                        }),
-                        new iam.PolicyStatement({
-                            effect: iam.Effect.ALLOW,
-                            actions: [
-                                "xray:PutTraceSegments",
-                                "xray:PutTelemetryRecords",
-                            ],
-                            resources: ['*'],
-                        }),
-                        new iam.PolicyStatement({
-                            effect: iam.Effect.ALLOW,
-                            actions: ['kms:Decrypt'],
-                            resources: [
-                                mieKey.keyArn
-                            ],
-                        }),
-                    ]
+                    statements: lambdaRolePolicyStatements
                 })
             }
         });
@@ -986,75 +990,6 @@ export class MediaInsightsStack extends Stack {
                         }),
                         new iam.PolicyStatement({
                             effect: iam.Effect.ALLOW,
-                            actions: ['states:StartExecution'],
-                            resources: [
-                                Stack.of(this).formatArn({
-                                    service: 'states',
-                                    resource: 'stateMachine',
-                                    resourceName: '*',
-                                    arnFormat: ArnFormat.COLON_RESOURCE_NAME,
-                                })
-                            ],
-                            conditions: {
-                                StringEquals: {
-                                    ['aws:ResourceTag/environment']: 'mie'
-                                }
-                            }
-                        }),
-                        new iam.PolicyStatement({
-                            effect: iam.Effect.ALLOW,
-                            actions: [
-                                "dynamodb:GetItem",
-                                "dynamodb:Query",
-                                "dynamodb:Scan",
-                                "dynamodb:DescribeTable",
-                                "dynamodb:BatchGetItem",
-                                "dynamodb:GetRecords",
-                                "dynamodb:DescribeLimits",
-                                "dynamodb:PutItem",
-                                "dynamodb:UpdateItem",
-                                "dynamodb:DeleteItem",
-                                "dynamodb:BatchWriteItem",
-                            ],
-                            resources: [
-                                workflowTable.tableArn,
-                                workflowExecutionTable.tableArn,
-                                `${workflowExecutionTable.tableArn}/index/*`,
-                                systemTable.tableArn,
-                            ],
-                        }),
-                        new iam.PolicyStatement({
-                            effect: iam.Effect.ALLOW,
-                            actions: [
-                                'logs:CreateLogGroup',
-                                'logs:CreateLogStream',
-                                'logs:PutLogEvents',
-                            ],
-                            resources: [
-                                Stack.of(this).formatArn({
-                                    service: 'logs',
-                                    resource: 'log-group',
-                                    resourceName: '/aws/lambda/*',
-                                    arnFormat: ArnFormat.COLON_RESOURCE_NAME,
-                                })
-                            ],
-                        }),
-                        new iam.PolicyStatement({
-                            effect: iam.Effect.ALLOW,
-                            actions: [
-                                "sqs:DeleteMessage",
-                                "sqs:ListQueues",
-                                "sqs:ChangeMessageVisibility",
-                                "sqs:ReceiveMessage",
-                                "sqs:SendMessage",
-                            ],
-                            resources: [
-                                stageExecutionQueue.queueArn,
-                                workflowExecutionLambdaDeadLetterQueue.queueArn,
-                            ],
-                        }),
-                        new iam.PolicyStatement({
-                            effect: iam.Effect.ALLOW,
                             actions: [
                                 "lambda:InvokeFunction",
                             ],
@@ -1062,21 +997,7 @@ export class MediaInsightsStack extends Stack {
                                 workflowSchedulerLambda.functionArn,
                             ],
                         }),
-                        new iam.PolicyStatement({
-                            effect: iam.Effect.ALLOW,
-                            actions: [
-                                "xray:PutTraceSegments",
-                                "xray:PutTelemetryRecords",
-                            ],
-                            resources: ['*'],
-                        }),
-                        new iam.PolicyStatement({
-                            effect: iam.Effect.ALLOW,
-                            actions: ['kms:Decrypt'],
-                            resources: [
-                                mieKey.keyArn
-                            ],
-                        }),
+                        ...lambdaRolePolicyStatements,
                     ]
                 })
             }

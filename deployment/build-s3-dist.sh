@@ -416,6 +416,7 @@ popd || exit 1
 
 zip -g ./dist/webcaptions.zip ./webcaptions.py
 cp "./dist/webcaptions.zip" "$regional_dist_dir/webcaptions.zip"
+rm -rf ./dist ./package
 
 # ------------------------------------------------------------------------------"
 # Translate Operations
@@ -659,6 +660,7 @@ popd || exit 1
 
 zip -q -g dist/workflowstream.zip ./*.py
 cp "./dist/workflowstream.zip" "$regional_dist_dir/workflowstream.zip"
+rm -rf ./dist ./package
 
 echo "------------------------------------------------------------------------------"
 echo "Dataplane API Stack"
@@ -723,6 +725,7 @@ fi
 popd || exit 1
 zip -q -g ./dist/anonymous-data-logger.zip ./anonymous-data-logger.py
 cp "./dist/anonymous-data-logger.zip" "$regional_dist_dir/anonymous-data-logger.zip"
+rm -rf ./dist ./package
 
 echo "------------------------------------------------------------------------------"
 echo "CloudFormation Templates"

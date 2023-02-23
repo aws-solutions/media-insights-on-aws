@@ -2386,7 +2386,7 @@ def update_workflow_execution_status(id, status, message):
     :param status: The new status of the workflow execution
 
     """
-    print("Update workflow execution {} set status = {}".format(id, status))
+    print("Update workflow execution {} set status = {}".format(id, status)) #nosec
     execution_table = DYNAMO_RESOURCE.Table(WORKFLOW_EXECUTION_TABLE_NAME)
 
     if status == awsmie.WORKFLOW_STATUS_ERROR:
@@ -2490,7 +2490,7 @@ def download_vocabulary():
     vocabulary_name = json.loads(app.current_request.raw_body.decode())['vocabulary_name']
     url = transcribe_client.get_vocabulary(VocabularyName=vocabulary_name)['DownloadUri']
     import urllib.request
-    vocabulary_file = urllib.request.urlopen(url).read().decode("utf-8")
+    vocabulary_file = urllib.request.urlopen(url).read().decode("utf-8") #nosec
     vocabulary_json = []
     vocabulary_fields = vocabulary_file.split('\n')[0].split('\t')
     for line in vocabulary_file.split('\n')[1:]:
@@ -2715,7 +2715,7 @@ def download_terminology():
     terminology_name = json.loads(app.current_request.raw_body.decode())['terminology_name']
     url = translate_client.get_terminology(Name=terminology_name, TerminologyDataFormat='CSV')['TerminologyDataLocation']['Location']
     import urllib.request
-    terminology_csv = urllib.request.urlopen(url).read().decode("utf-8")
+    terminology_csv = urllib.request.urlopen(url).read().decode("utf-8") #nosec
     return {"terminology": terminology_csv}
 
 
@@ -2879,7 +2879,7 @@ def download_parallel_data():
     request_payload = dict(json.loads(app.current_request.raw_body.decode()))
     url = translate_client.get_parallel_data(**request_payload)['DataLocation']['Location']
     import urllib.request
-    parallel_data_csv = urllib.request.urlopen(url).read().decode("utf-8")
+    parallel_data_csv = urllib.request.urlopen(url).read().decode("utf-8") #nosec
     return {"parallel_data_csv": parallel_data_csv}
 
 

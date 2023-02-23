@@ -2,20 +2,22 @@ version: 0.2
 
 ###############################################################################
 # DO NOT MODIFY THIS FILE.
-# This file is used by the build pipeline for the [MIE solution](https://aws.amazon.com/solutions/implementations/aws-media-insights-engine/).
+# This file is used by the build pipeline for the [Media Insights on AWS solution](https://aws.amazon.com/solutions/implementations/media-insights-on-aws/).
 ###############################################################################
 
 phases:
   install:
     runtime-versions:
-      nodejs: 12
-      python: 3.9
+      nodejs: 16
+      python: 3.10
     commands:
       - echo "nothing to do in install"
   pre_build:
     commands:
       - echo "Installing dependencies and executing unit tests - `pwd`"
-      - cd deployment
+      - echo "Update npm to latest"
+      - npm install -g npm@latest
+      - cd deployment && chmod +x ./run-unit-tests.sh && ./run-unit-tests.sh
       - echo "Installing dependencies and executing unit tests completed `date`"
   build:
     commands:
@@ -34,6 +36,14 @@ phases:
       - echo "Post build completed on `date`"
 artifacts:
   files:
+      - source/**/*
       - deployment/**/*
       - CHANGELOG.md
+      - README.md
+      - LICENSE.txt
+      - NOTICE.txt
+      - CODE_OF_CONDUCT.md
+      - CONTRIBUTING.md
       - buildspec.yml
+      - sonar-project.properties
+      - .github/**/*

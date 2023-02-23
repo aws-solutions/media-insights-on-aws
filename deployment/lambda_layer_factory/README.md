@@ -1,6 +1,6 @@
 # AWS Lambda Layer factory
 
-This factory creates AWS Lambda layers for user-specified Python libraries. Separate zip files will be generated for Python 3.6, 3.7, 3.8, and 3.9 execution environments.
+This factory creates AWS Lambda layers for user-specified Python libraries. Separate zip files will be generated for Python 3.7, 3.8, and 3.9 execution environments.
 
 ## USAGE:
 
@@ -34,7 +34,6 @@ Run the `build-lambda-layer.sh` script to build and deploy a Lamba layer contain
 
 To validate that the Lambda layers were created, do this:
 ```
-aws lambda list-layer-versions --layer-name lambda_layer-python36 --output text --query 'LayerVersions[0].LayerVersionArn'
 aws lambda list-layer-versions --layer-name lambda_layer-python37 --output text --query 'LayerVersions[0].LayerVersionArn'
 aws lambda list-layer-versions --layer-name lambda_layer-python38 --output text --query 'LayerVersions[0].LayerVersionArn'
 aws lambda list-layer-versions --layer-name lambda_layer-python39 --output text --query 'LayerVersions[0].LayerVersionArn'
@@ -42,7 +41,7 @@ aws lambda list-layer-versions --layer-name lambda_layer-python39 --output text 
 
 To validate that the Lambda layer includes certain libraries, for example `pymediainfo`, do this:
 ```
-cd .../aws-media-insights-engine/
+cd .../media-insights-on-aws/
 PYTHONPATH=./source/lib/MediaInsightsEngineLambdaHelper/ python3 -c "import pymediainfo"
 ```
 If you do not see a ModuleNotFoundError then the layer contains library is missing from the layer.

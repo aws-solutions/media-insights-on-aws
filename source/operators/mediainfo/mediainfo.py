@@ -54,7 +54,7 @@ def get_signed_url(s3_cli, expires_in, bucket, obj):
     return presigned_url
 
 
-def lambda_handler(event, context):
+def lambda_handler(event, _context):
     print("We got the following event:\n", event)
     operator_object = MediaInsightsOperationHelper(event)
     bucket = ''
@@ -133,19 +133,13 @@ def lambda_handler(event, context):
     metadata_upload = dataplane.store_asset_metadata(asset_id, operator_object.name, workflow_id, metadata_json)
 
     # Validate that the metadata was saved to the dataplane
-    if "Status" not in metadata_upload:
-        operator_object.add_workflow_metadata(
-            MediainfoError="Unable to upload metadata for asset: {asset}".format(asset=asset_id))
-        operator_object.update_workflow_status("Error")
-        raise MasExecutionError(operator_object.return_output_object())
-    else:
+    if metadata_upload.get("Status", '') == "Success":
         # Update the workflow status
-        if metadata_upload["Status"] == "Success":
-            print("Uploaded metadata for asset: {asset}".format(asset=asset_id))
-            operator_object.update_workflow_status("Complete")
-            return operator_object.return_output_object()
-        else:
-            operator_object.add_workflow_metadata(
-                MediainfoError="Unable to upload metadata for asset: {asset}".format(asset=asset_id))
-            operator_object.update_workflow_status("Error")
-            raise MasExecutionError(operator_object.return_output_object())
+        print("Uploaded metadata for asset: {asset}".format(asset=asset_id))
+        operator_object.update_workflow_status("Complete")
+        return operator_object.return_output_object()
+
+    operator_object.add_workflow_metadata(
+        MediainfoError="Unable to upload metadata for asset: {asset}".format(asset=asset_id))
+    operator_object.update_workflow_status("Error")
+    raise MasExecutionError(operator_object.return_output_object())

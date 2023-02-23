@@ -52,7 +52,7 @@ headers = {"Content-Type": "application/json"}
 
 kms_id = os.environ['KmsId']
 
-def lambda_handler(event, context):
+def lambda_handler(event, _context):
     print("We got this event:\n", event)
     operator_object = MediaInsightsOperationHelper(event)
     try:

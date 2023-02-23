@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 ###############################################################################
-# Integration testing for the MIE dataplane API
+# Integration testing for the MI dataplane API
 #
 # PRECONDITIONS:
-# MIE base stack must be deployed in your AWS account
+# MI base stack must be deployed in your AWS account
 #
 # Boto3 will raise a deprecation warning (known issue). It's safe to ignore.
 #

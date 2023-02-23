@@ -3,33 +3,26 @@
 
 from chalice import Chalice
 from chalice import IAMAuthorizer
-from chalice import NotFoundError, BadRequestError, ChaliceViewError, Response, ConflictError, CognitoUserPoolAuthorizer
+from chalice import NotFoundError, BadRequestError, ChaliceViewError, ConflictError
 import boto3
 from boto3 import resource
 from botocore.client import ClientError
-from boto3.dynamodb.conditions import Key, Attr
+from boto3.dynamodb.conditions import Attr
 from aws_xray_sdk.core import xray_recorder
 from aws_xray_sdk.core import patch_all
 
 import uuid
 import logging
 import os
-# from datetime import date
-# from datetime import time
 from datetime import datetime
 from operator import itemgetter
 from botocore import config
 import json
-import time
 import decimal
-import signal
-from operator import itemgetter
 from jsonschema import validate, ValidationError
-# from urllib2 import build_opener, HTTPHandler, Request
 from urllib.request import build_opener, HTTPHandler, Request
 from MediaInsightsEngineLambdaHelper import DataPlane
 from MediaInsightsEngineLambdaHelper import Status as awsmie
-import os
 
 APP_NAME = "workflowapi"
 API_STAGE = "dev"
@@ -38,12 +31,23 @@ app.debug = True
 API_VERSION = "3.0.0"
 FRAMEWORK_VERSION = os.environ['FRAMEWORK_VERSION']
 
+S_OUTPUTS = "$.Outputs"
+S_STATUS = "$.Status"
+ATT_NAME_WORKFLOW_NAME = '#workflow_name'
+ATT_NAME_WORKFLOW_STATUS = '#workflow_status'
+ATT_VALUE_WORKFLOW_STATUS = ':workflow_status'
+CREATE = 'CREATE!'
+UPDATE = 'UPDATE!'
+DELETE = 'DELETE!'
+FAILED = 'FAILED!'
+RESOURCE_CREATE_SUCCESS = "Resource creation successful!"
+RESOURCE_UPDATE_SUCCESS = "Resource update successful!"
+RESOURCE_DELETE_SUCCESS = "Resource deletion successful!"
+UNEXPECTED_CLOUD_FORMATION_EVENT = "Unexpected event received from CloudFormation"
+
 
 def is_aws():
-    if os.getenv('AWS_LAMBDA_FUNCTION_NAME') is None:
-        return False
-    else:
-        return True
+    return os.getenv('AWS_LAMBDA_FUNCTION_NAME') is not None
 
 
 if is_aws():
@@ -73,7 +77,7 @@ HISTORY_TABLE_NAME = os.environ["HISTORY_TABLE_NAME"]
 STAGE_EXECUTION_QUEUE_URL = os.environ["STAGE_EXECUTION_QUEUE_URL"]
 STAGE_EXECUTION_ROLE = os.environ["STAGE_EXECUTION_ROLE"]
 STEP_FUNCTION_LOG_GROUP_ARN = os.environ["STEP_FUNCTION_LOG_GROUP_ARN"]
-# FIXME testing NoQ execution
+# TODO testing NoQ execution
 COMPLETE_STAGE_LAMBDA_ARN = os.environ["COMPLETE_STAGE_LAMBDA_ARN"]
 FILTER_OPERATION_LAMBDA_ARN = os.environ["FILTER_OPERATION_LAMBDA_ARN"]
 OPERATOR_FAILED_LAMBDA_ARN = os.environ["OPERATOR_FAILED_LAMBDA_ARN"]
@@ -99,6 +103,13 @@ IAM_RESOURCE = boto3.resource('iam', config=config)
 
 # Lambda
 LAMBDA_CLIENT = boto3.client("lambda", config=config)
+
+# Transcribe
+TRANSCRIBE_CLIENT = None
+
+# Translate
+TRANSLATE_CLIENT = None
+
 # Helper class to convert a DynamoDB item to JSON.
 
 authorizer = IAMAuthorizer()
@@ -111,7 +122,7 @@ class DecimalEncoder(json.JSONEncoder):
         return super(DecimalEncoder, self).default(o)
 
 
-def checkRequiredInput(key, dict, objectname):
+def check_required_input(key, dict, objectname):
     if key not in dict:
         raise BadRequestError("Key '%s' is required in '%s' input" % (
             key, objectname))
@@ -121,13 +132,27 @@ def load_apischema():
     schemata = {}
     schema_directory = os.path.dirname(__file__) + "/chalicelib/apischema/"
     for f in os.listdir(schema_directory):
-        with open(schema_directory +f) as schema_file:
+        with open(schema_directory + f) as schema_file:
             schema = json.load(schema_file)
             schemata[schema['title']] = schema
             logger.info("Loaded schema: {}".format(json.dumps(schema)))
     return schemata
 
+
+def log_exception(error):
+    logger.error("Exception {}".format(error))
+
+
+def log_bad_request_error(error):
+    logger.error("got bad request error: {}".format(error))
+
+
+def format_exception(error):
+    return "Exception '%s'" % error
+
+
 SCHEMA = load_apischema()
+
 
 @app.route('/')
 def index():
@@ -174,7 +199,7 @@ def version():
 def create_system_configuration_api():
     """ Add a new system configuration parameter
 
-    - Updates the MIE system configuration with a new parameter or changes the value of
+    - Updates the system configuration with a new parameter or changes the value of
       existing parameters
 
     Body:
@@ -221,19 +246,19 @@ def create_system_configuration_api():
 
         system_table.put_item(Item=config)
     except Exception as e:
-        logger.error("Exception {}".format(e))
-        raise ChaliceViewError("Exception '%s'" % e)
+        log_exception(e)
+        raise ChaliceViewError(format_exception(e))
 
     return {}
 
 @app.route('/system/configuration', cors=True, methods=['GET'], authorizer=authorizer)
 def get_system_configuration_api():
-    """ Get the current MIE system configuration
+    """ Get the current system configuration
 
-    - Gets the current MIE system configuration parameter settings
+    - Gets the current system configuration parameter settings
 
     Returns:
-        A list of dict containing the current MIE system configuration key-value pairs.
+        A list of dict containing the current MI system configuration key-value pairs.
 
         .. code-block:: python
 
@@ -257,9 +282,8 @@ def get_system_configuration_api():
             ConsistentRead=True)
 
     except Exception as e:
-        logger.error("Exception {}".format(e))
-        operation = None
-        raise ChaliceViewError("Exception '%s'" % e)
+        log_exception(e)
+        raise ChaliceViewError(format_exception(e))
     return response["Items"]
 
 
@@ -287,8 +311,8 @@ def create_operation_api():
     when the operation is successfully initiated, but not complete. Asynchronous operators require
     an additional monitoring task to check the status of the operation.
 
-    For more information on how to implemenent lambdas to be used in MIE operators, please
-    refer to the MIE Developer Quick Start.
+    For more information on how to implemenent lambdas to be used in MI operators, please
+    refer to the MI Developer Quick Start.
 
 
 
@@ -361,56 +385,41 @@ def create_operation(operation):
         validate(instance=operation, schema=SCHEMA["create_operation_request"])
         logger.info("Operation schema is valid")
 
-        Name = operation["Name"]
+        name = operation["Name"]
 
-        # FIXME - can jsonschema validate this?
         if operation["Type"] == "Async":
-            checkRequiredInput("MonitorLambdaArn", operation, "Operation monitoring lambda function ARN")
-        elif operation["Type"] == "Sync":
-            pass
-        else:
-            raise BadRequestError('Operation Type must in ["Async"|"Sync"]')
+            check_required_input("MonitorLambdaArn", operation, "Operation monitoring lambda function ARN")
 
         # Check if this operation already exists
         response = operation_table.get_item(
             Key={
-                'Name': Name
+                'Name': name
             },
             ConsistentRead=True)
 
         if "Item" in response:
             raise ConflictError(
-                "A operation with the name '%s' already exists" % Name)
+                "A operation with the name '%s' already exists" % name)
 
         # Build the operation state machine.
 
-        if operation["Type"] == "Async":
-            operationAsl = ASYNC_OPERATION_ASL
-        elif operation["Type"] == "Sync":
-            operationAsl = SYNC_OPERATION_ASL
+        operation_asl = ASYNC_OPERATION_ASL if operation["Type"] == "Async" else SYNC_OPERATION_ASL
 
         # Setup task parameters in step function.  This filters out the paramters from
         # the stage data structure that belong to this specific operation and passes the
-        # result as input to the task lmbda
-        # FIXME - remove this if hardcoded one works
-        # params = TASK_PARAMETERS_ASL
-        # params["OperationName"] = Name
-        # params["Configuration.$"] = "$.Configuration." + Name
-        # for k,v in operationAsl["States"].items():
-        #     if v["Type"] == "Task":
-        #         v["Parameters"] = params
+        # result as input to the task lambda
 
-        operationAslString = json.dumps(operationAsl)
-        operationAslString = operationAslString.replace("%%OPERATION_NAME%%", operation["Name"])
-        operationAslString = operationAslString.replace("%%OPERATION_MEDIA_TYPE%%",
-                                                        operation["Configuration"]["MediaType"])
+        operation_asl_string = json.dumps(operation_asl)
+        operation_asl_string = operation_asl_string.replace("%%OPERATION_NAME%%", operation["Name"])
+        operation_asl_string = operation_asl_string.replace("%%OPERATION_MEDIA_TYPE%%",
+                                                            operation["Configuration"]["MediaType"])
 
         if operation["Type"] == "Async":
-            operationAslString = operationAslString.replace("%%OPERATION_MONITOR_LAMBDA%%",
-                                                            operation["MonitorLambdaArn"])
-        operationAslString = operationAslString.replace("%%OPERATION_START_LAMBDA%%", operation["StartLambdaArn"])
-        operationAslString = operationAslString.replace("%%OPERATION_FAILED_LAMBDA%%", OPERATOR_FAILED_LAMBDA_ARN)
-        operation["StateMachineAsl"] = operationAslString
+            operation_asl_string = operation_asl_string.replace("%%OPERATION_MONITOR_LAMBDA%%",
+                                                                operation["MonitorLambdaArn"])
+        operation_asl_string = operation_asl_string.replace("%%OPERATION_START_LAMBDA%%", operation["StartLambdaArn"])
+        operation_asl_string = operation_asl_string.replace("%%OPERATION_FAILED_LAMBDA%%", OPERATOR_FAILED_LAMBDA_ARN)
+        operation["StateMachineAsl"] = operation_asl_string
 
         logger.info(json.dumps(operation["StateMachineAsl"]))
 
@@ -435,7 +444,6 @@ def create_operation(operation):
 
             operation_table.put_item(Item=operation)
 
-
         except Exception as e:
             logger.error("Error creating default stage for operation {}: {}".format(operation["Name"], e))
             response = operation_table.delete_item(
@@ -449,10 +457,10 @@ def create_operation(operation):
         #  InvokeFunction, put that in the StepFunctionRole definition in
         #  media-insights-stack.yaml and remove the following code block. Inline
         #  policies have length limitations which will prevent users from adding
-        #  more than about 35 new operators via the MIE workflow api. Tag based
+        #  more than about 35 new operators via the MI workflow api. Tag based
         #  policies will not have any such limitation.
 
-        # Skip the inline policy creation for operators packaged with MIE.
+        # Skip the inline policy creation for operators packaged with MI.
         # The inline policy is not needed for those operators because the
         # StepFunctionRole has already been defined with permission to invoke
         # those Lambdas (see media-insigts-stack.yaml).
@@ -482,242 +490,177 @@ def create_operation(operation):
                 PolicyName=operation["Name"],
                 PolicyDocument=json.dumps(policy)
             )
-
     except ConflictError as e:
-        logger.error ("got ConflictError: {}".format (e))
+        logger.error("got ConflictError: {}".format(e))
         raise
     except ValidationError as e:
-        logger.error("got bad request error: {}".format(e))
+        log_bad_request_error(e)
         raise BadRequestError(e)
     except Exception as e:
-        logger.error("Exception {}".format(e))
+        log_exception(e)
         operation = None
-        raise ChaliceViewError("Exception '%s'" % e)
+        raise ChaliceViewError(format_exception(e))
 
     logger.info("end create_operation: {}".format(json.dumps(operation, cls=DecimalEncoder)))
     return operation
 
-ASYNC_OPERATION_ASL =         {
-    "StartAt": "Filter %%OPERATION_NAME%% Media Type? (%%STAGE_NAME%%)",
-    "States": {
-        "Filter %%OPERATION_NAME%% Media Type? (%%STAGE_NAME%%)": {
+
+def create_operation_asl(is_async):
+    """ Creates a template structure defining a state machine for an operation.
+
+    The template contains placeholders for %%OPERATION_NAME%% and %%STAGE_NAME%%.
+
+    Returns:
+        A dictionary defining an async state machine if is_async is True, otherwise
+        a synchronous state machine.
+    """
+
+    # Name the states of the state machine
+    state_filter = "Filter %%OPERATION_NAME%% Media Type? (%%STAGE_NAME%%)"
+    state_skip = "Skip %%OPERATION_NAME%%? (%%STAGE_NAME%%)"
+    state_no_start = "%%OPERATION_NAME%% Not Started (%%STAGE_NAME%%)"
+    state_execute = "Execute %%OPERATION_NAME%% (%%STAGE_NAME%%)"
+    state_async_wait = "%%OPERATION_NAME%% Wait (%%STAGE_NAME%%)"
+    state_async_status = "Get %%OPERATION_NAME%% Status (%%STAGE_NAME%%)"
+    state_check_complete = "Did %%OPERATION_NAME%% Complete (%%STAGE_NAME%%)"
+    state_failed = "%%OPERATION_NAME%% Failed (%%STAGE_NAME%%)"
+    state_succeeded = "%%OPERATION_NAME%% Succeeded (%%STAGE_NAME%%)"
+
+    starting_state = state_filter
+
+    # Avoid repeating a couple of structures we will use multiple times.
+    retry = [{
+        "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.Unknown",
+            "MasExecutionError"
+        ],
+        "IntervalSeconds": 2,
+        "MaxAttempts": 2,
+        "BackoffRate": 2
+    }]
+
+    catch = [{
+        "ErrorEquals": ["States.ALL"],
+        "Next": state_failed,
+        "ResultPath": S_OUTPUTS
+    }]
+
+    # Build the states
+    states = {
+        state_filter: {
             "Type": "Task",
             "Parameters": {
                 "StageName.$": "$.Name",
-                "Name":"%%OPERATION_NAME%%",
-                "Input.$":"$.Input",
-                "Configuration.$":"$.Configuration.%%OPERATION_NAME%%",
-                "AssetId.$":"$.AssetId",
-                "WorkflowExecutionId.$":"$.WorkflowExecutionId",
+                "Name": "%%OPERATION_NAME%%",
+                "Input.$": "$.Input",
+                "Configuration.$": "$.Configuration.%%OPERATION_NAME%%",
+                "AssetId.$": "$.AssetId",
+                "WorkflowExecutionId.$": "$.WorkflowExecutionId",
                 "Type": "%%OPERATION_MEDIA_TYPE%%",
-                "Status": "$.Status"
+                "Status": S_STATUS
             },
             "Resource": FILTER_OPERATION_LAMBDA_ARN,
-            "ResultPath": "$.Outputs",
-            "OutputPath": "$.Outputs",
-            "Next": "Skip %%OPERATION_NAME%%? (%%STAGE_NAME%%)",
-            "Retry": [ {
-                "ErrorEquals": ["Lambda.ServiceException", "Lambda.AWSLambdaException", "Lambda.SdkClientException", "Lambda.Unknown", "MasExecutionError"],
-                "IntervalSeconds": 2,
-                "MaxAttempts": 2,
-                "BackoffRate": 2
-            }
-            ],
-            "Catch": [
-            {
-                "ErrorEquals": ["States.ALL"],
-                "Next": "%%OPERATION_NAME%% Failed (%%STAGE_NAME%%)",
-                "ResultPath": "$.Outputs"
-            }
-            ]
+            "ResultPath": S_OUTPUTS,
+            "OutputPath": S_OUTPUTS,
+            "Next": state_skip,
+            "Retry": retry,
+            "Catch": catch
 
         },
-        "Skip %%OPERATION_NAME%%? (%%STAGE_NAME%%)": {
+        state_skip: {
             "Type": "Choice",
             "Choices": [{
-                "Variable": "$.Status",
+                "Variable": S_STATUS,
                 "StringEquals": awsmie.OPERATION_STATUS_STARTED,
-                "Next": "Execute %%OPERATION_NAME%% (%%STAGE_NAME%%)"
+                "Next": state_execute
             }],
-            "Default": "%%OPERATION_NAME%% Not Started (%%STAGE_NAME%%)"
+            "Default": state_no_start
         },
-        "%%OPERATION_NAME%% Not Started (%%STAGE_NAME%%)": {
+        state_no_start: {
             "Type": "Succeed"
         },
-        "Execute %%OPERATION_NAME%% (%%STAGE_NAME%%)": {
+        state_execute: {
             "Type": "Task",
             "Resource": "%%OPERATION_START_LAMBDA%%",
-            "ResultPath": "$.Outputs",
-            "OutputPath": "$.Outputs",
-            "Next": "%%OPERATION_NAME%% Wait (%%STAGE_NAME%%)",
-            "Retry": [ {
-                "ErrorEquals": ["Lambda.ServiceException", "Lambda.AWSLambdaException", "Lambda.SdkClientException", "Lambda.Unknown", "MasExecutionError"],
-                "IntervalSeconds": 2,
-                "MaxAttempts": 2,
-                "BackoffRate": 2
-            }
-            ],
-            "Catch": [
-            {
-                "ErrorEquals": ["States.ALL"],
-                "Next": "%%OPERATION_NAME%% Failed (%%STAGE_NAME%%)",
-                "ResultPath": "$.Outputs"
-            }
-            ]
+            "ResultPath": S_OUTPUTS,
+            "OutputPath": S_OUTPUTS,
+            # Next state depends on whether this is async or not.
+            "Next": state_async_wait if is_async else state_check_complete,
+            "Retry": retry,
+            "Catch": catch
+        }
+    }
+
+    # There are two possible choices in completion check state but the first one
+    # is only relevant if it is async. Default first choice is the second index.
+    first_choice = 1
+    choices = [
+        {
+            "Variable": S_STATUS,
+            "StringEquals": "Executing",
+            "Next": state_async_wait
         },
-        "%%OPERATION_NAME%% Wait (%%STAGE_NAME%%)": {
+        {
+            "Variable": S_STATUS,
+            "StringEquals": "Complete",
+            "Next": state_succeeded
+        }
+    ]
+
+    # In async mode, we have to insert a wait state and a status check.
+    if is_async:
+        # Set the first choice index to 0, the first index in the array so we get
+        # both choices in the completion check state.
+        first_choice = 0
+
+        states[state_async_wait] = {
             "Type": "Wait",
             "Seconds": 10,
-            "Next": "Get %%OPERATION_NAME%% Status (%%STAGE_NAME%%)"
-        },
-        "Get %%OPERATION_NAME%% Status (%%STAGE_NAME%%)": {
+            "Next": state_async_status
+        }
+
+        states[state_async_status] = {
             "Type": "Task",
             "Resource": "%%OPERATION_MONITOR_LAMBDA%%",
-            "Next": "Did %%OPERATION_NAME%% Complete (%%STAGE_NAME%%)",
-            "Retry": [ {
-                "ErrorEquals": ["Lambda.ServiceException", "Lambda.AWSLambdaException", "Lambda.SdkClientException", "Lambda.Unknown", "MasExecutionError"],
-                "IntervalSeconds": 2,
-                "MaxAttempts": 2,
-                "BackoffRate": 2
-            }
-            ],
-            "Catch": [
-            {
-                "ErrorEquals": ["States.ALL"],
-                "Next": "%%OPERATION_NAME%% Failed (%%STAGE_NAME%%)",
-                "ResultPath": "$.Outputs"
-            }
-            ]
-        },
-        "Did %%OPERATION_NAME%% Complete (%%STAGE_NAME%%)": {
-            "Type": "Choice",
-            "Choices": [{
-                    "Variable": "$.Status",
-                    "StringEquals": "Executing",
-                    "Next": "%%OPERATION_NAME%% Wait (%%STAGE_NAME%%)"
-                },
-                {
-                    "Variable": "$.Status",
-                    "StringEquals": "Complete",
-                    "Next": "%%OPERATION_NAME%% Succeeded (%%STAGE_NAME%%)"
-                }
-            ],
-            "Default": "%%OPERATION_NAME%% Failed (%%STAGE_NAME%%)"
-        },
-        "%%OPERATION_NAME%% Failed (%%STAGE_NAME%%)": {
-            "Type": "Task",
-            "End": True,
-            "Resource": "%%OPERATION_FAILED_LAMBDA%%",
-            "ResultPath": "$",
-            "Retry": [{
-                "ErrorEquals": ["Lambda.ServiceException", "Lambda.AWSLambdaException", "Lambda.SdkClientException", "Lambda.Unknown", "MasExecutionError"],
-                "IntervalSeconds": 2,
-                "MaxAttempts": 2,
-                "BackoffRate": 2
-            }]
-        },
-        "%%OPERATION_NAME%% Succeeded (%%STAGE_NAME%%)": {
-            "Type": "Succeed"
+            "Next": state_check_complete,
+            "Retry": retry,
+            "Catch": catch
         }
-    }
-}
 
-SYNC_OPERATION_ASL = {
-    "StartAt": "Filter %%OPERATION_NAME%% Media Type? (%%STAGE_NAME%%)",
-    "States": {
-        "Filter %%OPERATION_NAME%% Media Type? (%%STAGE_NAME%%)": {
-            "Type": "Task",
-            "Parameters": {
-                "StageName.$": "$.Name",
-                "Name":"%%OPERATION_NAME%%",
-                "Input.$":"$.Input",
-                "Configuration.$":"$.Configuration.%%OPERATION_NAME%%",
-                "AssetId.$":"$.AssetId",
-                "WorkflowExecutionId.$":"$.WorkflowExecutionId",
-                "Type": "%%OPERATION_MEDIA_TYPE%%",
-                "Status": "$.Status"
-            },
-            "Resource": FILTER_OPERATION_LAMBDA_ARN,
-            "ResultPath": "$.Outputs",
-            "OutputPath": "$.Outputs",
-            "Next": "Skip %%OPERATION_NAME%%? (%%STAGE_NAME%%)",
-            "Retry": [ {
-                "ErrorEquals": ["Lambda.ServiceException", "Lambda.AWSLambdaException", "Lambda.SdkClientException", "Lambda.Unknown", "MasExecutionError"],
-                "IntervalSeconds": 2,
-                "MaxAttempts": 2,
-                "BackoffRate": 2
-            }
-            ],
-            "Catch": [
-            {
-                "ErrorEquals": ["States.ALL"],
-                "Next": "%%OPERATION_NAME%% Failed (%%STAGE_NAME%%)",
-                "ResultPath": "$.Outputs"
-            }
-            ]
-
-        },
-        "Skip %%OPERATION_NAME%%? (%%STAGE_NAME%%)": {
-            "Type": "Choice",
-            "Choices": [{
-                "Variable": "$.Status",
-                "StringEquals": awsmie.OPERATION_STATUS_STARTED,
-                "Next": "Execute %%OPERATION_NAME%% (%%STAGE_NAME%%)"
-            }],
-            "Default": "%%OPERATION_NAME%% Not Started (%%STAGE_NAME%%)"
-        },
-        "%%OPERATION_NAME%% Not Started (%%STAGE_NAME%%)": {
-            "Type": "Succeed"
-        },
-        "Execute %%OPERATION_NAME%% (%%STAGE_NAME%%)": {
-            "Type": "Task",
-            "Resource": "%%OPERATION_START_LAMBDA%%",
-            "ResultPath": "$.Outputs",
-            "OutputPath": "$.Outputs",
-            "Next": "Did %%OPERATION_NAME%% Complete (%%STAGE_NAME%%)",
-            "Retry": [ {
-                "ErrorEquals": ["Lambda.ServiceException", "Lambda.AWSLambdaException", "Lambda.SdkClientException", "Lambda.Unknown", "MasExecutionError"],
-                "IntervalSeconds": 2,
-                "MaxAttempts": 2,
-                "BackoffRate": 2
-            }
-            ],
-            "Catch": [
-            {
-                "ErrorEquals": ["States.ALL"],
-                "Next": "%%OPERATION_NAME%% Failed (%%STAGE_NAME%%)",
-                "ResultPath": "$.Outputs"
-            }
-            ]
-        },
-        "Did %%OPERATION_NAME%% Complete (%%STAGE_NAME%%)": {
-            "Type": "Choice",
-            "Choices": [
-                {
-                    "Variable": "$.Status",
-                    "StringEquals": "Complete",
-                    "Next": "%%OPERATION_NAME%% Succeeded (%%STAGE_NAME%%)"
-                }
-            ],
-            "Default": "%%OPERATION_NAME%% Failed (%%STAGE_NAME%%)"
-        },
-        "%%OPERATION_NAME%% Failed (%%STAGE_NAME%%)": {
-            "Type": "Task",
-            "End": True,
-            "Resource": "%%OPERATION_FAILED_LAMBDA%%",
-            "ResultPath": "$",
-            "Retry": [{
-                "ErrorEquals": ["Lambda.ServiceException", "Lambda.AWSLambdaException", "Lambda.SdkClientException", "Lambda.Unknown", "MasExecutionError"],
-                "IntervalSeconds": 2,
-                "MaxAttempts": 2,
-                "BackoffRate": 2
-            }]
-        },
-        "%%OPERATION_NAME%% Succeeded (%%STAGE_NAME%%)": {
-            "Type": "Succeed"
-        }
+    # Add the rest of the states needed by both sync and async mode.
+    states[state_check_complete] = {
+        "Type": "Choice",
+        "Choices": choices[first_choice:2],
+        "Default": state_failed
     }
-}
+
+    states[state_failed] = {
+        "Type": "Task",
+        "End": True,
+        "Resource": "%%OPERATION_FAILED_LAMBDA%%",
+        "ResultPath": "$",
+        "Retry": retry
+    }
+
+    states[state_succeeded] = {
+        "Type": "Succeed"
+    }
+
+    # Return the final result
+    asl = {
+        "StartAt": starting_state,
+        "States": states
+    }
+
+    return asl
+
+
+ASYNC_OPERATION_ASL = create_operation_asl(True)
+
+SYNC_OPERATION_ASL = create_operation_asl(False)
 
 
 @app.route('/workflow/operation', cors=True, methods=['PUT'], authorizer=authorizer)
@@ -725,7 +668,7 @@ def update_operation():
     """ Update operation NOT IMPLEMENTED
 
     """
-    operation = {"Message": "Update on stages in not implemented"}
+    operation = {"Message": "Update on stages is not implemented"}
     return operation
 
 
@@ -752,8 +695,8 @@ def list_operations():
     return operations
 
 
-@app.route('/workflow/operation/{Name}', cors=True, methods=['GET'], authorizer=authorizer)
-def get_operation_by_name(Name):
+@app.route('/workflow/operation/{name}', cors=True, methods=['GET'], authorizer=authorizer)
+def get_operation_by_name(name):
     """ Get an operation definition by name
 
     Returns:
@@ -768,20 +711,20 @@ def get_operation_by_name(Name):
     operation = None
     response = operation_table.get_item(
         Key={
-            'Name': Name
+            'Name': name
         })
 
     if "Item" in response:
         operation = response["Item"]
     else:
         raise NotFoundError(
-            "Exception: operation '%s' not found" % Name)
+            "Exception: operation '%s' not found" % name)
 
     return operation
 
 
-@app.route('/workflow/operation/{Name}', cors=True, methods=['DELETE'], authorizer=authorizer)
-def delete_operation_api(Name):
+@app.route('/workflow/operation/{name}', cors=True, methods=['DELETE'], authorizer=authorizer)
+def delete_operation_api(name):
     """ Delete a an operation
 
     Returns:
@@ -792,132 +735,123 @@ def delete_operation_api(Name):
         400: Bad Request - there are dependent workflows and query parameter force=false
         500: ChaliceViewError - internal server error
     """
-    Force = False
     params = app.current_request.query_params
 
-    if params and "force" in params and params["force"] == "true":
-        Force = True
+    force = params and params.get("force", "false") == "true"
 
-    operation = delete_operation(Name, Force)
+    operation = delete_operation(name, force)
 
     return operation
 
 
-def delete_operation(Name, Force):
+def delete_operation(name, force):
 
     table = DYNAMO_RESOURCE.Table(OPERATION_TABLE_NAME)
     operation = {}
 
-    logger.info("delete_stage({},{})".format(Name, Force))
+    logger.info("delete_stage({},{})".format(name, force))
 
     try:
 
         operation = {}
         response = table.get_item(
             Key={
-                'Name': Name
+                'Name': name
             },
             ConsistentRead=True)
 
-        if "Item" in response:
+        if "Item" not in response:
+            operation["Message"] = "Warning: operation '{}' not found".format(name)
+            return operation
 
-            workflows = list_workflows_by_operator(Name)
+        workflows = list_workflows_by_operator(name)
 
-            if len(workflows) != 0 and Force == False:
-                Message = """Dependent workflows were found for operation {}.
+        if len(workflows) != 0 and not force:
+            message = """Dependent workflows were found for operation {}.
                     Either delete the dependent workflows or set the query parameter
                     force=true to delete the stage anyhow.  Undeleted dependent workflows
                     will be kept but will contain the deleted definition of the stage.  To
                     find the workflow that depend on a stage use the following endpoint:
-                    GET /workflow/list/operation/""".format(Name)
+                    GET /workflow/list/operation/""".format(name)
 
-                raise BadRequestError(Message)
+            raise BadRequestError(message)
 
-            operation = response["Item"]
+        operation = response["Item"]
 
-            delete_stage(operation["StageName"], True)
+        delete_stage(operation["StageName"], True)
 
-            response = table.delete_item(
-                Key={
-                    'Name': Name
-                })
+        response = table.delete_item(
+            Key={
+                'Name': name
+            })
 
-            # TODO: Once IAM supports the ability to use tag-based policies for
-            #  InvokeFunction, put that in the StepFunctionRole definition in
-            #  media-insights-stack.yaml and remove the following code block. Inline
-            #  policies have length limitations which will prevent users from adding
-            #  more than about 35 new operators via the MIE workflow api. Tag based
-            #  policies will not have any such limitation.
+        # TODO: Once IAM supports the ability to use tag-based policies for
+        #  InvokeFunction, put that in the StepFunctionRole definition in
+        #  media-insights-stack.yaml and remove the following code block. Inline
+        #  policies have length limitations which will prevent users from adding
+        #  more than about 35 new operators via the MI workflow api. Tag based
+        #  policies will not have any such limitation.
 
-            if not ("OperatorLibrary" in operation["StartLambdaArn"] or "start-wait-operation" in operation["StartLambdaArn"]):
-                # If true then this is a deleted operator has an inline policy which
-                # need to be removed from the StepFunctionRole.
+        if len([k for k in ("OperatorLibrary", "start-wait-operation") if k in operation["StartLambdaArn"]]) == 0:
+            # If true then this is a deleted operator has an inline policy which
+            # need to be removed from the StepFunctionRole.
 
-                # The policy name will be the same as the operator name.
-                # Paginate thru list_role_policies() until we find
-                # that policy, then delete it.
-                policy_found = False
-                role_name = STAGE_EXECUTION_ROLE.split('/')[1]
-                response = IAM_CLIENT.list_role_policies(RoleName=role_name)
-                if Name in response['PolicyNames']:
-                    policy_found = True
-                while policy_found is False and response['IsTruncated'] is True:
-                    response = IAM_CLIENT.list_role_policies(RoleName=role_name, Marker=response['Marker'])
-                    if Name in response['PolicyNames']:
-                        policy_found = True
-                # If the policy was found, then delete it.
-                if policy_found is True:
-                    logger.info("Deleting policy " + Name + " from role " + role_name)
-                    IAM_CLIENT.delete_role_policy(
-                        RoleName=role_name,
-                        PolicyName=Name
-                    )
+            # The policy name will be the same as the operator name.
+            # Paginate thru list_role_policies() until we find
+            # that policy, then delete it.
+            role_name = STAGE_EXECUTION_ROLE.split('/')[1]
+            response = IAM_CLIENT.list_role_policies(RoleName=role_name)
+            policy_found = name in response['PolicyNames']
+            while policy_found is False and response['IsTruncated'] is True:
+                response = IAM_CLIENT.list_role_policies(RoleName=role_name, Marker=response['Marker'])
+                policy_found = name in response['PolicyNames']
+            # If the policy was found, then delete it.
+            if policy_found:
+                logger.info("Deleting policy " + name + " from role " + role_name)
+                IAM_CLIENT.delete_role_policy(
+                    RoleName=role_name,
+                    PolicyName=name
+                )
 
-            # Flag dependent workflows
-            flag_operation_dependent_workflows(Name)
-
-        else:
-
-            operation["Message"] = "Warning: operation '{}' not found".format(Name)
-            # raise NotFoundError(
-            #    "Exception: operation '%s' not found" % Name)
+        # Flag dependent workflows
+        flag_operation_dependent_workflows(name)
 
     except BadRequestError as e:
-        logger.error("got bad request error: {}".format(e))
+        log_bad_request_error(e)
         raise
     except Exception as e:
 
         operation = None
-        logger.error("Exception {}".format(e))
-        raise ChaliceViewError("Exception: '%s'" % e)
+        log_exception(e)
+        raise ChaliceViewError(format_exception(e))
 
     return operation
 
-def flag_operation_dependent_workflows(OperationName):
+
+def flag_operation_dependent_workflows(operation_name):
 
     try:
         table = DYNAMO_RESOURCE.Table(WORKFLOW_TABLE_NAME)
 
-        workflows = list_workflows_by_operator(OperationName)
+        workflows = list_workflows_by_operator(operation_name)
         for workflow in workflows:
-            result = table.update_item(
+            table.update_item(
                 Key={
                     'Name': workflow["Name"]
                 },
                 UpdateExpression="SET StaleOperations = list_append(StaleOperations, :i)",
                 ExpressionAttributeValues={
-                    ':i': [OperationName],
+                    ':i': [operation_name],
                 },
                 ReturnValues="UPDATED_NEW"
             )
 
     except Exception as e:
-
-
         logger.error("Exception flagging workflows dependent on dropped operations {}".format(e))
-        raise ChaliceViewError("Exception: '%s'" % e)
+        raise ChaliceViewError(format_exception(e))
 
-    return OperationName
+    return operation_name
+
 
 ################################################################################################
 #   ____  _
@@ -1001,56 +935,56 @@ def create_stage_api():
 def create_stage(stage):
     try:
         stage_table = DYNAMO_RESOURCE.Table(STAGE_TABLE_NAME)
-        Configuration = {}
+        configuration = {}
 
         logger.info(stage)
 
         validate(instance=stage, schema=SCHEMA["create_stage_request"])
         logger.info("Stage schema is valid")
 
-        Name = stage["Name"]
+        name = stage["Name"]
 
         # Check if this stage already exists
         response = stage_table.get_item(
             Key={
-                'Name': Name
+                'Name': name
             },
             ConsistentRead=True)
 
         if "Item" in response:
             raise ConflictError(
-                "A stage with the name '%s' already exists" % Name)
+                "A stage with the name '%s' already exists" % name)
 
         # Build the stage state machine.  The stage machine consists of a parallel state with
         # branches for each operator and a call to the stage completion lambda at the end.
         # The parallel state takes a stage object as input.  Each
         # operator returns and operatorOutput object. The outputs for each operator are
         # returned from the parallel state as elements of the "outputs" array.
-        stageAsl = {
+        stage_asl = {
             "StartAt": "Preprocess Media",
             "States": {
-                "Complete Stage {}".format(Name): {
+                "Complete Stage {}".format(name): {
                     "Type": "Task",
-                    # FIXME - testing NoQ workflows
-                    #"Resource": COMPLETE_STAGE_LAMBDA_ARN,
+                    # TODO - testing NoQ workflows
                     "Resource": COMPLETE_STAGE_LAMBDA_ARN,
                     "End": True
                 }
 
             }
         }
-        stageAsl["StartAt"] = Name
-        stageAsl["States"][Name] = {
+        complete_stage = "Complete Stage {}".format(name)
+        stage_asl["StartAt"] = name
+        stage_asl["States"][name] = {
             "Type": "Parallel",
-            "Next": "Complete Stage {}".format(Name),
-            "ResultPath": "$.Outputs",
+            "Next": complete_stage,
+            "ResultPath": S_OUTPUTS,
             "Branches": [
             ],
             "Catch": [
                 {
                     "ErrorEquals": ["States.ALL"],
-                    "Next": "Complete Stage {}".format(Name),
-                    "ResultPath": "$.Outputs"
+                    "Next": complete_stage,
+                    "ResultPath": S_OUTPUTS
                 }
             ]
         }
@@ -1063,20 +997,20 @@ def create_stage(stage):
             operation = get_operation_by_name(op)
             logger.info(json.dumps(operation, cls=DecimalEncoder))
 
-            stageAsl["States"][Name]["Branches"].append(
+            stage_asl["States"][name]["Branches"].append(
                 json.loads(operation["StateMachineAsl"]))
-            Configuration[op] = operation["Configuration"]
+            configuration[op] = operation["Configuration"]
 
-        stageAslString = json.dumps(stageAsl)
-        stageAslString = stageAslString.replace("%%STAGE_NAME%%", stage["Name"])
-        stageAsl = json.loads(stageAslString)
-        logger.info(json.dumps(stageAsl))
+        stage_asl_string = json.dumps(stage_asl)
+        stage_asl_string = stage_asl_string.replace("%%STAGE_NAME%%", stage["Name"])
+        stage_asl = json.loads(stage_asl_string)
+        logger.info(json.dumps(stage_asl))
 
-        stage["Configuration"] = Configuration
+        stage["Configuration"] = configuration
 
         # Build stage
 
-        stage["Definition"] = json.dumps(stageAsl)
+        stage["Definition"] = json.dumps(stage_asl)
         stage["Version"] = "v0"
         stage["Id"] = str(uuid.uuid4())
         stage["Created"] = str(datetime.now().timestamp())
@@ -1086,12 +1020,12 @@ def create_stage(stage):
         stage_table.put_item(Item=stage)
 
     except ValidationError as e:
-        logger.error("got bad request error: {}".format(e))
+        log_bad_request_error(e)
         raise BadRequestError(e)
     except Exception as e:
-        logger.error("Exception {}".format(e))
+        log_exception(e)
         stage = None
-        raise ChaliceViewError("Exception '%s'" % e)
+        raise ChaliceViewError(format_exception(e))
 
     return stage
 
@@ -1130,8 +1064,8 @@ def list_stages():
     return stages
 
 
-@app.route('/workflow/stage/{Name}', cors=True, methods=['GET'], authorizer=authorizer)
-def get_stage_by_name(Name):
+@app.route('/workflow/stage/{name}', cors=True, methods=['GET'], authorizer=authorizer)
+def get_stage_by_name(name):
     """ Get a stage definition by name
 
     Returns:
@@ -1146,20 +1080,20 @@ def get_stage_by_name(Name):
     stage = None
     response = stage_table.get_item(
         Key={
-            'Name': Name
+            'Name': name
         })
 
     if "Item" in response:
         stage = response["Item"]
     else:
         raise NotFoundError(
-            "Exception: stage '%s' not found" % Name)
+            "Exception: stage '%s' not found" % name)
 
     return stage
 
 
-@app.route('/workflow/stage/{Name}', cors=True, methods=['DELETE'], authorizer=authorizer)
-def delete_stage_api(Name):
+@app.route('/workflow/stage/{name}', cors=True, methods=['DELETE'], authorizer=authorizer)
+def delete_stage_api(name):
     """ Delete a stage
 
     Returns:
@@ -1171,83 +1105,81 @@ def delete_stage_api(Name):
         404: Not found
         500: ChaliceViewError - internal server error
     """
-    Force = False
     params = app.current_request.query_params
 
-    if params and "force" in params and params["force"] == "true":
-        Force = True
+    force = params and params.get("force", "false") == "true"
 
-    stage = delete_stage(Name, Force)
+    stage = delete_stage(name, force)
 
     return stage
 
 
-def delete_stage(Name, Force):
+def delete_stage(name, force):
 
     table = DYNAMO_RESOURCE.Table(STAGE_TABLE_NAME)
 
-    logger.info("delete_stage({},{})".format(Name, Force))
+    logger.info("delete_stage({},{})".format(name, force))
 
     try:
 
         stage = {}
         response = table.get_item(
             Key={
-                'Name': Name
+                'Name': name
             },
             ConsistentRead=True)
 
         if "Item" in response:
 
-            workflows = list_workflows_by_stage(Name)
+            workflows = list_workflows_by_stage(name)
             stage = response["Item"]
 
-            if len(workflows) != 0 and Force == False:
-                Message = """Dependent workflows were found for stage {}.
+            if len(workflows) != 0 and not force:
+                message = """Dependent workflows were found for stage {}.
                     Either delete the dependent workflows or set the query parameter
                     force=true to delete the stage anyhow.  Undeleted dependent workflows
                     will be kept but will contain the deleted definition of the stage.  To
                     find the workflow that depend on a stage use the following endpoint:
-                    GET /workflow/list/stage/""".format(Name)
+                    GET /workflow/list/stage/""".format(name)
 
-                raise BadRequestError(Message)
-
+                raise BadRequestError(message)
 
             response = table.delete_item(
                 Key={
-                    'Name': Name
+                    'Name': name
                 })
 
-            flag_stage_dependent_workflows(Name)
+            flag_stage_dependent_workflows(name)
 
         else:
-            stage["Message"] = "Warning: stage '{}' not found".format(Name)
+            stage["Message"] = "Warning: stage '{}' not found".format(name)
 
     except BadRequestError as e:
-        logger.error("got bad request error: {}".format(e))
+        log_bad_request_error(e)
         raise
     except Exception as e:
 
         stage = None
-        logger.error("Exception {}".format(e))
-        raise ChaliceViewError("Exception: '%s'" % e)
+        log_exception(e)
+        raise ChaliceViewError(format_exception(e))
 
     return stage
 
-def flag_stage_dependent_workflows(StageName):
+
+def flag_stage_dependent_workflows(stage_name):
 
     try:
         table = DYNAMO_RESOURCE.Table(WORKFLOW_TABLE_NAME)
 
-        workflows = list_workflows_by_stage(StageName)
+        workflows = list_workflows_by_stage(stage_name)
         for workflow in workflows:
-            result = table.update_item(
+            table.update_item(
                 Key={
                     'Name': workflow["Name"]
                 },
                 UpdateExpression="SET StaleStages = list_append(StaleStages, :i)",
                 ExpressionAttributeValues={
-                    ':i': [StageName],
+                    ':i': [stage_name],
                 },
                 ReturnValues="UPDATED_NEW"
             )
@@ -1255,9 +1187,9 @@ def flag_stage_dependent_workflows(StageName):
     except Exception as e:
 
         logger.error("Exception flagging workflows dependent on dropped stage {}".format(e))
-        raise ChaliceViewError("Exception: '%s'" % e)
+        raise ChaliceViewError(format_exception(e))
 
-    return StageName
+    return stage_name
 
 ###############################################################################
 #  __        __         _     __ _
@@ -1354,9 +1286,10 @@ def create_workflow(trigger, workflow):
 
         # Validate inputs
 
-        checkRequiredInput("Name", workflow, "Workflow Definition")
-        checkRequiredInput("StartAt", workflow, "Workflow Definition")
-        checkRequiredInput("Stages", workflow, "Workflow Definition")
+        workflow_definition = "Workflow Definition"
+        check_required_input("Name", workflow, workflow_definition)
+        check_required_input("StartAt", workflow, workflow_definition)
+        check_required_input("Stages", workflow, workflow_definition)
 
         workflow = build_workflow(workflow)
 
@@ -1387,12 +1320,11 @@ def create_workflow(trigger, workflow):
         workflow.pop("WorkflowAsl")
         workflow["StateMachineArn"] = response["stateMachineArn"]
 
-
         workflow_table.put_item(
             Item=workflow,
-            ConditionExpression="attribute_not_exists(#workflow_name)",
+            ConditionExpression="attribute_not_exists({})".format(ATT_NAME_WORKFLOW_NAME),
             ExpressionAttributeNames={
-                '#workflow_name': "Name"
+                ATT_NAME_WORKFLOW_NAME: "Name"
             })
 
     except ClientError as e:
@@ -1407,28 +1339,27 @@ def create_workflow(trigger, workflow):
 
         if "StateMachineArn" in workflow:
             response = SFN_CLIENT.delete_state_machine(
-            workflow["StateMachineArn"]
-        )
-        logger.error("Exception {}".format(e))
+                workflow["StateMachineArn"]
+            )
+        log_exception(e)
         workflow = None
-        raise ChaliceViewError("Exception '%s'" % e)
+        raise ChaliceViewError(format_exception(e))
 
     return workflow
+
 
 def build_workflow(workflow):
 
     logger.info("Sanity Check for End of workflow")
     endcount = 0
-    for Name, stage in workflow["Stages"].items():
+    for name, stage in workflow["Stages"].items():
 
         # Stage must have an End or a Next key
-        if "End" in stage and stage["End"] == True:
+        if stage.get("End", False):
             endcount += 1
-        elif "Next" in stage:
-            pass
-        else:
+        elif "Next" not in stage:
             raise BadRequestError("Stage %s must have either an 'End' or and 'Next' key" % (
-                Name))
+                name))
 
     if endcount != 1:
         raise BadRequestError("Workflow %s must have exactly 1 'End' key within its stages" % (
@@ -1436,8 +1367,8 @@ def build_workflow(workflow):
 
     logger.info("Get stage definitions")
 
-    for Name, stage in workflow["Stages"].items():
-        s = get_stage_by_name(Name)
+    for name, stage in workflow["Stages"].items():
+        s = get_stage_by_name(name)
 
         logger.info(json.dumps(s))
 
@@ -1452,61 +1383,55 @@ def build_workflow(workflow):
         logger.info(json.dumps(s))
 
     # Build the workflow state machine.
-    startStageAsl = workflow["Stages"][workflow["StartAt"]]["stateMachineAsl"]
-    startAt = startStageAsl["StartAt"]
-    logger.info(startAt)
+    start_stage_asl = workflow["Stages"][workflow["StartAt"]]["stateMachineAsl"]
+    start_at = start_stage_asl["StartAt"]
+    logger.info(start_at)
 
-    workflowAsl = {
-        "StartAt": startAt,
+    workflow_asl = {
+        "StartAt": start_at,
         "States": {
         }
     }
 
     logger.info("Merge stages into workflow state machine")
-    for workflowStageName, workflowStage in workflow["Stages"].items():
+    for workflow_stage in workflow["Stages"].values():
         logger.info("LOOP OVER WORKFLOW STAGES")
-        logger.info(json.dumps(workflowStage))
-
+        logger.info(json.dumps(workflow_stage))
 
         # if this stage is not the end stage
         # - link the end of this stages ASL to the start of the next stages ASL
-        if "Next" in workflowStage:
-            nextWorkflowStageName = workflowStage["Next"]
-            nextWorkflowStage = workflow["Stages"][workflowStage["Next"]]
+        if "Next" in workflow_stage:
+            next_workflow_stage = workflow["Stages"][workflow_stage["Next"]]
 
             logger.info("NEXT STAGE")
-            logger.info(json.dumps(nextWorkflowStage))
+            logger.info(json.dumps(next_workflow_stage))
 
             # Find the End state for this stages ASL and link it to the start of
             # the next stage ASL
-            print(json.dumps(workflowStage["stateMachineAsl"]["States"]))
-            for k, v in workflowStage["stateMachineAsl"]["States"].items():
-                print(k)
-                if ("End" in v):
-                    endState = k
+            print(json.dumps(workflow_stage["stateMachineAsl"]["States"]))
+            end_state = [k for k, v in workflow_stage["stateMachineAsl"]["States"].items() if "End" in v][0]
 
-            # endState = find("End", workflowStage["stateMachineAsl"]["States"])
+            logger.info("END STATE {}".format(end_state))
 
-            logger.info("END STATE {}".format(endState))
-
-            workflowStage["stateMachineAsl"]["States"][endState]["Next"] = nextWorkflowStage["stateMachineAsl"][
+            workflow_stage["stateMachineAsl"]["States"][end_state]["Next"] = next_workflow_stage["stateMachineAsl"][
                 "StartAt"]
 
             # Remove the end key from the end state
-            workflowStage["stateMachineAsl"]["States"][endState].pop("End")
+            workflow_stage["stateMachineAsl"]["States"][end_state].pop("End")
 
-        workflowAsl["States"].update(workflowStage["stateMachineAsl"]["States"])
+        workflow_asl["States"].update(workflow_stage["stateMachineAsl"]["States"])
 
         # Remove ASL from the stage since we rolled it into the workflow and ASL in saved in the stage defintition
-        workflowStage.pop("stateMachineAsl")
+        workflow_stage.pop("stateMachineAsl")
 
         logger.info("IN LOOP WORKFLOW")
-        logger.info(json.dumps(workflowAsl))
+        logger.info(json.dumps(workflow_asl))
 
-    logger.info(json.dumps(workflowAsl))
-    workflow["WorkflowAsl"] = workflowAsl
+    logger.info(json.dumps(workflow_asl))
+    workflow["WorkflowAsl"] = workflow_asl
 
     return workflow
+
 
 @app.route('/workflow', cors=True, methods=['PUT'], authorizer=authorizer)
 def update_workflow_api():
@@ -1571,16 +1496,14 @@ def update_workflow_api():
     workflow = json.loads(app.current_request.raw_body.decode())
     logger.info(json.dumps(workflow))
 
-    return update_workflow("api", workflow)
-
-def update_workflow(trigger, new_workflow):
+    return update_workflow(workflow)
 
 
+def update_workflow(new_workflow):
     try:
         workflow_table = DYNAMO_RESOURCE.Table(WORKFLOW_TABLE_NAME)
-        history_table = DYNAMO_RESOURCE.Table(HISTORY_TABLE_NAME)
 
-        checkRequiredInput("Name", new_workflow, "Workflow Definition")
+        check_required_input("Name", new_workflow, "Workflow Definition")
 
         workflow = get_workflow_by_name(new_workflow["Name"])
 
@@ -1590,8 +1513,7 @@ def update_workflow(trigger, new_workflow):
 
         revisions = int(workflow["Revisions"])
 
-        old_version = workflow["Version"]
-        workflow["Version"] = "v"+str(revisions+1)
+        workflow["Version"] = "v" + str(revisions + 1)
 
         if "StartAt" in new_workflow:
             workflow["StartAt"] = new_workflow["StartAt"]
@@ -1606,7 +1528,7 @@ def update_workflow(trigger, new_workflow):
         workflow = build_workflow(workflow)
 
         # Update the workflow state machine
-        response = SFN_CLIENT.update_state_machine(
+        SFN_CLIENT.update_state_machine(
             stateMachineArn=workflow["StateMachineArn"],
             definition=json.dumps(workflow["WorkflowAsl"]),
             roleArn=STAGE_EXECUTION_ROLE
@@ -1626,7 +1548,7 @@ def update_workflow(trigger, new_workflow):
             # ExpressionAttributeValues={
             #     ":old_version": old_version
             # }
-            )
+        )
 
     except ClientError as e:
         # Ignore the ConditionalCheckFailedException, bubble up
@@ -1638,9 +1560,9 @@ def update_workflow(trigger, new_workflow):
 
     except Exception as e:
 
-        logger.error("Exception {}".format(e))
+        log_exception(e)
         workflow = None
-        raise ChaliceViewError("Exception '%s'" % e)
+        raise ChaliceViewError(format_exception(e))
 
     return workflow
 
@@ -1667,8 +1589,8 @@ def list_workflows():
 
     return workflows
 
-@app.route('/workflow/list/operation/{OperatorName}', cors=True, methods=['GET'], authorizer=authorizer)
-def list_workflows_by_operator(OperatorName):
+@app.route('/workflow/list/operation/{operator_name}', cors=True, methods=['GET'], authorizer=authorizer)
+def list_workflows_by_operator(operator_name):
     """ List all workflow defintions that contain an operator
 
     Returns:
@@ -1682,7 +1604,7 @@ def list_workflows_by_operator(OperatorName):
     table = DYNAMO_RESOURCE.Table(WORKFLOW_TABLE_NAME)
 
     response = table.scan(
-        FilterExpression=Attr("Operations").contains(OperatorName),
+        FilterExpression=Attr("Operations").contains(operator_name),
         ConsistentRead=True
     )
     workflows = response['Items']
@@ -1692,8 +1614,9 @@ def list_workflows_by_operator(OperatorName):
 
     return workflows
 
-@app.route('/workflow/list/stage/{StageName}', cors=True, methods=['GET'], authorizer=authorizer)
-def list_workflows_by_stage(StageName):
+
+@app.route('/workflow/list/stage/{stage_name}', cors=True, methods=['GET'], authorizer=authorizer)
+def list_workflows_by_stage(stage_name):
     """ List all workflow defintions that contain a stage
 
     Returns:
@@ -1707,7 +1630,7 @@ def list_workflows_by_stage(StageName):
     table = DYNAMO_RESOURCE.Table(WORKFLOW_TABLE_NAME)
 
     response = table.scan(
-        FilterExpression=Attr("Stages."+StageName).exists(),
+        FilterExpression=Attr("Stages." + stage_name).exists(),
         ConsistentRead=True
     )
     workflows = response['Items']
@@ -1718,9 +1641,8 @@ def list_workflows_by_stage(StageName):
     return workflows
 
 
-
-@app.route('/workflow/{Name}', cors=True, methods=['GET'], authorizer=authorizer)
-def get_workflow_by_name(Name):
+@app.route('/workflow/{name}', cors=True, methods=['GET'], authorizer=authorizer)
+def get_workflow_by_name(name):
     """ Get a workflow definition by name
 
     Returns:
@@ -1735,20 +1657,20 @@ def get_workflow_by_name(Name):
     workflow = None
     response = table.get_item(
         Key={
-            'Name': Name
+            'Name': name
         })
 
     if "Item" in response:
         workflow = response["Item"]
     else:
         raise NotFoundError(
-            "Exception: workflow '%s' not found" % Name)
+            "Exception: workflow '%s' not found" % name)
 
     return workflow
 
 
-@app.route('/workflow/configuration/{Name}', cors=True, methods=['GET'], authorizer=authorizer)
-def get_workflow_configuration_by_name(Name):
+@app.route('/workflow/configuration/{name}', cors=True, methods=['GET'], authorizer=authorizer)
+def get_workflow_configuration_by_name(name):
     """ Get a workflow configruation object by name
 
     Returns:
@@ -1763,24 +1685,24 @@ def get_workflow_configuration_by_name(Name):
     workflow = None
     response = table.get_item(
         Key={
-            'Name': Name
+            'Name': name
         })
 
     if "Item" in response:
         workflow = response["Item"]
-        Configuration = {}
-        for Name, stage in workflow["Stages"].items():
-            Configuration[Name] = stage["Configuration"]
+        configuration = {}
+        for key, stage in workflow["Stages"].items():
+            configuration[key] = stage["Configuration"]
 
     else:
         raise NotFoundError(
-            "Exception: workflow '%s' not found" % Name)
+            "Exception: workflow '%s' not found" % name)
 
-    return Configuration
+    return configuration
 
 
-@app.route('/workflow/{Name}', cors=True, methods=['DELETE'], authorizer=authorizer)
-def delete_workflow_api(Name):
+@app.route('/workflow/{name}', cors=True, methods=['DELETE'], authorizer=authorizer)
+def delete_workflow_api(name):
     """ Delete a workflow
 
     Returns:
@@ -1791,11 +1713,12 @@ def delete_workflow_api(Name):
         500: ChaliceViewError - internal server error
     """
 
-    stage = delete_workflow(Name)
+    stage = delete_workflow(name)
 
     return stage
 
-def delete_workflow(Name):
+
+def delete_workflow(name):
 
     table = DYNAMO_RESOURCE.Table(WORKFLOW_TABLE_NAME)
 
@@ -1804,7 +1727,7 @@ def delete_workflow(Name):
         workflow = {}
         response = table.get_item(
             Key={
-                'Name': Name
+                'Name': name
             },
             ConsistentRead=True)
 
@@ -1818,16 +1741,16 @@ def delete_workflow(Name):
 
             response = table.delete_item(
                 Key={
-                    'Name': Name
+                    'Name': name
                 })
         else:
-            workflow["Message"] = "Workflow '%s' not found" % Name
+            workflow["Message"] = "Workflow '%s' not found" % name
 
     except Exception as e:
 
         workflow = None
-        logger.error("Exception {}".format(e))
-        raise ChaliceViewError("Exception: '%s'" % e)
+        log_exception(e)
+        raise ChaliceViewError(format_exception(e))
 
     return workflow
 
@@ -1926,85 +1849,84 @@ def create_workflow_execution(trigger, workflow_execution):
     create_asset = None
 
     logger.info('create_workflow_execution workflow config: ' + str(workflow_execution))
-    if "Input" in workflow_execution and "AssetId" in workflow_execution["Input"]:
-        create_asset = False
-    elif "Input" in workflow_execution and "Media" in workflow_execution["Input"]:
-        create_asset = True
-    else:
+    workflow_input = workflow_execution.get("Input", {})
+    try:
+        # Find AssetId then Media in Input (in that order). One or the other must exist.
+        # If it is AssetId, we don't need to create an asset.
+        # Otherwise, if it is only Media, we do need to reate an asset.
+        # If neither exists, we'll get an IndexError when accessing the first item in the array.
+        create_asset = [k for k in ("AssetId", "Media") if k in workflow_input][0] == "Media"
+    except IndexError:
         raise BadRequestError('Input must contain either "AssetId" or "Media"')
 
     try:
-        Name = workflow_execution["Name"]
+        name = workflow_execution["Name"]
 
-        Configuration = workflow_execution["Configuration"] if "Configuration" in workflow_execution  else {}
+        configuration = workflow_execution.get("Configuration", {})
 
-        # BRANDON - make an asset
+        # make an asset
         dataplane = DataPlane()
-        if create_asset is True:
+        if create_asset:
             try:
-                input = workflow_execution["Input"]["Media"]
-                media_type = list(input.keys())[0]
-                s3bucket = input[media_type]["S3Bucket"]
-                s3key = input[media_type]["S3Key"]
+                media = workflow_input["Media"]
+                media_type = list(media.keys())[0]
+                s3bucket = media[media_type]["S3Bucket"]
+                s3key = media[media_type]["S3Key"]
             except KeyError as e:
-                logger.error("Exception {}".format(e))
-                raise ChaliceViewError("Exception '%s'" % e)
-            else:
-                asset_creation = dataplane.create_asset(media_type, s3bucket, s3key)
-                # If create_asset fails, then asset_creation will contain the error
-                # string instead of the expected dict. So, we'll raise that error
-                # if we get a KeyError in the following try block:
-                try:
-                    asset_input = {
-                        "Media": {
-                            media_type: {
-                                "S3Bucket": asset_creation["S3Bucket"],
-                                "S3Key": asset_creation["S3Key"]
-                            }
+                log_exception(e)
+                raise ChaliceViewError(format_exception(e))
+
+            asset_creation = dataplane.create_asset(media_type, s3bucket, s3key)
+            # If create_asset fails, then asset_creation will contain the error
+            # string instead of the expected dict. So, we'll raise that error
+            # if we get a KeyError in the following try block:
+            try:
+                asset_input = {
+                    "Media": {
+                        media_type: {
+                            "S3Bucket": asset_creation["S3Bucket"],
+                            "S3Key": asset_creation["S3Key"]
                         }
                     }
-                    asset_id = asset_creation["AssetId"]
-                except KeyError as e:
-                    logger.error("Error creating asset {}".format(asset_creation))
-                    raise ChaliceViewError("Error creating asset '%s'" % asset_creation)
+                }
+                asset_id = asset_creation["AssetId"]
+            except KeyError:
+                logger.error("Error creating asset {}".format(asset_creation))
+                raise ChaliceViewError("Error creating asset '%s'" % asset_creation)
         else:
 
+            asset_id = workflow_input["AssetId"]
+
+            workflow_execution_list = list_workflow_executions_by_assetid(asset_id)
+            acceptable_status = [awsmie.WORKFLOW_STATUS_COMPLETE, awsmie.WORKFLOW_STATUS_ERROR]
+            for workflow_execution in (workflow_execution
+                                       for workflow_execution in workflow_execution_list
+                                       if workflow_execution["Status"] not in acceptable_status):
+                raise ConflictError("There is currently another workflow execution(Id = {}) active on AssetId {}.".format(
+                    workflow_execution["Id"], asset_id))
+
+            retrieve_asset = dataplane.retrieve_asset_metadata(asset_id)
             try:
-                input = workflow_execution["Input"]["AssetId"]
-            except KeyError as e:
-                logger.error("Exception {}".format(e))
-                raise ChaliceViewError("Exception '%s'" % e)
-            else:
-                asset_id = input
-
-                workflow_execution_list = list_workflow_executions_by_assetid(asset_id)
-                for workflow_execution in workflow_execution_list:
-                    if workflow_execution["Status"] not in [awsmie.WORKFLOW_STATUS_COMPLETE, awsmie.WORKFLOW_STATUS_ERROR]:
-                        raise ConflictError("There is currently another workflow execution(Id = {}) active on AssetId {}.".format(
-                            workflow_execution["Id"], asset_id))
-
-                retrieve_asset = dataplane.retrieve_asset_metadata(asset_id)
-                if "results" in retrieve_asset:
-                    s3bucket = retrieve_asset["results"]["S3Bucket"]
-                    s3key = retrieve_asset["results"]["S3Key"]
-                    media_type = retrieve_asset["results"]["MediaType"]
-                    asset_input = {
-                        "Media": {
-                            media_type: {
-                                "S3Bucket": s3bucket,
-                                "S3Key": s3key
-                            }
+                s3bucket = retrieve_asset["results"]["S3Bucket"]
+                s3key = retrieve_asset["results"]["S3Key"]
+                media_type = retrieve_asset["results"]["MediaType"]
+                asset_input = {
+                    "Media": {
+                        media_type: {
+                            "S3Bucket": s3bucket,
+                            "S3Key": s3key
                         }
                     }
-                else:
-                    raise ChaliceViewError("Unable to retrieve asset: {e}".format(e=asset_id))
+                }
+            except KeyError:
+                raise ChaliceViewError("Unable to retrieve asset: {e}".format(e=asset_id))
 
-        workflow_execution = initialize_workflow_execution(trigger, Name, asset_input, Configuration, asset_id)
+        workflow_execution = initialize_workflow_execution(trigger, name, asset_input, configuration, asset_id)
 
         execution_table.put_item(Item=workflow_execution)
         dynamo_status_queued = True
 
-        # FIXME - must set workflow status to error if this fails since we marked it as QUeued .  we had to do that to avoid
+        # TODO - must set workflow status to error if this fails since we marked it as QUeued .  we had to do that to avoid
         # race condition on status with the execution itself.  Once we hand it off to the state machine, we can't touch the status again.
         response = SQS_CLIENT.send_message(QueueUrl=STAGE_EXECUTION_QUEUE_URL, MessageBody=json.dumps(workflow_execution))
         # the response contains MD5 of the body, a message Id, MD5 of message attributes, and a sequence number (for FIFO queues)
@@ -2017,18 +1939,17 @@ def create_workflow_execution(trigger, workflow_execution):
         )
 
     except Exception as e:
-        logger.error("Exception {}".format(e))
+        log_exception(e)
 
         if dynamo_status_queued:
             update_workflow_execution_status(workflow_execution["Id"], awsmie.WORKFLOW_STATUS_ERROR, "Exception {}".format(e))
 
-        raise ChaliceViewError("Exception '%s'" % e)
+        raise ChaliceViewError(format_exception(e))
 
     return workflow_execution
 
 
-
-def initialize_workflow_execution(trigger, Name, input, Configuration, asset_id):
+def initialize_workflow_execution(trigger, name, input, configuration, asset_id):
 
     workflow_table = DYNAMO_RESOURCE.Table(WORKFLOW_TABLE_NAME)
 
@@ -2038,7 +1959,7 @@ def initialize_workflow_execution(trigger, Name, input, Configuration, asset_id)
     workflow_execution["CurrentStage"] = None
     workflow_execution["Globals"] = {"Media": {}, "MetaData": {}}
     workflow_execution["Globals"].update(input)
-    workflow_execution["Configuration"] = Configuration
+    workflow_execution["Configuration"] = configuration
     workflow_execution["AssetId"] = asset_id
     workflow_execution["Version"] = "v0"
     workflow_execution["Created"] = str(datetime.now().timestamp())
@@ -2048,41 +1969,44 @@ def initialize_workflow_execution(trigger, Name, input, Configuration, asset_id)
     # lookup base workflow
     response = workflow_table.get_item(
         Key={
-            'Name': Name
+            'Name': name
         },
         ConsistentRead=True)
 
-    if "Item" in response:
+    try:
         workflow = response["Item"]
-    else:
+    except KeyError:
         raise ChaliceViewError(
-            "Exception: workflow name '%s' not found" % Name)
+            "Exception: workflow name '%s' not found" % name)
 
     print(workflow)
+    stages = workflow["Stages"]
+
+    # Verify that all stages in the configuration are valid stages defined in the workflow
+    for stage in (stage for stage in configuration.keys() if stage not in stages):
+        # Report the first invalid stage we find.
+        workflow_execution["Workflow"] = None
+        raise ChaliceViewError("Exception: Invalid stage found in Configuration '%s'" % stage)
+
     # Override the default configuration with Configuration key-value pairs that are input to the
     # /workflow/execution API.  Update only keys that are passed in, leaving the
     # defaults for any key that is not specified
-    for stage, sconfig in Configuration.items():
-        if stage in workflow["Stages"]:
-            for operation, oconfig in sconfig.items():
-                if operation in workflow["Stages"][stage]["Configuration"]:
-                    for key, value in oconfig.items():
-                        workflow["Stages"][stage]["Configuration"][operation][key] = value
-                else:
-                    workflow_execution["Workflow"] = None
-                    raise ChaliceViewError("Exception: Invalid operation '%s'" % operation)
-        else:
+    for stage, operation, oconfig in ((stage, operation, oconfig)
+                                      for stage, sconfig in configuration.items()
+                                      for operation, oconfig in sconfig.items()):
+        if operation not in stages[stage]["Configuration"]:
             workflow_execution["Workflow"] = None
-            raise ChaliceViewError("Exception: Invalid stage found in Configuration '%s'" % stage)
+            raise ChaliceViewError("Exception: Invalid operation '%s'" % operation)
+        for key, value in oconfig.items():
+            stages[stage]["Configuration"][operation][key] = value
 
-    for stage in workflow["Stages"]:
-        workflow["Stages"][stage]["Status"] = awsmie.STAGE_STATUS_NOT_STARTED
-        workflow["Stages"][stage]["Metrics"] = {}
-        workflow["Stages"][stage]["Name"] = stage
-        workflow["Stages"][stage]["AssetId"] = asset_id
-        workflow["Stages"][stage]["WorkflowExecutionId"] = workflow_execution["Id"]
-        if "MetaData" not in workflow["Stages"][stage]:
-            workflow["Stages"][stage]["MetaData"] = {}
+    for stage, stage_definition in stages.items():
+        stage_definition["Status"] = awsmie.STAGE_STATUS_NOT_STARTED
+        stage_definition["Metrics"] = {}
+        stage_definition["Name"] = stage
+        stage_definition["AssetId"] = asset_id
+        stage_definition["WorkflowExecutionId"] = workflow_execution["Id"]
+        stage_definition.setdefault("MetaData", {})
 
     workflow_execution["Workflow"] = workflow
 
@@ -2098,8 +2022,8 @@ def initialize_workflow_execution(trigger, Name, input, Configuration, asset_id)
     return workflow_execution
 
 
-@app.route('/workflow/execution/{Id}', cors=True, methods=['PUT'], authorizer=authorizer)
-def update_workflow_execution(Id):
+@app.route('/workflow/execution/{id}', cors=True, methods=['PUT'], authorizer=authorizer)
+def update_workflow_execution(id):
     """ Update a workflow execution
 
        Options:
@@ -2136,11 +2060,12 @@ def update_workflow_execution(Id):
     logger.info(json.dumps(params))
 
     if "WaitingStageName" in params:
-        response = resume_workflow_execution("api", Id, params["WaitingStageName"])
+        response = resume_workflow_execution(id, params["WaitingStageName"])
 
     return response
 
-def resume_workflow_execution(trigger, id, waiting_stage_name):
+
+def resume_workflow_execution(id, waiting_stage_name):
     """
     Get the workflow execution by id from dyanamo and assign to this object
     :param id: The id of the workflow execution
@@ -2154,20 +2079,24 @@ def resume_workflow_execution(trigger, id, waiting_stage_name):
     workflow_execution["Id"] = id
     workflow_execution["Status"] = awsmie.WORKFLOW_STATUS_RESUMED
 
+    ATT_WORKFLOW_WAITING_STATUS = ':workflow_waiting_status'
+    ATT_WAITING_STAGE_NAME = ':waiting_stage_name'
+
     try:
         response = execution_table.update_item(
             Key={
                 'Id': id
             },
-            UpdateExpression='SET #workflow_status = :workflow_status',
+            UpdateExpression='SET {} = {}'.format(ATT_NAME_WORKFLOW_STATUS, ATT_VALUE_WORKFLOW_STATUS),
             ExpressionAttributeNames={
-                '#workflow_status': "Status"
+                ATT_NAME_WORKFLOW_STATUS: "Status"
             },
-            ConditionExpression="#workflow_status = :workflow_waiting_status AND CurrentStage = :waiting_stage_name",
+            ConditionExpression="{} = {} AND CurrentStage = {}".format(
+                ATT_NAME_WORKFLOW_STATUS, ATT_WORKFLOW_WAITING_STATUS, ATT_WAITING_STAGE_NAME),
             ExpressionAttributeValues={
-                ':workflow_waiting_status': awsmie.WORKFLOW_STATUS_WAITING,
-                ':workflow_status': awsmie.WORKFLOW_STATUS_RESUMED,
-                ':waiting_stage_name': waiting_stage_name
+                ATT_WORKFLOW_WAITING_STATUS: awsmie.WORKFLOW_STATUS_WAITING,
+                ATT_VALUE_WORKFLOW_STATUS: awsmie.WORKFLOW_STATUS_RESUMED,
+                ATT_WAITING_STAGE_NAME: waiting_stage_name
             }
         )
     except ClientError as e:
@@ -2178,7 +2107,7 @@ def resume_workflow_execution(trigger, id, waiting_stage_name):
             raise
 
     # Queue the resumed workflow so it can run when resources are available
-    # FIXME - must set workflow status to error if this fails since we marked it as QUeued .  we had to do that to avoid
+    # TODO - must set workflow status to error if this fails since we marked it as QUeued .  we had to do that to avoid
     # race condition on status with the execution itself.  Once we hand it off to the state machine, we can't touch the status again.
     response = SQS_CLIENT.send_message(QueueUrl=STAGE_EXECUTION_QUEUE_URL, MessageBody=json.dumps(workflow_execution))
     # the response contains MD5 of the body, a message Id, MD5 of message attributes, and a sequence number (for FIFO queues)
@@ -2215,8 +2144,9 @@ def list_workflow_executions():
 
     return workflow_executions
 
-@app.route('/workflow/execution/status/{Status}', cors=True, methods=['GET'], authorizer=authorizer)
-def list_workflow_executions_by_status(Status):
+
+@app.route('/workflow/execution/status/{status}', cors=True, methods=['GET'], authorizer=authorizer)
+def list_workflow_executions_by_status(status):
     """ Get all workflow executions with the specified status
 
     Returns:
@@ -2228,18 +2158,19 @@ def list_workflow_executions_by_status(Status):
         500: Internal server error
     """
     table = DYNAMO_RESOURCE.Table(WORKFLOW_EXECUTION_TABLE_NAME)
-    projection_expression = "Id, AssetId, CurrentStage, StateMachineExecutionArn, #workflow_status, Workflow.#workflow_name"
+    projection_expression = "Id, AssetId, CurrentStage, StateMachineExecutionArn, {}, Workflow.{}".format(
+        ATT_NAME_WORKFLOW_STATUS, ATT_NAME_WORKFLOW_NAME)
 
     response = table.query(
         IndexName='WorkflowExecutionStatus',
         ExpressionAttributeNames={
-            '#workflow_status': "Status",
-            '#workflow_name': "Name"
+            ATT_NAME_WORKFLOW_STATUS: "Status",
+            ATT_NAME_WORKFLOW_NAME: "Name"
         },
         ExpressionAttributeValues={
-            ':workflow_status': Status
+            ATT_VALUE_WORKFLOW_STATUS: status
         },
-        KeyConditionExpression='#workflow_status = :workflow_status',
+        KeyConditionExpression='{} = {}'.format(ATT_NAME_WORKFLOW_STATUS, ATT_VALUE_WORKFLOW_STATUS),
         ProjectionExpression = projection_expression
         )
 
@@ -2249,21 +2180,21 @@ def list_workflow_executions_by_status(Status):
             ExclusiveStartKey=response['LastEvaluatedKey'],
             IndexName='WorkflowExecutionStatus',
             ExpressionAttributeNames={
-                '#workflow_status': "Status",
-                '#workflow_name': "Name"
+                ATT_NAME_WORKFLOW_STATUS: "Status",
+                ATT_NAME_WORKFLOW_NAME: "Name"
             },
             ExpressionAttributeValues={
-                ':workflow_status': Status
+                ATT_VALUE_WORKFLOW_STATUS: status
             },
-            KeyConditionExpression='#workflow_status = :workflow_status',
+            KeyConditionExpression='{} = {}'.format(ATT_NAME_WORKFLOW_STATUS, ATT_VALUE_WORKFLOW_STATUS),
             ProjectionExpression = projection_expression
         )
         workflow_executions.extend(response['Items'])
 
     return workflow_executions
 
-@app.route('/workflow/execution/asset/{AssetId}', cors=True, methods=['GET'], authorizer=authorizer)
-def list_workflow_executions_by_assetid(AssetId):
+@app.route('/workflow/execution/asset/{asset_id}', cors=True, methods=['GET'], authorizer=authorizer)
+def list_workflow_executions_by_assetid(asset_id):
     """ Get workflow executions by AssetId
 
     Returns:
@@ -2276,16 +2207,17 @@ def list_workflow_executions_by_assetid(AssetId):
     """
     table = DYNAMO_RESOURCE.Table(WORKFLOW_EXECUTION_TABLE_NAME)
 
-    projection_expression = "Id, AssetId, CurrentStage, Created, StateMachineExecutionArn, #workflow_status, Workflow.#workflow_name"
+    projection_expression = "Id, AssetId, CurrentStage, Created, StateMachineExecutionArn, {}, Workflow.{}".format(
+        ATT_NAME_WORKFLOW_STATUS, ATT_NAME_WORKFLOW_NAME)
 
     response = table.query(
         IndexName='WorkflowExecutionAssetId',
         ExpressionAttributeNames={
-            '#workflow_status': "Status",
-            '#workflow_name': "Name"
+            ATT_NAME_WORKFLOW_STATUS: "Status",
+            ATT_NAME_WORKFLOW_NAME: "Name"
         },
         ExpressionAttributeValues={
-            ':assetid': AssetId
+            ':assetid': asset_id
         },
         KeyConditionExpression='AssetId = :assetid',
         ProjectionExpression = projection_expression
@@ -2296,22 +2228,23 @@ def list_workflow_executions_by_assetid(AssetId):
             ExclusiveStartKey=response['LastEvaluatedKey'],
             IndexName='WorkflowExecutionAssetId',
             ExpressionAttributeNames={
-                '#workflow_status': "Status",
-                '#workflow_name': "Name"
+                ATT_NAME_WORKFLOW_STATUS: "Status",
+                ATT_NAME_WORKFLOW_NAME: "Name"
             },
             ExpressionAttributeValues={
-                ':assetid': AssetId
+                ':assetid': asset_id
             },
             KeyConditionExpression='AssetId = :assetid',
-            ProjectionExpression = projection_expression
+            ProjectionExpression=projection_expression
         )
         workflow_executions.extend(response['Items'])
 
     sorted_executions = sorted(workflow_executions, key=itemgetter('Created'), reverse=True)
     return sorted_executions
 
-@app.route('/workflow/execution/{Id}', cors=True, methods=['GET'], authorizer=authorizer)
-def get_workflow_execution_by_id(Id):
+
+@app.route('/workflow/execution/{id}', cors=True, methods=['GET'], authorizer=authorizer)
+def get_workflow_execution_by_id(id):
     """ Get a workflow execution by id
 
     Returns:
@@ -2326,7 +2259,7 @@ def get_workflow_execution_by_id(Id):
     workflow_execution = None
     response = table.get_item(
         Key={
-            'Id': Id
+            'Id': id
         },
         ConsistentRead=True)
 
@@ -2334,13 +2267,13 @@ def get_workflow_execution_by_id(Id):
         workflow_execution = response["Item"]
     else:
         raise NotFoundError(
-            "Exception: workflow execution '%s' not found" % Id)
+            "Exception: workflow execution '%s' not found" % id)
 
     return workflow_execution
 
 
-@app.route('/workflow/execution/{Id}', cors=True, methods=['DELETE'], authorizer=authorizer)
-def delete_workflow_execution(Id):
+@app.route('/workflow/execution/{id}', cors=True, methods=['DELETE'], authorizer=authorizer)
+def delete_workflow_execution(id):
     """ Delete a workflow executions
 
     Returns:
@@ -2356,7 +2289,7 @@ def delete_workflow_execution(Id):
         workflow_execution = None
         response = table.get_item(
             Key={
-                'Id': Id
+                'Id': id
             },
             ConsistentRead=True)
 
@@ -2364,20 +2297,21 @@ def delete_workflow_execution(Id):
             workflow_execution = response["Item"]
         else:
             raise NotFoundError(
-                "Exception: workflow execution '%s' not found" % Id)
+                "Exception: workflow execution '%s' not found" % id)
 
         response = table.delete_item(
             Key={
-                'Id': Id
+                'Id': id
             })
 
     except Exception as e:
 
         workflow_execution = None
-        logger.error("Exception {}".format(e))
-        raise ChaliceViewError("Exception: '%s'" % e)
+        log_exception(e)
+        raise ChaliceViewError(format_exception(e))
 
     return workflow_execution
+
 
 def update_workflow_execution_status(id, status, message):
     """
@@ -2386,41 +2320,41 @@ def update_workflow_execution_status(id, status, message):
     :param status: The new status of the workflow execution
 
     """
-    print("Update workflow execution {} set status = {}".format(id, status))
+    print("Update workflow execution {} set status = {}".format(id, status)) #nosec
     execution_table = DYNAMO_RESOURCE.Table(WORKFLOW_EXECUTION_TABLE_NAME)
 
     if status == awsmie.WORKFLOW_STATUS_ERROR:
-        response = execution_table.update_item(
+        execution_table.update_item(
             Key={
                 'Id': id
             },
-            UpdateExpression='SET #workflow_status = :workflow_status, Message = :message',
+            UpdateExpression='SET {} = {}, Message = :message'.format(ATT_NAME_WORKFLOW_STATUS, ATT_VALUE_WORKFLOW_STATUS),
             ExpressionAttributeNames={
-                '#workflow_status': "Status"
+                ATT_NAME_WORKFLOW_STATUS: "Status"
             },
             ExpressionAttributeValues={
-                ':workflow_status': status,
+                ATT_VALUE_WORKFLOW_STATUS: status,
                 ':message': message
 
             }
         )
     else:
-        response = execution_table.update_item(
+        execution_table.update_item(
             Key={
                 'Id': id
             },
-            UpdateExpression='SET #workflow_status = :workflow_status',
+            UpdateExpression='SET {} = {}'.format(ATT_NAME_WORKFLOW_STATUS, ATT_VALUE_WORKFLOW_STATUS),
             ExpressionAttributeNames={
-                '#workflow_status': "Status"
+                ATT_NAME_WORKFLOW_STATUS: "Status"
             },
             ExpressionAttributeValues={
-                ':workflow_status': status
+                ATT_VALUE_WORKFLOW_STATUS: status
             }
         )
 
     if status in [awsmie.WORKFLOW_STATUS_QUEUED, awsmie.WORKFLOW_STATUS_COMPLETE, awsmie.WORKFLOW_STATUS_ERROR]:
         # Trigger the workflow_scheduler
-        response = LAMBDA_CLIENT.invoke(
+        LAMBDA_CLIENT.invoke(
             FunctionName=WORKFLOW_SCHEDULER_LAMBDA_ARN,
             InvocationType='Event'
         )
@@ -2434,6 +2368,21 @@ def update_workflow_execution_status(id, status, message):
 #
 # ================================================================================================
 
+
+def get_transcribe_client():
+    global TRANSCRIBE_CLIENT
+    if TRANSCRIBE_CLIENT is None:
+        TRANSCRIBE_CLIENT = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
+    return TRANSCRIBE_CLIENT
+
+
+def get_translate_client():
+    global TRANSLATE_CLIENT
+    if TRANSLATE_CLIENT is None:
+        TRANSLATE_CLIENT = boto3.client('translate', region_name=os.environ['AWS_REGION'])
+    return TRANSLATE_CLIENT
+
+
 @app.route('/service/transcribe/get_vocabulary', cors=True, methods=['POST'], content_types=['application/json'], authorizer=authorizer)
 def get_vocabulary():
     """ Get the description for an Amazon Transcribe custom vocabulary.
@@ -2446,8 +2395,8 @@ def get_vocabulary():
         See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.get_vocabulary>`_
     """
     print('get_vocabulary request: '+app.current_request.raw_body.decode())
-    transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
     vocabulary_name = json.loads(app.current_request.raw_body.decode())['vocabulary_name']
+    transcribe_client = get_transcribe_client()
     response = transcribe_client.get_vocabulary(VocabularyName=vocabulary_name)
     # Convert time field to a format that is JSON serializable
     response['LastModifiedTime'] = response['LastModifiedTime'].isoformat()
@@ -2486,11 +2435,11 @@ def download_vocabulary():
         500: ChaliceViewError - internal server error
     """
     print('download_vocabulary request: '+app.current_request.raw_body.decode())
-    transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
+    transcribe_client = get_transcribe_client()
     vocabulary_name = json.loads(app.current_request.raw_body.decode())['vocabulary_name']
     url = transcribe_client.get_vocabulary(VocabularyName=vocabulary_name)['DownloadUri']
     import urllib.request
-    vocabulary_file = urllib.request.urlopen(url).read().decode("utf-8")
+    vocabulary_file = urllib.request.urlopen(url).read().decode("utf-8") #nosec
     vocabulary_json = []
     vocabulary_fields = vocabulary_file.split('\n')[0].split('\t')
     for line in vocabulary_file.split('\n')[1:]:
@@ -2520,7 +2469,7 @@ def list_vocabularies():
     """
     # List all custom vocabularies
     print('list_vocabularies request: '+app.current_request.raw_body.decode())
-    transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
+    transcribe_client = get_transcribe_client()
     response = transcribe_client.list_vocabularies(MaxResults=100)
     vocabularies = response['Vocabularies']
     while ('NextToken' in response):
@@ -2555,8 +2504,8 @@ def delete_vocabulary():
     """
     # Delete the specified vocabulary if it exists
     print('delete_vocabulary request: '+app.current_request.raw_body.decode())
-    transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
     vocabulary_name = json.loads(app.current_request.raw_body.decode())['vocabulary_name']
+    transcribe_client = get_transcribe_client()
     response = transcribe_client.delete_vocabulary(VocabularyName=vocabulary_name)
     return response
 
@@ -2586,9 +2535,9 @@ def create_vocabulary():
     """
     # Save the input vocab to a new vocabulary
     print('create_vocabulary request: '+app.current_request.raw_body.decode())
-    transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
     vocabulary_name = json.loads(app.current_request.raw_body.decode())['vocabulary_name']
     language_code = json.loads(app.current_request.raw_body.decode())['language_code']
+    transcribe_client = get_transcribe_client()
     response = transcribe_client.create_vocabulary(
         VocabularyName=vocabulary_name,
         LanguageCode=language_code,
@@ -2609,7 +2558,7 @@ def list_language_models():
         See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.list_language_models>`_
     """
     print('list_language_models request: '+app.current_request.raw_body.decode())
-    transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
+    transcribe_client = get_transcribe_client()
     response = transcribe_client.list_language_models()
     models = response['Models']
     while ('NextToken' in response):
@@ -2642,8 +2591,8 @@ def describe_language_model():
         See `the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.describe_language_model>`_
     """
     print('describe_language_model request: '+app.current_request.raw_body.decode())
-    transcribe_client = boto3.client('transcribe', region_name=os.environ['AWS_REGION'])
     request_payload = dict(json.loads(app.current_request.raw_body.decode()))
+    transcribe_client = get_transcribe_client()
     response = transcribe_client.describe_language_model(**request_payload)
     # Convert time field to a format that is JSON serializable
     response['LanguageModel']['CreateTime'] = response['LanguageModel']['CreateTime'].isoformat()
@@ -2672,8 +2621,8 @@ def get_terminology():
         500: ChaliceViewError - internal server error
     """
     print('get_terminology request: '+app.current_request.raw_body.decode())
-    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
     terminology_name = json.loads(app.current_request.raw_body.decode())['terminology_name']
+    translate_client = get_translate_client()
     response = translate_client.get_terminology(Name=terminology_name, TerminologyDataFormat='CSV')
     # Remove response metadata since we don't need it
     del response['ResponseMetadata']
@@ -2711,11 +2660,11 @@ def download_terminology():
     """
     # This function returns the specified terminology in CSV format, wrapped in a JSON formatted response.
     print('download_terminology request: '+app.current_request.raw_body.decode())
-    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
+    translate_client = get_translate_client()
     terminology_name = json.loads(app.current_request.raw_body.decode())['terminology_name']
     url = translate_client.get_terminology(Name=terminology_name, TerminologyDataFormat='CSV')['TerminologyDataLocation']['Location']
     import urllib.request
-    terminology_csv = urllib.request.urlopen(url).read().decode("utf-8")
+    terminology_csv = urllib.request.urlopen(url).read().decode("utf-8") #nosec
     return {"terminology": terminology_csv}
 
 
@@ -2733,11 +2682,11 @@ def list_terminologies():
     """
     # This function returns a list of saved terminologies
     print('list_terminologies request: '+app.current_request.raw_body.decode())
-    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
+    translate_client = get_translate_client()
     response = translate_client.list_terminologies(MaxResults=100)
     terminologies = response['TerminologyPropertiesList']
     while ('NextToken' in response):
-        response = translate_client.list_terminologies(MaxResults=100, NextToken=response['NextToken'])
+        response = TRANSLATE_CLIENT.list_terminologies(MaxResults=100, NextToken=response['NextToken'])
         terminologies = terminologies + response['TerminologyPropertiesList']
     # Convert time field to a format that is JSON serializable
     for item in terminologies:
@@ -2771,8 +2720,8 @@ def delete_terminology():
     """
     # Delete the specified terminology if it exists
     print('delete_terminology request: '+app.current_request.raw_body.decode())
-    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
     terminology_name = json.loads(app.current_request.raw_body.decode())['terminology_name']
+    translate_client = get_translate_client()
     response = translate_client.delete_terminology(Name=terminology_name)
     return response
 
@@ -2802,9 +2751,9 @@ def create_terminology():
     """
     # Save the input terminology to a new terminology
     print('create_terminology request: '+app.current_request.raw_body.decode())
-    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
     terminology_name = json.loads(app.current_request.raw_body.decode())['terminology_name']
     terminology_csv = json.loads(app.current_request.raw_body.decode())['terminology_csv']
+    translate_client = get_translate_client()
     response = translate_client.import_terminology(
         Name=terminology_name,
         MergeStrategy='OVERWRITE',
@@ -2837,8 +2786,8 @@ def get_parallel_data():
         500: ChaliceViewError - internal server error
     """
     print('get_parallel_data request: '+app.current_request.raw_body.decode())
-    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
     request_payload = dict(json.loads(app.current_request.raw_body.decode()))
+    translate_client = get_translate_client()
     response = translate_client.get_parallel_data(**request_payload)
 
     # Convert time field to a format that is JSON serializable
@@ -2875,11 +2824,11 @@ def download_parallel_data():
     """
     # This function returns the specified parallel_data in CSV format, wrapped in a JSON formatted response.
     print('download_parallel_data request: '+app.current_request.raw_body.decode())
-    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
+    translate_client = get_translate_client()
     request_payload = dict(json.loads(app.current_request.raw_body.decode()))
     url = translate_client.get_parallel_data(**request_payload)['DataLocation']['Location']
     import urllib.request
-    parallel_data_csv = urllib.request.urlopen(url).read().decode("utf-8")
+    parallel_data_csv = urllib.request.urlopen(url).read().decode("utf-8") #nosec
     return {"parallel_data_csv": parallel_data_csv}
 
 
@@ -2897,7 +2846,7 @@ def list_parallel_data():
     """
     # This function returns a list of saved parallel_data
     print('list_parallel_data request: '+app.current_request.raw_body.decode())
-    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
+    translate_client = get_translate_client()
     response = translate_client.list_parallel_data(MaxResults=100)
     parallel_data = response['ParallelDataPropertiesList']
     while ('NextToken' in response):
@@ -2935,8 +2884,8 @@ def delete_parallel_data():
     """
     # Delete the specified parallel_data if it exists
     print('delete_parallel_data request: '+app.current_request.raw_body.decode())
-    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
     request_payload = dict(json.loads(app.current_request.raw_body.decode()))
+    translate_client = get_translate_client()
     response = translate_client.delete_parallel_data(**request_payload)
     return response
 
@@ -2971,8 +2920,8 @@ def create_parallel_data():
         See the boto3 documentation for details
         500: ChaliceViewError - internal server error
     """
-    translate_client = boto3.client('translate', region_name=os.environ['AWS_REGION'])
     request_payload = dict(json.loads(app.current_request.raw_body.decode()))
+    translate_client = get_translate_client()
     response = translate_client.create_parallel_data(**request_payload)
     return response
 
@@ -2990,10 +2939,10 @@ def create_parallel_data():
 def workflow_custom_resource(event, context):
     '''Handle Lambda event from AWS CloudFormation'''
     # Setup alarm for remaining runtime minus a second
-    signal.alarm(int(context.get_remaining_time_in_millis() / 1000) - 1)
+    # signal.alarm(int(context.get_remaining_time_in_millis() / 1000) - 1)
 
     # send_response(event, context, "SUCCESS",
-    #                     {"Message": "Resource deletion successful!"})
+    #                     {"Message": RESOURCE_DELETE_SUCCESS})
     try:
         logger.info('REQUEST RECEIVED:\n %s', event)
         logger.info('REQUEST RECEIVED:\n %s', context)
@@ -3008,14 +2957,14 @@ def workflow_custom_resource(event, context):
         elif event["ResourceProperties"]["ResourceType"] == "Workflow":
             workflow_resource(event, context)
         else:
-            logger.info('FAILED!')
+            logger.info(FAILED)
             send_response(event, context, "FAILED",
                           {"Message": "Unexpected resource type received from CloudFormation"})
 
 
     except Exception as e:
 
-        logger.info('FAILED!')
+        logger.info(FAILED)
         send_response(event, context, "FAILED", {
             "Message": "Exception during processing: '%s'" % e})
 
@@ -3024,7 +2973,7 @@ def operation_resource(event, context):
     operation = {}
 
     if event['RequestType'] == 'Create':
-        logger.info('CREATE!')
+        logger.info(CREATE)
 
         operation = event["ResourceProperties"]
 
@@ -3032,26 +2981,26 @@ def operation_resource(event, context):
         operation["Configuration"]["Enabled"] = True if operation["Configuration"]["Enabled"] == 'true' else False
         operation = create_operation(operation)
         send_response(event, context, "SUCCESS",
-                      {"Message": "Resource creation successful!", "Name": event["ResourceProperties"]["Name"],
+                      {"Message": RESOURCE_CREATE_SUCCESS, "Name": event["ResourceProperties"]["Name"],
                        "StageName": operation["StageName"]})
     elif event['RequestType'] == 'Update':
-        logger.info('UPDATE!')
+        logger.info(UPDATE)
         send_response(event, context, "SUCCESS",
-                      {"Message": "Resource update successful!", "Name": event["ResourceProperties"]["Name"],
+                      {"Message": RESOURCE_UPDATE_SUCCESS, "Name": event["ResourceProperties"]["Name"],
                        "StageName": operation["StageName"]})
     elif event['RequestType'] == 'Delete':
-        logger.info('DELETE!')
+        logger.info(DELETE)
 
-        Name = event["ResourceProperties"]["Name"]
+        name = event["ResourceProperties"]["Name"]
 
-        operation = delete_operation(Name, True)
+        operation = delete_operation(name, True)
 
         send_response(event, context, "SUCCESS",
-                      {"Message": "Resource deletion successful!", "Name": event["ResourceProperties"]["Name"]})
+                      {"Message": RESOURCE_DELETE_SUCCESS, "Name": event["ResourceProperties"]["Name"]})
     else:
-        logger.info('FAILED!')
+        logger.info(FAILED)
         send_response(event, context, "FAILED",
-                      {"Message": "Unexpected event received from CloudFormation"})
+                      {"Message": UNEXPECTED_CLOUD_FORMATION_EVENT})
 
     return operation
 
@@ -3060,30 +3009,30 @@ def stage_resource(event, context):
     stage = event["ResourceProperties"]
 
     if event['RequestType'] == 'Create':
-        logger.info('CREATE!')
+        logger.info(CREATE)
 
         create_stage(stage)
 
         send_response(event, context, "SUCCESS",
-                      {"Message": "Resource creation successful!", "Name": event["ResourceProperties"]["Name"]})
+                      {"Message": RESOURCE_CREATE_SUCCESS, "Name": event["ResourceProperties"]["Name"]})
 
     elif event['RequestType'] == 'Update':
-        logger.info('UPDATE!')
+        logger.info(UPDATE)
         send_response(event, context, "SUCCESS",
-                      {"Message": "Resource update successful!"})
+                      {"Message": RESOURCE_UPDATE_SUCCESS})
     elif event['RequestType'] == 'Delete':
-        logger.info('DELETE!')
+        logger.info(DELETE)
 
-        Name = event["ResourceProperties"]["Name"]
+        name = event["ResourceProperties"]["Name"]
 
-        stage = delete_stage(Name, True)
+        stage = delete_stage(name, True)
 
         send_response(event, context, "SUCCESS",
-                      {"Message": "Resource deletion successful!"})
+                      {"Message": RESOURCE_DELETE_SUCCESS})
     else:
-        logger.info('FAILED!')
+        logger.info(FAILED)
         send_response(event, context, "FAILED",
-                      {"Message": "Unexpected event received from CloudFormation"})
+                      {"Message": UNEXPECTED_CLOUD_FORMATION_EVENT})
 
     return stage
 
@@ -3094,7 +3043,7 @@ def workflow_resource(event, context):
     logger.info(json.dumps(workflow))
 
     if event['RequestType'] == 'Create':
-        logger.info('CREATE!')
+        logger.info(CREATE)
 
         workflow["Stages"] = json.loads(event["ResourceProperties"]["Stages"])
 
@@ -3102,27 +3051,27 @@ def workflow_resource(event, context):
 
         send_response(event, context, "SUCCESS",
                       {
-                          "Message": "Resource creation successful!",
+                          "Message": RESOURCE_CREATE_SUCCESS,
                           "Name": event["ResourceProperties"]["Name"],
                           "StateMachineArn": create_workflow_response["StateMachineArn"]
                       })
     elif event['RequestType'] == 'Update':
-        logger.info('UPDATE!')
+        logger.info(UPDATE)
         send_response(event, context, "SUCCESS",
-                      {"Message": "Resource update successful!"})
+                      {"Message": RESOURCE_UPDATE_SUCCESS})
     elif event['RequestType'] == 'Delete':
-        logger.info('DELETE!')
+        logger.info(DELETE)
 
-        Name = event["ResourceProperties"]["Name"]
+        name = event["ResourceProperties"]["Name"]
 
-        delete_workflow(Name)
+        delete_workflow(name)
 
         send_response(event, context, "SUCCESS",
-                      {"Message": "Resource deletion successful!"})
+                      {"Message": RESOURCE_DELETE_SUCCESS})
     else:
-        logger.info('FAILED!')
+        logger.info(FAILED)
         send_response(event, context, "FAILED",
-                      {"Message": "Unexpected event received from CloudFormation"})
+                      {"Message": UNEXPECTED_CLOUD_FORMATION_EVENT})
 
     return workflow
 
@@ -3143,16 +3092,11 @@ def send_response(event, context, response_status, response_data):
     logger.info('ResponseBody: %s', response_body)
 
     opener = build_opener(HTTPHandler)
-    request = Request(event['ResponseURL'], data=response_body.encode('utf-8'))
+    data = response_body.encode('utf-8')
+    request = Request(event['ResponseURL'], data=data)
     request.add_header('Content-Type', '')
-    request.add_header('Content-Length', len(response_body))
+    request.add_header('Content-Length', str(len(data)))
     request.get_method = lambda: 'PUT'
     response = opener.open(request)
     logger.info("Status code: %s", response.getcode())
     logger.info("Status message: %s", response.msg)
-
-
-def timeout_handler(_signal, _frame):
-    '''Handle SIGALRM'''
-    raise Exception('Time exceeded')
-

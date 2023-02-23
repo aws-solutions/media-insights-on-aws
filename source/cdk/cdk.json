@@ -1,0 +1,8 @@
+{
+  "app": "npx ts-node bin/media-insights.ts",
+  "context": {
+    "solution_id": "SO0163",
+    "solution_name": "media-insights-on-aws",
+    "solution_version": "%%VERSION%%"
+  }
+}

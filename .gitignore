@@ -1,3 +1,5 @@
+.vscode
+
 deployment/media-analysis-dataplane-api-stack.yaml
 venv/
 **/dist
@@ -6,10 +8,24 @@ regional-s3-assets/
 package/
 node_modules/
 source/web_site/build/
+source/cdk/bin/**/*.js
+source/cdk/bin/**/*.d.ts
+source/cdk/lib/**/*.js
+source/cdk/lib/**/*.d.ts
+source/cdk/test/**/*.js
+source/cdk/test/**/*.d.ts
+source/cdk/cdk.out/
+source/cdk/cdk.context.json
+source/cdk/coverage/
+coverage-reports/
+package-lock.json
+deployment/staging/
+deployment/open-source/
 deployment/templateUrl.txt
 deployment/lambda_layer_factory/*.whl
 deployment/lambda_layer_factory/*.zip
 deployment/lambda_layer_factory/lambda_layer-python-*
+.scannerwork/
 *__pycache__/
 *.DS_Store
 *.iml
@@ -18,6 +34,7 @@ deployment/lambda_layer_factory/lambda_layer-python-*
 *~staging*
 *~release*
 test/unit/.coverage
+docs/source/output
 
 scratch/
 deployment/build.sh
@@ -39,4 +56,4 @@ private/
 
 # LambdaHelper builds
 source/lib/MediaInsightsEngineLambdaHelper/Media_Insights_Engine_Lambda_Helper.egg-info
-source/lib/MediaInsightsEngineLambdaHelper/build/*
+source/lib/MediaInsightsEngineLambdaHelper/build

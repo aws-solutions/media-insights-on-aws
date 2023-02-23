@@ -1,7 +1,6 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-
 import pytest
 import boto3
 import json
@@ -22,11 +21,16 @@ def testing_env_variables():
         test_env_vars = {
             'MEDIA_PATH': os.environ['TEST_MEDIA_PATH'],
             'SAMPLE_VIDEO': os.environ['TEST_VIDEO'],
-            'REGION': os.environ['MIE_REGION'],
-            'MIE_STACK_NAME': os.environ['MIE_STACK_NAME'],
+            'REGION': os.environ['REGION'],
+            'MI_STACK_NAME': os.environ['MI_STACK_NAME'],
             'ACCESS_KEY': os.environ['AWS_ACCESS_KEY_ID'],
             'SECRET_KEY': os.environ['AWS_SECRET_ACCESS_KEY']
-            }
+        }
+
+        # Optional session token may be set if we are using temporary STS credentials.
+        session_token = os.environ.get('AWS_SESSION_TOKEN', '')
+        if len(session_token):
+            test_env_vars['SESSION_TOKEN'] = session_token
 
     except KeyError as e:
         logging.error("ERROR: Missing a required environment variable for testing: {variable}".format(variable=e))
@@ -44,7 +48,7 @@ def stack_resources(testing_env_variables):
     # is the workflow api and operator library present?
 
     client = boto3.client('cloudformation', region_name=testing_env_variables['REGION'])
-    response = client.describe_stacks(StackName=testing_env_variables['MIE_STACK_NAME'])
+    response = client.describe_stacks(StackName=testing_env_variables['MI_STACK_NAME'])
     outputs = response['Stacks'][0]['Outputs']
 
     for output in outputs:
@@ -62,7 +66,7 @@ def stack_resources(testing_env_variables):
     for output in outputs:
         resources[output["OutputKey"]] = output["OutputValue"]
 
-    expected_resources = ['WorkflowApiRestID', 'DataplaneBucket', 'WorkflowCustomResourceArn', 'TestStack',  'MediaInsightsEnginePython39Layer', 'AnalyticsStreamArn', 'DataplaneApiEndpoint', 'WorkflowApiEndpoint', 'DataplaneApiRestID', 'OperatorLibraryStack', 'PollyOperation', 'ContentModerationOperationImage', 'GenericDataLookupOperation', 'comprehendEntitiesOperation', 'FaceSearch', 'FaceSearchOperationImage', 'MediainfoOperationImage', 'TextDetection', 'TextDetectionOperationImage', 'CreateSRTCaptionsOperation', 'ContentModeration', 'WebCaptionsOperation', 'WebToVTTCaptionsOperation', 'PollyWebCaptionsOperation', 'WaitOperation', 'TranslateWebCaptionsOperation', 'CelebRecognition', 'LabelDetection', 'FaceDetection', 'PersonTracking', 'MediaconvertOperation', 'FaceDetectionOperationImage', 'MediainfoOperation', 'ThumbnailOperation', 'TechnicalCueDetection', 'CreateVTTCaptionsOperation', 'CelebrityRecognitionOperationImage', 'TranslateOperation', 'comprehendPhrasesOperation', 'WebToSRTCaptionsOperation', 'shotDetection', 'LabelDetectionOperationImage', 'StackName', "Version", "TranscribeAudioOperation", "TranscribeVideoOperation", 'DataPlaneHandlerArn', 'MieKMSArn', 'MieKMSId', 'MieKMSAlias', 'MieSNSTopic', 'MieSQSQueue']
+    expected_resources = ['WorkflowApiRestID', 'DataplaneBucket', 'WorkflowCustomResourceArn', 'TestStack',  'MediaInsightsEnginePython39LayerArn', 'AnalyticsStreamArn', 'DataplaneApiEndpoint', 'WorkflowApiEndpoint', 'DataplaneApiRestID', 'OperatorLibraryStack', 'PollyOperation', 'ContentModerationOperationImage', 'GenericDataLookupOperation', 'comprehendEntitiesOperation', 'FaceSearch', 'FaceSearchOperationImage', 'MediainfoOperationImage', 'TextDetection', 'TextDetectionOperationImage', 'CreateSRTCaptionsOperation', 'ContentModeration', 'WebCaptionsOperation', 'WebToVTTCaptionsOperation', 'PollyWebCaptionsOperation', 'WaitOperation', 'TranslateWebCaptionsOperation', 'CelebRecognition', 'LabelDetection', 'FaceDetection', 'PersonTracking', 'MediaconvertOperation', 'FaceDetectionOperationImage', 'MediainfoOperation', 'ThumbnailOperation', 'TechnicalCueDetection', 'CreateVTTCaptionsOperation', 'CelebrityRecognitionOperationImage', 'TranslateOperation', 'comprehendPhrasesOperation', 'WebToSRTCaptionsOperation', 'shotDetection', 'LabelDetectionOperationImage', "Version", "TranscribeAudioOperation", "TranscribeVideoOperation", 'DataPlaneHandlerArn', 'MieKMSArn', 'MieKMSId', 'MieKMSAlias', 'MieSNSTopic', 'MieSQSQueue']
 
     assert set(resources.keys()) == set(expected_resources)
     return resources
@@ -86,7 +90,8 @@ class WorkflowAPI:
     def __init__(self, stack_resources, testing_env_variables):
         self.env_vars = testing_env_variables
         self.stack_resources = stack_resources
-        self.auth = AWS4Auth(testing_env_variables['ACCESS_KEY'], testing_env_variables['SECRET_KEY'], testing_env_variables['REGION'], 'execute-api')
+        self.auth = AWS4Auth(testing_env_variables['ACCESS_KEY'], testing_env_variables['SECRET_KEY'], testing_env_variables['REGION'], 'execute-api',
+                             session_token=testing_env_variables.get('SESSION_TOKEN'))
 
     # Workflow Methods
 
@@ -160,7 +165,8 @@ class DataplaneAPI:
     def __init__(self, stack_resources, testing_env_variables):
         self.env_vars = testing_env_variables
         self.stack_resources = stack_resources
-        self.auth = AWS4Auth(testing_env_variables['ACCESS_KEY'], testing_env_variables['SECRET_KEY'], testing_env_variables['REGION'], 'execute-api')
+        self.auth = AWS4Auth(testing_env_variables['ACCESS_KEY'], testing_env_variables['SECRET_KEY'], testing_env_variables['REGION'], 'execute-api',
+                             session_token=testing_env_variables.get('SESSION_TOKEN'))
 
     # Dataplane methods
 

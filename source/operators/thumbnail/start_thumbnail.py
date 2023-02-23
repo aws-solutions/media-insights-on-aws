@@ -44,8 +44,18 @@ mediaconvert_role = os.environ['mediaconvertRole']
 dataplane_bucket = os.environ['DATAPLANE_BUCKET']
 mediaconvert = boto3.client("mediaconvert", config=config, region_name=region)
 
+media_convert_client = None
 
-def lambda_handler(event, context):
+
+def get_mediaconvert_client():
+    mediaconvert_endpoint = os.environ["MEDIACONVERT_ENDPOINT"]
+    global media_convert_client
+    if media_convert_client is None:
+        media_convert_client = boto3.client("mediaconvert", region_name=region, endpoint_url=mediaconvert_endpoint)
+    return media_convert_client
+
+
+def lambda_handler(event, _context):
     print("We got the following event:\n", event)
     operator_object = MediaInsightsOperationHelper(event)
 
@@ -65,9 +75,10 @@ def lambda_handler(event, context):
         print("No asset id passed in with this workflow", e)
         asset_id = ''
     file_input = "s3://" + input_bucket + "/" + input_key
-    audio_destination = "s3://" + dataplane_bucket + "/" + 'private/assets/' + asset_id + "/workflows/" + workflow_id + "/"
-    thumbnail_destination = "s3://" + dataplane_bucket + "/" + 'private/assets/' + asset_id + "/"
-    proxy_destination = "s3://" + dataplane_bucket + "/" + 'private/assets/' + asset_id + "/"
+    asset_destination = "s3://" + dataplane_bucket + "/" + 'private/assets/' + asset_id + "/"
+    audio_destination = asset_destination + "workflows/" + workflow_id + "/"
+    thumbnail_destination = asset_destination
+    proxy_destination = asset_destination
 
     # Get user-defined location for generic data file
     if "ThumbnailPosition" in operator_object.configuration:
@@ -75,9 +86,10 @@ def lambda_handler(event, context):
     else:
         thumbnail_position = 7
 
-    mediaconvert_endpoint = os.environ["MEDIACONVERT_ENDPOINT"]
-    customer_mediaconvert = boto3.client("mediaconvert", region_name=region, endpoint_url=mediaconvert_endpoint)
-    
+    customer_mediaconvert = get_mediaconvert_client()
+
+    file_group = "File Group"
+    audio_selector_1 = "Audio Selector 1"
     try:
         response = customer_mediaconvert.create_job(
             Role=mediaconvert_role,
@@ -85,7 +97,7 @@ def lambda_handler(event, context):
                 "OutputGroups": [
                     {
                         "CustomName": "thumbnail",
-                        "Name": "File Group",
+                        "Name": file_group,
                         "Outputs": [
                             {
                                 "ContainerSettings": {
@@ -120,7 +132,7 @@ def lambda_handler(event, context):
                         }
                     },
                     {
-                        "Name": "File Group",
+                        "Name": file_group,
                         "Outputs": [{
                             "ContainerSettings": {
                                 "Container": "MP4",
@@ -132,7 +144,7 @@ def lambda_handler(event, context):
                             },
                             "AudioDescriptions": [{
                                 "AudioTypeControl": "FOLLOW_INPUT",
-                                "AudioSourceName": "Audio Selector 1",
+                                "AudioSourceName": audio_selector_1,
                                 "CodecSettings": {
                                     "Codec": "AAC",
                                     "AacSettings": {
@@ -229,7 +241,7 @@ def lambda_handler(event, context):
                                             }
                                         },
                                         "LanguageCodeControl": "FOLLOW_INPUT",
-                                        "AudioSourceName": "Audio Selector 1"
+                                        "AudioSourceName": audio_selector_1
                                     }
                                 ],
                                 "ContainerSettings": {
@@ -251,10 +263,10 @@ def lambda_handler(event, context):
                             }
                         }
                     }
-                    ],
+                ],
                 "Inputs": [{
                     "AudioSelectors": {
-                        "Audio Selector 1": {
+                        audio_selector_1: {
                             "Offset": 0,
                             "DefaultSelection": "DEFAULT",
                             "ProgramSelection": 1

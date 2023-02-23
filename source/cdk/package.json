@@ -1,0 +1,52 @@
+{
+    "name": "media-insights-on-aws",
+    "version": "5.1.0",
+    "description": "Synthesize templates for Media Insights on AWS using AWS Cloud Development Kit (CDK).",
+    "license": "Apache-2.0",
+    "author": {
+        "name": "Amazon Web Services",
+        "url": "https://aws.amazon.com/solutions"
+    },
+    "bin": {
+        "media-insights": "bin/media-insights.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/aws-solutions/media-insights-on-aws"
+    },
+    "scripts": {
+        "cleanup": "tsc --build ./ --clean && cdk context --clear && rm -rf node_modules dist cdk.out coverage && rm -f package-lock.json",
+        "cleanup:tsc": "tsc --build ./ --clean",
+        "cleanup:cdk": "cdk context --clear && rm -rf cdk.out",
+        "build": "tsc",
+        "watch": "tsc -w",
+        "pretest": "npm run checkincludes",
+        "test": "jest --coverage",
+        "cdk": "cdk",
+        "checkincludes": "test -f dist/media-insights-dataplane-api-stack.template && test -f dist/media-insights-workflow-api-stack.template || ./build-dist.sh",
+        "presynth": "npm run checkincludes && npm run build",
+        "synth": "cdk synth -q"
+    },
+    "peerDependencies": {
+        "constructs": "^10.0.0"
+    },
+    "devDependencies": {
+        "@aws-cdk/assert": "^2.0.0",
+        "@types/jest": "^27.0.0",
+        "@types/node": "^16.4.0",
+        "@types/sinon": "^10.0.2",
+        "aws-cdk": "^2.51.0",
+        "aws-cdk-lib": "^2.51.0",
+        "constructs": "^10.0.9",
+        "jest": "^27.0.6",
+        "sinon": "^11.1.1",
+        "ts-jest": "^27.1.5",
+        "ts-node": "^10.1.0",
+        "typescript": "^4.3.5"
+    },
+    "dependencies": {
+        "cdk-nag": "^2.21.52",
+        "jest-cdk-snapshot": "^2.0.1",
+        "source-map-support": "^0.5.16"
+    }
+}

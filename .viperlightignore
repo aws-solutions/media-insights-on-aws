@@ -8,7 +8,7 @@ node_modules/
 package-lock.json
 CODE_OF_CONDUCT.md
 CONTRIBUTING.md
-docs/assets/images/MIE-architecture-diagram.pptx
+docs/assets/images/MI-architecture-diagram.pptx
 .github/workflows/pr-workflow.yml:21
 .github/workflows/pr-workflow.yml:22
 .github/workflows/release-workflow.yml:28
@@ -28,8 +28,6 @@ docs/sigv4_get_sample.py:52
 docs/sigv4_get_sample.py:53
 docs/sigv4_post_sample.py:61
 docs/sigv4_post_sample.py:62
-deployment/media-insights-stack.yaml:357
-deployment/media-insights-stack.yaml:368
 docs/assets/images/Cognito3-set_password.png
 docs/source/theme/smithy/layout.html
 docs/source/theme/smithy/static/asciinema-player.js
@@ -39,7 +37,6 @@ source/lib/MediaInsightsEngineAPIHelper/MediaInsightsEngineAPIHelper/__init__.py
 source/lib/MediaInsightsEngineAPIHelper/MediaInsightsEngineAPIHelper/__init__.py:19
 source/operators/comprehend/entities/start_entity_detection.py:21
 source/operators/comprehend/key_phrases/start_key_phrases.py:21
-source/operators/operator-library.yaml:106
 .chalice/deployments
 source/workflowapi/chalicelib/apischema/create_operation_response.json:22
 source/workflowapi/chalicelib/apischema/create_operation_response.json:32

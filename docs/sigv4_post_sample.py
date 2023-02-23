@@ -2,7 +2,7 @@
 #
 # PURPOSE: This code sample shows how to start the CasImageWorkflow using a
 #   sigv4 signed request to the workflow execution REST API in the Media
-#   Insights Engine.
+#   Insights on AWS.
 #
 ###############################################################################
 #

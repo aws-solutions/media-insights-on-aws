@@ -31,7 +31,7 @@ rek = boto3.client('rekognition', config=config)
 # Matches faces in an image with known faces in a Rekognition collection
 def search_faces_by_image(bucket, key, collection_id):
     try:
-        response = rek.search_faces_by_image(CollectionId=collection_id, Image={'S3Object':{'Bucket':bucket, 'Name':key}})
+        response = rek.search_faces_by_image(CollectionId=collection_id, Image={'S3Object': {'Bucket': bucket, 'Name': key}})
     except Exception as e:
         output_object.update_workflow_status("Error")
         output_object.add_workflow_metadata(FaceSearchError=str(e))
@@ -67,18 +67,18 @@ def start_face_search(bucket, key, collection_id):
 
 
 # Lambda function entrypoint:
-def lambda_handler(event, context):
+def lambda_handler(event, _context):
     print("We got the following event:\n", event)
     try:
-        if "ProxyEncode" in event["Input"]["Media"]:
-            s3bucket = event["Input"]["Media"]["ProxyEncode"]["S3Bucket"]
-            s3key = event["Input"]["Media"]["ProxyEncode"]["S3Key"]
-        elif "Video" in event["Input"]["Media"]:
-            s3bucket = event["Input"]["Media"]["Video"]["S3Bucket"]
-            s3key = event["Input"]["Media"]["Video"]["S3Key"]
-        elif "Image" in event["Input"]["Media"]:
-            s3bucket = event["Input"]["Media"]["Image"]["S3Bucket"]
-            s3key = event["Input"]["Media"]["Image"]["S3Key"]
+        # We have three possible S3 location keys.
+        media_keys = ("ProxyEncode", "Video", "Image")
+        # Find the key that exists under Input.Media searching in the order given by media_keys.
+        input_media = event["Input"]["Media"]
+        for media in (input_media[k] for k in media_keys if k in input_media):
+            s3bucket = media["S3Bucket"]
+            s3key = media["S3Key"]
+            break
+
         workflow_id = str(event["WorkflowExecutionId"])
         asset_id = event['AssetId']
     except Exception:
@@ -92,7 +92,7 @@ def lambda_handler(event, context):
         output_object.add_workflow_metadata(FaceSearchError="Collection Id is not defined")
         raise MasExecutionError(output_object.return_output_object())
 
-    print("Processing s3://"+s3bucket+"/"+s3key)
+    print("Processing s3://" + s3bucket + "/" + s3key)
     valid_video_types = [".avi", ".mp4", ".mov"]
     valid_image_types = [".png", ".jpg", ".jpeg"]
     file_type = os.path.splitext(s3key)[1].lower()
@@ -102,26 +102,16 @@ def lambda_handler(event, context):
         output_object.add_workflow_metadata(AssetId=asset_id, WorkflowExecutionId=workflow_id)
         dataplane = DataPlane()
         metadata_upload = dataplane.store_asset_metadata(asset_id, operator_name, workflow_id, response)
-        if "Status" not in metadata_upload:
+        if metadata_upload.get("Status", "Failed") != "Success":
+            # Status is missing or anything other than "Success"
             output_object.update_workflow_status("Error")
             output_object.add_workflow_metadata(
                 FaceSearchError="Unable to upload metadata for asset: {asset}".format(asset=asset_id))
             raise MasExecutionError(output_object.return_output_object())
-        else:
-            if metadata_upload["Status"] == "Success":
-                print("Uploaded metadata for asset: {asset}".format(asset=asset_id))
-                output_object.update_workflow_status("Complete")
-                return output_object.return_output_object()
-            elif metadata_upload["Status"] == "Failed":
-                output_object.update_workflow_status("Error")
-                output_object.add_workflow_metadata(
-                    FaceSearchError="Unable to upload metadata for asset: {asset}".format(asset=asset_id))
-                raise MasExecutionError(output_object.return_output_object())
-            else:
-                output_object.update_workflow_status("Error")
-                output_object.add_workflow_metadata(
-                    FaceSearchError="Unable to upload metadata for asset: {asset}".format(asset=asset_id))
-                raise MasExecutionError(output_object.return_output_object())
+
+        print("Uploaded metadata for asset: {asset}".format(asset=asset_id))
+        output_object.update_workflow_status("Complete")
+        return output_object.return_output_object()
     elif file_type in valid_video_types:
         job_id = start_face_search(s3bucket, urllib.parse.unquote_plus(s3key), collection_id)
         output_object.update_workflow_status("Executing")

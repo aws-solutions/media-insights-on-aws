@@ -6,28 +6,15 @@
 
 # Run unit tests
 echo "Running unit tests"
-echo "cd ../source"
-echo "------------------------------------------------------------------------------"
-echo "Installing Dependencies And Testing Analysis"
-echo "------------------------------------------------------------------------------"
-cd ../source/analysis
-npm install
-npm test
 
 echo "------------------------------------------------------------------------------"
-echo "Installing Dependencies And Testing API"
+echo "Installing Dependencies And Testing CDK"
 echo "------------------------------------------------------------------------------"
-cd ../api
-npm install
-npm test
+chmod +x ../source/cdk/run-tests.sh && ../source/cdk/run-tests.sh || exit $?
 
+echo "cd ../test/unit"
+cd ../test/unit
 echo "------------------------------------------------------------------------------"
-echo "Installing Dependencies And Testing Helper"
+echo "Installing Dependencies And Testing Modules"
 echo "------------------------------------------------------------------------------"
-cd ../helper
-npm install
-#npm test
-
-echo "------------------------------------------------------------------------------"
-echo "Installing Dependencies And Testing Complete"
-echo "------------------------------------------------------------------------------"
+./run_unit.sh

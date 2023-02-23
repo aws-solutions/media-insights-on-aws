@@ -4,11 +4,11 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # PURPOSE:
-#   Build cloud formation templates for the Media Insights Engine
+#   Build cloud formation templates for the Media Insights on AWS
 #
 # USAGE:
 #  ./build-s3-dist.sh [-h] [-v] [--no-layer] --template-bucket {TEMPLATE_BUCKET} --code-bucket {CODE_BUCKET} --version {VERSION} --region {REGION} --profile {PROFILE}
-#    TEMPLATE_BUCKET should be the name for the S3 bucket location where MIE
+#    TEMPLATE_BUCKET should be the name for the S3 bucket location where Media Insights on AWS
 #      cloud formation templates should be saved.
 #    CODE_BUCKET should be the name for the S3 bucket location where cloud
 #      formation templates should find Lambda source code packages.
@@ -24,8 +24,6 @@
 #     --no-layer        Do not build AWS Lamda layer
 #
 ###############################################################################
-
-trap cleanup_and_die SIGINT SIGTERM ERR
 
 usage() {
   msg "$msg"
@@ -47,13 +45,13 @@ EOF
 }
 
 cleanup_and_die() {
-  trap - SIGINT SIGTERM ERR
   echo "Trapped signal."
   cleanup
   die 1
 }
 
 cleanup() {
+  trap - SIGINT SIGTERM EXIT
   # Deactivate and remove the temporary python virtualenv used to run this script
   if [[ "$VIRTUAL_ENV" != "" ]];
   then
@@ -62,6 +60,7 @@ cleanup() {
     echo "Cleaning up complete"
     echo "------------------------------------------------------------------------------"
   fi
+  [ -n "$VENV" ] && [ -d "$VENV" ] && rm -rf "$VENV"
 }
 
 msg() {
@@ -69,10 +68,15 @@ msg() {
 }
 
 die() {
-  local msg=$1
+  local msg="$1"
   local code=${2-1} # default exit status 1
   msg "$msg"
   exit "$code"
+}
+
+do_cmd() {
+  echo "$*"
+  "$@" || die $?
 }
 
 parse_params() {
@@ -169,10 +173,12 @@ fi
 
 # Get reference for all important folders
 build_dir="$PWD"
+staging_dist_dir="$build_dir/staging"
 global_dist_dir="$build_dir/global-s3-assets"
 regional_dist_dir="$build_dir/regional-s3-assets"
 dist_dir="$build_dir/dist"
 source_dir="$build_dir/../source"
+cdk_dir="$source_dir/cdk"
 
 # Create and activate a temporary Python environment for this script.
 echo "------------------------------------------------------------------------------"
@@ -183,14 +189,17 @@ if [[ "$VIRTUAL_ENV" != "" ]]; then
     echo "ERROR: Do not run this script inside Virtualenv. Type \`deactivate\` and run again.";
     exit 1;
 fi
-echo "Using virtual python environment:"
-VENV=$(mktemp -d) && echo "$VENV"
 command -v python3 > /dev/null
 if [ $? -ne 0 ]; then
     echo "ERROR: install Python3 before running this script"
     exit 1
 fi
-python3 -m venv "$VENV"
+echo "Using virtual python environment:"
+VENV=$(mktemp -d) && echo "$VENV"
+python3 -m venv "$VENV" || die "ERROR: Couldn't create virtual python environment" 1
+
+trap cleanup_and_die SIGINT SIGTERM EXIT
+
 source "$VENV"/bin/activate
 pip3 install wheel
 pip3 install --quiet boto3 chalice docopt pyyaml jsonschema aws_xray_sdk
@@ -215,7 +224,7 @@ echo "mkdir -p $regional_dist_dir"
 mkdir -p "$regional_dist_dir"
 
 echo "------------------------------------------------------------------------------"
-echo "Building MIEHelper package"
+echo "Building Media Insights on AWS Helper package"
 echo "------------------------------------------------------------------------------"
 
 cd "$source_dir"/lib/MediaInsightsEngineLambdaHelper || exit 1
@@ -231,8 +240,6 @@ if [[ ! -z "${NO_LAYER}" ]]; then
   echo "------------------------------------------------------------------------------"
   echo "Downloading Lambda Layers"
   echo "------------------------------------------------------------------------------"
-  echo "Downloading https://solutions-$region.$s3domain/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.6.zip"
-  wget -q https://solutions-"$region"."$s3domain"/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.6.zip -O media_insights_engine_lambda_layer_python3.6.zip
   echo "Downloading https://solutions-$region.$s3domain/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.7.zip" -O media_insights_engine_lambda_layer_python3.7.zip
   wget -q https://solutions-"$region"."$s3domain"/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.7.zip -O media_insights_engine_lambda_layer_python3.7.zip
   echo "Downloading https://solutions-$region.$s3domain/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.8.zip"
@@ -240,7 +247,6 @@ if [[ ! -z "${NO_LAYER}" ]]; then
   echo "Downloading https://solutions-$region.$s3domain/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.9.zip"
   wget -q https://solutions-"$region"."$s3domain"/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.9.zip -O media_insights_engine_lambda_layer_python3.9.zip
   echo "Copying Lambda layer zips to $dist_dir:"
-  mv media_insights_engine_lambda_layer_python3.6.zip "$regional_dist_dir"
   mv media_insights_engine_lambda_layer_python3.7.zip "$regional_dist_dir"
   mv media_insights_engine_lambda_layer_python3.8.zip "$regional_dist_dir"
   mv media_insights_engine_lambda_layer_python3.9.zip "$regional_dist_dir"
@@ -255,15 +261,15 @@ else
   rm -f Media_Insights_Engine*.whl
   cp -R "$source_dir"/lib/MediaInsightsEngineLambdaHelper .
   cd MediaInsightsEngineLambdaHelper/ || exit 1
-  echo "Building MIE Lambda Helper python library"
+  echo "Building Media Insights on AWS Lambda Helper python library"
   python3 setup.py bdist_wheel > /dev/null
   cp dist/*.whl ../
   cp dist/*.whl "$source_dir"/lib/MediaInsightsEngineLambdaHelper/dist/
-  echo "MIE Lambda Helper python library is at $source_dir/lib/MediaInsightsEngineLambdaHelper/dist/"
+  echo "Media Insights on AWS Lambda Helper python library is at $source_dir/lib/MediaInsightsEngineLambdaHelper/dist/"
   cd "$source_dir"/lib/MediaInsightsEngineLambdaHelper/dist/ || exit 1
   ls -1 "$(pwd)"/*.whl
   if [ $? -ne 0 ]; then
-    echo "ERROR: Failed to build MIE Lambda Helper python library"
+    echo "ERROR: Failed to build Media Insights on AWS Lambda Helper python library"
     exit 1
   fi
   cd "$build_dir"/lambda_layer_factory/ || exit 1
@@ -274,21 +280,18 @@ else
   mv requirements.txt requirements.txt.old
   cat requirements.txt.old | grep -v "Media_Insights_Engine_Lambda_Helper" > requirements.txt
   echo "/packages/$file" >> requirements.txt;
-  # Build Lambda layer zip files and rename them to the filenames expected by media-insights-stack.yaml. The Lambda layer build script runs in Docker.
+  # Build Lambda layer zip files and rename them to the filenames expected by the stack. The Lambda layer build script runs in Docker.
   # If Docker is not installed, then we'll use prebuilt Lambda layer zip files.
   echo "Running build-lambda-layer.sh:"
   rm -rf lambda_layer-python-* lambda_layer-python*.zip
   if `./build-lambda-layer.sh requirements.txt > /dev/null`; then
-    mv lambda_layer-python3.6.zip media_insights_engine_lambda_layer_python3.6.zip
     mv lambda_layer-python3.7.zip media_insights_engine_lambda_layer_python3.7.zip
     mv lambda_layer-python3.8.zip media_insights_engine_lambda_layer_python3.8.zip
     mv lambda_layer-python3.9.zip media_insights_engine_lambda_layer_python3.9.zip
-    rm -rf lambda_layer-python-3.6/ lambda_layer-python-3.7/ lambda_layer-python-3.8/ lambda_layer-python-3.9/
+    rm -rf lambda_layer-python-3.7/ lambda_layer-python-3.8/ lambda_layer-python-3.9/
     echo "Lambda layer build script completed.";
   else
     echo "WARNING: Lambda layer build script failed. We'll use a pre-built Lambda layers instead.";
-    echo "Downloading https://solutions-$region.$s3domain/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.6.zip"
-    wget -q https://solutions-"$region"."$s3domain"/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.6.zip -O media_insights_engine_lambda_layer_python3.6.zip
     echo "Downloading https://solutions-$region.$s3domain/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.7.zip" -O media_insights_engine_lambda_layer_python3.7.zip
     wget -q https://solutions-"$region"."$s3domain"/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.7.zip -O media_insights_engine_lambda_layer_python3.7.zip
     echo "Downloading https://solutions-$region.$s3domain/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.8.zip"
@@ -297,7 +300,6 @@ else
     wget -q https://solutions-"$region"."$s3domain"/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.9.zip -O media_insights_engine_lambda_layer_python3.9.zip
   fi
   echo "Copying Lambda layer zips to $regional_dist_dir:"
-  mv media_insights_engine_lambda_layer_python3.6.zip "$regional_dist_dir"
   mv media_insights_engine_lambda_layer_python3.7.zip "$regional_dist_dir"
   mv media_insights_engine_lambda_layer_python3.8.zip "$regional_dist_dir"
   mv media_insights_engine_lambda_layer_python3.9.zip "$regional_dist_dir"
@@ -414,6 +416,7 @@ popd || exit 1
 
 zip -g ./dist/webcaptions.zip ./webcaptions.py
 cp "./dist/webcaptions.zip" "$regional_dist_dir/webcaptions.zip"
+rm -rf ./dist ./package
 
 # ------------------------------------------------------------------------------"
 # Translate Operations
@@ -532,25 +535,9 @@ echo "creating lambda packages"
 # All the Python dependencies for Rekognition functions are in the Lambda layer, so
 # we can deploy the zipped source file without dependencies.
 zip -q -r9 generic_data_lookup.zip generic_data_lookup.py
-zip -q -r9 start_celebrity_recognition.zip start_celebrity_recognition.py
-zip -q -r9 check_celebrity_recognition_status.zip check_celebrity_recognition_status.py
-zip -q -r9 start_content_moderation.zip start_content_moderation.py
-zip -q -r9 check_content_moderation_status.zip check_content_moderation_status.py
-zip -q -r9 start_face_detection.zip start_face_detection.py
-zip -q -r9 check_face_detection_status.zip check_face_detection_status.py
+zip -q -r9 start_rekognition.zip start_rekognition.py
+zip -q -r9 check_rekognition_status.zip check_rekognition_status.py
 zip -q -r9 start_face_search.zip start_face_search.py
-zip -q -r9 check_face_search_status.zip check_face_search_status.py
-zip -q -r9 start_label_detection.zip start_label_detection.py
-zip -q -r9 check_label_detection_status.zip check_label_detection_status.py
-zip -q -r9 start_person_tracking.zip start_person_tracking.py
-zip -q -r9 check_person_tracking_status.zip check_person_tracking_status.py
-zip -q -r9 start_text_detection.zip start_text_detection.py
-zip -q -r9 check_text_detection_status.zip check_text_detection_status.py
-zip -q -r9 check_text_detection_status.zip check_text_detection_status.py
-zip -q -r9 start_technical_cue_detection.zip start_technical_cue_detection.py
-zip -q -r9 check_technical_cue_status.zip check_technical_cue_status.py
-zip -q -r9 start_shot_detection.zip start_shot_detection.py
-zip -q -r9 check_shot_detection_status.zip check_shot_detection_status.py
 mv -f ./*.zip "$regional_dist_dir"
 
 # ------------------------------------------------------------------------------"
@@ -633,10 +620,11 @@ fi
 [ -e .chalice/deployments ] && rm -rf .chalice/deployments
 
 echo "running chalice..."
-chalice package --merge-template external_resources.json dist
+chalice package dist
 echo "...chalice done"
-echo "cp ./dist/sam.json $global_dist_dir/media-insights-workflow-api-stack.template"
-cp dist/sam.json "$global_dist_dir"/media-insights-workflow-api-stack.template
+mkdir -p "$cdk_dir/dist"
+echo "cp ./dist/sam.json $cdk_dir/dist/media-insights-workflow-api-stack.template"
+cp dist/sam.json "$cdk_dir/dist/media-insights-workflow-api-stack.template"
 if [ $? -ne 0 ]; then
   echo "ERROR: Failed to build workflow api template"
   exit 1
@@ -672,6 +660,7 @@ popd || exit 1
 
 zip -q -g dist/workflowstream.zip ./*.py
 cp "./dist/workflowstream.zip" "$regional_dist_dir/workflowstream.zip"
+rm -rf ./dist ./package
 
 echo "------------------------------------------------------------------------------"
 echo "Dataplane API Stack"
@@ -690,9 +679,12 @@ fi
 # Otherwise, chalice will use the existing deployment package
 [ -e .chalice/deployments ] && rm -rf .chalice/deployments
 
-chalice package --merge-template external_resources.json dist
-echo "cp ./dist/sam.json $global_dist_dir/media-insights-dataplane-api-stack.template"
-cp dist/sam.json "$global_dist_dir"/media-insights-dataplane-api-stack.template
+echo "running chalice..."
+chalice package dist
+echo "...chalice done"
+mkdir -p "$cdk_dir/dist"
+echo "cp ./dist/sam.json $cdk_dir/dist/media-insights-dataplane-api-stack.template"
+cp dist/sam.json "$cdk_dir/dist/media-insights-dataplane-api-stack.template"
 if [ $? -ne 0 ]; then
   echo "ERROR: Failed to build dataplane api template"
   exit 1
@@ -733,17 +725,96 @@ fi
 popd || exit 1
 zip -q -g ./dist/anonymous-data-logger.zip ./anonymous-data-logger.py
 cp "./dist/anonymous-data-logger.zip" "$regional_dist_dir/anonymous-data-logger.zip"
+rm -rf ./dist ./package
 
 echo "------------------------------------------------------------------------------"
 echo "CloudFormation Templates"
 echo "------------------------------------------------------------------------------"
 
+echo "------------------------------------------------------------------------------"
+echo "Install dependencies for the cdk-solution-helper"
+echo "------------------------------------------------------------------------------"
+
+do_cmd cd $build_dir/cdk-solution-helper
+do_cmd npm install
+
+echo "------------------------------------------------------------------------------"
+echo "Synth CDK Project"
+echo "------------------------------------------------------------------------------"
+
+# Install the cdk package dependencies
+do_cmd cd "$cdk_dir"
+do_cmd npm install
+
+# Add local install to PATH
+if npm exec -c 'echo' &>/dev/null
+then
+  # npm exec is supported; use it to set the path
+  export PATH=$(npm exec -c 'echo $PATH')
+else
+  # fall back to npm bin for older npm versions
+  export PATH=$(npm bin):$PATH
+fi
+# Check cdk version to verify installation
+current_cdkver=`cdk --version | grep -Eo '^[0-9]{1,2}\.[0-9]+\.[0-9]+'`
+echo CDK version $current_cdkver
+
+do_cmd npm run build       # build javascript from typescript to validate the code
+                           # cdk synth doesn't always detect issues in the typescript
+                           # and may succeed using old build files. This ensures we
+                           # have fresh javascript from a successful build
+
+
+echo "------------------------------------------------------------------------------"
+echo "Create Templates"
+echo "------------------------------------------------------------------------------"
+
+
+# Run 'cdk synth' to generate raw solution outputs
+do_cmd cdk context --clear
+do_cmd cdk synth -q --output="$staging_dist_dir"
+
+# Remove unnecessary output files
+do_cmd cd "$staging_dist_dir"
+rm -f tree.json manifest.json cdk.out *.csv
+
 echo "Preparing template files:"
-cp "$source_dir/operators/operator-library.yaml" "$global_dist_dir/media-insights-operator-library.template"
-cp "$build_dir/media-insights-stack.yaml" "$global_dist_dir/media-insights-stack.template"
-cp "$build_dir/media-insights-test-operations-stack.yaml" "$global_dist_dir/media-insights-test-operations-stack.template"
-cp "$build_dir/media-insights-dataplane-streaming-stack.template" "$global_dist_dir/media-insights-dataplane-streaming-stack.template"
+root_template=`basename *.assets.json .assets.json`
+rm *.assets.json
+do_cmd mv "${root_template}.template.json" "$global_dist_dir/${root_template}-stack.template"
+
+# Map nested template names generated by CDK to destination names
+declare -ar nested_stacks_names_src=( \
+  MediaInsightsWorkflowApi \
+  MediaInsightsDataplaneApiStack \
+  Analytics \
+  OperatorLibrary \
+  TestResources \
+)
+declare -ar nested_stacks_names_dst=( \
+  workflow-api-stack \
+  dataplane-api-stack \
+  dataplane-streaming-stack \
+  operator-library \
+  test-operations-stack \
+)
+
+for i in `seq 0 $((${#nested_stacks_names_src[@]} - 1))`; do
+  do_cmd mv \
+    *${nested_stacks_names_src[$i]}????????.nested.template.json \
+    "${global_dist_dir}/${root_template}-${nested_stacks_names_dst[$i]}.template"
+done
+
 find "$global_dist_dir"
+
+
+# Run the helper to clean-up the templates
+echo "Run the helper to clean-up the templates"
+echo "node $build_dir/cdk-solution-helper/index"
+node $build_dir/cdk-solution-helper/index \
+    || die "(cdk-solution-helper) ERROR: there is likely output above." $?
+
+
 echo "Updating template source bucket in template files with '$global_bucket'"
 echo "Updating code source bucket in template files with '$regional_bucket'"
 echo "Updating solution version in template files with '$version'"
@@ -751,25 +822,16 @@ new_global_bucket="s/%%GLOBAL_BUCKET_NAME%%/$global_bucket/g"
 new_regional_bucket="s/%%REGIONAL_BUCKET_NAME%%/$regional_bucket/g"
 new_version="s/%%VERSION%%/$version/g"
 # Update templates in place. Copy originals to [filename].orig
-sed -i.orig -e "$new_global_bucket" "$global_dist_dir/media-insights-stack.template"
-sed -i.orig -e "$new_regional_bucket" "$global_dist_dir/media-insights-stack.template"
-sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-stack.template"
-sed -i.orig -e "$new_global_bucket" "$global_dist_dir/media-insights-operator-library.template"
-sed -i.orig -e "$new_regional_bucket" "$global_dist_dir/media-insights-operator-library.template"
-sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-operator-library.template"
-sed -i.orig -e "$new_global_bucket" "$global_dist_dir/media-insights-test-operations-stack.template"
-sed -i.orig -e "$new_regional_bucket" "$global_dist_dir/media-insights-test-operations-stack.template"
-sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-test-operations-stack.template"
-sed -i.orig -e "$new_global_bucket" "$global_dist_dir/media-insights-dataplane-streaming-stack.template"
-sed -i.orig -e "$new_regional_bucket" "$global_dist_dir/media-insights-dataplane-streaming-stack.template"
-sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-dataplane-streaming-stack.template"
-sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-dataplane-api-stack.template"
-sed -i.orig -e "$new_version" "$global_dist_dir/media-insights-workflow-api-stack.template"
-rm -f $global_dist_dir/*.orig
+sed -i.orig -e "$new_global_bucket" -e "$new_regional_bucket" -e "$new_version" "${global_dist_dir}"/*.template
+rm -f "${global_dist_dir}"/*.orig
+
+# Remove temporary staging directory if it is empty. Ignore failure to delete if it is not empty.
+cd "$build_dir"
+rmdir "$staging_dist_dir" || true
 
 # Skip copy dist to S3 if building for solution builder because
 # that pipeline takes care of copying the dist in another script.
-if [ "$global_bucket" != "solutions-reference" ] && [ "$global_bucket" != "solutions-test-reference" ]; then
+if [[ ! "$global_bucket" =~ solutions(-[a-z]+)?-reference ]]; then
   echo "------------------------------------------------------------------------------"
   echo "Copy dist to S3"
   echo "------------------------------------------------------------------------------"
@@ -804,23 +866,24 @@ if [ "$global_bucket" != "solutions-reference" ] && [ "$global_bucket" != "solut
   echo "** secured (not world-writeable, public access blocked) before continuing.   **"
   echo "*******************************************************************************"
   echo "*******************************************************************************"
-  echo "PROCEED WITH UPLOAD? (y/n) [n]: "
-  read input
+  read -p "PROCEED WITH UPLOAD? (y/n) [n]: " input
   if [ "$input" != "y" ] ; then
       echo "Upload aborted."
       exit
   fi
 
+  solution_name=media-insights-on-aws
+
   echo "=========================================================================="
-  echo "Deploying $solution_name version $version to bucket $bucket-$region"
+  echo "Deploying $solution_name version $version to bucket ${regional_bucket}-$region"
   echo "=========================================================================="
   echo "Templates: ${global_bucket}/$solution_name/$version/"
   echo "Lambda code: ${regional_bucket}-${region}/$solution_name/$version/"
   echo "---"
 
   set -x
-  aws s3 sync $global_dist_dir s3://$global_bucket/aws-media-insights-engine/$version/ $(if [ ! -z $profile ]; then echo "--profile $profile"; fi)
-  aws s3 sync $regional_dist_dir s3://${regional_bucket}-${region}/aws-media-insights-engine/$version/ $(if [ ! -z $profile ]; then echo "--profile $profile"; fi)
+  aws s3 sync $global_dist_dir s3://$global_bucket/${solution_name}/$version/ $(if [ ! -z $profile ]; then echo "--profile $profile"; fi)
+  aws s3 sync $regional_dist_dir s3://${regional_bucket}-${region}/${solution_name}/$version/ $(if [ ! -z $profile ]; then echo "--profile $profile"; fi)
   set +x
 
   echo "------------------------------------------------------------------------------"
@@ -829,11 +892,11 @@ if [ "$global_bucket" != "solutions-reference" ] && [ "$global_bucket" != "solut
 
   echo ""
   echo "Template to deploy:"
-  echo "TEMPLATE='"https://"$global_bucket"."$s3domain"/aws-media-insights-engine/"$version"/media-insights-stack.template"'"
+  echo "TEMPLATE='https://${global_bucket}.${s3domain}/${solution_name}/${version}/${root_template}-stack.template'"
 
   # Save the template URI for test automation scripts:
   touch templateUrl.txt
-  echo "https://"$global_bucket"."$s3domain"/aws-media-insights-engine/"$version"/media-insights-stack.template" > templateUrl.txt
+  echo "https://${global_bucket}.${s3domain}/${solution_name}/${version}/${root_template}-stack.template" > templateUrl.txt
 fi
 
 cleanup

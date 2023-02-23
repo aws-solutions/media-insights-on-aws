@@ -7,7 +7,7 @@
 # PURPOSE: This script runs our pytest e2e test suite.
 #
 # PRELIMINARY:
-#  You must have a functioning MIE deployment. Set the required environment variables; see the testing readme for more details.
+#  You must have a functioning MI deployment. Set the required environment variables; see the testing readme for more details.
 #
 # USAGE:
 #  ./run_e2e.sh
@@ -15,15 +15,15 @@
 ###############################################################################
 # User-defined environment variables
 
-if [ -z MIE_REGION ]
+if [ -z REGION ]
 then
-    echo "You must set the AWS region your MIE stack is install in under the env variable 'MIE_REGION'. Quitting."
+    echo "You must set the AWS region your MI stack under the env variable 'REGION'. Quitting."
     exit
 fi
 
-if [ -z MIE_STACK_NAME ]
+if [ -z MI_STACK_NAME ]
 then
-    echo "You must set the name of your MIE stack under the env variable 'MIE_STACK_NAME'. Quitting."
+    echo "You must set the name of your MI stack under the env variable 'MI_STACK_NAME'. Quitting."
     exit
 fi
 
@@ -44,8 +44,7 @@ fi
 echo "------------------------------------------------------------------------------"
 echo "Creating a temporary Python virtualenv for this script"
 echo "------------------------------------------------------------------------------"
-python -c "import os; print (os.getenv('VIRTUAL_ENV'))" | grep -q None
-if [ $? -ne 0 ]; then
+if [ -n "${VIRTUAL_ENV:-}" ]; then
     echo "ERROR: Do not run this script inside Virtualenv. Type \`deactivate\` and run again.";
     exit 1;
 fi

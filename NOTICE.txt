@@ -1,6 +1,8 @@
-Media Insights Engine
+Media Insights on AWS
 
 Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+
+Licensed under the Apache License Version 2.0 (the "License"). You may not use this file except in compliance with the License. A copy of the License is located at http://www.apache.org/licenses/ or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
 
 **********************
 THIRD PARTY COMPONENTS
@@ -9,15 +11,20 @@ This software includes third party software subject to the following copyrights:
 
 aws-amplify under the Apache License Version 2.0
 aws-amplify-vue under the Apache License Version 2.0
-aws_xray_sdk under the Apache License Version 2.0
+aws-xray-sdk under the Apache License Version 2.0
 boto3 under the Apache License Version 2.0
 botocore under the Apache License Version 2.0
 chalice under the Apache License Version 2.0
 docker under the Apache License Version 2.0
+docopt under the Massachusetts Institute of Technology license
+jsonpickle under the BSD 3-Clause "New" or "Revised" License
 jsonschema under the Massachusetts Institute of Technology license
+nltk under the Apache License Version 2.0
 pymediainfo under the Massachusetts Institute of Technology license
 pytest under the Massachusetts Institute of Technology license
+pytest-cov under the Massachusetts Institute of Technology license
 requests under the Apache License Version 2.0
 requests_aws4auth under the Massachusetts Institute of Technology license
+simplejson under the Massachusetts Institute of Technology license
 urllib3 under the Massachusetts Institute of Technology license
-
+webvtt-py under the Massachusetts Institute of Technology license

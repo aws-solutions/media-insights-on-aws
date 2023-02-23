@@ -4960,9 +4960,10 @@ Raises:
                   "Action": Array [
                     "dynamodb:GetItem",
                     "dynamodb:PutItem",
-                    "dynamodb:DeleteItem",
                     "dynamodb:UpdateItem",
+                    "dynamodb:DeleteItem",
                     "dynamodb:Scan",
+                    "dynamodb:Query",
                   ],
                   "Effect": "Allow",
                   "Resource": Array [

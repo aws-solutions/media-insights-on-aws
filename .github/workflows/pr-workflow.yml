@@ -4,10 +4,7 @@ on:
   pull_request:
     types: [opened, synchronize]
     branches:
-      - development
-      - mainline
-      - feature/**
-      - release/**
+      - development-fix-pr-workflow
 
 
 jobs:

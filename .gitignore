@@ -20,6 +20,7 @@ source/cdk/coverage/
 coverage-reports/
 package-lock.json
 deployment/staging/
+deployment/open-source/
 deployment/templateUrl.txt
 deployment/lambda_layer_factory/*.whl
 deployment/lambda_layer_factory/*.zip

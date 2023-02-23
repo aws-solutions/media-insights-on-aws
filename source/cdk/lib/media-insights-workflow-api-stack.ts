@@ -268,6 +268,55 @@ export class WorkflowApiStack extends cdk.NestedStack {
             },
         );
 
+        const policyDynamodbAccess = {
+            "Effect": "Allow",
+            "Action": [
+                "dynamodb:GetItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem",
+                "dynamodb:Scan",
+                "dynamodb:Query"
+            ],
+            "Resource": [
+                cdk.Stack.of(this).formatArn({
+                    service: 'dynamodb',
+                    resource: 'table',
+                    resourceName: systemTableName.valueAsString,
+                }),
+                cdk.Stack.of(this).formatArn({
+                    service: 'dynamodb',
+                    resource: 'table',
+                    resourceName: workflowTableName.valueAsString,
+                }),
+                cdk.Stack.of(this).formatArn({
+                    service: 'dynamodb',
+                    resource: 'table',
+                    resourceName: workflowExecutionTableName.valueAsString,
+                }),
+                cdk.Stack.of(this).formatArn({
+                    service: 'dynamodb',
+                    resource: 'table',
+                    resourceName: `${workflowExecutionTableName.valueAsString}/*`,
+                }),
+                cdk.Stack.of(this).formatArn({
+                    service: 'dynamodb',
+                    resource: 'table',
+                    resourceName: historyTableName.valueAsString,
+                }),
+                cdk.Stack.of(this).formatArn({
+                    service: 'dynamodb',
+                    resource: 'table',
+                    resourceName: operationTableName.valueAsString,
+                }),
+                cdk.Stack.of(this).formatArn({
+                    service: 'dynamodb',
+                    resource: 'table',
+                    resourceName: stageTableName.valueAsString,
+                }),
+            ]
+        };
+
         cfnApiHandlerRole.policies = [{
             policyDocument: {
               "Version": "2012-10-17",
@@ -330,54 +379,7 @@ export class WorkflowApiStack extends cdk.NestedStack {
                     dataplaneHandlerArn.valueAsString,
                   ]
                 },
-                {
-                  "Effect": "Allow",
-                  "Action": [
-                    "dynamodb:GetItem",
-                    "dynamodb:PutItem",
-                    "dynamodb:UpdateItem",
-                    "dynamodb:DeleteItem",
-                    "dynamodb:Scan",
-                    "dynamodb:Query"
-                  ],
-                  "Resource": [
-                    cdk.Stack.of(this).formatArn({
-                        service: 'dynamodb',
-                        resource: 'table',
-                        resourceName: systemTableName.valueAsString,
-                    }),
-                    cdk.Stack.of(this).formatArn({
-                        service: 'dynamodb',
-                        resource: 'table',
-                        resourceName: workflowTableName.valueAsString,
-                    }),
-                    cdk.Stack.of(this).formatArn({
-                        service: 'dynamodb',
-                        resource: 'table',
-                        resourceName: workflowExecutionTableName.valueAsString,
-                    }),
-                    cdk.Stack.of(this).formatArn({
-                        service: 'dynamodb',
-                        resource: 'table',
-                        resourceName: `${workflowExecutionTableName.valueAsString}/*`,
-                    }),
-                    cdk.Stack.of(this).formatArn({
-                        service: 'dynamodb',
-                        resource: 'table',
-                        resourceName: historyTableName.valueAsString,
-                    }),
-                    cdk.Stack.of(this).formatArn({
-                        service: 'dynamodb',
-                        resource: 'table',
-                        resourceName: operationTableName.valueAsString,
-                    }),
-                    cdk.Stack.of(this).formatArn({
-                        service: 'dynamodb',
-                        resource: 'table',
-                        resourceName: stageTableName.valueAsString,
-                    }),
-                  ]
-                },
+                policyDynamodbAccess,
                 {
                   "Effect": "Allow",
                   "Action": [
@@ -503,53 +505,7 @@ export class WorkflowApiStack extends cdk.NestedStack {
                   ],
                   "Resource": sqsQueueArn.valueAsString
                 },
-                {
-                  "Effect": "Allow",
-                  "Action": [
-                    "dynamodb:GetItem",
-                    "dynamodb:PutItem",
-                    "dynamodb:DeleteItem",
-                    "dynamodb:UpdateItem",
-                    "dynamodb:Scan"
-                  ],
-                  "Resource": [
-                    cdk.Stack.of(this).formatArn({
-                        service: 'dynamodb',
-                        resource: 'table',
-                        resourceName: systemTableName.valueAsString,
-                    }),
-                    cdk.Stack.of(this).formatArn({
-                        service: 'dynamodb',
-                        resource: 'table',
-                        resourceName: workflowTableName.valueAsString,
-                    }),
-                    cdk.Stack.of(this).formatArn({
-                        service: 'dynamodb',
-                        resource: 'table',
-                        resourceName: workflowExecutionTableName.valueAsString,
-                    }),
-                    cdk.Stack.of(this).formatArn({
-                        service: 'dynamodb',
-                        resource: 'table',
-                        resourceName: `${workflowExecutionTableName.valueAsString}/*`,
-                    }),
-                    cdk.Stack.of(this).formatArn({
-                        service: 'dynamodb',
-                        resource: 'table',
-                        resourceName: historyTableName.valueAsString,
-                    }),
-                    cdk.Stack.of(this).formatArn({
-                        service: 'dynamodb',
-                        resource: 'table',
-                        resourceName: operationTableName.valueAsString,
-                    }),
-                    cdk.Stack.of(this).formatArn({
-                        service: 'dynamodb',
-                        resource: 'table',
-                        resourceName: stageTableName.valueAsString,
-                    }),
-                  ]
-                },
+                policyDynamodbAccess,
                 {
                   "Effect": "Allow",
                   "Action": [

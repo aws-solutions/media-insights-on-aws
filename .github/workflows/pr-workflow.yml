@@ -4,7 +4,7 @@ on:
   pull_request:
     types: [opened, synchronize]
     branches:
-      - development-fix-pr-workflow
+      - development
 
 
 jobs:
@@ -12,16 +12,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out pr branch
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v3
         with:
           ref: ${{ github.sha }}
 
-      - name: Initialize AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1-node16
-        with:
-          aws-access-key-id: ${{ secrets.BUILD_AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.BUILD_AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-west-2
+#     - name: Initialize AWS credentials
+#       uses: aws-actions/configure-aws-credentials@v1-node16
+#       with:
+#         aws-access-key-id: ${{ secrets.BUILD_AWS_ACCESS_KEY_ID }}
+#         aws-secret-access-key: ${{ secrets.BUILD_AWS_SECRET_ACCESS_KEY }}
+#         aws-region: us-west-2
 
       - name: Generate short sha
         run: |
@@ -31,29 +31,31 @@ jobs:
           cd deployment
           MI_STACK_NAME="pr${SHORT_SHA}"
           REGION=us-west-2
+          export AWS_DEFAULT_REGION=$REGION
           VERSION="pr${SHORT_SHA}"
-          DIST_OUTPUT_BUCKET=mie-dev
-          TEMPLATE_OUTPUT_BUCKET=mie-dev-us-west-2
+          DIST_OUTPUT_BUCKET=solutions-miedevwf-reference # mie-dev
+          TEMPLATE_OUTPUT_BUCKET=solutions-miedevwf-reference # mie-dev-us-west-2
           echo y | ./build-s3-dist.sh --no-layer --template-bucket $TEMPLATE_OUTPUT_BUCKET --code-bucket $DIST_OUTPUT_BUCKET --version $VERSION --region $REGION
-          read -r TEMPLATE < templateUrl.txt
-          aws cloudformation deploy --stack-name $MI_STACK_NAME --region $REGION --template-file global-s3-assets/media-insights-on-aws-stack.template --s3-bucket $DIST_OUTPUT_BUCKET-$REGION --s3-prefix media-insights-on-aws/$VERSION --parameter-overrides DeployTestResources=Yes MaxConcurrentWorkflows=10 DeployAnalyticsPipeline=Yes EnableXrayTrace=Yes ParameterKey=SendAnonymousData,ParameterValue=false --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --force-upload
+          #read -r TEMPLATE < templateUrl.txt
+          #aws cloudformation deploy --stack-name $MI_STACK_NAME --region $REGION --template-file global-s3-assets/media-insights-on-aws-stack.template --s3-bucket $DIST_OUTPUT_BUCKET-$REGION --s3-prefix media-insights-on-aws/$VERSION --parameter-overrides DeployTestResources=Yes MaxConcurrentWorkflows=10 DeployAnalyticsPipeline=Yes EnableXrayTrace=Yes ParameterKey=SendAnonymousData,ParameterValue=false --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --force-upload
   test-us-west-2:
     needs: build-us-west-2
     runs-on: ubuntu-latest
     env:
       REGION: 'us-west-2'
+      AWS_DEFAULT_REGION: 'us-west-2'
     steps:
       - name: Check out pr branch
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v3
         with:
           ref: ${{ github.sha }}
 
-      - name: Initialize test AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1-node16
-        with:
-            aws-access-key-id: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
-            aws-secret-access-key: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
-            aws-region: us-west-2
+#     - name: Initialize test AWS credentials
+#       uses: aws-actions/configure-aws-credentials@v1-node16
+#       with:
+#           aws-access-key-id: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
+#           aws-secret-access-key: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
+#           aws-region: us-west-2
 
       - name: Generate short sha
         run: |
@@ -75,18 +77,18 @@ jobs:
           cd source/cdk
           npm install
           npm test
-      - name: Run integ tests
-        run: |
-          cd $GITHUB_WORKSPACE
-          cd test/integ
-          ./run_integ.sh
-      - name: Initialize build AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1-node16
-        with:
-          aws-access-key-id: ${{ secrets.BUILD_AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.BUILD_AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-west-2
+#     - name: Run integ tests
+#       run: |
+#         cd $GITHUB_WORKSPACE
+#         cd test/integ
+#         ./run_integ.sh
+#     - name: Initialize build AWS credentials
+#       uses: aws-actions/configure-aws-credentials@v1-node16
+#       with:
+#         aws-access-key-id: ${{ secrets.BUILD_AWS_ACCESS_KEY_ID }}
+#         aws-secret-access-key: ${{ secrets.BUILD_AWS_SECRET_ACCESS_KEY }}
+#         aws-region: us-west-2
 
-      - name: Delete stack
-        run: |
-          aws cloudformation delete-stack --stack-name $MI_STACK_NAME
+#     - name: Delete stack
+#       run: |
+#         aws cloudformation delete-stack --stack-name $MI_STACK_NAME

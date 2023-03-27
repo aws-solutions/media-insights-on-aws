@@ -18,7 +18,6 @@ source/cdk/cdk.out/
 source/cdk/cdk.context.json
 source/cdk/coverage/
 coverage-reports/
-package-lock.json
 deployment/staging/
 deployment/open-source/
 deployment/templateUrl.txt

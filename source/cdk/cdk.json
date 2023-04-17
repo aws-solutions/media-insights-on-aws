@@ -1,6 +1,7 @@
 {
   "app": "npx ts-node bin/media-insights.ts",
   "context": {
+    "@aws-cdk/aws-s3:serverAccessLogsUseBucketPolicy": true,
     "solution_id": "SO0163",
     "solution_name": "media-insights-on-aws",
     "solution_version": "%%VERSION%%"

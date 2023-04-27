@@ -3,13 +3,17 @@ version: 0.2
 ###############################################################################
 # DO NOT MODIFY THIS FILE.
 # This file is used by the build pipeline for the [Media Insights on AWS solution](https://aws.amazon.com/solutions/implementations/media-insights-on-aws/).
+#
+# NOTE - Ensure aws/codebuild/standard:5.0 Codebuild image version is selected
+#        when creating the build pipeline.
+#
 ###############################################################################
 
 phases:
   install:
     runtime-versions:
-      nodejs: 16
-      python: 3.10
+      nodejs: 14
+      python: 3.9
     commands:
       - echo "nothing to do in install"
   pre_build:

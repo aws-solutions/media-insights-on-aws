@@ -89,6 +89,7 @@ parse_params() {
     -h | --help) usage ;;
     -v | --verbose) set -x ;;
     --no-layer) NO_LAYER=1 ;;
+    --upload) UPLOAD=1 ;;
     --template-bucket)
       global_bucket="${2}"
       shift
@@ -126,6 +127,9 @@ parse_params() {
   return 0
 }
 
+# initialize default parameters
+UPLOAD=0
+
 parse_params "$@"
 msg "Build parameters:"
 msg "- Template bucket: ${global_bucket}"
@@ -134,6 +138,7 @@ msg "- Version: ${version}"
 msg "- Region: ${region}"
 msg "- Profile: ${profile}"
 msg "- Build layer? $(if [[ -z $NO_LAYER ]]; then echo 'Yes, please.'; else echo 'No, thanks.'; fi)"
+msg "- Upload built solution to S3? $(if [[ $UPLOAD -eq 1 ]]; then echo 'Yes, please.'; else echo 'No, thanks.'; fi)"
 
 echo ""
 sleep 3
@@ -829,9 +834,8 @@ rm -f "${global_dist_dir}"/*.orig
 cd "$build_dir"
 rmdir "$staging_dist_dir" || true
 
-# Skip copy dist to S3 if building for solution builder because
-# that pipeline takes care of copying the dist in another script.
-if [[ ! "$global_bucket" =~ solutions(-[a-z]+)?-reference ]]; then
+# Copy dist to S3 only if --upload flag is passed
+if [[ $UPLOAD -eq 1 ]]; then
   echo "------------------------------------------------------------------------------"
   echo "Copy dist to S3"
   echo "------------------------------------------------------------------------------"

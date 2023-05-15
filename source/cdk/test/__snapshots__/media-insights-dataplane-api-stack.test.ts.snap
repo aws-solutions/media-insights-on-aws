@@ -142,7 +142,7 @@ Object {
         },
         "Runtime": "python3.9",
         "Tags": Object {
-          "aws-chalice": "version=1.27.3:stage=dev:app=dataplaneapi",
+          "aws-chalice": "version=1.28.0:stage=dev:app=dataplaneapi",
         },
         "Timeout": 120,
         "Tracing": Object {

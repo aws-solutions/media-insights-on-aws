@@ -14,9 +14,11 @@ aws-amplify-vue under the Apache License Version 2.0
 aws-xray-sdk under the Apache License Version 2.0
 boto3 under the Apache License Version 2.0
 botocore under the Apache License Version 2.0
+cdk-nag under the Apache License Version 2.0
 chalice under the Apache License Version 2.0
 docker under the Apache License Version 2.0
 docopt under the Massachusetts Institute of Technology license
+jest-cdk-snapshot under the Massachusetts Institute of Technology license
 jsonpickle under the BSD 3-Clause "New" or "Revised" License
 jsonschema under the Massachusetts Institute of Technology license
 nltk under the Apache License Version 2.0
@@ -25,6 +27,6 @@ pytest under the Massachusetts Institute of Technology license
 pytest-cov under the Massachusetts Institute of Technology license
 requests under the Apache License Version 2.0
 requests_aws4auth under the Massachusetts Institute of Technology license
-simplejson under the Massachusetts Institute of Technology license
+source-map-support under the Massachusetts Institute of Technology license
 urllib3 under the Massachusetts Institute of Technology license
 webvtt-py under the Massachusetts Institute of Technology license

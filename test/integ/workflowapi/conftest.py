@@ -108,12 +108,12 @@ class API:
         }
 
         print ("POST /system/configuration {}".format(json.dumps(body)))
-        set_configuration_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/system/configuration', headers=headers, json=body, verify=True, auth=self.auth)
+        set_configuration_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/system/configuration', headers=headers, json=body, verify=True, auth=self.auth, timeout=60)
 
         return set_configuration_response
 
     def get_configuration_request(self):
-        get_configuration_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/system/configuration', verify=True, auth=self.auth)
+        get_configuration_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/system/configuration', verify=True, auth=self.auth, timeout=60)
 
         return get_configuration_response
 
@@ -122,7 +122,8 @@ class API:
     def get_operation_request(self, operation):
         get_operation_response = requests.get(
             self.stack_resources["WorkflowApiEndpoint"] + '/workflow/operation/' + operation, verify=True,
-            auth=self.auth)
+            auth=self.auth,
+            timeout=60)
 
         return get_operation_response
 
@@ -132,13 +133,13 @@ class API:
         # Create the operation
 
         create_operation_response = requests.post(self.stack_resources["WorkflowApiEndpoint"] + '/workflow/operation',
-                                                  headers=headers, json=body, verify=True, auth=self.auth)
+                                                  headers=headers, json=body, verify=True, auth=self.auth, timeout=60)
 
         return create_operation_response
 
     def delete_operation_request(self, operation):
         client = boto3.client(service_name='stepfunctions', region_name=self.env_vars['REGION'])
-        delete_operation_response = requests.delete(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/operation/'+operation, verify=True, auth=self.auth)
+        delete_operation_response = requests.delete(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/operation/'+operation, verify=True, auth=self.auth, timeout=60)
         return delete_operation_response
 
     # Workflow Methods
@@ -146,14 +147,14 @@ class API:
     def create_workflow_request(self, body):
         headers = {"Content-Type": "application/json"}
         print ("POST /workflow {}".format(json.dumps(body)))
-        create_workflow_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/workflow', headers=headers, json=body, verify=True, auth=self.auth)
+        create_workflow_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/workflow', headers=headers, json=body, verify=True, auth=self.auth, timeout=60)
 
         return create_workflow_response
 
     def delete_workflow_request(self, workflow):
         headers = {"Content-Type": "application/json"}
         print("DELETE /workflow {}".format(workflow))
-        delete_workflow_response = requests.delete(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/'+workflow, verify=True, auth=self.auth, headers=headers)
+        delete_workflow_response = requests.delete(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/'+workflow, verify=True, auth=self.auth, headers=headers, timeout=60)
         return delete_workflow_response
 
     # Stage Methods
@@ -161,23 +162,23 @@ class API:
     def create_stage_request(self, body):
         headers = {"Content-Type": "application/json"}
         print ("POST /workflow/stage {}".format(json.dumps(body)))
-        create_stage_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/stage', headers=headers, json=body, verify=True, auth=self.auth)
+        create_stage_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/stage', headers=headers, json=body, verify=True, auth=self.auth, timeout=60)
 
         return create_stage_response
 
     def get_stage_request(self, stage):
-        get_stage_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/stage/'+stage, verify=True, auth=self.auth)
+        get_stage_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/stage/'+stage, verify=True, auth=self.auth, timeout=60)
 
         return get_stage_response
 
     def delete_stage_request(self, stage):
-        delete_stage_response = requests.delete(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/stage/'+stage, verify=True, auth=self.auth)
+        delete_stage_response = requests.delete(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/stage/'+stage, verify=True, auth=self.auth, timeout=60)
 
         return delete_stage_response
 
     def get_workflow_configuration_request(self, workflow):
         headers = {"Content-Type": "application/json"}
-        get_workflow_configuration_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/configuration/'+workflow, verify=True, auth=self.auth, headers=headers)
+        get_workflow_configuration_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/configuration/'+workflow, verify=True, auth=self.auth, headers=headers, timeout=60)
 
         return get_workflow_configuration_response
 
@@ -186,82 +187,82 @@ class API:
     def get_terminology(self, body):
         headers = {"Content-Type": "application/json"}
         print("POST /service/translate/get_terminology")
-        get_terminology_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/get_terminology', headers=headers, json=body, verify=True, auth=self.auth)
+        get_terminology_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/get_terminology', headers=headers, json=body, verify=True, auth=self.auth, timeout=60)
 
         return get_terminology_response
 
     def download_terminology(self, body):
         headers = {"Content-Type": "application/json"}
         print("POST /service/translate/download_terminology")
-        download_terminology_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/download_terminology', headers=headers, json=body, verify=True, auth=self.auth)
+        download_terminology_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/download_terminology', headers=headers, json=body, verify=True, auth=self.auth, timeout=60)
 
         return download_terminology_response
 
     def list_terminologies(self):
         print("GET /service/translate/list_terminologies")
-        list_terminologies_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/list_terminologies', verify=True, auth=self.auth)
+        list_terminologies_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/list_terminologies', verify=True, auth=self.auth, timeout=60)
 
         return list_terminologies_response
 
     def delete_terminology(self, body):
         headers = {"Content-Type": "application/json"}
         print("POST /service/translate/delete_terminology")
-        delete_terminology_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/delete_terminology', headers=headers, json=body, verify=True, auth=self.auth)
+        delete_terminology_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/delete_terminology', headers=headers, json=body, verify=True, auth=self.auth, timeout=60)
 
         return delete_terminology_response
 
     def create_terminology(self, body):
         headers = {"Content-Type": "application/json"}
         print("POST /service/translate/create_terminology")
-        create_terminology_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/create_terminology', headers=headers, json=body, verify=True, auth=self.auth)
+        create_terminology_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/create_terminology', headers=headers, json=body, verify=True, auth=self.auth, timeout=60)
 
         return create_terminology_response
 
     def get_parallel_data(self, body):
         headers = {"Content-Type": "application/json"}
         print("POST /service/translate/get_parallel_data")
-        get_parallel_data_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/get_parallel_data', headers=headers, json=body, verify=True, auth=self.auth)
+        get_parallel_data_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/get_parallel_data', headers=headers, json=body, verify=True, auth=self.auth, timeout=60)
 
         return get_parallel_data_response
 
     def list_parallel_data(self):
         print("GET /service/translate/list_parallel_data")
-        list_parallel_data_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/list_parallel_data', verify=True, auth=self.auth)
+        list_parallel_data_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/list_parallel_data', verify=True, auth=self.auth, timeout=60)
 
         return list_parallel_data_response
 
     def download_parallel_data(self, body):
         headers = {"Content-Type": "application/json"}
         print("POST /service/translate/download_parallel_data")
-        download_parallel_data_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/download_parallel_data', headers=headers, json=body, verify=True, auth=self.auth)
+        download_parallel_data_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/download_parallel_data', headers=headers, json=body, verify=True, auth=self.auth, timeout=60)
 
         return download_parallel_data_response
 
     def delete_parallel_data(self, body):
         headers = {"Content-Type": "application/json"}
         print("POST /service/translate/delete_parallel_data")
-        delete_parallel_data_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/delete_parallel_data', headers=headers, json=body, verify=True, auth=self.auth)
+        delete_parallel_data_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/delete_parallel_data', headers=headers, json=body, verify=True, auth=self.auth, timeout=60)
 
         return delete_parallel_data_response
 
     def create_parallel_data(self, body):
         headers = {"Content-Type": "application/json"}
         print("POST /service/translate/create_parallel_data")
-        create_parallel_data_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/create_parallel_data', headers=headers, json=body, verify=True, auth=self.auth)
+        create_parallel_data_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/service/translate/create_parallel_data', headers=headers, json=body, verify=True, auth=self.auth, timeout=60)
 
         return create_parallel_data_response
 
     def list_language_models(self):
         headers = {"Content-Type": "application/json"}
         print("GET /service/transcribe/list_language_models")
-        list_language_models_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/service/transcribe/list_language_models', headers=headers, verify=True, auth=self.auth)
+        list_language_models_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/service/transcribe/list_language_models', headers=headers, verify=True, auth=self.auth, timeout=60)
 
         return list_language_models_response
 
     def describe_language_model(self, body):
         headers = {"Content-Type": "application/json"}
         print("POST /service/transcribe/describe_language_model")
-        describe_language_model_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/service/transcribe/describe_language_model', headers=headers, json=body, verify=True, auth=self.auth)
+        describe_language_model_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/service/transcribe/describe_language_model', headers=headers, json=body, verify=True, auth=self.auth, timeout=60)
 
         return describe_language_model_response
 

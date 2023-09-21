@@ -32,10 +32,10 @@ run_cdk_project_test() {
     cd "$component_path"
 
     # install and build for unit testing
-    npm install
+    npm install || return $?
 
     # run unit tests
-    npm run test
+    npm run test || return $?
 
     # prepare coverage reports
     prepare_jest_coverage_report $component_name

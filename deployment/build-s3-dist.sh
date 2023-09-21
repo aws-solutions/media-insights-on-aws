@@ -26,15 +26,17 @@
 ###############################################################################
 
 usage() {
-  msg "$msg"
+  msg "$1"
   cat <<EOF
-Usage: $(basename "${BASH_SOURCE[0]}") [-h] [-v] [--profile PROFILE] [--no-layer] --template-bucket TEMPLATE_BUCKET --code-bucket CODE_BUCKET --version VERSION --region REGION
+
+Usage: $(basename "${BASH_SOURCE[0]}") [-h] [-v] [--profile PROFILE] [--no-layer] [--layer-version LAYER_VERSION] --template-bucket TEMPLATE_BUCKET --code-bucket CODE_BUCKET --version VERSION --region REGION
 
 Available options:
 
 -h, --help        Print this help and exit (optional)
 -v, --verbose     Print script debug info (optional)
---no-layer        Do not build AWS Lamda layer (optional)
+--no-layer        Do not build AWS Lamda layer (optional). Layer version can be specified using --layer-version parameter
+--layer-version   Layer version to download. (optional)
 --template-bucket S3 bucket to put cloud formation templates
 --code-bucket     S3 bucket to put Lambda code packages
 --version         Arbitrary string indicating build version
@@ -110,6 +112,10 @@ parse_params() {
       profile="${2}"
       shift
       ;;
+    --layer-version)
+      user_specified_layer_version="${2}"
+      shift
+      ;;
     -?*) die "Unknown option: $1" ;;
     *) break ;;
     esac
@@ -123,21 +129,41 @@ parse_params() {
   [[ -z "${regional_bucket}" ]] && usage "Missing required parameter: code-bucket"
   [[ -z "${version}" ]] && usage "Missing required parameter: version"
   [[ -z "${region}" ]] && usage "Missing required parameter: region"
+  [[ ! "${user_specified_layer_version}" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]] && usage "layer-version parameter format must be ^v([0-9]+)\.([0-9]+)\.([0-9]+)$. e.g. v1.2.3"
 
   return 0
 }
 
+# Get reference for all important folders
+build_dir="$PWD"
+staging_dist_dir="$build_dir/staging"
+global_dist_dir="$build_dir/global-s3-assets"
+regional_dist_dir="$build_dir/regional-s3-assets"
+dist_dir="$build_dir/dist"
+source_dir="$build_dir/../source"
+cdk_dir="$source_dir/cdk"
+
 # initialize default parameters
 UPLOAD=0
+declare -ar supported_python_versions=(3.9 3.10 3.11)
+declare -r DEFAULT_SOLUTION_VERSION=v$(cat $cdk_dir/package.json \
+  | grep version \
+  | head -1 \
+  | awk -F: '{ print $2 }' \
+  | sed 's/[",\ ]//g')
+user_specified_layer_version=$DEFAULT_SOLUTION_VERSION
 
 parse_params "$@"
+
+declare -r SOLUTION_VERSION_WITH_COMPATIBLE_PYTHON_LAYERS="${user_specified_layer_version:-$DEFAULT_SOLUTION_VERSION}"
+
 msg "Build parameters:"
 msg "- Template bucket: ${global_bucket}"
 msg "- Code bucket: ${regional_bucket}-${region}"
 msg "- Version: ${version}"
 msg "- Region: ${region}"
 msg "- Profile: ${profile}"
-msg "- Build layer? $(if [[ -z $NO_LAYER ]]; then echo 'Yes, please.'; else echo 'No, thanks.'; fi)"
+msg "- Build layer? $(if [[ -z $NO_LAYER ]]; then echo "Yes, please. Download Layer version $SOLUTION_VERSION_WITH_COMPATIBLE_PYTHON_LAYERS if build fails"; else echo "No, thanks. Download Layer version $SOLUTION_VERSION_WITH_COMPATIBLE_PYTHON_LAYERS"; fi)"
 msg "- Upload built solution to S3? $(if [[ $UPLOAD -eq 1 ]]; then echo 'Yes, please.'; else echo 'No, thanks.'; fi)"
 
 echo ""
@@ -176,15 +202,6 @@ echo "ERROR: This script requires the AWS CLI to be installed. Please install it
 exit 1
 fi
 
-# Get reference for all important folders
-build_dir="$PWD"
-staging_dist_dir="$build_dir/staging"
-global_dist_dir="$build_dir/global-s3-assets"
-regional_dist_dir="$build_dir/regional-s3-assets"
-dist_dir="$build_dir/dist"
-source_dir="$build_dir/../source"
-cdk_dir="$source_dir/cdk"
-
 # Create and activate a temporary Python environment for this script.
 echo "------------------------------------------------------------------------------"
 echo "Creating a temporary Python virtualenv for this script"
@@ -207,7 +224,11 @@ trap cleanup_and_die SIGINT SIGTERM EXIT
 
 source "$VENV"/bin/activate
 pip3 install wheel
-pip3 install --quiet boto3 chalice docopt pyyaml jsonschema aws_xray_sdk
+# jsonschema will be pinned to this specific versions due to issues in newer ones
+# See the following issues for more details:
+#  - https://github.com/aws/aws-cdk/issues/26300
+#  - https://github.com/python-jsonschema/jsonschema/issues/1117
+pip3 install --quiet boto3 chalice docopt pyyaml jsonschema==4.17.3 aws_xray_sdk
 export PYTHONPATH="$PYTHONPATH:$source_dir/lib/MediaInsightsEngineLambdaHelper/"
 if [ $? -ne 0 ]; then
     echo "ERROR: Failed to install required Python libraries."
@@ -241,20 +262,29 @@ echo -n "Created: "
 find "$source_dir"/lib/MediaInsightsEngineLambdaHelper/dist/
 cd "$build_dir"/ || exit 1
 
-if [[ ! -z "${NO_LAYER}" ]]; then
+download_layers () {
   echo "------------------------------------------------------------------------------"
   echo "Downloading Lambda Layers"
   echo "------------------------------------------------------------------------------"
-  echo "Downloading https://solutions-$region.$s3domain/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.7.zip" -O media_insights_engine_lambda_layer_python3.7.zip
-  wget -q https://solutions-"$region"."$s3domain"/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.7.zip -O media_insights_engine_lambda_layer_python3.7.zip
-  echo "Downloading https://solutions-$region.$s3domain/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.8.zip"
-  wget -q https://solutions-"$region"."$s3domain"/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.8.zip -O media_insights_engine_lambda_layer_python3.8.zip
-  echo "Downloading https://solutions-$region.$s3domain/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.9.zip"
-  wget -q https://solutions-"$region"."$s3domain"/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.9.zip -O media_insights_engine_lambda_layer_python3.9.zip
+  for i in "${supported_python_versions[@]}"
+  do
+    echo "Downloading Layer $SOLUTION_VERSION_WITH_COMPATIBLE_PYTHON_LAYERS for Python $i: https://solutions-$region.$s3domain/media-insights-on-aws/$SOLUTION_VERSION_WITH_COMPATIBLE_PYTHON_LAYERS/media_insights_on_aws_lambda_layer_python$i-${SOLUTION_VERSION_WITH_COMPATIBLE_PYTHON_LAYERS}.zip"  
+    wget -q "https://solutions-$region.$s3domain/media-insights-on-aws/$SOLUTION_VERSION_WITH_COMPATIBLE_PYTHON_LAYERS/media_insights_on_aws_lambda_layer_python$i-${SOLUTION_VERSION_WITH_COMPATIBLE_PYTHON_LAYERS}.zip" -O "media_insights_on_aws_lambda_layer_python$i.zip"
+    if [ $? -ne 0 ]; then
+      echo "Lambda Layer for version $SOLUTION_VERSION_WITH_COMPATIBLE_PYTHON_LAYERS does not exist. Please select a different version and try again."
+      rm media_insights_on_aws_lambda_layer_python*.zip
+      exit 1
+    fi  
+  done
+}
+
+if [[ ! -z "${NO_LAYER}" ]]; then
+  download_layers
   echo "Copying Lambda layer zips to $dist_dir:"
-  mv media_insights_engine_lambda_layer_python3.7.zip "$regional_dist_dir"
-  mv media_insights_engine_lambda_layer_python3.8.zip "$regional_dist_dir"
-  mv media_insights_engine_lambda_layer_python3.9.zip "$regional_dist_dir"
+  for i in "${supported_python_versions[@]}"
+  do
+    mv -v "media_insights_on_aws_lambda_layer_python$i.zip" "$regional_dist_dir"
+  done
   cd "$build_dir" || exit 1
 else
   echo "------------------------------------------------------------------------------"
@@ -262,7 +292,7 @@ else
   echo "------------------------------------------------------------------------------"
   # Build MediaInsightsEngineLambdaHelper Python package
   cd "$build_dir"/lambda_layer_factory/ || exit 1
-  rm -f media_insights_engine_lambda_layer_python*.zip*
+  rm -f media_insights_on_aws_lambda_layer_python*.zip*
   rm -f Media_Insights_Engine*.whl
   cp -R "$source_dir"/lib/MediaInsightsEngineLambdaHelper .
   cd MediaInsightsEngineLambdaHelper/ || exit 1
@@ -290,24 +320,18 @@ else
   echo "Running build-lambda-layer.sh:"
   rm -rf lambda_layer-python-* lambda_layer-python*.zip
   if `./build-lambda-layer.sh requirements.txt > /dev/null`; then
-    mv lambda_layer-python3.7.zip media_insights_engine_lambda_layer_python3.7.zip
-    mv lambda_layer-python3.8.zip media_insights_engine_lambda_layer_python3.8.zip
-    mv lambda_layer-python3.9.zip media_insights_engine_lambda_layer_python3.9.zip
-    rm -rf lambda_layer-python-3.7/ lambda_layer-python-3.8/ lambda_layer-python-3.9/
+    for i in "${supported_python_versions[@]}"
+    do
+      mv lambda_layer-python${i}.zip media_insights_on_aws_lambda_layer_python${i}-${DEFAULT_SOLUTION_VERSION}.zip
+    done
+    rm -rf lambda_layer-python-*/
     echo "Lambda layer build script completed.";
   else
     echo "WARNING: Lambda layer build script failed. We'll use a pre-built Lambda layers instead.";
-    echo "Downloading https://solutions-$region.$s3domain/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.7.zip" -O media_insights_engine_lambda_layer_python3.7.zip
-    wget -q https://solutions-"$region"."$s3domain"/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.7.zip -O media_insights_engine_lambda_layer_python3.7.zip
-    echo "Downloading https://solutions-$region.$s3domain/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.8.zip"
-    wget -q https://solutions-"$region"."$s3domain"/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.8.zip -O media_insights_engine_lambda_layer_python3.8.zip
-    echo "Downloading https://solutions-$region.$s3domain/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.9.zip"
-    wget -q https://solutions-"$region"."$s3domain"/aws-media-insights-engine/layers/media_insights_engine_lambda_layer_v1.0.0_python3.9.zip -O media_insights_engine_lambda_layer_python3.9.zip
+    download_layers
   fi
   echo "Copying Lambda layer zips to $regional_dist_dir:"
-  mv media_insights_engine_lambda_layer_python3.7.zip "$regional_dist_dir"
-  mv media_insights_engine_lambda_layer_python3.8.zip "$regional_dist_dir"
-  mv media_insights_engine_lambda_layer_python3.9.zip "$regional_dist_dir"
+  mv -v media_insights_on_aws_lambda_layer_python*.zip "$regional_dist_dir"
   mv requirements.txt.old requirements.txt
   cd "$build_dir" || exit 1
 fi
@@ -703,11 +727,11 @@ fi
 rm -rf ./dist
 
 echo "------------------------------------------------------------------------------"
-echo "Creating deployment package for anonymous data logger"
+echo "Creating deployment package for anonymized data logger"
 echo "------------------------------------------------------------------------------"
 
-echo "Building anonymous data logger"
-cd "$source_dir/anonymous-data-logger" || exit 1
+echo "Building anonymized data logger"
+cd "$source_dir/anonymized-data-logger" || exit 1
 [ -e dist ] && rm -rf dist
 mkdir -p dist
 [ -e package ] && rm -rf package
@@ -722,14 +746,14 @@ echo "[install]" > ./setup.cfg
 echo "prefix= " >> ./setup.cfg
 pip3 install --quiet -r ../requirements.txt --target .
 cp -R ../lib .
-if ! [ -d ../dist/anonymous-data-logger.zip ]; then
-  zip -q -r9 ../dist/anonymous-data-logger.zip .
-elif [ -d ../dist/anonymous-data-logger.zip ]; then
+if ! [ -d ../dist/anonymized-data-logger.zip ]; then
+  zip -q -r9 ../dist/anonymized-data-logger.zip .
+elif [ -d ../dist/anonymized-data-logger.zip ]; then
   echo "Package already present"
 fi
 popd || exit 1
-zip -q -g ./dist/anonymous-data-logger.zip ./anonymous-data-logger.py
-cp "./dist/anonymous-data-logger.zip" "$regional_dist_dir/anonymous-data-logger.zip"
+zip -q -g ./dist/anonymized-data-logger.zip ./anonymized-data-logger.py
+cp "./dist/anonymized-data-logger.zip" "$regional_dist_dir/anonymized-data-logger.zip"
 rm -rf ./dist ./package
 
 echo "------------------------------------------------------------------------------"

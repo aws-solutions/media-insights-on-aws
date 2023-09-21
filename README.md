@@ -237,7 +237,11 @@ aws s3 rb s3://<bucket-name> --force
 
 ## Collection of operational metrics
 
-Media Insights on AWS sends anonymous operational metrics to AWS when it is deployed. We use this data to help improve the quality of the solution. It consists of the following information:
+This solution collects anonymized operational metrics to help AWS improve the quality and features of
+the solution. For more information, including how to disable this capability, please see the
+[implementation guide](https://docs.aws.amazon.com/solutions/latest/media-insights-on-aws/reference.html).
+
+It consists of the following information:
 
 * **Solution ID:** The Media Insights on AWS solution identifier (`SO0163`)
 * **Unique ID (UUID):** Randomly generated, unique identifier for each Media Insights on AWS deployment
@@ -258,8 +262,19 @@ Example data:
 }
 ```
 
-To opt out of this reporting, set the `SendAnonymousData` parameter in the base Cloud Formation template [deployment/media-insights-stack.yaml](deployment/media-insights-stack.yaml) to a value of `false`.
+To opt out of this reporting, complete the following steps before launching the AWS Cloudformation template.
 
+1.  Download the AWS CloudFormation template to your local hard drive.
+2.  Open the AWS CloudFormation template with a text editor.
+3.  Modify the AWS CloudFormation template mapping section so `SendAnonymizedData` value is `No`.
+
+Example:
+
+```
+    AnonymizedData:
+      SendAnonymizedData:
+        Data: No
+```
 
 # Known Issues
 

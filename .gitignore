@@ -48,6 +48,7 @@ deployment/lambda_layer_factory/*.zip
 deployment/lambda_layer_factory/*.whl
 deployment/lambda_layer_factory/python/**
 deployment/lambda_layer_factory/python 2/**
+deployment/lambda_layer_factory/*.log
 
 # explicitly named "private" files
 **/private*webapp/README.md

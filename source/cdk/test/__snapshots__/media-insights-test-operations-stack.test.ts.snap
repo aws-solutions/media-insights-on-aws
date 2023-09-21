@@ -1,188 +1,196 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`Snapshot media-insights-test-operations stack test 1`] = `
-Object {
+{
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "media-insights-on-aws version %%VERSION%%. This AWS CloudFormation template  provisions operators, stages, and workflows used for testing the Media Insights on AWS",
-  "Mappings": Object {
-    "SourceCode": Object {
-      "General": Object {
+  "Mappings": {
+    "SourceCode": {
+      "General": {
         "CodeKeyPrefix": "media-insights-on-aws/%%VERSION%%",
         "RegionalS3Bucket": "%%REGIONAL_BUCKET_NAME%%",
       },
     },
   },
-  "Outputs": Object {
-    "AudioAsyncOKLambda": Object {
-      "Value": Object {
-        "Fn::GetAtt": Array [
+  "Outputs": {
+    "AudioAsyncOKLambda": {
+      "Value": {
+        "Fn::GetAtt": [
           "AudioAsyncOKLambda",
           "Arn",
         ],
       },
     },
-    "AudioAsyncOKMonitorLambda": Object {
-      "Value": Object {
-        "Fn::GetAtt": Array [
+    "AudioAsyncOKMonitorLambda": {
+      "Value": {
+        "Fn::GetAtt": [
           "AudioAsyncOKMonitorLambda",
           "Arn",
         ],
       },
     },
-    "AudioSyncOKLambda": Object {
-      "Value": Object {
-        "Fn::GetAtt": Array [
+    "AudioSyncOKLambda": {
+      "Value": {
+        "Fn::GetAtt": [
           "AudioSyncOKLambda",
           "Arn",
         ],
       },
     },
-    "ImageAsyncOKLambda": Object {
-      "Value": Object {
-        "Fn::GetAtt": Array [
+    "ImageAsyncOKLambda": {
+      "Value": {
+        "Fn::GetAtt": [
           "ImageAsyncOKLambda",
           "Arn",
         ],
       },
     },
-    "ImageAsyncOKMonitorLambda": Object {
-      "Value": Object {
-        "Fn::GetAtt": Array [
+    "ImageAsyncOKMonitorLambda": {
+      "Value": {
+        "Fn::GetAtt": [
           "ImageAsyncOKMonitorLambda",
           "Arn",
         ],
       },
     },
-    "ImageSyncOKLambda": Object {
-      "Value": Object {
-        "Fn::GetAtt": Array [
+    "ImageSyncOKLambda": {
+      "Value": {
+        "Fn::GetAtt": [
           "ImageSyncOKLambda",
           "Arn",
         ],
       },
     },
-    "TextAsyncOKLambda": Object {
-      "Value": Object {
-        "Fn::GetAtt": Array [
+    "TextAsyncOKLambda": {
+      "Value": {
+        "Fn::GetAtt": [
           "TextAsyncOKLambda",
           "Arn",
         ],
       },
     },
-    "TextAsyncOKMonitorLambda": Object {
-      "Value": Object {
-        "Fn::GetAtt": Array [
+    "TextAsyncOKMonitorLambda": {
+      "Value": {
+        "Fn::GetAtt": [
           "TextAsyncOKMonitorLambda",
           "Arn",
         ],
       },
     },
-    "TextSyncOKLambda": Object {
-      "Value": Object {
-        "Fn::GetAtt": Array [
+    "TextSyncOKLambda": {
+      "Value": {
+        "Fn::GetAtt": [
           "TextSyncOKLambda",
           "Arn",
         ],
       },
     },
-    "VideoAsyncFailMonitorLambda": Object {
-      "Value": Object {
-        "Fn::GetAtt": Array [
+    "VideoAsyncFailMonitorLambda": {
+      "Value": {
+        "Fn::GetAtt": [
           "VideoAsyncFailMonitorLambda",
           "Arn",
         ],
       },
     },
-    "VideoAsyncOKLambda": Object {
-      "Value": Object {
-        "Fn::GetAtt": Array [
+    "VideoAsyncOKLambda": {
+      "Value": {
+        "Fn::GetAtt": [
           "VideoAsyncOKLambda",
           "Arn",
         ],
       },
     },
-    "VideoAsyncOKMonitorLambda": Object {
-      "Value": Object {
-        "Fn::GetAtt": Array [
+    "VideoAsyncOKMonitorLambda": {
+      "Value": {
+        "Fn::GetAtt": [
           "VideoAsyncOKMonitorLambda",
           "Arn",
         ],
       },
     },
-    "VideoSyncFailLambda": Object {
-      "Value": Object {
-        "Fn::GetAtt": Array [
+    "VideoSyncFailLambda": {
+      "Value": {
+        "Fn::GetAtt": [
           "VideoSyncFailLambda",
           "Arn",
         ],
       },
     },
-    "VideoSyncOKLambda": Object {
-      "Value": Object {
-        "Fn::GetAtt": Array [
+    "VideoSyncOKLambda": {
+      "Value": {
+        "Fn::GetAtt": [
           "VideoSyncOKLambda",
           "Arn",
         ],
       },
     },
   },
-  "Parameters": Object {
-    "DataPlaneBucket": Object {
+  "Parameters": {
+    "DataPlaneBucket": {
       "Description": "Bucket for the dataplane",
       "Type": "String",
     },
-    "DataplaneEndpoint": Object {
+    "DataplaneEndpoint": {
       "Description": "Lambda name of the dataplane handler",
       "Type": "String",
     },
-    "referencetoMiTestStackMediaInsightsEnginePython39Layer": Object {
+    "referencetoMiTestStackMediaInsightsOnAwsPython311Layer": {
       "Type": "String",
     },
   },
-  "Resources": Object {
-    "AudioAsyncOKLambda": Object {
-      "DependsOn": Array [
+  "Resources": {
+    "AudioAsyncOKLambda": {
+      "DependsOn": [
         "TestExecutionRole",
       ],
-      "Metadata": Object {
-        "cfn_nag": Object {
-          "rules_to_suppress": Array [
-            Object {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-L1",
+              "reason": "Latest lambda version not supported at this time.",
+            },
+          ],
+        },
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
               "id": "W89",
               "reason": "This Lambda function does not need to access any resource provisioned within a VPC.",
             },
-            Object {
+            {
               "id": "W92",
               "reason": "This function does not require performance optimization, so the default concurrency limits suffice.",
             },
           ],
         },
       },
-      "Properties": Object {
-        "Code": Object {
-          "S3Bucket": Object {
-            "Fn::Join": Array [
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Join": [
               "-",
-              Array [
-                Object {
-                  "Fn::FindInMap": Array [
+              [
+                {
+                  "Fn::FindInMap": [
                     "SourceCode",
                     "General",
                     "RegionalS3Bucket",
                   ],
                 },
-                Object {
+                {
                   "Ref": "AWS::Region",
                 },
               ],
             ],
           },
-          "S3Key": Object {
-            "Fn::Join": Array [
+          "S3Key": {
+            "Fn::Join": [
               "/",
-              Array [
-                Object {
-                  "Fn::FindInMap": Array [
+              [
+                {
+                  "Fn::FindInMap": [
                     "SourceCode",
                     "General",
                     "CodeKeyPrefix",
@@ -193,21 +201,21 @@ Object {
             ],
           },
         },
-        "Environment": Object {
-          "Variables": Object {
-            "DATAPLANE_BUCKET": Object {
+        "Environment": {
+          "Variables": {
+            "DATAPLANE_BUCKET": {
               "Ref": "DataPlaneBucket",
             },
-            "DataplaneEndpoint": Object {
+            "DataplaneEndpoint": {
               "Ref": "DataplaneEndpoint",
             },
           },
         },
-        "FunctionName": Object {
-          "Fn::Join": Array [
+        "FunctionName": {
+          "Fn::Join": [
             "",
-            Array [
-              Object {
+            [
+              {
                 "Ref": "AWS::StackName",
               },
               "-audio-async-ok",
@@ -215,21 +223,21 @@ Object {
           ],
         },
         "Handler": "test.audio_async_ok_lambda_handler",
-        "Layers": Array [
-          Object {
-            "Ref": "referencetoMiTestStackMediaInsightsEnginePython39Layer",
+        "Layers": [
+          {
+            "Ref": "referencetoMiTestStackMediaInsightsOnAwsPython311Layer",
           },
         ],
         "MemorySize": 256,
-        "Role": Object {
-          "Fn::GetAtt": Array [
+        "Role": {
+          "Fn::GetAtt": [
             "TestExecutionRole",
             "Arn",
           ],
         },
-        "Runtime": "python3.9",
-        "Tags": Array [
-          Object {
+        "Runtime": "python3.11",
+        "Tags": [
+          {
             "Key": "environment",
             "Value": "mie",
           },
@@ -238,49 +246,57 @@ Object {
       },
       "Type": "AWS::Lambda::Function",
     },
-    "AudioAsyncOKMonitorLambda": Object {
-      "DependsOn": Array [
+    "AudioAsyncOKMonitorLambda": {
+      "DependsOn": [
         "TestExecutionRole",
       ],
-      "Metadata": Object {
-        "cfn_nag": Object {
-          "rules_to_suppress": Array [
-            Object {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-L1",
+              "reason": "Latest lambda version not supported at this time.",
+            },
+          ],
+        },
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
               "id": "W89",
               "reason": "This Lambda function does not need to access any resource provisioned within a VPC.",
             },
-            Object {
+            {
               "id": "W92",
               "reason": "This function does not require performance optimization, so the default concurrency limits suffice.",
             },
           ],
         },
       },
-      "Properties": Object {
-        "Code": Object {
-          "S3Bucket": Object {
-            "Fn::Join": Array [
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Join": [
               "-",
-              Array [
-                Object {
-                  "Fn::FindInMap": Array [
+              [
+                {
+                  "Fn::FindInMap": [
                     "SourceCode",
                     "General",
                     "RegionalS3Bucket",
                   ],
                 },
-                Object {
+                {
                   "Ref": "AWS::Region",
                 },
               ],
             ],
           },
-          "S3Key": Object {
-            "Fn::Join": Array [
+          "S3Key": {
+            "Fn::Join": [
               "/",
-              Array [
-                Object {
-                  "Fn::FindInMap": Array [
+              [
+                {
+                  "Fn::FindInMap": [
                     "SourceCode",
                     "General",
                     "CodeKeyPrefix",
@@ -291,21 +307,21 @@ Object {
             ],
           },
         },
-        "Environment": Object {
-          "Variables": Object {
-            "DATAPLANE_BUCKET": Object {
+        "Environment": {
+          "Variables": {
+            "DATAPLANE_BUCKET": {
               "Ref": "DataPlaneBucket",
             },
-            "DataplaneEndpoint": Object {
+            "DataplaneEndpoint": {
               "Ref": "DataplaneEndpoint",
             },
           },
         },
-        "FunctionName": Object {
-          "Fn::Join": Array [
+        "FunctionName": {
+          "Fn::Join": [
             "",
-            Array [
-              Object {
+            [
+              {
                 "Ref": "AWS::StackName",
               },
               "-audio-async-ok-monitor",
@@ -313,21 +329,21 @@ Object {
           ],
         },
         "Handler": "test.audio_async_ok_monitor_lambda_handler",
-        "Layers": Array [
-          Object {
-            "Ref": "referencetoMiTestStackMediaInsightsEnginePython39Layer",
+        "Layers": [
+          {
+            "Ref": "referencetoMiTestStackMediaInsightsOnAwsPython311Layer",
           },
         ],
         "MemorySize": 256,
-        "Role": Object {
-          "Fn::GetAtt": Array [
+        "Role": {
+          "Fn::GetAtt": [
             "TestExecutionRole",
             "Arn",
           ],
         },
-        "Runtime": "python3.9",
-        "Tags": Array [
-          Object {
+        "Runtime": "python3.11",
+        "Tags": [
+          {
             "Key": "environment",
             "Value": "mie",
           },
@@ -336,49 +352,57 @@ Object {
       },
       "Type": "AWS::Lambda::Function",
     },
-    "AudioSyncOKLambda": Object {
-      "DependsOn": Array [
+    "AudioSyncOKLambda": {
+      "DependsOn": [
         "TestExecutionRole",
       ],
-      "Metadata": Object {
-        "cfn_nag": Object {
-          "rules_to_suppress": Array [
-            Object {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-L1",
+              "reason": "Latest lambda version not supported at this time.",
+            },
+          ],
+        },
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
               "id": "W89",
               "reason": "This Lambda function does not need to access any resource provisioned within a VPC.",
             },
-            Object {
+            {
               "id": "W92",
               "reason": "This function does not require performance optimization, so the default concurrency limits suffice.",
             },
           ],
         },
       },
-      "Properties": Object {
-        "Code": Object {
-          "S3Bucket": Object {
-            "Fn::Join": Array [
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Join": [
               "-",
-              Array [
-                Object {
-                  "Fn::FindInMap": Array [
+              [
+                {
+                  "Fn::FindInMap": [
                     "SourceCode",
                     "General",
                     "RegionalS3Bucket",
                   ],
                 },
-                Object {
+                {
                   "Ref": "AWS::Region",
                 },
               ],
             ],
           },
-          "S3Key": Object {
-            "Fn::Join": Array [
+          "S3Key": {
+            "Fn::Join": [
               "/",
-              Array [
-                Object {
-                  "Fn::FindInMap": Array [
+              [
+                {
+                  "Fn::FindInMap": [
                     "SourceCode",
                     "General",
                     "CodeKeyPrefix",
@@ -389,21 +413,21 @@ Object {
             ],
           },
         },
-        "Environment": Object {
-          "Variables": Object {
-            "DATAPLANE_BUCKET": Object {
+        "Environment": {
+          "Variables": {
+            "DATAPLANE_BUCKET": {
               "Ref": "DataPlaneBucket",
             },
-            "DataplaneEndpoint": Object {
+            "DataplaneEndpoint": {
               "Ref": "DataplaneEndpoint",
             },
           },
         },
-        "FunctionName": Object {
-          "Fn::Join": Array [
+        "FunctionName": {
+          "Fn::Join": [
             "",
-            Array [
-              Object {
+            [
+              {
                 "Ref": "AWS::StackName",
               },
               "-audio-sync-ok",
@@ -411,21 +435,21 @@ Object {
           ],
         },
         "Handler": "test.audio_sync_ok_lambda_handler",
-        "Layers": Array [
-          Object {
-            "Ref": "referencetoMiTestStackMediaInsightsEnginePython39Layer",
+        "Layers": [
+          {
+            "Ref": "referencetoMiTestStackMediaInsightsOnAwsPython311Layer",
           },
         ],
         "MemorySize": 256,
-        "Role": Object {
-          "Fn::GetAtt": Array [
+        "Role": {
+          "Fn::GetAtt": [
             "TestExecutionRole",
             "Arn",
           ],
         },
-        "Runtime": "python3.9",
-        "Tags": Array [
-          Object {
+        "Runtime": "python3.11",
+        "Tags": [
+          {
             "Key": "environment",
             "Value": "mie",
           },
@@ -434,49 +458,57 @@ Object {
       },
       "Type": "AWS::Lambda::Function",
     },
-    "ImageAsyncOKLambda": Object {
-      "DependsOn": Array [
+    "ImageAsyncOKLambda": {
+      "DependsOn": [
         "TestExecutionRole",
       ],
-      "Metadata": Object {
-        "cfn_nag": Object {
-          "rules_to_suppress": Array [
-            Object {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-L1",
+              "reason": "Latest lambda version not supported at this time.",
+            },
+          ],
+        },
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
               "id": "W89",
               "reason": "This Lambda function does not need to access any resource provisioned within a VPC.",
             },
-            Object {
+            {
               "id": "W92",
               "reason": "This function does not require performance optimization, so the default concurrency limits suffice.",
             },
           ],
         },
       },
-      "Properties": Object {
-        "Code": Object {
-          "S3Bucket": Object {
-            "Fn::Join": Array [
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Join": [
               "-",
-              Array [
-                Object {
-                  "Fn::FindInMap": Array [
+              [
+                {
+                  "Fn::FindInMap": [
                     "SourceCode",
                     "General",
                     "RegionalS3Bucket",
                   ],
                 },
-                Object {
+                {
                   "Ref": "AWS::Region",
                 },
               ],
             ],
           },
-          "S3Key": Object {
-            "Fn::Join": Array [
+          "S3Key": {
+            "Fn::Join": [
               "/",
-              Array [
-                Object {
-                  "Fn::FindInMap": Array [
+              [
+                {
+                  "Fn::FindInMap": [
                     "SourceCode",
                     "General",
                     "CodeKeyPrefix",
@@ -487,21 +519,21 @@ Object {
             ],
           },
         },
-        "Environment": Object {
-          "Variables": Object {
-            "DATAPLANE_BUCKET": Object {
+        "Environment": {
+          "Variables": {
+            "DATAPLANE_BUCKET": {
               "Ref": "DataPlaneBucket",
             },
-            "DataplaneEndpoint": Object {
+            "DataplaneEndpoint": {
               "Ref": "DataplaneEndpoint",
             },
           },
         },
-        "FunctionName": Object {
-          "Fn::Join": Array [
+        "FunctionName": {
+          "Fn::Join": [
             "",
-            Array [
-              Object {
+            [
+              {
                 "Ref": "AWS::StackName",
               },
               "-image-async-ok",
@@ -509,21 +541,21 @@ Object {
           ],
         },
         "Handler": "test.image_async_ok_lambda_handler",
-        "Layers": Array [
-          Object {
-            "Ref": "referencetoMiTestStackMediaInsightsEnginePython39Layer",
+        "Layers": [
+          {
+            "Ref": "referencetoMiTestStackMediaInsightsOnAwsPython311Layer",
           },
         ],
         "MemorySize": 256,
-        "Role": Object {
-          "Fn::GetAtt": Array [
+        "Role": {
+          "Fn::GetAtt": [
             "TestExecutionRole",
             "Arn",
           ],
         },
-        "Runtime": "python3.9",
-        "Tags": Array [
-          Object {
+        "Runtime": "python3.11",
+        "Tags": [
+          {
             "Key": "environment",
             "Value": "mie",
           },
@@ -532,49 +564,57 @@ Object {
       },
       "Type": "AWS::Lambda::Function",
     },
-    "ImageAsyncOKMonitorLambda": Object {
-      "DependsOn": Array [
+    "ImageAsyncOKMonitorLambda": {
+      "DependsOn": [
         "TestExecutionRole",
       ],
-      "Metadata": Object {
-        "cfn_nag": Object {
-          "rules_to_suppress": Array [
-            Object {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-L1",
+              "reason": "Latest lambda version not supported at this time.",
+            },
+          ],
+        },
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
               "id": "W89",
               "reason": "This Lambda function does not need to access any resource provisioned within a VPC.",
             },
-            Object {
+            {
               "id": "W92",
               "reason": "This function does not require performance optimization, so the default concurrency limits suffice.",
             },
           ],
         },
       },
-      "Properties": Object {
-        "Code": Object {
-          "S3Bucket": Object {
-            "Fn::Join": Array [
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Join": [
               "-",
-              Array [
-                Object {
-                  "Fn::FindInMap": Array [
+              [
+                {
+                  "Fn::FindInMap": [
                     "SourceCode",
                     "General",
                     "RegionalS3Bucket",
                   ],
                 },
-                Object {
+                {
                   "Ref": "AWS::Region",
                 },
               ],
             ],
           },
-          "S3Key": Object {
-            "Fn::Join": Array [
+          "S3Key": {
+            "Fn::Join": [
               "/",
-              Array [
-                Object {
-                  "Fn::FindInMap": Array [
+              [
+                {
+                  "Fn::FindInMap": [
                     "SourceCode",
                     "General",
                     "CodeKeyPrefix",
@@ -585,21 +625,21 @@ Object {
             ],
           },
         },
-        "Environment": Object {
-          "Variables": Object {
-            "DATAPLANE_BUCKET": Object {
+        "Environment": {
+          "Variables": {
+            "DATAPLANE_BUCKET": {
               "Ref": "DataPlaneBucket",
             },
-            "DataplaneEndpoint": Object {
+            "DataplaneEndpoint": {
               "Ref": "DataplaneEndpoint",
             },
           },
         },
-        "FunctionName": Object {
-          "Fn::Join": Array [
+        "FunctionName": {
+          "Fn::Join": [
             "",
-            Array [
-              Object {
+            [
+              {
                 "Ref": "AWS::StackName",
               },
               "-image-async-ok-monitor",
@@ -607,21 +647,21 @@ Object {
           ],
         },
         "Handler": "test.image_async_ok_monitor_lambda_handler",
-        "Layers": Array [
-          Object {
-            "Ref": "referencetoMiTestStackMediaInsightsEnginePython39Layer",
+        "Layers": [
+          {
+            "Ref": "referencetoMiTestStackMediaInsightsOnAwsPython311Layer",
           },
         ],
         "MemorySize": 256,
-        "Role": Object {
-          "Fn::GetAtt": Array [
+        "Role": {
+          "Fn::GetAtt": [
             "TestExecutionRole",
             "Arn",
           ],
         },
-        "Runtime": "python3.9",
-        "Tags": Array [
-          Object {
+        "Runtime": "python3.11",
+        "Tags": [
+          {
             "Key": "environment",
             "Value": "mie",
           },
@@ -630,49 +670,57 @@ Object {
       },
       "Type": "AWS::Lambda::Function",
     },
-    "ImageSyncOKLambda": Object {
-      "DependsOn": Array [
+    "ImageSyncOKLambda": {
+      "DependsOn": [
         "TestExecutionRole",
       ],
-      "Metadata": Object {
-        "cfn_nag": Object {
-          "rules_to_suppress": Array [
-            Object {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-L1",
+              "reason": "Latest lambda version not supported at this time.",
+            },
+          ],
+        },
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
               "id": "W89",
               "reason": "This Lambda function does not need to access any resource provisioned within a VPC.",
             },
-            Object {
+            {
               "id": "W92",
               "reason": "This function does not require performance optimization, so the default concurrency limits suffice.",
             },
           ],
         },
       },
-      "Properties": Object {
-        "Code": Object {
-          "S3Bucket": Object {
-            "Fn::Join": Array [
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Join": [
               "-",
-              Array [
-                Object {
-                  "Fn::FindInMap": Array [
+              [
+                {
+                  "Fn::FindInMap": [
                     "SourceCode",
                     "General",
                     "RegionalS3Bucket",
                   ],
                 },
-                Object {
+                {
                   "Ref": "AWS::Region",
                 },
               ],
             ],
           },
-          "S3Key": Object {
-            "Fn::Join": Array [
+          "S3Key": {
+            "Fn::Join": [
               "/",
-              Array [
-                Object {
-                  "Fn::FindInMap": Array [
+              [
+                {
+                  "Fn::FindInMap": [
                     "SourceCode",
                     "General",
                     "CodeKeyPrefix",
@@ -683,21 +731,21 @@ Object {
             ],
           },
         },
-        "Environment": Object {
-          "Variables": Object {
-            "DATAPLANE_BUCKET": Object {
+        "Environment": {
+          "Variables": {
+            "DATAPLANE_BUCKET": {
               "Ref": "DataPlaneBucket",
             },
-            "DataplaneEndpoint": Object {
+            "DataplaneEndpoint": {
               "Ref": "DataplaneEndpoint",
             },
           },
         },
-        "FunctionName": Object {
-          "Fn::Join": Array [
+        "FunctionName": {
+          "Fn::Join": [
             "",
-            Array [
-              Object {
+            [
+              {
                 "Ref": "AWS::StackName",
               },
               "-image-sync-ok",
@@ -705,21 +753,21 @@ Object {
           ],
         },
         "Handler": "test.image_sync_ok_lambda_handler",
-        "Layers": Array [
-          Object {
-            "Ref": "referencetoMiTestStackMediaInsightsEnginePython39Layer",
+        "Layers": [
+          {
+            "Ref": "referencetoMiTestStackMediaInsightsOnAwsPython311Layer",
           },
         ],
         "MemorySize": 256,
-        "Role": Object {
-          "Fn::GetAtt": Array [
+        "Role": {
+          "Fn::GetAtt": [
             "TestExecutionRole",
             "Arn",
           ],
         },
-        "Runtime": "python3.9",
-        "Tags": Array [
-          Object {
+        "Runtime": "python3.11",
+        "Tags": [
+          {
             "Key": "environment",
             "Value": "mie",
           },
@@ -728,55 +776,55 @@ Object {
       },
       "Type": "AWS::Lambda::Function",
     },
-    "TestExecutionRole": Object {
-      "Metadata": Object {
-        "cdk_nag": Object {
-          "rules_to_suppress": Array [
-            Object {
+    "TestExecutionRole": {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
               "id": "AwsSolutions-IAM5",
               "reason": "Resource ARNs are not generated at the time of policy creation",
             },
           ],
         },
       },
-      "Properties": Object {
-        "AssumeRolePolicyDocument": Object {
-          "Statement": Array [
-            Object {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
               "Action": "sts:AssumeRole",
               "Effect": "Allow",
-              "Principal": Object {
+              "Principal": {
                 "Service": "lambda.amazonaws.com",
               },
             },
           ],
           "Version": "2012-10-17",
         },
-        "Policies": Array [
-          Object {
-            "PolicyDocument": Object {
-              "Statement": Array [
-                Object {
+        "Policies": [
+          {
+            "PolicyDocument": {
+              "Statement": [
+                {
                   "Action": "states:StartExecution",
                   "Effect": "Allow",
-                  "Resource": Object {
-                    "Fn::Join": Array [
+                  "Resource": {
+                    "Fn::Join": [
                       "",
-                      Array [
+                      [
                         "arn:",
-                        Object {
+                        {
                           "Ref": "AWS::Partition",
                         },
                         ":states:",
-                        Object {
+                        {
                           "Ref": "AWS::Region",
                         },
                         ":",
-                        Object {
+                        {
                           "Ref": "AWS::AccountId",
                         },
                         ":stateMachine:",
-                        Object {
+                        {
                           "Ref": "AWS::StackName",
                         },
                         "*",
@@ -784,27 +832,27 @@ Object {
                     ],
                   },
                 },
-                Object {
-                  "Action": Array [
+                {
+                  "Action": [
                     "logs:CreateLogGroup",
                     "logs:CreateLogStream",
                     "logs:PutLogEvents",
                   ],
                   "Effect": "Allow",
-                  "Resource": Object {
-                    "Fn::Join": Array [
+                  "Resource": {
+                    "Fn::Join": [
                       "",
-                      Array [
+                      [
                         "arn:",
-                        Object {
+                        {
                           "Ref": "AWS::Partition",
                         },
                         ":logs:",
-                        Object {
+                        {
                           "Ref": "AWS::Region",
                         },
                         ":",
-                        Object {
+                        {
                           "Ref": "AWS::AccountId",
                         },
                         ":log-group:/aws/lambda/*",
@@ -815,11 +863,11 @@ Object {
               ],
               "Version": "2012-10-17",
             },
-            "PolicyName": Object {
-              "Fn::Join": Array [
+            "PolicyName": {
+              "Fn::Join": [
                 "",
-                Array [
-                  Object {
+                [
+                  {
                     "Ref": "AWS::StackName",
                   },
                   "-test-execution-lambda-role",
@@ -828,8 +876,8 @@ Object {
             },
           },
         ],
-        "Tags": Array [
-          Object {
+        "Tags": [
+          {
             "Key": "environment",
             "Value": "mie",
           },
@@ -837,49 +885,57 @@ Object {
       },
       "Type": "AWS::IAM::Role",
     },
-    "TextAsyncOKLambda": Object {
-      "DependsOn": Array [
+    "TextAsyncOKLambda": {
+      "DependsOn": [
         "TestExecutionRole",
       ],
-      "Metadata": Object {
-        "cfn_nag": Object {
-          "rules_to_suppress": Array [
-            Object {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-L1",
+              "reason": "Latest lambda version not supported at this time.",
+            },
+          ],
+        },
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
               "id": "W89",
               "reason": "This Lambda function does not need to access any resource provisioned within a VPC.",
             },
-            Object {
+            {
               "id": "W92",
               "reason": "This function does not require performance optimization, so the default concurrency limits suffice.",
             },
           ],
         },
       },
-      "Properties": Object {
-        "Code": Object {
-          "S3Bucket": Object {
-            "Fn::Join": Array [
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Join": [
               "-",
-              Array [
-                Object {
-                  "Fn::FindInMap": Array [
+              [
+                {
+                  "Fn::FindInMap": [
                     "SourceCode",
                     "General",
                     "RegionalS3Bucket",
                   ],
                 },
-                Object {
+                {
                   "Ref": "AWS::Region",
                 },
               ],
             ],
           },
-          "S3Key": Object {
-            "Fn::Join": Array [
+          "S3Key": {
+            "Fn::Join": [
               "/",
-              Array [
-                Object {
-                  "Fn::FindInMap": Array [
+              [
+                {
+                  "Fn::FindInMap": [
                     "SourceCode",
                     "General",
                     "CodeKeyPrefix",
@@ -890,21 +946,21 @@ Object {
             ],
           },
         },
-        "Environment": Object {
-          "Variables": Object {
-            "DATAPLANE_BUCKET": Object {
+        "Environment": {
+          "Variables": {
+            "DATAPLANE_BUCKET": {
               "Ref": "DataPlaneBucket",
             },
-            "DataplaneEndpoint": Object {
+            "DataplaneEndpoint": {
               "Ref": "DataplaneEndpoint",
             },
           },
         },
-        "FunctionName": Object {
-          "Fn::Join": Array [
+        "FunctionName": {
+          "Fn::Join": [
             "",
-            Array [
-              Object {
+            [
+              {
                 "Ref": "AWS::StackName",
               },
               "-text-async-ok",
@@ -912,21 +968,21 @@ Object {
           ],
         },
         "Handler": "test.text_async_ok_lambda_handler",
-        "Layers": Array [
-          Object {
-            "Ref": "referencetoMiTestStackMediaInsightsEnginePython39Layer",
+        "Layers": [
+          {
+            "Ref": "referencetoMiTestStackMediaInsightsOnAwsPython311Layer",
           },
         ],
         "MemorySize": 256,
-        "Role": Object {
-          "Fn::GetAtt": Array [
+        "Role": {
+          "Fn::GetAtt": [
             "TestExecutionRole",
             "Arn",
           ],
         },
-        "Runtime": "python3.9",
-        "Tags": Array [
-          Object {
+        "Runtime": "python3.11",
+        "Tags": [
+          {
             "Key": "environment",
             "Value": "mie",
           },
@@ -935,49 +991,57 @@ Object {
       },
       "Type": "AWS::Lambda::Function",
     },
-    "TextAsyncOKMonitorLambda": Object {
-      "DependsOn": Array [
+    "TextAsyncOKMonitorLambda": {
+      "DependsOn": [
         "TestExecutionRole",
       ],
-      "Metadata": Object {
-        "cfn_nag": Object {
-          "rules_to_suppress": Array [
-            Object {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-L1",
+              "reason": "Latest lambda version not supported at this time.",
+            },
+          ],
+        },
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
               "id": "W89",
               "reason": "This Lambda function does not need to access any resource provisioned within a VPC.",
             },
-            Object {
+            {
               "id": "W92",
               "reason": "This function does not require performance optimization, so the default concurrency limits suffice.",
             },
           ],
         },
       },
-      "Properties": Object {
-        "Code": Object {
-          "S3Bucket": Object {
-            "Fn::Join": Array [
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Join": [
               "-",
-              Array [
-                Object {
-                  "Fn::FindInMap": Array [
+              [
+                {
+                  "Fn::FindInMap": [
                     "SourceCode",
                     "General",
                     "RegionalS3Bucket",
                   ],
                 },
-                Object {
+                {
                   "Ref": "AWS::Region",
                 },
               ],
             ],
           },
-          "S3Key": Object {
-            "Fn::Join": Array [
+          "S3Key": {
+            "Fn::Join": [
               "/",
-              Array [
-                Object {
-                  "Fn::FindInMap": Array [
+              [
+                {
+                  "Fn::FindInMap": [
                     "SourceCode",
                     "General",
                     "CodeKeyPrefix",
@@ -988,21 +1052,21 @@ Object {
             ],
           },
         },
-        "Environment": Object {
-          "Variables": Object {
-            "DATAPLANE_BUCKET": Object {
+        "Environment": {
+          "Variables": {
+            "DATAPLANE_BUCKET": {
               "Ref": "DataPlaneBucket",
             },
-            "DataplaneEndpoint": Object {
+            "DataplaneEndpoint": {
               "Ref": "DataplaneEndpoint",
             },
           },
         },
-        "FunctionName": Object {
-          "Fn::Join": Array [
+        "FunctionName": {
+          "Fn::Join": [
             "",
-            Array [
-              Object {
+            [
+              {
                 "Ref": "AWS::StackName",
               },
               "-text-async-ok-monitor",
@@ -1010,21 +1074,21 @@ Object {
           ],
         },
         "Handler": "test.text_async_ok_monitor_lambda_handler",
-        "Layers": Array [
-          Object {
-            "Ref": "referencetoMiTestStackMediaInsightsEnginePython39Layer",
+        "Layers": [
+          {
+            "Ref": "referencetoMiTestStackMediaInsightsOnAwsPython311Layer",
           },
         ],
         "MemorySize": 256,
-        "Role": Object {
-          "Fn::GetAtt": Array [
+        "Role": {
+          "Fn::GetAtt": [
             "TestExecutionRole",
             "Arn",
           ],
         },
-        "Runtime": "python3.9",
-        "Tags": Array [
-          Object {
+        "Runtime": "python3.11",
+        "Tags": [
+          {
             "Key": "environment",
             "Value": "mie",
           },
@@ -1033,49 +1097,57 @@ Object {
       },
       "Type": "AWS::Lambda::Function",
     },
-    "TextSyncOKLambda": Object {
-      "DependsOn": Array [
+    "TextSyncOKLambda": {
+      "DependsOn": [
         "TestExecutionRole",
       ],
-      "Metadata": Object {
-        "cfn_nag": Object {
-          "rules_to_suppress": Array [
-            Object {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-L1",
+              "reason": "Latest lambda version not supported at this time.",
+            },
+          ],
+        },
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
               "id": "W89",
               "reason": "This Lambda function does not need to access any resource provisioned within a VPC.",
             },
-            Object {
+            {
               "id": "W92",
               "reason": "This function does not require performance optimization, so the default concurrency limits suffice.",
             },
           ],
         },
       },
-      "Properties": Object {
-        "Code": Object {
-          "S3Bucket": Object {
-            "Fn::Join": Array [
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Join": [
               "-",
-              Array [
-                Object {
-                  "Fn::FindInMap": Array [
+              [
+                {
+                  "Fn::FindInMap": [
                     "SourceCode",
                     "General",
                     "RegionalS3Bucket",
                   ],
                 },
-                Object {
+                {
                   "Ref": "AWS::Region",
                 },
               ],
             ],
           },
-          "S3Key": Object {
-            "Fn::Join": Array [
+          "S3Key": {
+            "Fn::Join": [
               "/",
-              Array [
-                Object {
-                  "Fn::FindInMap": Array [
+              [
+                {
+                  "Fn::FindInMap": [
                     "SourceCode",
                     "General",
                     "CodeKeyPrefix",
@@ -1086,21 +1158,21 @@ Object {
             ],
           },
         },
-        "Environment": Object {
-          "Variables": Object {
-            "DATAPLANE_BUCKET": Object {
+        "Environment": {
+          "Variables": {
+            "DATAPLANE_BUCKET": {
               "Ref": "DataPlaneBucket",
             },
-            "DataplaneEndpoint": Object {
+            "DataplaneEndpoint": {
               "Ref": "DataplaneEndpoint",
             },
           },
         },
-        "FunctionName": Object {
-          "Fn::Join": Array [
+        "FunctionName": {
+          "Fn::Join": [
             "",
-            Array [
-              Object {
+            [
+              {
                 "Ref": "AWS::StackName",
               },
               "-text-sync-ok",
@@ -1108,21 +1180,21 @@ Object {
           ],
         },
         "Handler": "test.text_sync_ok_lambda_handler",
-        "Layers": Array [
-          Object {
-            "Ref": "referencetoMiTestStackMediaInsightsEnginePython39Layer",
+        "Layers": [
+          {
+            "Ref": "referencetoMiTestStackMediaInsightsOnAwsPython311Layer",
           },
         ],
         "MemorySize": 256,
-        "Role": Object {
-          "Fn::GetAtt": Array [
+        "Role": {
+          "Fn::GetAtt": [
             "TestExecutionRole",
             "Arn",
           ],
         },
-        "Runtime": "python3.9",
-        "Tags": Array [
-          Object {
+        "Runtime": "python3.11",
+        "Tags": [
+          {
             "Key": "environment",
             "Value": "mie",
           },
@@ -1131,49 +1203,57 @@ Object {
       },
       "Type": "AWS::Lambda::Function",
     },
-    "VideoAsyncFailMonitorLambda": Object {
-      "DependsOn": Array [
+    "VideoAsyncFailMonitorLambda": {
+      "DependsOn": [
         "TestExecutionRole",
       ],
-      "Metadata": Object {
-        "cfn_nag": Object {
-          "rules_to_suppress": Array [
-            Object {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-L1",
+              "reason": "Latest lambda version not supported at this time.",
+            },
+          ],
+        },
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
               "id": "W89",
               "reason": "This Lambda function does not need to access any resource provisioned within a VPC.",
             },
-            Object {
+            {
               "id": "W92",
               "reason": "This function does not require performance optimization, so the default concurrency limits suffice.",
             },
           ],
         },
       },
-      "Properties": Object {
-        "Code": Object {
-          "S3Bucket": Object {
-            "Fn::Join": Array [
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Join": [
               "-",
-              Array [
-                Object {
-                  "Fn::FindInMap": Array [
+              [
+                {
+                  "Fn::FindInMap": [
                     "SourceCode",
                     "General",
                     "RegionalS3Bucket",
                   ],
                 },
-                Object {
+                {
                   "Ref": "AWS::Region",
                 },
               ],
             ],
           },
-          "S3Key": Object {
-            "Fn::Join": Array [
+          "S3Key": {
+            "Fn::Join": [
               "/",
-              Array [
-                Object {
-                  "Fn::FindInMap": Array [
+              [
+                {
+                  "Fn::FindInMap": [
                     "SourceCode",
                     "General",
                     "CodeKeyPrefix",
@@ -1184,21 +1264,21 @@ Object {
             ],
           },
         },
-        "Environment": Object {
-          "Variables": Object {
-            "DATAPLANE_BUCKET": Object {
+        "Environment": {
+          "Variables": {
+            "DATAPLANE_BUCKET": {
               "Ref": "DataPlaneBucket",
             },
-            "DataplaneEndpoint": Object {
+            "DataplaneEndpoint": {
               "Ref": "DataplaneEndpoint",
             },
           },
         },
-        "FunctionName": Object {
-          "Fn::Join": Array [
+        "FunctionName": {
+          "Fn::Join": [
             "",
-            Array [
-              Object {
+            [
+              {
                 "Ref": "AWS::StackName",
               },
               "-video-async-fail-monitor",
@@ -1206,21 +1286,21 @@ Object {
           ],
         },
         "Handler": "test.video_async_fail_monitor_lambda_handler",
-        "Layers": Array [
-          Object {
-            "Ref": "referencetoMiTestStackMediaInsightsEnginePython39Layer",
+        "Layers": [
+          {
+            "Ref": "referencetoMiTestStackMediaInsightsOnAwsPython311Layer",
           },
         ],
         "MemorySize": 256,
-        "Role": Object {
-          "Fn::GetAtt": Array [
+        "Role": {
+          "Fn::GetAtt": [
             "TestExecutionRole",
             "Arn",
           ],
         },
-        "Runtime": "python3.9",
-        "Tags": Array [
-          Object {
+        "Runtime": "python3.11",
+        "Tags": [
+          {
             "Key": "environment",
             "Value": "mie",
           },
@@ -1229,49 +1309,57 @@ Object {
       },
       "Type": "AWS::Lambda::Function",
     },
-    "VideoAsyncOKLambda": Object {
-      "DependsOn": Array [
+    "VideoAsyncOKLambda": {
+      "DependsOn": [
         "TestExecutionRole",
       ],
-      "Metadata": Object {
-        "cfn_nag": Object {
-          "rules_to_suppress": Array [
-            Object {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-L1",
+              "reason": "Latest lambda version not supported at this time.",
+            },
+          ],
+        },
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
               "id": "W89",
               "reason": "This Lambda function does not need to access any resource provisioned within a VPC.",
             },
-            Object {
+            {
               "id": "W92",
               "reason": "This function does not require performance optimization, so the default concurrency limits suffice.",
             },
           ],
         },
       },
-      "Properties": Object {
-        "Code": Object {
-          "S3Bucket": Object {
-            "Fn::Join": Array [
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Join": [
               "-",
-              Array [
-                Object {
-                  "Fn::FindInMap": Array [
+              [
+                {
+                  "Fn::FindInMap": [
                     "SourceCode",
                     "General",
                     "RegionalS3Bucket",
                   ],
                 },
-                Object {
+                {
                   "Ref": "AWS::Region",
                 },
               ],
             ],
           },
-          "S3Key": Object {
-            "Fn::Join": Array [
+          "S3Key": {
+            "Fn::Join": [
               "/",
-              Array [
-                Object {
-                  "Fn::FindInMap": Array [
+              [
+                {
+                  "Fn::FindInMap": [
                     "SourceCode",
                     "General",
                     "CodeKeyPrefix",
@@ -1282,21 +1370,21 @@ Object {
             ],
           },
         },
-        "Environment": Object {
-          "Variables": Object {
-            "DATAPLANE_BUCKET": Object {
+        "Environment": {
+          "Variables": {
+            "DATAPLANE_BUCKET": {
               "Ref": "DataPlaneBucket",
             },
-            "DataplaneEndpoint": Object {
+            "DataplaneEndpoint": {
               "Ref": "DataplaneEndpoint",
             },
           },
         },
-        "FunctionName": Object {
-          "Fn::Join": Array [
+        "FunctionName": {
+          "Fn::Join": [
             "",
-            Array [
-              Object {
+            [
+              {
                 "Ref": "AWS::StackName",
               },
               "-video-async-ok",
@@ -1304,21 +1392,21 @@ Object {
           ],
         },
         "Handler": "test.video_async_ok_lambda_handler",
-        "Layers": Array [
-          Object {
-            "Ref": "referencetoMiTestStackMediaInsightsEnginePython39Layer",
+        "Layers": [
+          {
+            "Ref": "referencetoMiTestStackMediaInsightsOnAwsPython311Layer",
           },
         ],
         "MemorySize": 256,
-        "Role": Object {
-          "Fn::GetAtt": Array [
+        "Role": {
+          "Fn::GetAtt": [
             "TestExecutionRole",
             "Arn",
           ],
         },
-        "Runtime": "python3.9",
-        "Tags": Array [
-          Object {
+        "Runtime": "python3.11",
+        "Tags": [
+          {
             "Key": "environment",
             "Value": "mie",
           },
@@ -1327,49 +1415,57 @@ Object {
       },
       "Type": "AWS::Lambda::Function",
     },
-    "VideoAsyncOKMonitorLambda": Object {
-      "DependsOn": Array [
+    "VideoAsyncOKMonitorLambda": {
+      "DependsOn": [
         "TestExecutionRole",
       ],
-      "Metadata": Object {
-        "cfn_nag": Object {
-          "rules_to_suppress": Array [
-            Object {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-L1",
+              "reason": "Latest lambda version not supported at this time.",
+            },
+          ],
+        },
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
               "id": "W89",
               "reason": "This Lambda function does not need to access any resource provisioned within a VPC.",
             },
-            Object {
+            {
               "id": "W92",
               "reason": "This function does not require performance optimization, so the default concurrency limits suffice.",
             },
           ],
         },
       },
-      "Properties": Object {
-        "Code": Object {
-          "S3Bucket": Object {
-            "Fn::Join": Array [
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Join": [
               "-",
-              Array [
-                Object {
-                  "Fn::FindInMap": Array [
+              [
+                {
+                  "Fn::FindInMap": [
                     "SourceCode",
                     "General",
                     "RegionalS3Bucket",
                   ],
                 },
-                Object {
+                {
                   "Ref": "AWS::Region",
                 },
               ],
             ],
           },
-          "S3Key": Object {
-            "Fn::Join": Array [
+          "S3Key": {
+            "Fn::Join": [
               "/",
-              Array [
-                Object {
-                  "Fn::FindInMap": Array [
+              [
+                {
+                  "Fn::FindInMap": [
                     "SourceCode",
                     "General",
                     "CodeKeyPrefix",
@@ -1380,21 +1476,21 @@ Object {
             ],
           },
         },
-        "Environment": Object {
-          "Variables": Object {
-            "DATAPLANE_BUCKET": Object {
+        "Environment": {
+          "Variables": {
+            "DATAPLANE_BUCKET": {
               "Ref": "DataPlaneBucket",
             },
-            "DataplaneEndpoint": Object {
+            "DataplaneEndpoint": {
               "Ref": "DataplaneEndpoint",
             },
           },
         },
-        "FunctionName": Object {
-          "Fn::Join": Array [
+        "FunctionName": {
+          "Fn::Join": [
             "",
-            Array [
-              Object {
+            [
+              {
                 "Ref": "AWS::StackName",
               },
               "-video-async-ok-monitor",
@@ -1402,21 +1498,21 @@ Object {
           ],
         },
         "Handler": "test.video_async_ok_monitor_lambda_handler",
-        "Layers": Array [
-          Object {
-            "Ref": "referencetoMiTestStackMediaInsightsEnginePython39Layer",
+        "Layers": [
+          {
+            "Ref": "referencetoMiTestStackMediaInsightsOnAwsPython311Layer",
           },
         ],
         "MemorySize": 256,
-        "Role": Object {
-          "Fn::GetAtt": Array [
+        "Role": {
+          "Fn::GetAtt": [
             "TestExecutionRole",
             "Arn",
           ],
         },
-        "Runtime": "python3.9",
-        "Tags": Array [
-          Object {
+        "Runtime": "python3.11",
+        "Tags": [
+          {
             "Key": "environment",
             "Value": "mie",
           },
@@ -1425,49 +1521,57 @@ Object {
       },
       "Type": "AWS::Lambda::Function",
     },
-    "VideoSyncFailLambda": Object {
-      "DependsOn": Array [
+    "VideoSyncFailLambda": {
+      "DependsOn": [
         "TestExecutionRole",
       ],
-      "Metadata": Object {
-        "cfn_nag": Object {
-          "rules_to_suppress": Array [
-            Object {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-L1",
+              "reason": "Latest lambda version not supported at this time.",
+            },
+          ],
+        },
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
               "id": "W89",
               "reason": "This Lambda function does not need to access any resource provisioned within a VPC.",
             },
-            Object {
+            {
               "id": "W92",
               "reason": "This function does not require performance optimization, so the default concurrency limits suffice.",
             },
           ],
         },
       },
-      "Properties": Object {
-        "Code": Object {
-          "S3Bucket": Object {
-            "Fn::Join": Array [
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Join": [
               "-",
-              Array [
-                Object {
-                  "Fn::FindInMap": Array [
+              [
+                {
+                  "Fn::FindInMap": [
                     "SourceCode",
                     "General",
                     "RegionalS3Bucket",
                   ],
                 },
-                Object {
+                {
                   "Ref": "AWS::Region",
                 },
               ],
             ],
           },
-          "S3Key": Object {
-            "Fn::Join": Array [
+          "S3Key": {
+            "Fn::Join": [
               "/",
-              Array [
-                Object {
-                  "Fn::FindInMap": Array [
+              [
+                {
+                  "Fn::FindInMap": [
                     "SourceCode",
                     "General",
                     "CodeKeyPrefix",
@@ -1478,21 +1582,21 @@ Object {
             ],
           },
         },
-        "Environment": Object {
-          "Variables": Object {
-            "DATAPLANE_BUCKET": Object {
+        "Environment": {
+          "Variables": {
+            "DATAPLANE_BUCKET": {
               "Ref": "DataPlaneBucket",
             },
-            "DataplaneEndpoint": Object {
+            "DataplaneEndpoint": {
               "Ref": "DataplaneEndpoint",
             },
           },
         },
-        "FunctionName": Object {
-          "Fn::Join": Array [
+        "FunctionName": {
+          "Fn::Join": [
             "",
-            Array [
-              Object {
+            [
+              {
                 "Ref": "AWS::StackName",
               },
               "-video-sync-fail",
@@ -1500,21 +1604,21 @@ Object {
           ],
         },
         "Handler": "test.video_sync_fail_lambda_handler",
-        "Layers": Array [
-          Object {
-            "Ref": "referencetoMiTestStackMediaInsightsEnginePython39Layer",
+        "Layers": [
+          {
+            "Ref": "referencetoMiTestStackMediaInsightsOnAwsPython311Layer",
           },
         ],
         "MemorySize": 256,
-        "Role": Object {
-          "Fn::GetAtt": Array [
+        "Role": {
+          "Fn::GetAtt": [
             "TestExecutionRole",
             "Arn",
           ],
         },
-        "Runtime": "python3.9",
-        "Tags": Array [
-          Object {
+        "Runtime": "python3.11",
+        "Tags": [
+          {
             "Key": "environment",
             "Value": "mie",
           },
@@ -1523,49 +1627,57 @@ Object {
       },
       "Type": "AWS::Lambda::Function",
     },
-    "VideoSyncOKLambda": Object {
-      "DependsOn": Array [
+    "VideoSyncOKLambda": {
+      "DependsOn": [
         "TestExecutionRole",
       ],
-      "Metadata": Object {
-        "cfn_nag": Object {
-          "rules_to_suppress": Array [
-            Object {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-L1",
+              "reason": "Latest lambda version not supported at this time.",
+            },
+          ],
+        },
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
               "id": "W89",
               "reason": "This Lambda function does not need to access any resource provisioned within a VPC.",
             },
-            Object {
+            {
               "id": "W92",
               "reason": "This function does not require performance optimization, so the default concurrency limits suffice.",
             },
           ],
         },
       },
-      "Properties": Object {
-        "Code": Object {
-          "S3Bucket": Object {
-            "Fn::Join": Array [
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Join": [
               "-",
-              Array [
-                Object {
-                  "Fn::FindInMap": Array [
+              [
+                {
+                  "Fn::FindInMap": [
                     "SourceCode",
                     "General",
                     "RegionalS3Bucket",
                   ],
                 },
-                Object {
+                {
                   "Ref": "AWS::Region",
                 },
               ],
             ],
           },
-          "S3Key": Object {
-            "Fn::Join": Array [
+          "S3Key": {
+            "Fn::Join": [
               "/",
-              Array [
-                Object {
-                  "Fn::FindInMap": Array [
+              [
+                {
+                  "Fn::FindInMap": [
                     "SourceCode",
                     "General",
                     "CodeKeyPrefix",
@@ -1576,21 +1688,21 @@ Object {
             ],
           },
         },
-        "Environment": Object {
-          "Variables": Object {
-            "DATAPLANE_BUCKET": Object {
+        "Environment": {
+          "Variables": {
+            "DATAPLANE_BUCKET": {
               "Ref": "DataPlaneBucket",
             },
-            "DataplaneEndpoint": Object {
+            "DataplaneEndpoint": {
               "Ref": "DataplaneEndpoint",
             },
           },
         },
-        "FunctionName": Object {
-          "Fn::Join": Array [
+        "FunctionName": {
+          "Fn::Join": [
             "",
-            Array [
-              Object {
+            [
+              {
                 "Ref": "AWS::StackName",
               },
               "-video-sync-ok",
@@ -1598,21 +1710,21 @@ Object {
           ],
         },
         "Handler": "test.video_sync_ok_lambda_handler",
-        "Layers": Array [
-          Object {
-            "Ref": "referencetoMiTestStackMediaInsightsEnginePython39Layer",
+        "Layers": [
+          {
+            "Ref": "referencetoMiTestStackMediaInsightsOnAwsPython311Layer",
           },
         ],
         "MemorySize": 256,
-        "Role": Object {
-          "Fn::GetAtt": Array [
+        "Role": {
+          "Fn::GetAtt": [
             "TestExecutionRole",
             "Arn",
           ],
         },
-        "Runtime": "python3.9",
-        "Tags": Array [
-          Object {
+        "Runtime": "python3.11",
+        "Tags": [
+          {
             "Key": "environment",
             "Value": "mie",
           },

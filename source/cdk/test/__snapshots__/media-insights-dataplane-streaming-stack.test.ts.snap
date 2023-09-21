@@ -1,71 +1,68 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`Snapshot media-insights-dataplane-streaming stack test 1`] = `
-Object {
+{
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "media-insights-on-aws version %%VERSION%%. This AWS CloudFormation template defines resources for the analytics streaming pipeline.",
-  "Mappings": Object {
-    "SourceCode": Object {
-      "General": Object {
+  "Mappings": {
+    "SourceCode": {
+      "General": {
         "CodeKeyPrefix": "media-insights-on-aws/%%VERSION%%",
         "RegionalS3Bucket": "%%REGIONAL_BUCKET_NAME%%",
       },
     },
   },
-  "Outputs": Object {
-    "MiTestStackAnalyticsAnalyticsStreamArn": Object {
-      "Value": Object {
-        "Fn::GetAtt": Array [
+  "Outputs": {
+    "MiTestStackAnalyticsAnalyticsStreamArn": {
+      "Value": {
+        "Fn::GetAtt": [
           "AnalyticsStream",
           "Arn",
         ],
       },
     },
   },
-  "Parameters": Object {
-    "KinesisShardCount": Object {
+  "Parameters": {
+    "KinesisShardCount": {
       "Default": 1,
       "Type": "Number",
     },
-    "botoConfig": Object {
+    "botoConfig": {
       "Description": "Botocore config",
       "Type": "String",
     },
-    "referencetoMiTestStackDataplaneTableF492DF1EStreamArn": Object {
+    "referencetoMiTestStackDataplaneTableF492DF1EStreamArn": {
       "Type": "String",
     },
-    "referencetoMiTestStackMieKeyArn": Object {
+    "referencetoMiTestStackMieKeyArn": {
       "Type": "String",
     },
   },
-  "Resources": Object {
-    "AnalyticsStream": Object {
-      "Metadata": Object {
-        "cdk_nag": Object {
-          "rules_to_suppress": Array [
-            Object {
+  "Resources": {
+    "AnalyticsStream": {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
               "id": "AwsSolutions-KDS3",
               "reason": "Customer managed key is being used to encrypt Kinesis Data Stream",
             },
           ],
         },
       },
-      "Properties": Object {
+      "Properties": {
         "RetentionPeriodHours": 24,
-        "ShardCount": Object {
+        "ShardCount": {
           "Ref": "KinesisShardCount",
         },
-        "StreamEncryption": Object {
+        "StreamEncryption": {
           "EncryptionType": "KMS",
-          "KeyId": Object {
+          "KeyId": {
             "Ref": "referencetoMiTestStackMieKeyArn",
           },
         },
-        "StreamModeDetails": Object {
-          "StreamMode": "PROVISIONED",
-        },
-        "Tags": Array [
-          Object {
+        "Tags": [
+          {
             "Key": "environment",
             "Value": "mie",
           },
@@ -73,50 +70,58 @@ Object {
       },
       "Type": "AWS::Kinesis::Stream",
     },
-    "DynamoDBStreamingFunction": Object {
-      "DependsOn": Array [
+    "DynamoDBStreamingFunction": {
+      "DependsOn": [
         "LambdaStreamRoleDefaultPolicy",
         "LambdaStreamRole",
       ],
-      "Metadata": Object {
-        "cfn_nag": Object {
-          "rules_to_suppress": Array [
-            Object {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-L1",
+              "reason": "Latest lambda version not supported at this time.",
+            },
+          ],
+        },
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
               "id": "W89",
               "reason": "This Lambda function does not need to access any resource provisioned within a VPC.",
             },
-            Object {
+            {
               "id": "W92",
               "reason": "This function does not require performance optimization, so the default concurrency limits suffice.",
             },
           ],
         },
       },
-      "Properties": Object {
-        "Code": Object {
-          "S3Bucket": Object {
-            "Fn::Join": Array [
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Join": [
               "-",
-              Array [
-                Object {
-                  "Fn::FindInMap": Array [
+              [
+                {
+                  "Fn::FindInMap": [
                     "SourceCode",
                     "General",
                     "RegionalS3Bucket",
                   ],
                 },
-                Object {
+                {
                   "Ref": "AWS::Region",
                 },
               ],
             ],
           },
-          "S3Key": Object {
-            "Fn::Join": Array [
+          "S3Key": {
+            "Fn::Join": [
               "/",
-              Array [
-                Object {
-                  "Fn::FindInMap": Array [
+              [
+                {
+                  "Fn::FindInMap": [
                     "SourceCode",
                     "General",
                     "CodeKeyPrefix",
@@ -127,87 +132,97 @@ Object {
             ],
           },
         },
-        "Environment": Object {
-          "Variables": Object {
-            "StreamName": Object {
+        "Environment": {
+          "Variables": {
+            "StreamName": {
               "Ref": "AnalyticsStream",
             },
-            "botoConfig": Object {
+            "botoConfig": {
               "Ref": "botoConfig",
             },
           },
         },
         "Handler": "stream.lambda_handler",
-        "Role": Object {
-          "Fn::GetAtt": Array [
+        "Role": {
+          "Fn::GetAtt": [
             "LambdaStreamRole",
             "Arn",
           ],
         },
-        "Runtime": "python3.9",
-        "Tags": Array [
-          Object {
+        "Runtime": "python3.11",
+        "Tags": [
+          {
             "Key": "environment",
             "Value": "mie",
           },
         ],
-        "TracingConfig": Object {
+        "TracingConfig": {
           "Mode": "PassThrough",
         },
       },
       "Type": "AWS::Lambda::Function",
     },
-    "DynamoDBStreamingFunctionDynamoDBEventSourceMiTestStackDataplaneTableEC93931E": Object {
-      "Properties": Object {
+    "DynamoDBStreamingFunctionDynamoDBEventSourceMiTestStackDataplaneTableEC93931E": {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-L1",
+              "reason": "Latest lambda version not supported at this time.",
+            },
+          ],
+        },
+      },
+      "Properties": {
         "BatchSize": 100,
-        "EventSourceArn": Object {
+        "EventSourceArn": {
           "Ref": "referencetoMiTestStackDataplaneTableF492DF1EStreamArn",
         },
-        "FunctionName": Object {
+        "FunctionName": {
           "Ref": "DynamoDBStreamingFunction",
         },
         "StartingPosition": "LATEST",
       },
       "Type": "AWS::Lambda::EventSourceMapping",
     },
-    "LambdaStreamRole": Object {
-      "Metadata": Object {
-        "cdk_nag": Object {
-          "rules_to_suppress": Array [
-            Object {
+    "LambdaStreamRole": {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
               "id": "AwsSolutions-IAM5",
               "reason": "The policy applies to all resources - can't be scoped to a specific resource",
             },
           ],
         },
-        "cfn_nag": Object {
-          "rules_to_suppress": Array [
-            Object {
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
               "id": "W11",
               "reason": "The policy applies to all resources - can't be scoped to a specific resource",
             },
           ],
         },
       },
-      "Properties": Object {
-        "AssumeRolePolicyDocument": Object {
-          "Statement": Array [
-            Object {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
               "Action": "sts:AssumeRole",
               "Effect": "Allow",
-              "Principal": Object {
+              "Principal": {
                 "Service": "lambda.amazonaws.com",
               },
             },
           ],
           "Version": "2012-10-17",
         },
-        "Policies": Array [
-          Object {
-            "PolicyDocument": Object {
-              "Statement": Array [
-                Object {
-                  "Action": Array [
+        "Policies": [
+          {
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Action": [
                     "kinesis:ListShards",
                     "kinesis:DescribeStream",
                     "kinesis:GetRecords",
@@ -218,54 +233,54 @@ Object {
                     "kinesis:PutRecords",
                   ],
                   "Effect": "Allow",
-                  "Resource": Object {
-                    "Fn::GetAtt": Array [
+                  "Resource": {
+                    "Fn::GetAtt": [
                       "AnalyticsStream",
                       "Arn",
                     ],
                   },
                 },
-                Object {
-                  "Action": Array [
+                {
+                  "Action": [
                     "dynamodb:DescribeStream",
                     "dynamodb:GetRecords",
                     "dynamodb:GetShardIterator",
                     "dynamodb:ListStreams",
                   ],
                   "Effect": "Allow",
-                  "Resource": Object {
+                  "Resource": {
                     "Ref": "referencetoMiTestStackDataplaneTableF492DF1EStreamArn",
                   },
                 },
-                Object {
-                  "Action": Array [
+                {
+                  "Action": [
                     "xray:PutTraceSegments",
                     "xray:PutTelemetryRecords",
                   ],
                   "Effect": "Allow",
                   "Resource": "*",
                 },
-                Object {
-                  "Action": Array [
+                {
+                  "Action": [
                     "logs:CreateLogGroup",
                     "logs:CreateLogStream",
                     "logs:PutLogEvents",
                   ],
                   "Effect": "Allow",
-                  "Resource": Object {
-                    "Fn::Join": Array [
+                  "Resource": {
+                    "Fn::Join": [
                       "",
-                      Array [
+                      [
                         "arn:",
-                        Object {
+                        {
                           "Ref": "AWS::Partition",
                         },
                         ":logs:",
-                        Object {
+                        {
                           "Ref": "AWS::Region",
                         },
                         ":",
-                        Object {
+                        {
                           "Ref": "AWS::AccountId",
                         },
                         ":log-group:/aws/lambda/*-DynamoDBStream*",
@@ -273,24 +288,24 @@ Object {
                     ],
                   },
                 },
-                Object {
-                  "Action": Array [
+                {
+                  "Action": [
                     "kms:GenerateDataKey",
                     "kms:Decrypt",
                   ],
                   "Effect": "Allow",
-                  "Resource": Object {
+                  "Resource": {
                     "Ref": "referencetoMiTestStackMieKeyArn",
                   },
                 },
               ],
               "Version": "2012-10-17",
             },
-            "PolicyName": Object {
-              "Fn::Join": Array [
+            "PolicyName": {
+              "Fn::Join": [
                 "",
-                Array [
-                  Object {
+                [
+                  {
                     "Ref": "AWS::StackName",
                   },
                   "-LambdaStreamAccessPolicy",
@@ -299,8 +314,8 @@ Object {
             },
           },
         ],
-        "Tags": Array [
-          Object {
+        "Tags": [
+          {
             "Key": "environment",
             "Value": "mie",
           },
@@ -308,51 +323,51 @@ Object {
       },
       "Type": "AWS::IAM::Role",
     },
-    "LambdaStreamRoleDefaultPolicy": Object {
-      "Metadata": Object {
-        "cdk_nag": Object {
-          "rules_to_suppress": Array [
-            Object {
+    "LambdaStreamRoleDefaultPolicy": {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
               "id": "AwsSolutions-IAM5",
               "reason": "The policy applies to all resources - can't be scoped to a specific resource",
             },
           ],
         },
       },
-      "Properties": Object {
-        "PolicyDocument": Object {
-          "Statement": Array [
-            Object {
-              "Action": Array [
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
                 "xray:PutTraceSegments",
                 "xray:PutTelemetryRecords",
               ],
               "Effect": "Allow",
               "Resource": "*",
             },
-            Object {
+            {
               "Action": "dynamodb:ListStreams",
               "Effect": "Allow",
               "Resource": "*",
             },
-            Object {
-              "Action": Array [
+            {
+              "Action": [
                 "kms:Decrypt",
                 "kms:DescribeKey",
               ],
               "Effect": "Allow",
-              "Resource": Object {
+              "Resource": {
                 "Ref": "referencetoMiTestStackMieKeyArn",
               },
             },
-            Object {
-              "Action": Array [
+            {
+              "Action": [
                 "dynamodb:DescribeStream",
                 "dynamodb:GetRecords",
                 "dynamodb:GetShardIterator",
               ],
               "Effect": "Allow",
-              "Resource": Object {
+              "Resource": {
                 "Ref": "referencetoMiTestStackDataplaneTableF492DF1EStreamArn",
               },
             },
@@ -360,8 +375,8 @@ Object {
           "Version": "2012-10-17",
         },
         "PolicyName": "LambdaStreamRoleDefaultPolicy",
-        "Roles": Array [
-          Object {
+        "Roles": [
+          {
             "Ref": "LambdaStreamRole",
           },
         ],

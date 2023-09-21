@@ -3,56 +3,60 @@
 echo "================================================================================"
 echo "Installing the packages listed in requirements.txt:"
 echo "================================================================================"
+
 cat /packages/requirements.txt
-pip3.9 install -q -r /packages/requirements.txt -t /packages/lambda_layer-python-3.9/python/lib/python3.9/site-packages
-pip3.8 install -q -r /packages/requirements.txt -t /packages/lambda_layer-python-3.8/python/lib/python3.8/site-packages
-pip3.7 install -q -r /packages/requirements.txt -t /packages/lambda_layer-python-3.7/python/lib/python3.7/site-packages
+
+for i in "$@"
+do
+    echo "Installing for Python version $i"
+    mkdir -p /packages/lambda_layer-python-$i/python/lib/python$i/site-packages
+    pip$i install -q -r /packages/requirements.txt -t /packages/lambda_layer-python-$i/python/lib/python$i/site-packages    
+done
 
 echo "================================================================================"
 echo "Installing MediaInfo package"
 echo "================================================================================"
-# MediaInfo version 19.09 works but 20.03 does not. So, hardcoding to 19.09 instead of latest.
-#VERSION=$(curl -s https://github.com/MediaArea/MediaInfoLib/releases/latest | cut -d "\"" -f 2 | awk -F "/" '{print $NF}' | tr -d 'v')
-VERSION="19.09"
+# Use specified mediainfo version in case the latest version is not compatible in future updates.
+VERSION="23.07"
 echo "MediaInfo latest version = v$VERSION"
-URL=https://mediaarea.net/download/binary/libmediainfo0/${VERSION}/MediaInfo_DLL_${VERSION}_GNU_FromSource.tar.gz
+URL=https://mediaarea.net/download/binary/libmediainfo0/${VERSION}/MediaInfo_DLL_${VERSION}_Lambda_x86_64.zip
 echo "Downloading MediaInfo from $URL"
 cd /
 curl $URL -o mediainfo.tgz || exit 1
 echo "Checking md5sum for MediaInfo source..."
 # Check the md5sum for MediaInfo 19.09:
-echo "74d33c37a161dba72baf09ad90c1c6b9  mediainfo.tgz" > mediainfo.md5 
+echo "4fcb1d40994fc1c2a56d0b6df4860f61  mediainfo.tgz" > mediainfo.md5 
 md5sum --check mediainfo.md5 || exit 1
-tar -xzf mediainfo.tgz
-echo "Compiling MediaInfo library..."
-cd MediaInfo_DLL_GNU_FromSource/
-./SO_Compile.sh > /dev/null
-echo "Finished building MediaInfo library files:"
-find /MediaInfo_DLL_GNU_FromSource/MediaInfoLib/Project/GNU/Library/.libs/
-cp /MediaInfo_DLL_GNU_FromSource/MediaInfoLib/Project/GNU/Library/.libs/* /packages/lambda_layer-python-3.7/python/ || exit 1
-cp /MediaInfo_DLL_GNU_FromSource/MediaInfoLib/Project/GNU/Library/.libs/* /packages/lambda_layer-python-3.8/python/ || exit 1
-cp /MediaInfo_DLL_GNU_FromSource/MediaInfoLib/Project/GNU/Library/.libs/* /packages/lambda_layer-python-3.9/python/ || exit 1
+unzip -d mediainfo-lambda-lib mediainfo.tgz
+echo "Copying MediaInfo library into lambda layer folder"
+
+for i in "$@"
+do
+    echo "Copying to Python version $i directory"
+    cp mediainfo-lambda-lib/lib/* /packages/lambda_layer-python-$i/python/ || exit 1
+done
+echo "Finished copying MediaInfo library files"
 
 echo "================================================================================"
 echo "Creating zip files for Lambda layers"
 echo "================================================================================"
-cd /packages/lambda_layer-python-3.9/
-zip -q -r /packages/lambda_layer-python3.9.zip .
-cd /packages/lambda_layer-python-3.8/
-zip -q -r /packages/lambda_layer-python3.8.zip .
-cd /packages/lambda_layer-python-3.7/
-zip -q -r /packages/lambda_layer-python3.7.zip .
+for i in "$@"
+do
+    echo "Copying zip files to Python version $i directory"
+    cd /packages/lambda_layer-python-$i/
+    zip -q -r /packages/lambda_layer-python$i.zip .
+done
 
-# Clean up build environment
-cd /packages/
-rm -rf /packages/pymediainfo-3.7/
-rm -rf /packages/lambda_layer-python-3.7/
-rm -rf /packages/pymediainfo-3.8/
-rm -rf /packages/lambda_layer-python-3.8/
-rm -rf /packages/pymediainfo-3.9/
-rm -rf /packages/lambda_layer-python-3.9/
-
-echo "Zip files have been saved to docker volume /data. You can copy them locally like this:"
-echo "docker run --rm -it -v \$(pwd):/packages <docker_image>"
 echo "================================================================================"
+echo "Cleaning up Build environments"
+echo "================================================================================"
+cd /packages/
+for i in "$@"
+do
+    echo "Removing environments for Python version $i"
+    rm -rf /packages/pymediainfo-$i/
+    rm -rf /packages/lambda_layer-python-$i/
+done
 
+echo "Zip files have been saved"
+echo "================================================================================"

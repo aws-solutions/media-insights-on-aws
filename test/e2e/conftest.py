@@ -66,7 +66,7 @@ def stack_resources(testing_env_variables):
     for output in outputs:
         resources[output["OutputKey"]] = output["OutputValue"]
 
-    expected_resources = ['WorkflowApiRestID', 'DataplaneBucket', 'WorkflowCustomResourceArn', 'TestStack',  'MediaInsightsEnginePython39LayerArn', 'AnalyticsStreamArn', 'DataplaneApiEndpoint', 'WorkflowApiEndpoint', 'DataplaneApiRestID', 'OperatorLibraryStack', 'PollyOperation', 'ContentModerationOperationImage', 'GenericDataLookupOperation', 'comprehendEntitiesOperation', 'FaceSearch', 'FaceSearchOperationImage', 'MediainfoOperationImage', 'TextDetection', 'TextDetectionOperationImage', 'CreateSRTCaptionsOperation', 'ContentModeration', 'WebCaptionsOperation', 'WebToVTTCaptionsOperation', 'PollyWebCaptionsOperation', 'WaitOperation', 'TranslateWebCaptionsOperation', 'CelebRecognition', 'LabelDetection', 'FaceDetection', 'PersonTracking', 'MediaconvertOperation', 'FaceDetectionOperationImage', 'MediainfoOperation', 'ThumbnailOperation', 'TechnicalCueDetection', 'CreateVTTCaptionsOperation', 'CelebrityRecognitionOperationImage', 'TranslateOperation', 'comprehendPhrasesOperation', 'WebToSRTCaptionsOperation', 'shotDetection', 'LabelDetectionOperationImage', "Version", "TranscribeAudioOperation", "TranscribeVideoOperation", 'DataPlaneHandlerArn', 'MieKMSArn', 'MieKMSId', 'MieKMSAlias', 'MieSNSTopic', 'MieSQSQueue']
+    expected_resources = ['WorkflowApiRestID', 'DataplaneBucket', 'WorkflowCustomResourceArn', 'TestStack',  'MediaInsightsOnAwsPython39LayerArn', 'MediaInsightsOnAwsPython310LayerArn', 'MediaInsightsOnAwsPython311LayerArn', 'AnalyticsStreamArn', 'DataplaneApiEndpoint', 'WorkflowApiEndpoint', 'DataplaneApiRestID', 'OperatorLibraryStack', 'PollyOperation', 'ContentModerationOperationImage', 'GenericDataLookupOperation', 'comprehendEntitiesOperation', 'FaceSearch', 'FaceSearchOperationImage', 'MediainfoOperationImage', 'TextDetection', 'TextDetectionOperationImage', 'CreateSRTCaptionsOperation', 'ContentModeration', 'WebCaptionsOperation', 'WebToVTTCaptionsOperation', 'PollyWebCaptionsOperation', 'WaitOperation', 'TranslateWebCaptionsOperation', 'CelebRecognition', 'LabelDetection', 'FaceDetection', 'PersonTracking', 'MediaconvertOperation', 'FaceDetectionOperationImage', 'MediainfoOperation', 'ThumbnailOperation', 'TechnicalCueDetection', 'CreateVTTCaptionsOperation', 'CelebrityRecognitionOperationImage', 'TranslateOperation', 'comprehendPhrasesOperation', 'WebToSRTCaptionsOperation', 'shotDetection', 'LabelDetectionOperationImage', "Version", "TranscribeAudioOperation", "TranscribeVideoOperation", 'DataPlaneHandlerArn', 'MieKMSArn', 'MieKMSId', 'MieKMSAlias', 'MieSNSTopic', 'MieSQSQueue']
 
     assert set(resources.keys()) == set(expected_resources)
     return resources
@@ -98,24 +98,24 @@ class WorkflowAPI:
     def create_workflow_request(self, body):
         headers = {"Content-Type": "application/json"}
         print ("POST /workflow {}".format(json.dumps(body)))
-        create_workflow_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/workflow', headers=headers, json=body, verify=True, auth=self.auth)
+        create_workflow_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/workflow', headers=headers, json=body, verify=True, auth=self.auth, timeout=60)
 
         return create_workflow_response
 
     def delete_workflow_request(self, workflow):
         headers = {"Content-Type": "application/json"}
         print("DELETE /workflow {}".format(workflow))
-        delete_workflow_response = requests.delete(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/'+workflow, verify=True, auth=self.auth, headers=headers)
+        delete_workflow_response = requests.delete(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/'+workflow, verify=True, auth=self.auth, headers=headers, timeout=60)
         return delete_workflow_response
 
     def get_workflow_request(self, workflow):
-        get_workflow_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/'+workflow, verify=True, auth=self.auth)
+        get_workflow_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/'+workflow, verify=True, auth=self.auth, timeout=60)
         return get_workflow_response
 
     def resume_workflow_request(self, body, workflow_execution_id):
         headers = {"Content-Type": "application/json"}
         print ("PUT /workflow/execution/" + workflow_execution_id + " {}".format(json.dumps(body)))
-        resume_workflow_response = requests.put(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/'+workflow_execution_id, headers=headers, json=body, verify=True, auth=self.auth)
+        resume_workflow_response = requests.put(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/'+workflow_execution_id, headers=headers, json=body, verify=True, auth=self.auth, timeout=60)
         return resume_workflow_response
 
     # Stage Methods
@@ -123,12 +123,12 @@ class WorkflowAPI:
     def create_stage_request(self, body):
         headers = {"Content-Type": "application/json"}
         print ("POST /workflow/stage {}".format(json.dumps(body)))
-        create_stage_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/stage', headers=headers, json=body, verify=True, auth=self.auth)
+        create_stage_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/stage', headers=headers, json=body, verify=True, auth=self.auth, timeout=60)
 
         return create_stage_response
 
     def delete_stage_request(self, stage):
-        delete_stage_response = requests.delete(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/stage/'+stage+'?force=true', verify=True, auth=self.auth)
+        delete_stage_response = requests.delete(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/stage/'+stage+'?force=true', verify=True, auth=self.auth, timeout=60)
 
         return delete_stage_response
 
@@ -138,13 +138,13 @@ class WorkflowAPI:
         headers = {"Content-Type": "application/json"}
         print("POST /workflow/execution")
         print(body)
-        create_workflow_execution_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/execution', headers=headers, json=body, verify=True, auth=self.auth)
+        create_workflow_execution_response = requests.post(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/execution', headers=headers, json=body, verify=True, auth=self.auth, timeout=60)
 
         return create_workflow_execution_response
 
     def get_workflow_execution_request(self, id):
         print("GET /workflow/execution/{}".format(id))
-        get_workflow_execution_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/' + id, verify=True, auth=self.auth)
+        get_workflow_execution_response = requests.get(self.stack_resources["WorkflowApiEndpoint"]+'/workflow/execution/' + id, verify=True, auth=self.auth, timeout=60)
 
         return get_workflow_execution_response
 
@@ -174,14 +174,14 @@ class DataplaneAPI:
         url = self.stack_resources["DataplaneApiEndpoint"] + 'metadata/' + asset_id + "/" + operator
         headers = {"Content-Type": "application/json"}
         print("GET /metadata/{asset}/{operator}".format(asset=asset_id, operator=operator))
-        single_metadata_response = requests.get(url, headers=headers, verify=True, auth=self.auth)
+        single_metadata_response = requests.get(url, headers=headers, verify=True, auth=self.auth, timeout=60)
         return single_metadata_response
 
     def delete_asset(self, asset_id):
         url = self.stack_resources["DataplaneApiEndpoint"] + 'metadata/' + asset_id
         headers = {"Content-Type": "application/json"}
         print("DELETE /metadata/{asset}".format(asset=asset_id))
-        delete_asset_response = requests.delete(url, headers=headers, verify=True, auth=self.auth)
+        delete_asset_response = requests.delete(url, headers=headers, verify=True, auth=self.auth, timeout=60)
         return delete_asset_response
 
 # Dataplane API Fixture

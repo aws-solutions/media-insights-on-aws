@@ -83,7 +83,7 @@ def lambda_handler(event, _context):
     comprehend_data = {"LanguageCode": response['EntitiesDetectionJobPropertiesList'][0]['LanguageCode'], "Results": []}
     if comprehend_tarball["Status"] == "Success":
         input_bytes = comprehend_tarball["Object"]
-        with tarfile.open(fileobj=BytesIO(input_bytes)) as tf:
+        with tarfile.open(fileobj=BytesIO(input_bytes)) as tf:  # NOSONAR: trusted archive
             for member in (member for member in tf if member.isfile()):
                 comprehend_data["Results"].append(tf.extractfile(member).read().decode('utf-8'))
         dataplane = DataPlane()

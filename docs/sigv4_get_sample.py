@@ -130,7 +130,7 @@ request_url = endpoint
 
 print('\nBEGIN REQUEST++++++++++++++++++++++++++++++++++++')
 print('Request URL = ' + request_url)
-r = requests.get(request_url, headers=headers)
+r = requests.get(request_url, headers=headers, timeout=60)
 
 print('\nRESPONSE++++++++++++++++++++++++++++++++++++')
 print('Response code: %d\n' % r.status_code)

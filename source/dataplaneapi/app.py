@@ -28,11 +28,12 @@ def is_aws():
 if is_aws():
     patch_all()
 
-# TODO: Add additional exception and response codes
-# TODO: Narrow exception scopes
-# TODO: Better way to bubble exceptions to lambda helper class
-# TODO: Normalize pattern for referencing URI params inside a function
-# TODO: Move global_attributes list to a top level variable
+# TODO: Address the following items
+#   *   Add additional exception and response codes
+#   *   Narrow exception scopes
+#   *   Better way to bubble exceptions to lambda helper class
+#   *   Normalize pattern for referencing URI params inside a function
+#   *   Move global_attributes list to a top level variable
 
 '''
 except ClientError as e:

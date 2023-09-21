@@ -179,7 +179,7 @@ def test_completed_job():
     assert response['MetaData']['AssetId'] == 'testAssetId'
     assert response['MetaData']['WorkflowExecutionId'] == 'testWorkflowId'
     assert MediaInfo.parse.call_count == 1
-    assert 'https://s3.us-west-2.amazonaws.com/test_bucket/test_key' in MediaInfo.parse.call_args[0][0]
+    assert 'https://s3.dualstack.us-west-2.amazonaws.com/test_bucket/test_key' in MediaInfo.parse.call_args[0][0]
     assert lambda_function.DataPlane.store_asset_metadata.call_count == 1
     assert lambda_function.DataPlane.store_asset_metadata.call_args[0][0] == 'testAssetId'
     assert lambda_function.DataPlane.store_asset_metadata.call_args[0][1] == 'testName'

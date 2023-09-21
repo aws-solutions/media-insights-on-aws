@@ -1,7 +1,7 @@
-boto3==1.26.46
-botocore==1.29.46
+boto3==1.28.5
+botocore==1.31.7
 pytest==7.2.0
-requests==2.28.1
+requests==2.31.0
 urllib3==1.26.13
-jsonschema==4.17.0
+jsonschema==4.18.4
 requests_aws4auth==1.2.0

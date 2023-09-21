@@ -33,10 +33,10 @@ import * as util from './utils'
  */
 export interface TestResourcesStackProps extends NestedStackProps {
     /**
-     * Media Insights on AWS lambda layer that contains basic python dependencies
+     * Media Insights on AWS lambda layer (python 3.11) that contains basic python dependencies
      * for boto3, chalice, control plane and dataplane
      */
-    readonly python39Layer: lambda.ILayerVersion;
+    readonly python311Layer: lambda.ILayerVersion;
 }
 
 /*
@@ -135,11 +135,11 @@ export class TestResourcesStack extends NestedStack {
                 handler: `test.${handler}_lambda_handler`,
                 code: sourceCodeMap.codeFromRegionalBucket("test_operations.zip"),
                 layers: [
-                    props.python39Layer,
+                    props.python311Layer,
                 ],
                 memorySize: 256,
                 role: testExecutionRole,
-                runtime: lambda.Runtime.PYTHON_3_9,
+                runtime: lambda.Runtime.PYTHON_3_11,
                 timeout: Duration.seconds(900),
                 environment: {
                     DataplaneEndpoint: dataplaneEndpoint.valueAsString,
@@ -162,6 +162,10 @@ export class TestResourcesStack extends NestedStack {
                 {
                     id: 'W92',
                     reason: "This function does not require performance optimization, so the default concurrency limits suffice.",
+                },
+                {
+                    id: 'AwsSolutions-L1',
+                    reason: "Latest lambda version not supported at this time.",
                 }
             );
 

@@ -17,6 +17,7 @@ import {
     Aws,
     CfnCondition,
     CfnElement,
+    CfnMapping,
     CfnParameter,
     CustomResource,
     Duration,
@@ -44,6 +45,7 @@ import { OperatorLibraryStack } from './operator-library';
 import { TestResourcesStack } from './media-insights-test-operations-stack';
 import { NagSuppressions } from 'cdk-nag';
 import * as util from './utils';
+import { version as cdkPackageVersion } from '../package.json';
 
 export interface MediaInsightsNestedStacks {
     readonly dataplaneApiStack: DataplaneApiStack,
@@ -109,12 +111,6 @@ export class MediaInsightsStack extends Stack {
             type: 'String',
             default: "%%VERSION%%",
         });
-        const sendAnonymousData = new CfnParameter(this, 'SendAnonymousData', {
-            description: "(Optional) Send anonymous data about Media Insights on AWS performance to AWS to help improve the quality of this solution.",
-            type: 'String',
-            default: 'Yes',
-            allowedValues: [ 'Yes', 'No' ],
-        });
 
         //
         // Cfn Metadata
@@ -126,6 +122,17 @@ export class MediaInsightsStack extends Stack {
                 },
                 Parameters: [ "MaxConcurrentWorkflows" ],
             }]
+        });
+
+        /**
+         * Mapping for sending anonymized metrics to AWS Solution Builders API
+         */
+        new CfnMapping(this, 'AnonymizedData', { // NOSONAR
+            mapping: {
+                SendAnonymizedData: {
+                    Data: 'Yes'
+                }
+            },
         });
 
         //
@@ -141,8 +148,11 @@ export class MediaInsightsStack extends Stack {
         const enableTraceOnEntryPoints = new CfnCondition(this, 'EnableTraceOnEntryPoints', {
             expression: Fn.conditionEquals(enableXrayTrace.valueAsString, 'Yes'),
         });
-        const enableAnonymousData = new CfnCondition(this, 'EnableAnonymousData', {
-            expression: Fn.conditionEquals(sendAnonymousData.valueAsString, 'Yes'),
+        const enableAnonymizedData = new CfnCondition(this, 'EnableAnonymizedData', {
+            expression: Fn.conditionEquals(
+                Fn.findInMap('AnonymizedData', 'SendAnonymizedData', 'Data'),
+                'Yes'
+            ),
         });
 
         //
@@ -800,11 +810,11 @@ export class MediaInsightsStack extends Stack {
             }
         });
 
-        const anonymousDataCustomResourceRole = new iam.Role(this, 'AnonymousDataCustomResourceRole', {
+        const anonymizedDataCustomResourceRole = new iam.Role(this, 'AnonymizedDataCustomResourceRole', {
             assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
             path: '/',
             inlinePolicies: {
-                [`${Aws.STACK_NAME}-anonymous-data-logger`]: new iam.PolicyDocument({
+                [`${Aws.STACK_NAME}-anonymized-data-logger`]: new iam.PolicyDocument({
                     statements: [
                         new iam.PolicyStatement({
                             effect: iam.Effect.ALLOW,
@@ -839,7 +849,7 @@ export class MediaInsightsStack extends Stack {
         });
 
         // cdk_nag
-        NagSuppressions.addResourceSuppressions(anonymousDataCustomResourceRole, [
+        NagSuppressions.addResourceSuppressions(anonymizedDataCustomResourceRole, [
             { id: 'AwsSolutions-IAM5', reason: "Resource ARNs are not generated at the time of policy creation", },
         ]);
 
@@ -862,19 +872,19 @@ export class MediaInsightsStack extends Stack {
             // e.g., "Python 3.9"
             const Lang_X_Y = runtimeStr.replace(/\d/, x => ` ${x}`).replace(/^[a-z]/, x => x.toUpperCase());
 
-            return new lambda.LayerVersion(scope, `MediaInsightsEngine${LangXY}Layer`, {
+            return new lambda.LayerVersion(scope, `MediaInsightsOnAws${LangXY}Layer`, {
                 removalPolicy: RemovalPolicy.RETAIN,
                 compatibleRuntimes: [runtime],
-                code: codeFromRegionalBucket(`media_insights_engine_lambda_layer_${runtime}.zip`),
-                description: `Boto3 and MediaInsightsEngineLambdaHelper packages for ${Lang_X_Y}`,
-                layerVersionName: `media-insights-engine-${langXY}`,
+                code: codeFromRegionalBucket(`media_insights_on_aws_lambda_layer_${runtime}-v${cdkPackageVersion}.zip`),
+                description: `Boto3 and MediaInsightsOnAwsLambdaHelper packages for ${Lang_X_Y}`,
+                layerVersionName: `media-insights-on-aws-${langXY}`,
                 license: "Apache-2.0",
             });
         }
 
         const python39Layer = createLambdaLayerVersion(this, lambda.Runtime.PYTHON_3_9);
-        const python38Layer = createLambdaLayerVersion(this, lambda.Runtime.PYTHON_3_8);
-        const python37Layer = createLambdaLayerVersion(this, lambda.Runtime.PYTHON_3_7);
+        const python310Layer = createLambdaLayerVersion(this, lambda.Runtime.PYTHON_3_10);
+        const python311Layer = createLambdaLayerVersion(this, lambda.Runtime.PYTHON_3_11);
 
 
         //
@@ -896,7 +906,7 @@ export class MediaInsightsStack extends Stack {
                 DEFAULT_MAX_CONCURRENT_WORKFLOWS,
             },
             handler: "index.handler",
-            runtime: lambda.Runtime.PYTHON_3_9,
+            runtime: lambda.Runtime.PYTHON_3_11,
             code: helperFunctionCode,
             role: helperExecutionRole,
         });
@@ -945,10 +955,10 @@ export class MediaInsightsStack extends Stack {
             handler: "app.workflow_scheduler_lambda",
             tracing: `${Fn.conditionIf(enableTraceOnEntryPoints.logicalId, lambda.Tracing.ACTIVE, lambda.Tracing.PASS_THROUGH)}` as lambda.Tracing,
             code: codeFromRegionalBucket('workflow.zip'),
-            layers: [ python39Layer ],
+            layers: [ python311Layer ],
             memorySize: 256,
             role: stageExecutionRole,
-            runtime: lambda.Runtime.PYTHON_3_9,
+            runtime: lambda.Runtime.PYTHON_3_11,
             timeout: Duration.seconds(900),
             reservedConcurrentExecutions: 1,
             deadLetterQueue: workflowExecutionLambdaDeadLetterQueue,
@@ -1015,10 +1025,10 @@ export class MediaInsightsStack extends Stack {
             handler: "app.workflow_error_handler_lambda",
             tracing: `${Fn.conditionIf(enableTraceOnEntryPoints.logicalId, lambda.Tracing.ACTIVE, lambda.Tracing.PASS_THROUGH)}` as lambda.Tracing,
             code: codeFromRegionalBucket('workflow.zip'),
-            layers: [ python39Layer ],
+            layers: [ python311Layer ],
             memorySize: 256,
             role: operationLambdaExecutionRole,
-            runtime: lambda.Runtime.PYTHON_3_9,
+            runtime: lambda.Runtime.PYTHON_3_11,
             timeout: Duration.seconds(900),
             reservedConcurrentExecutions: 1,
             deadLetterQueue: workflowExecutionLambdaDeadLetterQueue,
@@ -1057,10 +1067,10 @@ export class MediaInsightsStack extends Stack {
             handler: "app.complete_stage_execution_lambda",
             tracing: lambda.Tracing.PASS_THROUGH,
             code: codeFromRegionalBucket('workflow.zip'),
-            layers: [ python39Layer ],
+            layers: [ python311Layer ],
             memorySize: 256,
             role: operationLambdaExecutionRole,
-            runtime: lambda.Runtime.PYTHON_3_9,
+            runtime: lambda.Runtime.PYTHON_3_11,
             timeout: Duration.seconds(900),
         });
         completeStageLambda.node.addDependency(workflowSchedulerLambda);
@@ -1077,10 +1087,10 @@ export class MediaInsightsStack extends Stack {
             handler: "app.filter_operation_lambda",
             tracing: lambda.Tracing.PASS_THROUGH,
             code: codeFromRegionalBucket('workflow.zip'),
-            layers: [ python39Layer ],
+            layers: [ python311Layer ],
             memorySize: 256,
             role: operationLambdaExecutionRole,
-            runtime: lambda.Runtime.PYTHON_3_9,
+            runtime: lambda.Runtime.PYTHON_3_11,
             timeout: Duration.seconds(900),
         });
 
@@ -1088,9 +1098,9 @@ export class MediaInsightsStack extends Stack {
             handler: "operator_failed.lambda_handler",
             tracing: lambda.Tracing.PASS_THROUGH,
             code: codeFromRegionalBucket('operator_failed.zip'),
-            layers: [ python39Layer ],
+            layers: [ python311Layer ],
             role: operatorFailedRole,
-            runtime: lambda.Runtime.PYTHON_3_9,
+            runtime: lambda.Runtime.PYTHON_3_11,
         });
 
         const startWaitOperationLambda = new lambda.Function(this, 'StartWaitOperationLambda', {
@@ -1105,10 +1115,10 @@ export class MediaInsightsStack extends Stack {
             },
             handler: "app.start_wait_operation_lambda",
             code: codeFromRegionalBucket('workflow.zip'),
-            layers: [ python39Layer ],
+            layers: [ python311Layer ],
             memorySize: 256,
             role: operationLambdaExecutionRole,
-            runtime: lambda.Runtime.PYTHON_3_9,
+            runtime: lambda.Runtime.PYTHON_3_11,
             timeout: Duration.seconds(900),
         });
 
@@ -1124,10 +1134,10 @@ export class MediaInsightsStack extends Stack {
             },
             handler: "app.check_wait_operation_lambda",
             code: codeFromRegionalBucket('workflow.zip'),
-            layers: [ python39Layer ],
+            layers: [ python311Layer ],
             memorySize: 256,
             role: operationLambdaExecutionRole,
-            runtime: lambda.Runtime.PYTHON_3_9,
+            runtime: lambda.Runtime.PYTHON_3_11,
             timeout: Duration.seconds(900),
         });
 
@@ -1139,16 +1149,16 @@ export class MediaInsightsStack extends Stack {
             handler: "workflowstream.lambda_handler",
             code: codeFromRegionalBucket('workflowstream.zip'),
             role: workflowExecutionStreamLambdaRole,
-            runtime: lambda.Runtime.PYTHON_3_9,
+            runtime: lambda.Runtime.PYTHON_3_11,
         });
 
-        const anonymousDataCustomResource = new lambda.Function(this, 'AnonymousDataCustomResource', {
-            functionName: `${Aws.STACK_NAME}-anonymous-data`,
-            description: "Used to send anonymous data",
-            handler: "anonymous-data-logger.handler",
-            code: codeFromRegionalBucket('anonymous-data-logger.zip'),
-            role: anonymousDataCustomResourceRole,
-            runtime: lambda.Runtime.PYTHON_3_9,
+        const anonymizedDataCustomResource = new lambda.Function(this, 'AnonymizedDataCustomResource', {
+            functionName: `${Aws.STACK_NAME}-anonymized-data`,
+            description: "Used to send anonymized data",
+            handler: "anonymized-data-logger.handler",
+            code: codeFromRegionalBucket('anonymized-data-logger.zip'),
+            role: anonymizedDataCustomResourceRole,
+            runtime: lambda.Runtime.PYTHON_3_11,
             timeout: Duration.seconds(180),
         });
 
@@ -1163,7 +1173,7 @@ export class MediaInsightsStack extends Stack {
             startWaitOperationLambda,
             checkWaitOperationLambda,
             workflowExecutionStreamingFunction,
-            anonymousDataCustomResource,
+            anonymizedDataCustomResource,
         ].forEach(l => util.setNagSuppressRules(l,
             {
                 id: 'W89',
@@ -1173,6 +1183,10 @@ export class MediaInsightsStack extends Stack {
                 id: 'W92',
                 reason: "This function does not require performance optimization, so the default concurrency limits suffice.",
             },
+            {
+                id: 'AwsSolutions-L1',
+                reason: "Latest lambda version not supported at this time.",
+            }
         ));
 
 
@@ -1243,7 +1257,7 @@ export class MediaInsightsStack extends Stack {
                 DeploymentPackageBucket: sourceCodeMap.getRegionalS3BucketName(),
                 TracingConfigMode: `${Fn.conditionIf(enableTraceOnEntryPoints.logicalId, lambda.Tracing.ACTIVE, lambda.Tracing.PASS_THROUGH)}`,
                 DeploymentPackageKey: sourceCodeMap.getSourceCodeKey("dataplaneapi.zip"),
-                MediaInsightsEnginePython39Layer: python39Layer.layerVersionArn,
+                MediaInsightsOnAwsPython311Layer: python311Layer.layerVersionArn,
                 FrameworkVersion: sourceCodeMap.findInMap("FrameworkVersion"),
                 KmsKeyId: mieKey.keyId,
             },
@@ -1264,7 +1278,7 @@ export class MediaInsightsStack extends Stack {
                 HistoryTableName: historyTable.tableName,
                 SystemTableName: systemTable.tableName,
                 SqsQueueArn: stageExecutionQueue.queueArn,
-                MediaInsightsEnginePython39Layer: python39Layer.layerVersionArn,
+                MediaInsightsOnAwsPython311Layer: python311Layer.layerVersionArn,
                 TracingConfigMode: `${Fn.conditionIf(enableTraceOnEntryPoints.logicalId, lambda.Tracing.ACTIVE, lambda.Tracing.PASS_THROUGH)}`,
                 CompleteStageLambdaArn: completeStageLambda.functionArn,
                 FilterOperationLambdaArn: filterOperationLambda.functionArn,
@@ -1293,8 +1307,8 @@ export class MediaInsightsStack extends Stack {
 
         const operatorLibraryStack = new OperatorLibraryStack(this, 'OperatorLibrary', {
             python39Layer,
-            python38Layer,
-            python37Layer,
+            python310Layer,
+            python311Layer,
             kmsKey: mieKey,
             parameters: {
                 DataPlaneBucket: dataplaneBucket.bucketName,
@@ -1312,7 +1326,7 @@ export class MediaInsightsStack extends Stack {
         operatorLibraryStack.addDependency(dataplaneApiStack);
 
         const testResourcesStack = new TestResourcesStack(this, 'TestResources', {
-            python39Layer,
+            python311Layer,
             parameters: {
                 DataplaneEndpoint: `${dataplaneApiStack.nestedStackResource!.getAtt('Outputs.APIHandlerName')}`,
                 DataPlaneBucket: dataplaneBucket.bucketName,
@@ -1462,27 +1476,27 @@ export class MediaInsightsStack extends Stack {
             },
         );
 
-        // SendAnonymousData
-        const anonymousDataUuid = new CustomResource(this, 'AnonymousDataUuid', {
+        // SendAnonymizedData
+        const anonymizedDataUuid = new CustomResource(this, 'AnonymizedDataUuid', {
             resourceType: "Custom::UUID",
-            serviceToken: anonymousDataCustomResource.functionArn,
+            serviceToken: anonymizedDataCustomResource.functionArn,
             properties: {
                 Resource: 'UUID',
             },
         });
 
-        const anonymousMetric = new CustomResource(this, 'AnonymousMetric', {
-            resourceType: "Custom::AnonymousMetric",
-            serviceToken: anonymousDataCustomResource.functionArn,
+        const anonymizedMetric = new CustomResource(this, 'AnonymizedMetric', {
+            resourceType: "Custom::AnonymizedMetric",
+            serviceToken: anonymizedDataCustomResource.functionArn,
             properties: {
-                Resource: 'AnonymousMetric',
+                Resource: 'AnonymizedMetric',
                 SolutionId: "SO0163",
-                UUID: anonymousDataUuid.getAttString('UUID'),
+                UUID: anonymizedDataUuid.getAttString('UUID'),
                 Version: sourceCodeMap.findInMap("FrameworkVersion"),
             },
         });
 
-        [anonymousDataUuid, anonymousMetric].forEach(c => util.setCondition(c, enableAnonymousData));
+        [anonymizedDataUuid, anonymizedMetric].forEach(c => util.setCondition(c, enableAnonymizedData));
 
         //
         // cfn_nag rules
@@ -1554,10 +1568,20 @@ export class MediaInsightsStack extends Stack {
             value: `${workflowApiStack.nestedStackResource!.getAtt('Outputs.RestAPIId')}`,
             exportName: Fn.join(':', [Aws.STACK_NAME, 'WorkflowApiId']),
         });
-        util.createCfnOutput(this, 'MediaInsightsEnginePython39LayerArn', {
-            description: "Lambda layer for Python libraries",
+        util.createCfnOutput(this, 'MediaInsightsOnAwsPython39LayerArn', {
+            description: "Lambda layer for Python 3.9 libraries",
             value: python39Layer.layerVersionArn,
-            exportName: Fn.join(':', [Aws.STACK_NAME, 'MediaInsightsEnginePython39Layer']),
+            exportName: Fn.join(':', [Aws.STACK_NAME, 'MediaInsightsOnAwsPython39Layer']),
+        });
+        util.createCfnOutput(this, 'MediaInsightsOnAwsPython310LayerArn', {
+            description: "Lambda layer for Python 3.10 libraries",
+            value: python310Layer.layerVersionArn,
+            exportName: Fn.join(':', [Aws.STACK_NAME, 'MediaInsightsOnAwsPython310Layer']),
+        });
+        util.createCfnOutput(this, 'MediaInsightsOnAwsPython311LayerArn', {
+            description: "Lambda layer for Python 3.11 libraries",
+            value: python311Layer.layerVersionArn,
+            exportName: Fn.join(':', [Aws.STACK_NAME, 'MediaInsightsOnAwsPython311Layer']),
         });
         util.createCfnOutput(this, 'AnalyticsStreamArn', {
             description: "Arn of the dataplane pipeline",

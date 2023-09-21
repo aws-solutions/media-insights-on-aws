@@ -30,7 +30,8 @@ def send(event, context, response_status, response_data, physical_resource_id=No
     try:
         response = requests.put(response_url,
                                 data=json_response_body,
-                                headers=headers)
+                                headers=headers,
+                                timeout=60)
         print("Status code: " + response.reason)
     except Exception as e:
         print("send(..) failed executing requests.put(..): " + str(e))

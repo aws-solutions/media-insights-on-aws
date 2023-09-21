@@ -163,9 +163,9 @@ export class WorkflowApiStack extends cdk.NestedStack {
             description: "Arn of the Media Insights on AWS workflow queue",
         });
 
-        const mediaInsightsEnginePython39Layer = new cdk.CfnParameter(this, 'MediaInsightsEnginePython39Layer', {
+        const mediaInsightsOnAwsPython311Layer = new cdk.CfnParameter(this, 'MediaInsightsOnAwsPython311Layer', {
             type: 'String',
-            description: "Arn of the Media Insights on AWS Python 3.9 lambda layer",
+            description: "Arn of the Media Insights on AWS Python 3.11 lambda layer",
         });
 
         const tracingConfigMode = new cdk.CfnParameter(this, 'TracingConfigMode', {
@@ -207,7 +207,11 @@ export class WorkflowApiStack extends cdk.NestedStack {
 
                     id: 'W92',
                     reason: "This function does not require performance optimization, so the default concurrency limits suffice.",
-                }
+                },
+                {
+                    id: 'AwsSolutions-L1',
+                    reason: "Latest lambda version not supported at this time.",
+                },
             );
 
             if ((cfnFunction.environment as FunctionEnvironmentProperty).variables !== undefined) {
@@ -234,7 +238,8 @@ export class WorkflowApiStack extends cdk.NestedStack {
                 }
             }
 
-            cfnFunction.layers = [mediaInsightsEnginePython39Layer.valueAsString];
+            cfnFunction.runtime = cdk.aws_lambda.Runtime.PYTHON_3_11.name; // TODO: Remove this line once Chalice supports Python 3.11 (https://github.com/aws/chalice/issues/2053)
+            cfnFunction.layers = [mediaInsightsOnAwsPython311Layer.valueAsString];
             cfnFunction.codeUri = {
                 bucket: deploymentPackageBucket.valueAsString,
                 key: deploymentPackageKey.valueAsString,

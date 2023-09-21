@@ -41,19 +41,6 @@ patch_all()
 region = os.environ['AWS_REGION']
 
 
-def get_signed_url(s3_cli, expires_in, bucket, obj):
-    """
-    Generate a signed URL for reading a file from S3 via HTTPS
-    :param s3_cli:      Boto3 S3 client object
-    :param expires_in:  URL Expiration time in seconds
-    :param bucket:
-    :param obj:         S3 Key name
-    :return:            Signed URL
-    """
-    presigned_url = s3_cli.generate_presigned_url('get_object', Params={'Bucket': bucket, 'Key': obj}, ExpiresIn=expires_in)
-    return presigned_url
-
-
 def lambda_handler(event, _context):
     print("We got the following event:\n", event)
     operator_object = MediaInsightsOperationHelper(event)
@@ -80,7 +67,10 @@ def lambda_handler(event, _context):
         asset_id = ''
 
     # Get metadata
-    s3_cli = boto3.client("s3", region_name=region, config=Config(signature_version='s3v4', s3={'addressing_style': 'virtual'}))
+    # Using dualstack endpoint because all dualstack endpoints are regional-only, which we want.
+    # Otherwise, boto3 tries to use the global virtual (legacy) endpoint, which causes mediainfo
+    # to fail to fetch the media file unless it is in us-east-1 region.
+    s3_cli = boto3.client("s3", region_name=region, config=Config(signature_version='s3v4', use_dualstack_endpoint=True, s3={'addressing_style': 'virtual'}))
     metadata_json = {}
     try:
         # The number of seconds that the Signed URL is valid:

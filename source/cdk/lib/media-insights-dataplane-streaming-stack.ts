@@ -167,7 +167,7 @@ export class AnalyticsStack extends NestedStack {
             role: lambdaStreamRole,
             tracing: lambda.Tracing.PASS_THROUGH,
             code: sourceCodeMap.codeFromRegionalBucket("ddbstream.zip"),
-            runtime: lambda.Runtime.PYTHON_3_9,
+            runtime: lambda.Runtime.PYTHON_3_11,
             environment: {
                 StreamName: analyticsStream.streamName,
                 botoConfig: botoConfig.valueAsString,
@@ -177,6 +177,13 @@ export class AnalyticsStack extends NestedStack {
         dynamoDBStreamingFunction.addEventSource(new DynamoEventSource(props.dynamoStream, {
             startingPosition: lambda.StartingPosition.LATEST,
         }));
+
+        util.setNagSuppressRules(dynamoDBStreamingFunction,
+            {
+                id: 'AwsSolutions-L1',
+                reason: "Latest lambda version not supported at this time.",
+            }
+        );
 
         //
         // Tags

@@ -5,8 +5,8 @@ import os
 import time
 import logging
 import boto3
-# need to use simplejson as the std lib json package cannot handle float values
-import simplejson as json
+import json
+import decimal
 from botocore.client import ClientError
 from botocore.config import Config
 from boto3.dynamodb.types import TypeDeserializer
@@ -26,6 +26,13 @@ config = Config(**mie_config)
 
 topic_arn = os.environ['TOPIC_ARN']
 sns = boto3.client('sns', config=config)
+
+
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, decimal.Decimal):
+            return str(o)
+        return super(DecimalEncoder, self).default(o)
 
 
 def deserialize(data):
@@ -70,7 +77,7 @@ def lambda_handler(event, _context):
                 try:
                     response = sns.publish(
                         TargetArn=topic_arn,
-                        Message=json.dumps({'default': json.dumps(message)}),
+                        Message=json.dumps({'default': json.dumps(message, cls=DecimalEncoder)}),
                         MessageStructure='json'
                     )
                 except ClientError as e:

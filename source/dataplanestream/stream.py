@@ -3,14 +3,12 @@
 
 import os
 import boto3
-# need to use simplejson as the std lib json package cannot handle float values
-import simplejson as json
+import json
+import decimal
 from boto3.dynamodb.types import TypeDeserializer
 from botocore import config
 from aws_xray_sdk.core import xray_recorder
 from aws_xray_sdk.core import patch_all
-
-# TODO: Move away from simplejson and to my custom decimal encoder class in the dataplane api
 
 patch_all()
 
@@ -20,6 +18,13 @@ config = config.Config(**mie_config)
 ks = boto3.client('kinesis', config=config)
 stream_name = os.environ['StreamName']
 serializer = TypeDeserializer()
+
+
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, decimal.Decimal):
+            return str(o)
+        return super(DecimalEncoder, self).default(o)
 
 
 def deserialize(data):
@@ -38,7 +43,7 @@ def deserialize(data):
 def put_ks_record(pkey, data):
     ks.put_record(
         StreamName=stream_name,
-        Data=json.dumps(data),
+        Data=json.dumps(data, cls=DecimalEncoder),
         PartitionKey=pkey,
     )
 

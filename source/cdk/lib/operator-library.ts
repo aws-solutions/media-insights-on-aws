@@ -46,15 +46,15 @@ export interface OperatorLibraryStackProps extends NestedStackProps {
      */
     readonly python39Layer: lambda.ILayerVersion;
     /**
-     * Media insights on AWS lambda layer (python3.8) containing basic python
+     * Media insights on AWS lambda layer (python3.10) containing basic python
      * dependencies for boto3, chalice, control plane and dataplane
      */
-    readonly python38Layer: lambda.ILayerVersion;
+    readonly python310Layer: lambda.ILayerVersion;
     /**
-     * Media insights on AWS lambda layer (python3.7) containing basic python
+     * Media insights on AWS lambda layer (python3.11) containing basic python
      * dependencies for boto3, chalice, control plane and dataplane
      */
-    readonly python37Layer: lambda.ILayerVersion;
+    readonly python311Layer: lambda.ILayerVersion;
 }
 
 /**
@@ -673,12 +673,12 @@ export class OperatorLibraryStack extends NestedStack {
         }
         const pythonLayers = {
             [`${lambda.Runtime.PYTHON_3_9}`]: props.python39Layer,
-            [`${lambda.Runtime.PYTHON_3_8}`]: props.python38Layer,
-            [`${lambda.Runtime.PYTHON_3_7}`]: props.python37Layer,
+            [`${lambda.Runtime.PYTHON_3_10}`]: props.python310Layer,
+            [`${lambda.Runtime.PYTHON_3_11}`]: props.python311Layer,
         };
         function createLambdaFunction(scope: Construct, id: string, codeArchive: string,
                                       timeout: number, props: ICreateLambdaFunctionProps,
-                                      runtime: lambda.Runtime = lambda.Runtime.PYTHON_3_9): lambda.Function {
+                                      runtime: lambda.Runtime = lambda.Runtime.PYTHON_3_11): lambda.Function {
             const layer = pythonLayers[`${runtime}`];
             const func = new lambda.Function(scope, id, {
                 ...props,
@@ -703,6 +703,10 @@ export class OperatorLibraryStack extends NestedStack {
                 {
                     id: 'W92',
                     reason: "This function does not require performance optimization, so the default concurrency limits suffice.",
+                },
+                {
+                    id: 'AwsSolutions-L1',
+                    reason: "Latest lambda version not supported at this time.",
                 }
             );
 
@@ -736,7 +740,7 @@ export class OperatorLibraryStack extends NestedStack {
                 LD_LIBRARY_PATH,
                 botoConfig,
             }
-        }, lambda.Runtime.PYTHON_3_7);
+        });
 
         // Comprehend
 

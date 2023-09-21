@@ -4,8 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # PURPOSE:
-# This function sends anonymous performance data to the AWS
-# Solutions metrics API. This information is anonymous and helps improve the
+# This function sends anonymized performance data to the AWS
+# Solutions metrics API. This information is anonymized and helps improve the
 # quality of the solution.
 
 import uuid
@@ -34,7 +34,7 @@ def handler(event, context):
                 response_data = {'UUID': str(uuid.uuid4())}
                 unique_id = response_data['UUID']
                 cfn.send(event, context, 'SUCCESS', response_data, unique_id)
-            elif resource == 'AnonymousMetric':
+            elif resource == 'AnonymizedMetric':
                 Metrics.send_metrics(config)
                 unique_id = 'Metrics Sent'
                 cfn.send(event, context, 'SUCCESS', response_data, unique_id)

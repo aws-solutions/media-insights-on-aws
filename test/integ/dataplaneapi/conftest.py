@@ -108,7 +108,7 @@ class API:
         }
 
         print("POST /create")
-        create_asset_response = requests.post(self.stack_resources["DataplaneApiEndpoint"] + '/create', headers=headers, json=body, verify=True, auth=self.auth)
+        create_asset_response = requests.post(self.stack_resources["DataplaneApiEndpoint"] + '/create', headers=headers, json=body, verify=True, auth=self.auth, timeout=60)
         return create_asset_response
 
     def post_metadata(self, asset_id, metadata, paginate=False, end=False):
@@ -122,26 +122,26 @@ class API:
         headers = {"Content-Type": "application/json"}
         body = metadata
         print("POST /metadata/{asset}".format(asset=asset_id))
-        nonpaginated_metadata_response = requests.post(url, headers=headers, json=body, verify=True, auth=self.auth)
+        nonpaginated_metadata_response = requests.post(url, headers=headers, json=body, verify=True, auth=self.auth, timeout=60)
         return nonpaginated_metadata_response
 
     def checkout_asset(self, asset_id):
         headers = {"Content-Type": "application/json"}
         body = {"LockedBy": "user01@example.com"}
         print("POST /checkout/{asset}".format(asset=asset_id))
-        response = requests.post(self.stack_resources["DataplaneApiEndpoint"] + '/checkout/' + asset_id, headers=headers, json=body, verify=True, auth=self.auth)
+        response = requests.post(self.stack_resources["DataplaneApiEndpoint"] + '/checkout/' + asset_id, headers=headers, json=body, verify=True, auth=self.auth, timeout=60)
         return response
 
     def list_checkouts(self):
         headers = {"Content-Type": "application/json"}
         print("GET /checkouts")
-        response = requests.get(self.stack_resources["DataplaneApiEndpoint"] + '/checkouts', headers=headers, verify=True, auth=self.auth)
+        response = requests.get(self.stack_resources["DataplaneApiEndpoint"] + '/checkouts', headers=headers, verify=True, auth=self.auth, timeout=60)
         return response
 
     def checkin_asset(self, asset_id):
         headers = {"Content-Type": "application/json"}
         print("POST /checkout/{asset}".format(asset=asset_id))
-        response = requests.post(self.stack_resources["DataplaneApiEndpoint"] + '/checkin/' + asset_id, headers=headers, verify=True, auth=self.auth)
+        response = requests.post(self.stack_resources["DataplaneApiEndpoint"] + '/checkin/' + asset_id, headers=headers, verify=True, auth=self.auth, timeout=60)
         return response
 
     def get_all_metadata(self, asset_id, cursor=None):
@@ -152,11 +152,11 @@ class API:
 
         if cursor is None:
             print("GET /metadata/{asset}".format(asset=asset_id))
-            metadata_response = requests.get(url, headers=headers, verify=True, auth=self.auth)
+            metadata_response = requests.get(url, headers=headers, verify=True, auth=self.auth, timeout=60)
         else:
             print("GET /metadata/{asset}?cursor={cursor}".format(asset=asset_id, cursor=cursor))
             query_params = {"cursor": cursor}
-            metadata_response = requests.get(url, headers=headers, params=query_params, verify=True, auth=self.auth)
+            metadata_response = requests.get(url, headers=headers, params=query_params, verify=True, auth=self.auth, timeout=60)
 
         print(metadata_response.json())
         print(metadata_response.text)
@@ -167,7 +167,7 @@ class API:
         url = self.stack_resources["DataplaneApiEndpoint"] + 'metadata/' + asset_id + "/" + metadata_field
         headers = {"Content-Type": "application/json"}
         print("GET /metadata/{asset}/{operator}".format(asset=asset_id, operator=operator["OperatorName"]))
-        single_metadata_response = requests.get(url, headers=headers, verify=True, auth=self.auth)
+        single_metadata_response = requests.get(url, headers=headers, verify=True, auth=self.auth, timeout=60)
         return single_metadata_response
 
     def delete_single_metadata_field(self, asset_id, operator):
@@ -175,14 +175,14 @@ class API:
         url = self.stack_resources["DataplaneApiEndpoint"] + 'metadata/' + asset_id + "/" + metadata_field
         headers = {"Content-Type": "application/json"}
         print("DELETE /metadata/{asset}/{operator}".format(asset=asset_id, operator=operator["OperatorName"]))
-        delete_single_metadata_response = requests.delete(url, headers=headers, verify=True, auth=self.auth)
+        delete_single_metadata_response = requests.delete(url, headers=headers, verify=True, auth=self.auth, timeout=60)
         return delete_single_metadata_response
 
     def delete_asset(self, asset_id):
         url = self.stack_resources["DataplaneApiEndpoint"] + 'metadata/' + asset_id
         headers = {"Content-Type": "application/json"}
         print("DELETE /metadata/{asset}".format(asset=asset_id))
-        delete_asset_response = requests.delete(url, headers=headers, verify=True, auth=self.auth)
+        delete_asset_response = requests.delete(url, headers=headers, verify=True, auth=self.auth, timeout=60)
         return delete_asset_response
 
 

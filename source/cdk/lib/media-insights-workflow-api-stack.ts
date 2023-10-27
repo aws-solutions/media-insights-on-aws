@@ -50,7 +50,7 @@ interface FunctionEnvironmentProperty {
 export class WorkflowApiStack extends cdk.NestedStack {
 
     constructor(scope: Construct, id: string, props: cdk.NestedStackProps) {
-        super(scope, id, { ...props, description: "media-insights-on-aws version %%VERSION%%. This AWS CloudFormation template provisions the REST API for the Media Insights on AWS control plane" });
+        super(scope, id, { ...props, description: "media-insights-on-aws. This AWS CloudFormation template provisions the REST API for the Media Insights on AWS control plane. Version %%VERSION%%" });
         this.templateOptions.templateFormatVersion = '2010-09-09';
 
 

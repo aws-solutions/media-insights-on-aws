@@ -17,7 +17,7 @@ exports[`Snapshot operator-library stack test 1`] = `
       ],
     },
   },
-  "Description": "media-insights-on-aws version %%VERSION%%. This AWS CloudFormation template provisions the Media Insights on AWS operator library.",
+  "Description": "media-insights-on-aws. This AWS CloudFormation template provisions the Media Insights on AWS operator library. Version %%VERSION%%",
   "Mappings": {
     "SourceCode": {
       "General": {

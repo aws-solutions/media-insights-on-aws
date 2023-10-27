@@ -48,7 +48,7 @@ export interface TestResourcesStackProps extends NestedStackProps {
  */
 export class TestResourcesStack extends NestedStack {
     constructor(scope: Construct, id: string, props: TestResourcesStackProps) {
-        super(scope, id, { ...props, description: "media-insights-on-aws version %%VERSION%%. This AWS CloudFormation template  provisions operators, stages, and workflows used for testing the Media Insights on AWS" });
+        super(scope, id, { ...props, description: "media-insights-on-aws. This AWS CloudFormation template provisions operators, stages, and workflows used for testing the Media Insights on AWS. Version %%VERSION%%" });
         this.templateOptions.templateFormatVersion = '2010-09-09';
 
         //

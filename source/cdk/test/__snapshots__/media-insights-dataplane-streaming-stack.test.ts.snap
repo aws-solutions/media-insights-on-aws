@@ -3,7 +3,7 @@
 exports[`Snapshot media-insights-dataplane-streaming stack test 1`] = `
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "media-insights-on-aws version %%VERSION%%. This AWS CloudFormation template defines resources for the analytics streaming pipeline.",
+  "Description": "media-insights-on-aws. This AWS CloudFormation template defines resources for the analytics streaming pipeline. Version %%VERSION%%",
   "Mappings": {
     "SourceCode": {
       "General": {

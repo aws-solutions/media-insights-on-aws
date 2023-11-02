@@ -17,7 +17,7 @@ exports[`Snapshot media-insights-dataplane-api stack test 1`] = `
       ],
     },
   },
-  "Description": "media-insights-on-aws version %%VERSION%%. This AWS CloudFormation template provisions the REST API for the Media Insights on AWS data plane",
+  "Description": "media-insights-on-aws. This AWS CloudFormation template provisions the REST API for the Media Insights on AWS data plane. Version %%VERSION%%",
   "Outputs": {
     "APIHandlerArn": {
       "Value": {

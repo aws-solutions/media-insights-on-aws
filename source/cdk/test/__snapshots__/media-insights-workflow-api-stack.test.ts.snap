@@ -3,7 +3,7 @@
 exports[`Snapshot media-insights-workflow-api stack test 1`] = `
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "media-insights-on-aws version %%VERSION%%. This AWS CloudFormation template provisions the REST API for the Media Insights on AWS control plane",
+  "Description": "media-insights-on-aws. This AWS CloudFormation template provisions the REST API for the Media Insights on AWS control plane. Version %%VERSION%%",
   "Outputs": {
     "APIHandlerArn": {
       "Value": {

@@ -3,7 +3,7 @@
 exports[`Snapshot media-insights-test-operations stack test 1`] = `
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "media-insights-on-aws version %%VERSION%%. This AWS CloudFormation template  provisions operators, stages, and workflows used for testing the Media Insights on AWS",
+  "Description": "media-insights-on-aws. This AWS CloudFormation template provisions operators, stages, and workflows used for testing the Media Insights on AWS. Version %%VERSION%%",
   "Mappings": {
     "SourceCode": {
       "General": {

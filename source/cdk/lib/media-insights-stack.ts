@@ -65,7 +65,7 @@ export class MediaInsightsStack extends Stack {
     readonly nestedStacks: MediaInsightsNestedStacks;
 
     constructor(scope: Construct, id: string, props?: StackProps) {
-        super(scope, id, { ...props, description: '(SO0163) - media-insights-on-aws version %%VERSION%%. This is the base AWS CloudFormation template that provisions Media Insights on AWS services and provides parameters for user configurable settings.' });
+        super(scope, id, { ...props, description: '(SO0163) - media-insights-on-aws. This is the base AWS CloudFormation template that provisions Media Insights on AWS services and provides parameters for user configurable settings. Version %%VERSION%%' });
         this.templateOptions.templateFormatVersion = '2010-09-09';
 
         //

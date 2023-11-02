@@ -41,7 +41,7 @@ exports[`Snapshot media-insights root stack test 1`] = `
       ],
     },
   },
-  "Description": "(SO0163) - media-insights-on-aws version %%VERSION%%. This is the base AWS CloudFormation template that provisions Media Insights on AWS services and provides parameters for user configurable settings.",
+  "Description": "(SO0163) - media-insights-on-aws. This is the base AWS CloudFormation template that provisions Media Insights on AWS services and provides parameters for user configurable settings. Version %%VERSION%%",
   "Mappings": {
     "AnonymizedData": {
       "SendAnonymizedData": {
@@ -2077,7 +2077,7 @@ exports[`Snapshot media-insights root stack test 1`] = `
                     "CodeKeyPrefix",
                   ],
                 },
-                "media_insights_on_aws_lambda_layer_python3.10-v5.1.4.zip",
+                "media_insights_on_aws_lambda_layer_python3.10-v5.1.5.zip",
               ],
             ],
           },
@@ -2124,7 +2124,7 @@ exports[`Snapshot media-insights root stack test 1`] = `
                     "CodeKeyPrefix",
                   ],
                 },
-                "media_insights_on_aws_lambda_layer_python3.11-v5.1.4.zip",
+                "media_insights_on_aws_lambda_layer_python3.11-v5.1.5.zip",
               ],
             ],
           },
@@ -2171,7 +2171,7 @@ exports[`Snapshot media-insights root stack test 1`] = `
                     "CodeKeyPrefix",
                   ],
                 },
-                "media_insights_on_aws_lambda_layer_python3.9-v5.1.4.zip",
+                "media_insights_on_aws_lambda_layer_python3.9-v5.1.5.zip",
               ],
             ],
           },

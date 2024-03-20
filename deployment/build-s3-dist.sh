@@ -228,7 +228,7 @@ pip3 install wheel
 # See the following issues for more details:
 #  - https://github.com/aws/aws-cdk/issues/26300
 #  - https://github.com/python-jsonschema/jsonschema/issues/1117
-pip3 install --quiet boto3 chalice docopt pyyaml jsonschema==4.17.3 aws_xray_sdk
+pip3 install --quiet boto3 chalice==1.31.0 docopt pyyaml jsonschema==4.17.3 aws_xray_sdk
 export PYTHONPATH="$PYTHONPATH:$source_dir/lib/MediaInsightsEngineLambdaHelper/"
 if [ $? -ne 0 ]; then
     echo "ERROR: Failed to install required Python libraries."

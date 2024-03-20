@@ -487,28 +487,6 @@ export class MediaInsightsStack extends Stack {
             enforceSSL: true,
         });
 
-        const sqsQueuePolicy = new sqs.QueuePolicy(this, 'SqsQueuePolicy', {
-            queues: [workflowExecutionEventQueue],
-        });
-        sqsQueuePolicy.document.addStatements(
-            new iam.PolicyStatement({
-                principals: [new iam.ServicePrincipal('sns.amazonaws.com')],
-                resources: [workflowExecutionEventQueue.queueArn],
-                actions: ["sqs:SendMessage"],
-                conditions: {
-                    ArnEquals: {
-                        ['aws:SourceArn']: workflowExecutionEventTopic.topicArn,
-                    }
-                },
-            }),
-        );
-
-        // cfn_nag
-        util.setNagSuppressRules(sqsQueuePolicy, {
-            id: 'W11',
-            reason: "The queue permissions are scoped to the SNS topic using the condition",
-        });
-
         workflowExecutionEventTopic.addSubscription(new subscriptions.SqsSubscription(workflowExecutionEventQueue));
 
         //

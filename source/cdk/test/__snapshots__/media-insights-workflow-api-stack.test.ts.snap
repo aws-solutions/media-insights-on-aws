@@ -246,7 +246,7 @@ exports[`Snapshot media-insights-workflow-api stack test 1`] = `
         },
         "Runtime": "python3.11",
         "Tags": {
-          "aws-chalice": "version=1.31.0:stage=dev:app=workflowapi",
+          "aws-chalice": "version=1.31.2:stage=dev:app=workflowapi",
         },
         "Timeout": 60,
         "Tracing": {
@@ -4877,7 +4877,7 @@ Raises:
         },
         "Runtime": "python3.11",
         "Tags": {
-          "aws-chalice": "version=1.31.0:stage=dev:app=workflowapi",
+          "aws-chalice": "version=1.31.2:stage=dev:app=workflowapi",
         },
         "Timeout": 180,
         "Tracing": {

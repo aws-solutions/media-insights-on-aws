@@ -1,6 +1,6 @@
 id: SO0163
 name: media-insights-on-aws
-version: 5.1.6
+version: 5.1.7
 cloudformation_templates:
   - template: media-insights-on-aws-stack.template
     main_template: true
@@ -9,3 +9,5 @@ cloudformation_templates:
   - template: media-insights-on-aws-dataplane-api-stack.template
   - template: media-insights-on-aws-operator-library.template
   - template: media-insights-on-aws-workflow-api-stack.template
+build_environment:
+  build_image: 'aws/codebuild/standard:7.0'

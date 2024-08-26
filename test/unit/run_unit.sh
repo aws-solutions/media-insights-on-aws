@@ -78,6 +78,11 @@ run_tests() {
         local tc="${1%/}"
         shift
 
+        if [ "$tc" = "nltk_data" ]; then
+            echo "Skipping nltk_data directory"
+            continue
+        fi
+
         echo "Running ${tc} unit tests"
         coverage_report_path="$coverage_reports_dir/coverage-source-${tc}.xml"
         pytest "${tc}" -s -W ignore::DeprecationWarning \

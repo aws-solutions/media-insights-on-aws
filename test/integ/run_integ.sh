@@ -96,11 +96,18 @@ elif [ "$1" = "workflowapi" ]; then
     else
 	exit 1
     fi
+elif [ "$1" = "nightswatch" ]; then
+    echo "Running all integ tests for nightswatch"
+    pytest -ra -W ignore::DeprecationWarning -p no:cacheproviders  --json="$FUNCTIONAL_TESTS_DIR/results/$RESULTS_FILE_NAME" --html="$FUNCTIONAL_TESTS_DIR/results/result-integ.html"
+    if [ $? -eq 0 ]; then
+	exit 0
+    else
+	exit 1
+    fi
 else
     echo "Invalid positional parameter. Quitting."
     exit
 fi
-
 
 echo "------------------------------------------------------------------------------"
 echo "Cleaning up"

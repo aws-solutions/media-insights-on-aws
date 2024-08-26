@@ -73,13 +73,21 @@ export TEST_JSON="sample-data.json"
 export TEST_FACE_IMAGE="sample-face.jpg"
 
 echo "------------------------------------------------------------------------------"
-
-pytest -s -W ignore::DeprecationWarning -p no:cacheproviders
-
-if [ $? -eq 0 ]; then
-    exit 0
+if [ "$1" = "nightswatch" ]; then
+    echo "Running all e2e tests for nightswatch"
+    pytest -ra -W ignore::DeprecationWarning -p no:cacheproviders  --json="$FUNCTIONAL_TESTS_DIR/results/$RESULTS_FILE_NAME" --html="$FUNCTIONAL_TESTS_DIR/results/result-e2e.html"
+    if [ $? -eq 0 ]; then
+	exit 0
+    else
+	exit 1
+    fi
 else
-    exit 1
+    pytest -s -W ignore::DeprecationWarning -p no:cacheproviders
+    if [ $? -eq 0 ]; then
+        exit 0
+    else
+        exit 1
+    fi
 fi
 
 echo "------------------------------------------------------------------------------"

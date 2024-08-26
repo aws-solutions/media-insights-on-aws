@@ -25,6 +25,8 @@
 #
 ###############################################################################
 
+source "$(dirname "${BASH_SOURCE[0]}")/nltk_download_functions.sh"
+
 usage() {
   msg "$1"
   cat <<EOF
@@ -63,6 +65,8 @@ cleanup() {
     echo "------------------------------------------------------------------------------"
   fi
   [ -n "$VENV" ] && [ -d "$VENV" ] && rm -rf "$VENV"
+
+  cleanup_punkt "$source_dir"
 }
 
 msg() {
@@ -228,7 +232,7 @@ pip3 install wheel
 # See the following issues for more details:
 #  - https://github.com/aws/aws-cdk/issues/26300
 #  - https://github.com/python-jsonschema/jsonschema/issues/1117
-pip3 install --quiet boto3 chalice==1.31.0 docopt pyyaml jsonschema==4.17.3 aws_xray_sdk
+pip3 install --quiet boto3 chalice==1.31.2 docopt pyyaml jsonschema==4.17.3 aws_xray_sdk
 export PYTHONPATH="$PYTHONPATH:$source_dir/lib/MediaInsightsEngineLambdaHelper/"
 if [ $? -ne 0 ]; then
     echo "ERROR: Failed to install required Python libraries."
@@ -257,6 +261,7 @@ cd "$source_dir"/lib/MediaInsightsEngineLambdaHelper || exit 1
 rm -rf build
 rm -rf dist
 rm -rf Media_Insights_Engine_Lambda_Helper.egg-info
+python3 -m pip install -r requirements.txt
 python3 setup.py bdist_wheel > /dev/null
 echo -n "Created: "
 find "$source_dir"/lib/MediaInsightsEngineLambdaHelper/dist/
@@ -297,6 +302,7 @@ else
   cp -R "$source_dir"/lib/MediaInsightsEngineLambdaHelper .
   cd MediaInsightsEngineLambdaHelper/ || exit 1
   echo "Building Media Insights on AWS Lambda Helper python library"
+  python3 -m pip install -r requirements.txt
   python3 setup.py bdist_wheel > /dev/null
   cp dist/*.whl ../
   cp dist/*.whl "$source_dir"/lib/MediaInsightsEngineLambdaHelper/dist/
@@ -452,6 +458,7 @@ rm -rf ./dist ./package
 # ------------------------------------------------------------------------------"
 
 echo "Building Translate function"
+download_punkt "$source_dir"
 cd "$source_dir/operators/translate" || exit 1
 [ -e dist ] && rm -rf dist
 mkdir -p dist
@@ -466,12 +473,16 @@ touch ./setup.cfg
 echo "[install]" > ./setup.cfg
 echo "prefix= " >> ./setup.cfg
 pip3 install --quiet -r ../requirements.txt --target .
+# copy downloaded nltk_data pickles to the package
+cp -r ../nltk_data nltk_data
+
 if ! [ -d ../dist/start_translate.zip ]; then
   zip -q -r9 ../dist/start_translate.zip .
 
 elif [ -d ../dist/start_translate.zip ]; then
   echo "Package already present"
 fi
+
 popd || exit 1
 zip -q -g ./dist/start_translate.zip ./start_translate.py
 cp "./dist/start_translate.zip" "$regional_dist_dir/start_translate.zip"

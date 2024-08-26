@@ -9,6 +9,8 @@ from aws_xray_sdk.core import xray_recorder
 from aws_xray_sdk.core import patch_all
 import tempfile
 import nltk.data
+import pickle
+from nltk.tokenize.punkt import PunktSentenceTokenizer
 
 from MediaInsightsEngineLambdaHelper import DataPlane
 from MediaInsightsEngineLambdaHelper import MediaInsightsOperationHelper
@@ -21,6 +23,40 @@ config = config.Config(**mie_config)
 translate_client = boto3.client('translate', config=config)
 s3 = boto3.client('s3', config=config)
 
+def _load_tokenizer(lang: str) -> PunktSentenceTokenizer:
+    """
+    Load a PunktSentenceTokenizer for a given language from pre-downloaded pickles.
+    Pickles found at: https://raw.githubusercontent.com/nltk/nltk_data/gh-pages/packages/tokenizers/punkt.zip
+    These pickles are downloaded and packaged during build. See deployment/nltk_download_functions.sh
+
+    Args:
+        lang (str): The language for which to load the tokenizer.
+
+    Returns:
+        PunktSentenceTokenizer: The tokenizer for the specified language.
+    """
+    try:
+        # Get the directory of the current file
+        current_directory = os.path.dirname(os.path.abspath(__file__))
+
+        # Construct the path to the pickle file
+        pickle_path = os.path.join(current_directory, 'nltk_data', 'tokenizers', 'punkt', f'{lang.lower()}.pickle')
+
+        # Open the file and unpickle the tokenizer
+        with open(pickle_path, 'rb') as f:
+            tokenizer = pickle.load(f)
+
+        return tokenizer
+
+    except FileNotFoundError as e:
+        print("Error: Tokenizer file for '%s' not found." % lang)
+        raise e
+    except pickle.UnpicklingError as e:
+        print("Error: Failed to unpickle the tokenizer for '%s'." % lang)
+        raise e
+    except Exception as e:
+        print("An error occurred while loading the tokenizer: %s" % e)
+        raise e
 
 def lambda_handler(event, _context):
     print("We got the following event:\n", event)
@@ -73,12 +109,6 @@ def lambda_handler(event, _context):
         operator_object.update_workflow_status("Complete")
         return operator_object.return_output_object()
 
-    # Tell the NLTK data loader to look for files in the tmp directory
-    tmp_dir = tempfile.gettempdir()
-    nltk.data.path.append(tmp_dir)
-    # Download NLTK tokenizers to the tmp directory
-    # We use tmp because that's where AWS Lambda provides write access to the local file system.
-    nltk.download('punkt', download_dir=tmp_dir)
     # Create language tokenizer according to user-specified source language.
     # Default to English.
     lang_options = {
@@ -91,7 +121,8 @@ def lambda_handler(event, _context):
     }
     lang = lang_options.get(source_lang, 'English')
     print("Using {} dictionary to find sentence boundaries.".format(lang))
-    tokenizer = nltk.data.load('tokenizers/punkt/{}.pickle'.format(lang.lower()))
+
+    tokenizer = _load_tokenizer(lang)
 
     # Split input text into a list of sentences
     sentences = tokenizer.tokenize(transcript)

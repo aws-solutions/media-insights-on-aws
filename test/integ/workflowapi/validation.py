@@ -78,7 +78,7 @@ def stage_execution(workflow_execution, stage_config, stack_resources, api_schem
         expected_status = "Error"
 
     # Check the outputs published by the operator to the workflow
-    for media_type in stage_config["Ouputs"]:
+    for media_type in stage_config["Outputs"]:
         assert media_type in globals["Media"]
     
     assert "MetaData" in globals

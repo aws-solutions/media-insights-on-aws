@@ -1,6 +1,6 @@
 id: SO0163
 name: media-insights-on-aws
-version: 5.1.7
+version: 5.1.8
 cloudformation_templates:
   - template: media-insights-on-aws-stack.template
     main_template: true

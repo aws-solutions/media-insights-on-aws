@@ -1,4 +1,4 @@
-# Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 import json
@@ -232,10 +232,11 @@ class DataPlane:
         dataplane_response = json.loads(response)
         return json.loads(dataplane_response["body"])
 
-    def create_asset(self, s3bucket, s3key):
+    def create_asset(self, media_type, s3bucket, s3key):
         """
         Method to create an asset in the dataplane
 
+        :param media_type: Type of the media asset
         :param s3bucket: S3 Bucket of the asset
         :param s3key: S3 Key of the asset
 
@@ -244,7 +245,7 @@ class DataPlane:
         path = "/create"
         resource = "/create"
         method = "POST"
-        body = {"Input": {"S3Bucket": s3bucket, "S3Key": s3key}}
+        body = {"Input": {"MediaType": media_type, "S3Bucket": s3bucket, "S3Key": s3key}}
         dataplane_response = self.call_dataplane(path, resource, method, body)
         return dataplane_response
 

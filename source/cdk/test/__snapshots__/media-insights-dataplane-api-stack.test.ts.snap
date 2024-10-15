@@ -1,0 +1,1825 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Snapshot media-insights-dataplane-api stack test 1`] = `
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Conditions": {
+    "AllowAccessToExternalBucket": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "ExternalBucketArn",
+            },
+            "",
+          ],
+        },
+      ],
+    },
+  },
+  "Description": "media-insights-on-aws. This AWS CloudFormation template provisions the REST API for the Media Insights on AWS data plane. Version %%VERSION%%",
+  "Outputs": {
+    "APIHandlerArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "APIHandler",
+          "Arn",
+        ],
+      },
+    },
+    "APIHandlerName": {
+      "Value": {
+        "Ref": "APIHandler",
+      },
+    },
+    "EndpointURL": {
+      "Value": {
+        "Fn::Sub": "https://\${RestAPI}.execute-api.\${AWS::Region}.\${AWS::URLSuffix}/api/",
+      },
+    },
+    "RestAPIId": {
+      "Value": {
+        "Ref": "RestAPI",
+      },
+    },
+  },
+  "Parameters": {
+    "DataplaneBucketName": {
+      "Description": "Bucket used to store asset media",
+      "Type": "String",
+    },
+    "DataplaneTableName": {
+      "Description": "Table used for storing asset metadata",
+      "Type": "String",
+    },
+    "DeploymentPackageBucket": {
+      "Description": "Bucket that contains the dataplane deployment package",
+      "Type": "String",
+    },
+    "DeploymentPackageKey": {
+      "Description": "S3 Key of the dataplane deployment package",
+      "Type": "String",
+    },
+    "ExternalBucketArn": {
+      "Description": "The ARN for Amazon S3 resources that exist outside the stack which may need to be used as inputs to the workflows.",
+      "Type": "String",
+    },
+    "FrameworkVersion": {
+      "Description": "Version of the Media Insights on AWS Framework",
+      "Type": "String",
+    },
+    "KmsKeyId": {
+      "Description": "ID of the stack KMS Key",
+      "Type": "String",
+    },
+    "MediaInsightsOnAwsPython311Layer": {
+      "Description": "Arn of the Media Insights on AWS Python 3.11 lambda layer",
+      "Type": "String",
+    },
+    "TracingConfigMode": {
+      "Description": "Sets tracing mode for stack entry points.  Allowed values: Active, PassThrough",
+      "Type": "String",
+    },
+    "botoConfig": {
+      "Description": "Botocore config",
+      "Type": "String",
+    },
+  },
+  "Resources": {
+    "APIHandler": {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-L1",
+              "reason": "Latest lambda version not supported at this time.",
+            },
+          ],
+        },
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W89",
+              "reason": "This Lambda function does not need to access any resource provisioned within a VPC.",
+            },
+            {
+              "id": "W92",
+              "reason": "This function does not require performance optimization, so the default concurrency limits suffice.",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "CodeUri": {
+          "Bucket": {
+            "Ref": "DeploymentPackageBucket",
+          },
+          "Key": {
+            "Ref": "DeploymentPackageKey",
+          },
+        },
+        "Environment": {
+          "Variables": {
+            "DATAPLANE_BUCKET": {
+              "Ref": "DataplaneBucketName",
+            },
+            "DATAPLANE_TABLE_NAME": {
+              "Ref": "DataplaneTableName",
+            },
+            "FRAMEWORK_VERSION": {
+              "Ref": "FrameworkVersion",
+            },
+            "USER_POOL_ARN": "",
+            "botoConfig": {
+              "Ref": "botoConfig",
+            },
+          },
+        },
+        "Handler": "app.app",
+        "Layers": [
+          {
+            "Ref": "MediaInsightsOnAwsPython311Layer",
+          },
+        ],
+        "MemorySize": 2048,
+        "Role": {
+          "Fn::GetAtt": [
+            "ApiHandlerRole",
+            "Arn",
+          ],
+        },
+        "Runtime": "python3.11",
+        "Tags": {
+          "aws-chalice": "version=1.31.2:stage=dev:app=dataplaneapi",
+        },
+        "Timeout": 120,
+        "Tracing": {
+          "Ref": "TracingConfigMode",
+        },
+      },
+      "Type": "AWS::Serverless::Function",
+    },
+    "APIHandlerInvokePermission": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Ref": "APIHandler",
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Sub": [
+            "arn:\${AWS::Partition}:execute-api:\${AWS::Region}:\${AWS::AccountId}:\${RestAPIId}/*",
+            {
+              "RestAPIId": {
+                "Ref": "RestAPI",
+              },
+            },
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "ApiHandlerRole": {
+      "Metadata": {
+        "Comment": "This role contains two policies that provide GetObject permission for DataplaneBucketName. This duplication is necessary in order to avoid a syntax error when the user-specified ExternalBucketArn parameter is empty.",
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-IAM5",
+              "reason": "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources",
+            },
+          ],
+        },
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W11",
+              "reason": "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+              "Sid": "",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Policies": [
+          {
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Action": [
+                    "s3:GetObject",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::If": [
+                      "AllowAccessToExternalBucket",
+                      {
+                        "Ref": "ExternalBucketArn",
+                      },
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            "arn:",
+                            {
+                              "Ref": "AWS::Partition",
+                            },
+                            ":s3:::",
+                            {
+                              "Ref": "DataplaneBucketName",
+                            },
+                            "/*",
+                          ],
+                        ],
+                      },
+                    ],
+                  },
+                },
+                {
+                  "Action": [
+                    "s3:ReplicateObject",
+                    "s3:PutObject",
+                    "s3:GetObject",
+                    "s3:RestoreObject",
+                    "s3:GetObjectVersionAcl",
+                    "s3:ListBucket",
+                    "s3:DeleteObject",
+                    "s3:HeadBucket",
+                    "s3:PutObjectAcl",
+                    "s3:GetObjectVersion",
+                    "s3:DeleteObjectVersion",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:",
+                        {
+                          "Ref": "AWS::Partition",
+                        },
+                        ":s3:::",
+                        {
+                          "Ref": "DataplaneBucketName",
+                        },
+                        "/*",
+                      ],
+                    ],
+                  },
+                },
+                {
+                  "Action": "s3:ListBucket",
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:",
+                        {
+                          "Ref": "AWS::Partition",
+                        },
+                        ":s3:::",
+                        {
+                          "Ref": "DataplaneBucketName",
+                        },
+                      ],
+                    ],
+                  },
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetItem",
+                    "dynamodb:PutItem",
+                    "dynamodb:DeleteItem",
+                    "dynamodb:UpdateItem",
+                    "dynamodb:Scan",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:",
+                        {
+                          "Ref": "AWS::Partition",
+                        },
+                        ":dynamodb:",
+                        {
+                          "Ref": "AWS::Region",
+                        },
+                        ":",
+                        {
+                          "Ref": "AWS::AccountId",
+                        },
+                        ":table/",
+                        {
+                          "Ref": "DataplaneTableName",
+                        },
+                      ],
+                    ],
+                  },
+                },
+                {
+                  "Action": [
+                    "dynamodb:Query",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:",
+                        {
+                          "Ref": "AWS::Partition",
+                        },
+                        ":dynamodb:",
+                        {
+                          "Ref": "AWS::Region",
+                        },
+                        ":",
+                        {
+                          "Ref": "AWS::AccountId",
+                        },
+                        ":table/",
+                        {
+                          "Ref": "DataplaneTableName",
+                        },
+                        "/index/LockIndex",
+                      ],
+                    ],
+                  },
+                },
+                {
+                  "Action": [
+                    "xray:PutTraceSegments",
+                    "xray:PutTelemetryRecords",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": [
+                    "*",
+                  ],
+                },
+                {
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:",
+                        {
+                          "Ref": "AWS::Partition",
+                        },
+                        ":logs:",
+                        {
+                          "Ref": "AWS::Region",
+                        },
+                        ":",
+                        {
+                          "Ref": "AWS::AccountId",
+                        },
+                        ":log-group:/aws/lambda/*-APIHandler-*",
+                      ],
+                    ],
+                  },
+                  "Sid": "Logging",
+                },
+                {
+                  "Action": [
+                    "kms:Decrypt",
+                    "kms:GenerateDataKey",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:",
+                        {
+                          "Ref": "AWS::Partition",
+                        },
+                        ":kms:",
+                        {
+                          "Ref": "AWS::Region",
+                        },
+                        ":",
+                        {
+                          "Ref": "AWS::AccountId",
+                        },
+                        ":key/",
+                        {
+                          "Ref": "KmsKeyId",
+                        },
+                      ],
+                    ],
+                  },
+                },
+              ],
+              "Version": "2012-10-17",
+            },
+            "PolicyName": "MieDataplaneApiHandlerRolePolicy",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "RestAPI": {
+      "Properties": {
+        "DefinitionBody": {
+          "definitions": {
+            "Empty": {
+              "title": "Empty Schema",
+              "type": "object",
+            },
+          },
+          "info": {
+            "title": "dataplaneapi",
+            "version": "1.0",
+          },
+          "paths": {
+            "/": {
+              "get": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Returns:
+
+.. code-block:: python
+
+    {"hello":"world"}
+
+Raises:
+
+    ChaliceViewError - 500",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "summary": "Test the API endpoint",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+            },
+            "/checkin/{asset_id}": {
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'POST,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+              "post": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "This is intended to help applications implement mutual exclusion between users that
+can modify asset data.
+
+Returns:
+
+    Unlocked asset {asset}
+
+Raises:
+    BadRequestError - 400
+    ChaliceViewError - 500",
+                "parameters": [
+                  {
+                    "in": "path",
+                    "name": "asset_id",
+                    "required": true,
+                    "type": "string",
+                  },
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Removes LockedAt and LockedBy attributes from an asset item in the Dataplane table.",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+            },
+            "/checkout/{asset_id}": {
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'POST,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+              "post": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "This is intended to help applications implement mutual exclusion between users that
+can modify asset data.
+
+Body:
+
+.. code-block:: python
+
+    {
+        "LockedBy": "{some_user_id}"
+    }
+
+Returns:
+
+    Dictionary of lock info added to the asset.
+
+    .. code-block:: python
+
+        {
+            "AssetId": asset_id,
+            "LockedBy": user_name,
+            "LockedAt": timestamp
+        }
+
+Raises:
+    BadRequestError - 400
+    ChaliceViewError - 500",
+                "parameters": [
+                  {
+                    "in": "path",
+                    "name": "asset_id",
+                    "required": true,
+                    "type": "string",
+                  },
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Adds LockedAt and LockedBy attributes to an asset item in the Dataplane table.",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+            },
+            "/checkouts": {
+              "get": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "    Dict containing a list of all locked assets with their corresponding LockedBy, LockedAt, and AssetId attributes. The list returns empty if no assets have been locked.
+
+    .. code-block:: python
+        {
+            "locks": [
+            {'LockedAt': 1641411425}, 'AssetId': 'e69ba549-34f3-46f4-882c-6dafc3d74ca6'}, 'LockedBy': 'user1@example.com'}},
+            {'LockedAt': 1641411742}, 'AssetId': '1c745641-d9fd-4634-949b-34c9d4b3d847'}, 'LockedBy': 'user2@example.com'}},
+            ...
+            ]
+        }
+Raises:
+    ChaliceViewError - 500",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Returns:",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'GET,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+            },
+            "/create": {
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'POST,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+              "post": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Body:
+
+.. code-block:: python
+
+    {
+        "Input": {
+            "MediaType": "{media type}",
+            "S3Bucket": "{source bucket}",
+            "S3Key": "{source key}"
+        }
+    }
+
+Returns:
+    A dict containing the asset id and the Amazon S3 bucket and key describing where its media file was sourced from.
+     .. code-block:: python
+
+        {
+            "AssetId": asset_id,
+            "MediaType": media_type,
+            "S3Bucket": source_bucket,
+            "S3Key": source_key
+        }
+Raises:
+    ChaliceViewError - 500",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Create an asset in the dataplane from a json input composed of the input key and bucket of the object.",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+            },
+            "/download": {
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'POST,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+              "post": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Returns:
+    Pre-signed S3 URL for downloading files from S3 to a web application.
+Raises:
+    ChaliceViewError - 500",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Generate a pre-signed URL that can be used to download media files from S3.",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+            },
+            "/mediapath/{asset_id}/{workflow_id}": {
+              "get": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Returns:
+     Dictionary containing the S3 bucket and key for uploading a given asset media object to the dataplane.
+Raises:
+    ChaliceViewError - 500",
+                "parameters": [
+                  {
+                    "in": "path",
+                    "name": "asset_id",
+                    "required": true,
+                    "type": "string",
+                  },
+                  {
+                    "in": "path",
+                    "name": "workflow_id",
+                    "required": true,
+                    "type": "string",
+                  },
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Generate a media storage path in the dataplane S3 bucket.",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'GET,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+            },
+            "/metadata": {
+              "get": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "    Dict containing a list of all assets by their asset_id. The list returns empty if no assets have been created.
+
+    .. code-block:: python
+        {
+            "assets": ["$asset_id_1", "$asset_id_2"...]
+        }
+Raises:
+    ChaliceViewError - 500",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Returns:",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'GET,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+            },
+            "/metadata/{asset_id}": {
+              "delete": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Returns:
+    Deletion status from dataplane.
+Raises:
+    ChaliceViewError - 500",
+                "parameters": [
+                  {
+                    "in": "path",
+                    "name": "asset_id",
+                    "required": true,
+                    "type": "string",
+                  },
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Deletes an asset and all metadata from the dataplane.",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+              "get": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "The first call to this method will return a dictionary containing the asset_id, a results key containing
+global asset information, and a cursor to iterate through each stored metadata type.
+
+To receive the additional metadata, make additional calls to this endpoint and pass in the value of the cursor
+response key as the value for the cursor query parameter.
+
+Once all results have been retrieved, no cursor key will be present in the response.
+
+Returns:
+    All asset metadata
+
+    .. code-block:: python
+
+        {
+            "asset_id": asset_id,
+            "operator": operator_name,
+            "cursor": encoded_cursor_value,
+            "results": global_asset_info (if first call) / operator metadata
+        }
+
+Raises:
+    ChaliceViewError - 500",
+                "parameters": [
+                  {
+                    "in": "path",
+                    "name": "asset_id",
+                    "required": true,
+                    "type": "string",
+                  },
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Retrieves all of the metadata for a specified asset.",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'POST,GET,DELETE,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+              "post": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "If the results are in a paginated format, such as from Rekognition, you must set the paginate query param to
+"true" for each page of metadata a put metadata call is made for. For the final page of results,
+the "end" query param must be set to "true", which will tell the dataplane that the paginated session is
+over and update the pointer for that metadata type.
+
+Query String Params:
+:param paginate: Boolean to tell dataplane that the results will come in as pages.
+:param end: Boolean to declare the last page in a set of paginated results.
+
+Body:
+
+.. code-block:: python
+
+    {
+        "OperatorName": "{some_operator}",
+        "Results": "{json_formatted_results}",
+        "WorkflowId": "workflow-id"
+    }
+
+Returns:
+
+    Dictionary containing the status of the PUT metadata operation. If a pointer is updated, the response will also
+    include the S3 Bucket and S3 Key that the data was written to.
+
+    .. code-block:: python
+
+        {
+            "Status": "$status", "Bucket": $bucket, "Key": $metadata_key
+        }
+
+Raises:
+    BadRequestError - 400
+    ChaliceViewError - 500",
+                "parameters": [
+                  {
+                    "in": "path",
+                    "name": "asset_id",
+                    "required": true,
+                    "type": "string",
+                  },
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Adds operation metadata for an asset.",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+            },
+            "/metadata/{asset_id}/{operator_name}": {
+              "delete": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Returns:
+    Deletion status from dataplane.
+Raises:
+    NotFoundError - 404
+    ChaliceViewError - 500
+    ...",
+                "parameters": [
+                  {
+                    "in": "path",
+                    "name": "asset_id",
+                    "required": true,
+                    "type": "string",
+                  },
+                  {
+                    "in": "path",
+                    "name": "operator_name",
+                    "required": true,
+                    "type": "string",
+                  },
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Deletes the specified operator metadata from an asset.",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+              "get": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "If the results are paginated, the first call to this method will include a cursor in the response.
+
+To receive the remaining paginated data, make additional calls to this endpoint and pass in the value of the cursor
+response key as the value for the cursor query parameter.
+
+Once all results have been retrieved, no cursor key will be present in the response.
+
+Returns:
+
+    Metadata that a specific operator created
+
+    .. code-block:: python
+
+        {
+            "asset_id": asset_id,
+            "operator": operator_name,
+            "cursor": encoded_cursor_value,
+            "results": first_page_data
+        }
+
+Raises:
+    ChaliceViewError - 500",
+                "parameters": [
+                  {
+                    "in": "path",
+                    "name": "asset_id",
+                    "required": true,
+                    "type": "string",
+                  },
+                  {
+                    "in": "path",
+                    "name": "operator_name",
+                    "required": true,
+                    "type": "string",
+                  },
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Retrieves specified operator metadata for a given asset.",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'GET,DELETE,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+            },
+            "/upload": {
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'POST,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+              "post": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Returns:
+    Pre-signed S3 URL for uploading files to S3 from a web application
+Raises:
+    ChaliceViewError - 500",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Generate a pre-signed URL that can be used to upload media files to S3 from a web application",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+            },
+            "/version": {
+              "get": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Returns:
+
+.. code-block:: python
+
+    {"ApiVersion": "x.x.x", "FrameworkVersion": "vx.x.x"}",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Get the dataplane api and framework version numbers",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'GET,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+            },
+          },
+          "schemes": [
+            "https",
+          ],
+          "securityDefinitions": {
+            "sigv4": {
+              "in": "header",
+              "name": "Authorization",
+              "type": "apiKey",
+              "x-amazon-apigateway-authtype": "awsSigv4",
+            },
+          },
+          "swagger": "2.0",
+          "x-amazon-apigateway-binary-media-types": [
+            "application/octet-stream",
+            "application/x-tar",
+            "application/zip",
+            "audio/basic",
+            "audio/ogg",
+            "audio/mp4",
+            "audio/mpeg",
+            "audio/wav",
+            "audio/webm",
+            "image/png",
+            "image/jpg",
+            "image/jpeg",
+            "image/gif",
+            "video/ogg",
+            "video/mpeg",
+            "video/webm",
+          ],
+        },
+        "EndpointConfiguration": "EDGE",
+        "StageName": "api",
+      },
+      "Type": "AWS::Serverless::Api",
+    },
+  },
+  "Transform": "AWS::Serverless-2016-10-31",
+}
+`;

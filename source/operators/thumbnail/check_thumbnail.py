@@ -1,4 +1,4 @@
-# Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 ###############################################################################
@@ -9,6 +9,8 @@
 
 import os
 import boto3
+import json
+from botocore import config
 from aws_xray_sdk.core import xray_recorder
 from aws_xray_sdk.core import patch_all
 
@@ -18,9 +20,24 @@ from MediaInsightsEngineLambdaHelper import MasExecutionError
 patch_all()
 
 region = os.environ["AWS_REGION"]
-mediaconvert = boto3.client("mediaconvert", region_name=region)
 
-def lambda_handler(event, context):
+mie_config = json.loads(os.environ['botoConfig'])
+config = config.Config(**mie_config)
+
+mediaconvert = boto3.client("mediaconvert", config=config, region_name=region)
+
+media_convert_client = None
+
+
+def get_mediaconvert_client():
+    mediaconvert_endpoint = os.environ["MEDIACONVERT_ENDPOINT"]
+    global media_convert_client
+    if media_convert_client is None:
+        media_convert_client = boto3.client("mediaconvert", region_name=region, endpoint_url=mediaconvert_endpoint)
+    return media_convert_client
+
+
+def lambda_handler(event, _context):
     print("We got the following event:\n", event)
     operator_object = MediaInsightsOperationHelper(event)
     # Get MediaConvert job id
@@ -35,28 +52,11 @@ def lambda_handler(event, context):
     # Get asset id
     try:
         asset_id = operator_object.asset_id
-    except KeyError as e:
+    except KeyError:
         print("No asset_id in this workflow")
         asset_id = ''
 
-    # Get mediaconvert endpoint from cache if available
-    if ("MEDIACONVERT_ENDPOINT" in os.environ):
-        mediaconvert_endpoint = os.environ["MEDIACONVERT_ENDPOINT"]
-        customer_mediaconvert = boto3.client("mediaconvert", region_name=region, endpoint_url=mediaconvert_endpoint)
-    else:
-        try:
-            response = mediaconvert.describe_endpoints()
-        except Exception as e:
-            print("Exception:\n", e)
-            operator_object.update_workflow_status("Error")
-            operator_object.add_workflow_metadata(MediaconvertError=str(e))
-            raise MasExecutionError(operator_object.return_output_object())
-        else:
-            mediaconvert_endpoint = response["Endpoints"][0]["Url"]
-            # Cache the mediaconvert endpoint in order to avoid getting throttled on
-            # the DescribeEndpoints API.
-            os.environ["MEDIACONVERT_ENDPOINT"] = mediaconvert_endpoint
-            customer_mediaconvert = boto3.client("mediaconvert", region_name=region, endpoint_url=mediaconvert_endpoint)
+    customer_mediaconvert = get_mediaconvert_client()
 
     # Get MediaConvert job results
     try:
@@ -106,4 +106,3 @@ def lambda_handler(event, context):
             operator_object.add_workflow_metadata(
                 MediaconvertError="Unhandled exception, unable to get status from mediaconvert: {response}".format(response=response), MediaconvertJobId=job_id)
             raise MasExecutionError(operator_object.return_output_object())
-

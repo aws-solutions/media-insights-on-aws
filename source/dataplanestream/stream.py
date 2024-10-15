@@ -1,21 +1,30 @@
-# Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 import os
 import boto3
-# need to use simplejson as the std lib json package cannot handle float values
-import simplejson as json
+import json
+import decimal
 from boto3.dynamodb.types import TypeDeserializer
+from botocore import config
 from aws_xray_sdk.core import xray_recorder
 from aws_xray_sdk.core import patch_all
 
-# TODO: Move away from simplejson and to my custom decimal encoder class in the dataplane api
-
 patch_all()
 
-ks = boto3.client('kinesis')
+mie_config = json.loads(os.environ['botoConfig'])
+config = config.Config(**mie_config)
+
+ks = boto3.client('kinesis', config=config)
 stream_name = os.environ['StreamName']
 serializer = TypeDeserializer()
+
+
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, decimal.Decimal):
+            return str(o)
+        return super(DecimalEncoder, self).default(o)
 
 
 def deserialize(data):
@@ -34,7 +43,7 @@ def deserialize(data):
 def put_ks_record(pkey, data):
     ks.put_record(
         StreamName=stream_name,
-        Data=json.dumps(data),
+        Data=json.dumps(data, cls=DecimalEncoder),
         PartitionKey=pkey,
     )
 
@@ -63,8 +72,7 @@ def diff_item_images(item_1, item_2):
             changed = {"operator": operator, "pointer": item_1_pointer, "workflow": item_1[operator][0]["workflow"]}
             print("Found the modified operator:", changed)
             modified_operator.append(changed)
-        else:
-            pass
+
     if len(modified_operator) > 1:
         # This really shouldn't happen, but adding just in case... see comment about storing as a string instead
         print("We somehow got modified pointers for more than one operator in one stream event")
@@ -119,9 +127,7 @@ def build_metadata_object(stream_record, action):
     if action == "INSERT":
         items = stream_record["NewImage"]
         for item in items:
-            if item == "AssetId":
-                pass
-            else:
+            if item != "AssetId":
                 metadata_object[item] = items[item]
         metadata_object["Action"] = "INSERT"
     if action == "REMOVE":
@@ -136,29 +142,15 @@ def build_metadata_object(stream_record, action):
         return {"Status": "Success", "Results": metadata_object}
 
 
-def lambda_handler(event, context):
+def lambda_handler(event, _context):
     print("Stream record received:", event)
     for record in event["Records"]:
         deserialized_record = deserialize(record["dynamodb"])
         print(deserialized_record)
         asset_id = deserialized_record["Keys"]["AssetId"]
         event_type = record["eventName"]
-        if event_type == "MODIFY":
-            metadata = build_metadata_object(deserialized_record, "MODIFY")
-            if metadata["Status"] == "Success":
-                print('Putting the following data into the stream:', metadata["Results"])
-                put_ks_record(asset_id, metadata["Results"])
-            else:
-                print("Nothing to put into stream")
-        if event_type == "INSERT":
-            metadata = build_metadata_object(deserialized_record, "INSERT")
-            if metadata["Status"] == "Success":
-                print('Putting the following data into the stream:', metadata["Results"])
-                put_ks_record(asset_id, metadata["Results"])
-            else:
-                print("Nothing to put into stream")
-        if event_type == "REMOVE":
-            metadata = build_metadata_object(deserialized_record, "REMOVE")
+        if event_type in {"MODIFY", "INSERT", "REMOVE"}:
+            metadata = build_metadata_object(deserialized_record, event_type)
             if metadata["Status"] == "Success":
                 print('Putting the following data into the stream:', metadata["Results"])
                 put_ks_record(asset_id, metadata["Results"])

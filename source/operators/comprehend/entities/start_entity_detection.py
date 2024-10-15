@@ -1,5 +1,33 @@
-# Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
+
+###############################################################################
+# PURPOSE:
+#
+#   Lambda function to perform Comprehend Entity detection on text.
+#
+# INPUT:
+#
+#   This operator recognizes the following field in the Configuration
+#   block of the Lambda input:
+#
+#      KmsKeyId - KMS key ID to use for encryption in the
+#        Comprehend service. If not specified, then encryption is not used in the
+#        Comprehend job.
+#
+#   Sample configuration block:
+#
+#      "Configuration": {
+#          "KmsKeyId": "abcd0123-0123-4567-0abc-12345678abc",
+#      },
+#
+#   The IAM policy used for this Lambda function must include the following permissions in order to use KMS Encryption (reference https://docs.aws.amazon.com/comprehend/latest/dg/access-control-managing-permissions.html):
+#
+#        "kms:CreateGrant",
+#        "kms:Decrypt",
+#        "kms:GenerateDatakey"
+#
+###############################################################################
 
 import os
 import boto3
@@ -16,13 +44,13 @@ patch_all()
 mie_config = json.loads(os.environ['botoConfig'])
 config = config.Config(**mie_config)
 comprehend = boto3.client('comprehend', config=config)
-s3 = boto3.client('s3')
+s3 = boto3.client('s3', config=config)
 comprehend_role = os.environ['comprehendRole']
 region = os.environ['AWS_REGION']
 headers = {"Content-Type": "application/json"}
+kms_id = os.environ['KmsId']
 
-
-def lambda_handler(event, context):
+def lambda_handler(event, _context):
     print("We got this event:\n", event)
     operator_object = MediaInsightsOperationHelper(event)
     try:
@@ -74,18 +102,35 @@ def lambda_handler(event, context):
     output_uri_request = dataplane.generate_media_storage_path(asset_id, workflow_id)
     output_uri = "s3://{bucket}/{key}".format(bucket=output_uri_request["S3Bucket"], key=output_uri_request["S3Key"] + '/comprehend_entities')
     try:
-        comprehend.start_entities_detection_job(
-            InputDataConfig={
-                "S3Uri": uri,
-                "InputFormat": "ONE_DOC_PER_FILE"
-            },
-            OutputDataConfig={
-                "S3Uri": output_uri
-            },
-            DataAccessRoleArn=comprehend_role,
-            JobName=workflow_id,
-            LanguageCode="en"
-        )
+        if kms_id != '':
+            # If the user specified a KMS key then enable comprehend job encryption.
+            comprehend.start_entities_detection_job(
+                InputDataConfig={
+                    "S3Uri": uri,
+                    "InputFormat": "ONE_DOC_PER_FILE"
+                },
+                OutputDataConfig={
+                    "S3Uri": output_uri,
+                    "KmsKeyId": kms_id
+                },
+                DataAccessRoleArn=comprehend_role,
+                VolumeKmsKeyId=kms_id,
+                JobName=workflow_id,
+                LanguageCode="en"
+            )
+        else:
+            comprehend.start_entities_detection_job(
+                InputDataConfig={
+                    "S3Uri": uri,
+                    "InputFormat": "ONE_DOC_PER_FILE"
+                },
+                OutputDataConfig={
+                    "S3Uri": output_uri
+                },
+                DataAccessRoleArn=comprehend_role,
+                JobName=workflow_id,
+                LanguageCode="en"
+            )
     except Exception as e:
         operator_object.update_workflow_status("Error")
         operator_object.add_workflow_metadata(comprehend_error="Unable to get response from comprehend: {e}".format(e=str(e)))

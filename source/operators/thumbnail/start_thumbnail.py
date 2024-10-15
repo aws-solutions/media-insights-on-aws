@@ -1,4 +1,4 @@
-# Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 ###############################################################################
@@ -20,20 +20,15 @@
 #   then a thumbnail will be created at time 0 and have a filename ending
 #   with end with "_thumbnail.0000000.jpg".
 #
-# USAGE:
-#   To run this operator add
+#   Thumbnail position can be controlled in the workflow configuration, like this:
 #   '"Thumbnail":{"Position":7, "Enabled":true}'
-#   to the workflow configuration, like this:
-#
-#   curl -k -X POST -H "Authorization: $MIE_ACCESS_TOKEN" -H "Content-Type: application/json" --data '{"Name":"MieCompleteWorkflow","Configuration":{"defaultVideoStage":{"Thumbnail":{"ThumbnailPosition":7, Enabled":true}}}},"Input":{"Media":{"Video":{"S3Bucket":"'$DATAPLANE_BUCKET'","S3Key":"My Video.mp4"}}}}'  $WORKFLOW_API_ENDPOINT/workflow/execution
-#
-#  For instructions on getting $MIE_ACCESS_TOKEN, see:
-#  https://github.com/awslabs/aws-media-insights-engine/blob/master/IMPLEMENTATION_GUIDE.md#step-6-test-your-operator
 #
 ###############################################################################
 
 import os
 import boto3
+import json
+from botocore import config
 from aws_xray_sdk.core import xray_recorder
 from aws_xray_sdk.core import patch_all
 from MediaInsightsEngineLambdaHelper import MediaInsightsOperationHelper
@@ -42,18 +37,32 @@ from MediaInsightsEngineLambdaHelper import MasExecutionError
 patch_all()
 
 region = os.environ['AWS_REGION']
+mie_config = json.loads(os.environ['botoConfig'])
+config = config.Config(**mie_config)
+
 mediaconvert_role = os.environ['mediaconvertRole']
-mediaconvert = boto3.client("mediaconvert", region_name=region)
+dataplane_bucket = os.environ['DATAPLANE_BUCKET']
+mediaconvert = boto3.client("mediaconvert", config=config, region_name=region)
+
+media_convert_client = None
 
 
-def lambda_handler(event, context):
+def get_mediaconvert_client():
+    mediaconvert_endpoint = os.environ["MEDIACONVERT_ENDPOINT"]
+    global media_convert_client
+    if media_convert_client is None:
+        media_convert_client = boto3.client("mediaconvert", region_name=region, endpoint_url=mediaconvert_endpoint)
+    return media_convert_client
+
+
+def lambda_handler(event, _context):
     print("We got the following event:\n", event)
     operator_object = MediaInsightsOperationHelper(event)
 
     try:
         workflow_id = str(operator_object.workflow_execution_id)
-        bucket = operator_object.input["Media"]["Video"]["S3Bucket"]
-        key = operator_object.input["Media"]["Video"]["S3Key"]
+        input_bucket = operator_object.input["Media"]["Video"]["S3Bucket"]
+        input_key = operator_object.input["Media"]["Video"]["S3Key"]
     except KeyError as e:
         operator_object.update_workflow_status("Error")
         operator_object.add_workflow_metadata(ThumbnailError="Missing a required metadata key {e}".format(e=e))
@@ -65,10 +74,11 @@ def lambda_handler(event, context):
     except KeyError as e:
         print("No asset id passed in with this workflow", e)
         asset_id = ''
-    file_input = "s3://" + bucket + "/" + key
-    audio_destination = "s3://" + bucket + "/" + 'private/assets/' + asset_id + "/workflows/" + workflow_id + "/"
-    thumbnail_destination = "s3://" + bucket + "/" + 'private/assets/' + asset_id + "/"
-    proxy_destination = "s3://" + bucket + "/" + 'private/assets/' + asset_id + "/"
+    file_input = "s3://" + input_bucket + "/" + input_key
+    asset_destination = "s3://" + dataplane_bucket + "/" + 'private/assets/' + asset_id + "/"
+    audio_destination = asset_destination + "workflows/" + workflow_id + "/"
+    thumbnail_destination = asset_destination
+    proxy_destination = asset_destination
 
     # Get user-defined location for generic data file
     if "ThumbnailPosition" in operator_object.configuration:
@@ -76,25 +86,10 @@ def lambda_handler(event, context):
     else:
         thumbnail_position = 7
 
-    # Get mediaconvert endpoint from cache if available
-    if ("MEDIACONVERT_ENDPOINT" in os.environ):
-        mediaconvert_endpoint = os.environ["MEDIACONVERT_ENDPOINT"]
-        customer_mediaconvert = boto3.client("mediaconvert", region_name=region, endpoint_url=mediaconvert_endpoint)
-    else:
-        try:
-            response = mediaconvert.describe_endpoints()
-        except Exception as e:
-            print("Exception:\n", e)
-            operator_object.update_workflow_status("Error")
-            operator_object.add_workflow_metadata(ThumbnailError=str(e))
-            raise MasExecutionError(operator_object.return_output_object())
-        else:
-            mediaconvert_endpoint = response["Endpoints"][0]["Url"]
-            # Cache the mediaconvert endpoint in order to avoid getting throttled on
-            # the DescribeEndpoints API.
-            os.environ["MEDIACONVERT_ENDPOINT"] = mediaconvert_endpoint
-            customer_mediaconvert = boto3.client("mediaconvert", region_name=region, endpoint_url=mediaconvert_endpoint)
+    customer_mediaconvert = get_mediaconvert_client()
 
+    file_group = "File Group"
+    audio_selector_1 = "Audio Selector 1"
     try:
         response = customer_mediaconvert.create_job(
             Role=mediaconvert_role,
@@ -102,7 +97,7 @@ def lambda_handler(event, context):
                 "OutputGroups": [
                     {
                         "CustomName": "thumbnail",
-                        "Name": "File Group",
+                        "Name": file_group,
                         "Outputs": [
                             {
                                 "ContainerSettings": {
@@ -137,7 +132,7 @@ def lambda_handler(event, context):
                         }
                     },
                     {
-                        "Name": "File Group",
+                        "Name": file_group,
                         "Outputs": [{
                             "ContainerSettings": {
                                 "Container": "MP4",
@@ -149,7 +144,7 @@ def lambda_handler(event, context):
                             },
                             "AudioDescriptions": [{
                                 "AudioTypeControl": "FOLLOW_INPUT",
-                                "AudioSourceName": "Audio Selector 1",
+                                "AudioSourceName": audio_selector_1,
                                 "CodecSettings": {
                                     "Codec": "AAC",
                                     "AacSettings": {
@@ -201,7 +196,7 @@ def lambda_handler(event, context):
                                             "TemporalAdaptiveQuantization": "ENABLED",
                                             "FlickerAdaptiveQuantization": "DISABLED",
                                             "EntropyEncoding": "CABAC",
-                                            "Bitrate": 5000000,
+                                            "Bitrate": 1600000,
                                             "FramerateControl": "SPECIFIED",
                                             "RateControlMode": "CBR",
                                             "CodecProfile": "MAIN",
@@ -246,7 +241,7 @@ def lambda_handler(event, context):
                                             }
                                         },
                                         "LanguageCodeControl": "FOLLOW_INPUT",
-                                        "AudioSourceName": "Audio Selector 1"
+                                        "AudioSourceName": audio_selector_1
                                     }
                                 ],
                                 "ContainerSettings": {
@@ -268,10 +263,10 @@ def lambda_handler(event, context):
                             }
                         }
                     }
-                    ],
+                ],
                 "Inputs": [{
                     "AudioSelectors": {
-                        "Audio Selector 1": {
+                        audio_selector_1: {
                             "Offset": 0,
                             "DefaultSelection": "DEFAULT",
                             "ProgramSelection": 1

@@ -1,0 +1,5238 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Snapshot media-insights-workflow-api stack test 1`] = `
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "media-insights-on-aws. This AWS CloudFormation template provisions the REST API for the Media Insights on AWS control plane. Version %%VERSION%%",
+  "Outputs": {
+    "APIHandlerArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "APIHandler",
+          "Arn",
+        ],
+      },
+    },
+    "APIHandlerName": {
+      "Value": {
+        "Ref": "APIHandler",
+      },
+    },
+    "EndpointURL": {
+      "Value": {
+        "Fn::Sub": "https://\${RestAPI}.execute-api.\${AWS::Region}.\${AWS::URLSuffix}/api/",
+      },
+    },
+    "RestAPIId": {
+      "Value": {
+        "Ref": "RestAPI",
+      },
+    },
+    "WorkflowCustomResourceArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "WorkflowCustomResource",
+          "Arn",
+        ],
+      },
+    },
+  },
+  "Parameters": {
+    "CompleteStageLambdaArn": {
+      "Description": "Lambda that completes execution of a stage",
+      "Type": "String",
+    },
+    "DataPlaneBucket": {
+      "Description": "S3 bucket of the dataplane",
+      "Type": "String",
+    },
+    "DataplaneEndpoint": {
+      "Description": "Rest endpoint for the dataplane",
+      "Type": "String",
+    },
+    "DataplaneHandlerArn": {
+      "Description": "Arn for the dataplane lambda handler",
+      "Type": "String",
+    },
+    "DeploymentPackageBucket": {
+      "Description": "Bucket that contains the dataplane deployment package",
+      "Type": "String",
+    },
+    "DeploymentPackageKey": {
+      "Description": "S3 Key of the dataplane deployment package",
+      "Type": "String",
+    },
+    "FilterOperationLambdaArn": {
+      "Description": "Lambda that checks if an operation should execute",
+      "Type": "String",
+    },
+    "FrameworkVersion": {
+      "Description": "Version of the Media Insights on AWS Framework",
+      "Type": "String",
+    },
+    "HistoryTableName": {
+      "Description": "Table used to store workflow resource history",
+      "Type": "String",
+    },
+    "KmsKeyId": {
+      "Description": "ID of the stack KMS Key",
+      "Type": "String",
+    },
+    "MediaInsightsOnAwsPython311Layer": {
+      "Description": "Arn of the Media Insights on AWS Python 3.11 lambda layer",
+      "Type": "String",
+    },
+    "OperationTableName": {
+      "Description": "Table used to store operations",
+      "Type": "String",
+    },
+    "OperatorFailedHandlerLambdaArn": {
+      "Description": "Lambda that handles failed operator states",
+      "Type": "String",
+    },
+    "ShortUUID": {
+      "Description": "A short UUID that is going to be appended to resource names",
+      "Type": "String",
+    },
+    "SqsQueueArn": {
+      "Description": "Arn of the Media Insights on AWS workflow queue",
+      "Type": "String",
+    },
+    "StageExecutionQueueUrl": {
+      "Description": "Queue used to post stage executions for processing",
+      "Type": "String",
+    },
+    "StageExecutionRole": {
+      "Description": "ARN of the role used to execute a stage state machine",
+      "Type": "String",
+    },
+    "StageTableName": {
+      "Description": "Table used to store stage definitions",
+      "Type": "String",
+    },
+    "StepFunctionLogGroupArn": {
+      "Description": "ARN of the log group used for logging step functions with Cloudwatch",
+      "Type": "String",
+    },
+    "SystemTableName": {
+      "Description": "Table used to store system configuration",
+      "Type": "String",
+    },
+    "TracingConfigMode": {
+      "Description": "Sets tracing mode for stack entry points.  Allowed values: Active, PassThrough",
+      "Type": "String",
+    },
+    "WorkflowExecutionTableName": {
+      "Description": "Table used to monitor Workflow executions",
+      "Type": "String",
+    },
+    "WorkflowSchedulerLambdaArn": {
+      "Description": "Lambda that schedules workflows from the work queue",
+      "Type": "String",
+    },
+    "WorkflowTableName": {
+      "Description": "Table used to store workflow definitions",
+      "Type": "String",
+    },
+    "botoConfig": {
+      "Description": "Botocore config",
+      "Type": "String",
+    },
+  },
+  "Resources": {
+    "APIHandler": {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-L1",
+              "reason": "Latest lambda version not supported at this time.",
+            },
+          ],
+        },
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W89",
+              "reason": "This Lambda function does not need to access any resource provisioned within a VPC.",
+            },
+            {
+              "id": "W92",
+              "reason": "This function does not require performance optimization, so the default concurrency limits suffice.",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "CodeUri": {
+          "Bucket": {
+            "Ref": "DeploymentPackageBucket",
+          },
+          "Key": {
+            "Ref": "DeploymentPackageKey",
+          },
+        },
+        "Environment": {
+          "Variables": {
+            "COMPLETE_STAGE_LAMBDA_ARN": {
+              "Ref": "CompleteStageLambdaArn",
+            },
+            "DATAPLANE_BUCKET": {
+              "Ref": "DataPlaneBucket",
+            },
+            "DataplaneEndpoint": {
+              "Ref": "DataplaneEndpoint",
+            },
+            "FILTER_OPERATION_LAMBDA_ARN": {
+              "Ref": "FilterOperationLambdaArn",
+            },
+            "FRAMEWORK_VERSION": {
+              "Ref": "FrameworkVersion",
+            },
+            "HISTORY_TABLE_NAME": {
+              "Ref": "HistoryTableName",
+            },
+            "OPERATION_TABLE_NAME": {
+              "Ref": "OperationTableName",
+            },
+            "OPERATOR_FAILED_LAMBDA_ARN": {
+              "Ref": "OperatorFailedHandlerLambdaArn",
+            },
+            "STACK_SHORT_UUID": {
+              "Ref": "ShortUUID",
+            },
+            "STAGE_EXECUTION_QUEUE_URL": {
+              "Ref": "StageExecutionQueueUrl",
+            },
+            "STAGE_EXECUTION_ROLE": {
+              "Ref": "StageExecutionRole",
+            },
+            "STAGE_TABLE_NAME": {
+              "Ref": "StageTableName",
+            },
+            "STEP_FUNCTION_LOG_GROUP_ARN": {
+              "Ref": "StepFunctionLogGroupArn",
+            },
+            "SYSTEM_TABLE_NAME": {
+              "Ref": "SystemTableName",
+            },
+            "USER_POOL_ARN": "",
+            "WORKFLOW_EXECUTION_TABLE_NAME": {
+              "Ref": "WorkflowExecutionTableName",
+            },
+            "WORKFLOW_SCHEDULER_LAMBDA_ARN": {
+              "Ref": "WorkflowSchedulerLambdaArn",
+            },
+            "WORKFLOW_TABLE_NAME": {
+              "Ref": "WorkflowTableName",
+            },
+            "botoConfig": {
+              "Ref": "botoConfig",
+            },
+          },
+        },
+        "Handler": "app.app",
+        "Layers": [
+          {
+            "Ref": "MediaInsightsOnAwsPython311Layer",
+          },
+        ],
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "ApiHandlerRole",
+            "Arn",
+          ],
+        },
+        "Runtime": "python3.11",
+        "Tags": {
+          "aws-chalice": "version=1.31.2:stage=dev:app=workflowapi",
+        },
+        "Timeout": 60,
+        "Tracing": {
+          "Ref": "TracingConfigMode",
+        },
+      },
+      "Type": "AWS::Serverless::Function",
+    },
+    "APIHandlerInvokePermission": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Ref": "APIHandler",
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Sub": [
+            "arn:\${AWS::Partition}:execute-api:\${AWS::Region}:\${AWS::AccountId}:\${RestAPIId}/*",
+            {
+              "RestAPIId": {
+                "Ref": "RestAPI",
+              },
+            },
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "ApiHandlerRole": {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-IAM5",
+              "reason": "The X-Ray, Transcribe, and Translate policies cannot be scoped to a specific resource.",
+            },
+          ],
+        },
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W11",
+              "reason": "The X-Ray, Transcribe, and Translate policies cannot be scoped to a specific resource.",
+            },
+            {
+              "id": "W76",
+              "reason": "The complexity of this policy document is necessary in order to avoid wildcards.",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+              "Sid": "",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Description": "This role is used by the workflow api lambda when invoked by API Gateway",
+        "Policies": [
+          {
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Action": [
+                    "sqs:SendMessage",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "SqsQueueArn",
+                  },
+                },
+                {
+                  "Action": [
+                    "s3:GetObject",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:",
+                        {
+                          "Ref": "AWS::Partition",
+                        },
+                        ":s3:::",
+                        {
+                          "Ref": "DataPlaneBucket",
+                        },
+                        "/*",
+                      ],
+                    ],
+                  },
+                },
+                {
+                  "Action": [
+                    "states:ListStateMachines",
+                    "states:TagResource",
+                    "states:CreateStateMachine",
+                    "states:DescribeStateMachine",
+                    "states:UpdateStateMachine",
+                    "states:DeleteStateMachine",
+                    "states:UntagResource",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:",
+                        {
+                          "Ref": "AWS::Partition",
+                        },
+                        ":states:",
+                        {
+                          "Ref": "AWS::Region",
+                        },
+                        ":",
+                        {
+                          "Ref": "AWS::AccountId",
+                        },
+                        ":stateMachine:*-",
+                        {
+                          "Ref": "ShortUUID",
+                        },
+                      ],
+                    ],
+                  },
+                },
+                {
+                  "Action": [
+                    "iam:PassRole",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "StageExecutionRole",
+                  },
+                },
+                {
+                  "Action": [
+                    "lambda:InvokeFunction",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": [
+                    {
+                      "Ref": "WorkflowSchedulerLambdaArn",
+                    },
+                    {
+                      "Ref": "FilterOperationLambdaArn",
+                    },
+                    {
+                      "Ref": "CompleteStageLambdaArn",
+                    },
+                    {
+                      "Ref": "OperatorFailedHandlerLambdaArn",
+                    },
+                    {
+                      "Ref": "DataplaneHandlerArn",
+                    },
+                  ],
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetItem",
+                    "dynamodb:PutItem",
+                    "dynamodb:UpdateItem",
+                    "dynamodb:DeleteItem",
+                    "dynamodb:Scan",
+                    "dynamodb:Query",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": [
+                    {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "arn:",
+                          {
+                            "Ref": "AWS::Partition",
+                          },
+                          ":dynamodb:",
+                          {
+                            "Ref": "AWS::Region",
+                          },
+                          ":",
+                          {
+                            "Ref": "AWS::AccountId",
+                          },
+                          ":table/",
+                          {
+                            "Ref": "SystemTableName",
+                          },
+                        ],
+                      ],
+                    },
+                    {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "arn:",
+                          {
+                            "Ref": "AWS::Partition",
+                          },
+                          ":dynamodb:",
+                          {
+                            "Ref": "AWS::Region",
+                          },
+                          ":",
+                          {
+                            "Ref": "AWS::AccountId",
+                          },
+                          ":table/",
+                          {
+                            "Ref": "WorkflowTableName",
+                          },
+                        ],
+                      ],
+                    },
+                    {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "arn:",
+                          {
+                            "Ref": "AWS::Partition",
+                          },
+                          ":dynamodb:",
+                          {
+                            "Ref": "AWS::Region",
+                          },
+                          ":",
+                          {
+                            "Ref": "AWS::AccountId",
+                          },
+                          ":table/",
+                          {
+                            "Ref": "WorkflowExecutionTableName",
+                          },
+                        ],
+                      ],
+                    },
+                    {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "arn:",
+                          {
+                            "Ref": "AWS::Partition",
+                          },
+                          ":dynamodb:",
+                          {
+                            "Ref": "AWS::Region",
+                          },
+                          ":",
+                          {
+                            "Ref": "AWS::AccountId",
+                          },
+                          ":table/",
+                          {
+                            "Ref": "WorkflowExecutionTableName",
+                          },
+                          "/*",
+                        ],
+                      ],
+                    },
+                    {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "arn:",
+                          {
+                            "Ref": "AWS::Partition",
+                          },
+                          ":dynamodb:",
+                          {
+                            "Ref": "AWS::Region",
+                          },
+                          ":",
+                          {
+                            "Ref": "AWS::AccountId",
+                          },
+                          ":table/",
+                          {
+                            "Ref": "HistoryTableName",
+                          },
+                        ],
+                      ],
+                    },
+                    {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "arn:",
+                          {
+                            "Ref": "AWS::Partition",
+                          },
+                          ":dynamodb:",
+                          {
+                            "Ref": "AWS::Region",
+                          },
+                          ":",
+                          {
+                            "Ref": "AWS::AccountId",
+                          },
+                          ":table/",
+                          {
+                            "Ref": "OperationTableName",
+                          },
+                        ],
+                      ],
+                    },
+                    {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "arn:",
+                          {
+                            "Ref": "AWS::Partition",
+                          },
+                          ":dynamodb:",
+                          {
+                            "Ref": "AWS::Region",
+                          },
+                          ":",
+                          {
+                            "Ref": "AWS::AccountId",
+                          },
+                          ":table/",
+                          {
+                            "Ref": "StageTableName",
+                          },
+                        ],
+                      ],
+                    },
+                  ],
+                },
+                {
+                  "Action": [
+                    "xray:PutTraceSegments",
+                    "xray:PutTelemetryRecords",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": [
+                    "*",
+                  ],
+                },
+                {
+                  "Action": [
+                    "transcribe:CreateVocabulary",
+                    "transcribe:DeleteVocabulary",
+                    "transcribe:GetVocabulary",
+                    "transcribe:ListVocabularies",
+                    "transcribe:ListLanguageModels",
+                    "transcribe:DescribeLanguageModel",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": "*",
+                },
+                {
+                  "Action": [
+                    "translate:CreateTerminology",
+                    "translate:DeleteTerminology",
+                    "translate:GetTerminology",
+                    "translate:ImportTerminology",
+                    "translate:ListTerminologies",
+                    "translate:CreateParallelData",
+                    "translate:DeleteParallelData",
+                    "translate:GetParallelData",
+                    "translate:ImportParallelData",
+                    "translate:ListParallelData",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": "*",
+                },
+                {
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:",
+                        {
+                          "Ref": "AWS::Partition",
+                        },
+                        ":logs:",
+                        {
+                          "Ref": "AWS::Region",
+                        },
+                        ":",
+                        {
+                          "Ref": "AWS::AccountId",
+                        },
+                        ":log-group:/aws/lambda/*-APIHandler-*",
+                      ],
+                    ],
+                  },
+                  "Sid": "Logging",
+                },
+                {
+                  "Action": [
+                    "iam:ListRolePolicies",
+                    "iam:PutRolePolicy",
+                    "iam:DeleteRolePolicy",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "StageExecutionRole",
+                  },
+                },
+                {
+                  "Action": [
+                    "kms:Decrypt",
+                    "kms:GenerateDataKey",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:",
+                        {
+                          "Ref": "AWS::Partition",
+                        },
+                        ":kms:",
+                        {
+                          "Ref": "AWS::Region",
+                        },
+                        ":",
+                        {
+                          "Ref": "AWS::AccountId",
+                        },
+                        ":key/",
+                        {
+                          "Ref": "KmsKeyId",
+                        },
+                      ],
+                    ],
+                  },
+                },
+              ],
+              "Version": "2012-10-17",
+            },
+            "PolicyName": "MieWorkflowApiHandlerRolePolicy",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "RestAPI": {
+      "Properties": {
+        "DefinitionBody": {
+          "definitions": {
+            "Empty": {
+              "title": "Empty Schema",
+              "type": "object",
+            },
+          },
+          "info": {
+            "title": "workflowapi",
+            "version": "1.0",
+          },
+          "paths": {
+            "/": {
+              "get": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Returns:
+
+.. code-block:: python
+
+    {"hello":"world"}
+
+Raises:
+
+    500: ChaliceViewError - internal server error",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "summary": "Test the API endpoint",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+            },
+            "/service/transcribe/create_vocabulary": {
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'POST,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+              "post": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Body:
+
+    .. code-block:: python
+
+        {
+            'vocabulary_name'='string',
+            'language_code'='af-ZA'|'ar-AE'|'ar-SA'|'cy-GB'|'da-DK'|'de-CH'|'de-DE'|'en-AB'|'en-AU'|'en-GB'|'en-IE'|'en-IN'|'en-US'|'en-WL'|'es-ES'|'es-US'|'fa-IR'|'fr-CA'|'fr-FR'|'ga-IE'|'gd-GB'|'he-IL'|'hi-IN'|'id-ID'|'it-IT'|'ja-JP'|'ko-KR'|'ms-MY'|'nl-NL'|'pt-BR'|'pt-PT'|'ru-RU'|'ta-IN'|'te-IN'|'tr-TR'|'zh-CN',
+            's3uri'='string'
+        }
+
+
+Returns:
+    This is a proxy for boto3 create_vocabulary and returns the output from that SDK method.
+    See \`the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.create_vocabulary>\`_
+
+Raises:
+    See the boto3 documentation for details
+    500: ChaliceViewError - internal server error",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Create an Amazon Transcribe custom vocabulary.",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+            },
+            "/service/transcribe/delete_vocabulary": {
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'POST,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+              "post": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Body:
+
+    .. code-block:: python
+
+        {
+            'vocabulary_name': 'string'
+        }
+
+Returns:
+
+    This is a proxy for boto3 delete_vocabulary and returns the output from that SDK method.
+    See \`the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.delete_vocabulary>\`_
+
+Raises:
+    See the boto3 documentation for details
+    500: ChaliceViewError - internal server error",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Delete an Amazon Transcribe custom vocabulary.",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+            },
+            "/service/transcribe/describe_language_model": {
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'POST,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+              "post": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Body:
+
+    .. code-block:: python
+
+        {
+            'ModelName': 'string'
+        }
+
+Returns:
+    This is a proxy for boto3 describe_language_model and returns the output from that SDK method.
+    See \`the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.describe_language_model>\`_
+
+Raises:
+    See \`the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.describe_language_model>\`_",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Gets information about a single custom language model. ",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+            },
+            "/service/transcribe/download_vocabulary": {
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'POST,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+              "post": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Body:
+
+.. code-block:: python
+
+    {
+        "vocabulary_name": string
+    }
+
+
+Returns:
+    A list of vocabulary terms.
+
+    .. code-block:: python
+
+        {
+            "vocabulary": [{
+                "Phrase": string,
+                "IPA": string,
+                "SoundsLike": string,
+                "DisplayAs": string
+                },
+                ...
+        }
+
+Raises:
+    500: ChaliceViewError - internal server error",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Get the contents of an Amazon Transcribe custom vocabulary.",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+            },
+            "/service/transcribe/get_vocabulary": {
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'POST,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+              "post": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Returns:
+    This is a proxy for boto3 get_vocabulary and returns the output from that SDK method.
+    See \`the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.get_vocabulary>\`_
+
+Raises:
+    See \`the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.get_vocabulary>\`_",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Get the description for an Amazon Transcribe custom vocabulary.",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+            },
+            "/service/transcribe/list_language_models": {
+              "get": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Returns:
+    This is a proxy for boto3 list_language_models and returns the output from that SDK method.
+    See \`the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.list_language_models>\`_
+
+Raises:
+    See \`the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.list_language_models>\`_",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Provides more information about the custom language models you've created. You can use the information in this list to find a specific custom language model. You can then use the describe_language_model operation to get more information about it.",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'GET,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+            },
+            "/service/transcribe/list_vocabularies": {
+              "get": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Returns:
+    This is a proxy for boto3 list_vocabularies and returns the output from that SDK method.
+    See \`the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/transcribe.html#TranscribeService.Client.list_vocabularies>\`_
+
+Raises:
+    See the boto3 documentation for details
+    500: ChaliceViewError - internal server error",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "List all the available Amazon Transcribe custom vocabularies in this region.",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'GET,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+            },
+            "/service/translate/create_parallel_data": {
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'POST,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+              "post": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Body:
+
+.. code-block:: python
+
+    {
+          "Name"="string",
+          "Description"="string",
+          "ParallelDataConfig"={
+              "S3Uri": "string",
+              "Format": "TSV"|"CSV"|"TMX"
+          },
+          "EncryptionKey"={
+              "Type": "KMS",
+              "Id": "string"
+          },
+          "ClientToken"="string"
+    }
+
+Returns:
+    This is a proxy for boto3 create_vocabulary and returns the output from that SDK method.
+    See \`the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/translate.html#TranslateService.Client.create_parallel_data>\`_
+
+Raises:
+    See the boto3 documentation for details
+    500: ChaliceViewError - internal server error",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Create an Amazon Translate Parallel Data.  If the parallel_data already exists, overwrite the parallel data with this new content.",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+            },
+            "/service/translate/create_terminology": {
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'POST,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+              "post": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Body:
+
+.. code-block:: python
+
+    {
+        'terminology_name'='string',
+        'terminology_csv'='string'
+    }
+}
+
+
+Returns:
+    This is a proxy for boto3 create_vocabulary and returns the output from that SDK method.
+    See \`the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/translate.html#Translate.Client.import_terminology>\`_
+
+Raises:
+    See the boto3 documentation for details
+    500: ChaliceViewError - internal server error",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Create an Amazon Translate Terminology.  If the terminology already exists, overwrite the terminology with this new content.",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+            },
+            "/service/translate/delete_parallel_data": {
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'POST,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+              "post": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Body:
+
+.. code-block:: python
+
+    {
+        'Name': 'string'
+    }
+
+
+Returns:
+
+    This is a proxy for boto3 delete_parallel_data and returns the output from that SDK method.
+    See \`the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/translate.html#Translate.Client.delete_parallel_data>\`_
+
+
+Raises:
+    See the boto3 documentation for details
+    500: ChaliceViewError - internal server error",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Delete an Amazon Translate Parallel Data",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+            },
+            "/service/translate/delete_terminology": {
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'POST,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+              "post": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Body:
+
+.. code-block:: python
+
+    {
+        'terminology_name': 'string'
+    }
+
+
+Returns:
+
+    This is a proxy for boto3 delete_terminology and returns the output from that SDK method.
+    See \`the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/translate.html#Translate.Client.delete_terminology>\`_
+
+
+Raises:
+    See the boto3 documentation for details
+    500: ChaliceViewError - internal server error",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Delete an Amazon Translate Terminology",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+            },
+            "/service/translate/download_parallel_data": {
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'POST,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+              "post": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Body:
+
+.. code-block:: python
+
+    {
+        'Name'='string'
+    }
+
+
+Returns:
+    A pre-signed url for the the CSV formatted Amazon Transcribe parallel_data
+
+    .. code-block:: python
+
+        {
+            'parallel_data_csv': string
+        }
+
+Raises:
+    See the boto3 documentation for details
+    500: ChaliceViewError - internal server error",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Get the CSV formated contents of an Amazon Translate Parallel Data Set.",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+            },
+            "/service/translate/download_terminology": {
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'POST,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+              "post": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Body:
+
+.. code-block:: python
+
+    {
+        'terminology_name'='string'
+    }
+
+
+Returns:
+    A string contining the CSV formatted Amazon Transcribe terminology
+
+    .. code-block:: python
+
+        {
+            'terminology_csv': string
+        }
+
+Raises:
+    See the boto3 documentation for details
+    500: ChaliceViewError - internal server error",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Get the CSV formated contents of an Amazon Translate terminology.",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+            },
+            "/service/translate/get_parallel_data": {
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'POST,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+              "post": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Body:
+
+.. code-block:: python
+
+    {
+        'Name'='string'
+    }
+
+Returns:
+    This is a proxy for boto3 get_parallel_data and returns the output from that SDK method.
+    See \`the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/translate.html#Translate.Client.get_parallel_data>\`_
+
+Raises:
+    See the boto3 documentation for details
+    500: ChaliceViewError - internal server error",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Get a link to the CSV formatted description for an Amazon Translate Parallel Data Set.",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+            },
+            "/service/translate/get_terminology": {
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'POST,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+              "post": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Body:
+
+.. code-block:: python
+
+    {
+        'terminology_name'='string'
+    }
+
+Returns:
+    This is a proxy for boto3 get_terminology and returns the output from that SDK method.
+    See \`the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/translate.html#Translate.Client.get_terminology>\`_
+
+Raises:
+    See the boto3 documentation for details
+    500: ChaliceViewError - internal server error",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Get a link to the CSV formatted description for an Amazon Translate parallel data.",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+            },
+            "/service/translate/list_parallel_data": {
+              "get": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Returns:
+    This is a proxy for boto3 get_parallel_data and returns the output from that SDK method.
+    See \`the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/translate.html#Translate.Client.list_parallel_data>\`_
+
+Raises:
+    See the boto3 documentation for details
+    500: Internal server error",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Get the list of available Amazon Translate Parallel Data Sets for this region",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'GET,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+            },
+            "/service/translate/list_terminologies": {
+              "get": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Returns:
+    This is a proxy for boto3 get_terminology and returns the output from that SDK method.
+    See \`the boto3 documentation for details <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/translate.html#Translate.Client.list_terminologies>\`_
+
+Raises:
+    See the boto3 documentation for details
+    500: Internal server error",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Get the list of available Amazon Translate Terminologies for this region",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'GET,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+            },
+            "/system/configuration": {
+              "get": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "- Gets the current system configuration parameter settings
+
+Returns:
+    A list of dict containing the current MI system configuration key-value pairs.
+
+    .. code-block:: python
+
+        [
+            {
+            "Name": "Value"
+            },
+        ...]
+
+Raises:
+    200: The system configuration was returned successfully.
+    500: ChaliceViewError - internal server error",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Get the current system configuration",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'POST,GET,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+              "post": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "- Updates the system configuration with a new parameter or changes the value of
+  existing parameters
+
+Body:
+
+.. code-block:: python
+
+    {
+        "Name": "ParameterName",
+        "Value": "ParameterValue"
+    }
+
+Supported parameters:
+
+    MaxConcurrentWorkflows
+
+        Sets the maximum number of workflows that are allowed to run concurrently.
+        Any new workflows that are added after MaxConcurrentWorkflows is reached are
+        placed on a queue until capacity is freed by completing workflows.  Use this
+        to help avoid throttling in service API calls from workflow operators.
+
+        This setting is checked each time the WorkflowSchedulerLambda is run and may
+        take up to 60 seconds to take effect.
+
+Returns:
+    None
+
+Raises:
+    200: The system configuration was set successfully successfully.
+    400: Bad Request
+         - an input value is invalid
+    500: ChaliceViewError - internal server error",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Add a new system configuration parameter",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+            },
+            "/version": {
+              "get": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Returns:
+
+.. code-block:: python
+
+    {"ApiVersion": "x.x.x", "FrameworkVersion": "vx.x.x"}",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Get the workflow api and framework version numbers",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'GET,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+            },
+            "/workflow": {
+              "get": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Returns:
+    A list of workflow definitions.
+
+Raises:
+    200: All workflows returned sucessfully.
+    500: ChaliceViewError - internal server error",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "List all workflow defintions",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'POST,PUT,GET,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+              "post": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "A workflow is a pipeline of stages that are executed sequentially to transform and
+extract metadata for a set of MediaType objects.  Each stage must contain either a
+"Next" key indicating the next stage to execute or and "End" key indicating it
+is the last stage.
+
+Body:
+
+.. code-block:: python
+
+    {
+        "Name": string,
+        "StartAt": string - name of starting stage,
+        "Stages": {
+            "stage-name": {
+                "Next": "string - name of next stage"
+            },
+            ...,
+            "stage-name": {
+                "End": true
+            }
+        }
+    }
+
+
+Returns:
+    A dict mapping keys to the corresponding workflow created including the
+    AWS resources used to execute each stage.
+
+    .. code-block:: python
+
+        {
+            "Name": string,
+            "StartAt": string - name of starting stage,
+            "Stages": {
+                "stage-name": {
+                    "Resource": queueARN,
+                    "StateMachine": stateMachineARN,
+                    "Configuration": stageConfigurationObject,
+                    "Next": "string - name of next stage"
+                },
+                ...,
+                "stage-name": {
+                    "Resource": queueARN,
+                    "StateMachine": stateMachineARN,
+                    "Configuration": stageConfigurationObject,
+                    "End": true
+                }
+            }
+        }
+
+
+Raises:
+    200: The workflow was created successfully.
+    400: Bad Request - one of the input stages was not found or was invalid
+    500: ChaliceViewError - internal server error",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Create a workflow from a list of existing stages.",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+              "put": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Update the definition of an existing workflow.
+
+
+Body:
+
+.. code-block:: python
+
+    {
+        "Name": string - name of the workflow to modify,
+        "StartAt": string - name of starting stage,
+        "Stages": {
+            "stage-name": {
+                "Next": "string - name of next stage"
+            },
+            ...,
+            "stage-name": {
+                "End": true
+            }
+        }
+    }
+
+
+Returns:
+    A dict mapping keys to the corresponding workflow updated including the
+    AWS resources used to execute each stage.
+
+    .. code-block:: python
+
+        {
+            "Name": string - name of the workflow to modify,
+            "Configuration": Configuration object.  Contains the default configuration for the workflow.  Use the
+                GET /workflow/donfiguration/{WorkflowName} API to get the current setting for this object.
+            "StartAt": string - name of starting stage,
+            "Stages": {
+                "stage-name": {
+                    "Resource": queueARN,
+                    "StateMachine": stateMachineARN,
+                    "Configuration": stageConfigurationObject,
+                    "Next": "string - name of next stage"
+                },
+                ...,
+                "stage-name": {
+                    "Resource": queueARN,
+                    "StateMachine": stateMachineARN,
+                    "Configuration": stageConfigurationObject,
+                    "End": true
+                }
+            }
+        }
+
+
+Raises:
+    200: The workflow was updated successfully.
+    400: Bad Request - one of the input stages was not found or was invalid
+    500: ChaliceViewError - internal server error",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Update a workflow from a list of existing stages.",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+            },
+            "/workflow/configuration/{name}": {
+              "get": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Returns:
+    A dictionary contianing the workflow configuration.
+
+Raises:
+    200: All workflows returned sucessfully.
+    404: Not found
+    500: ChaliceViewError - internal server error",
+                "parameters": [
+                  {
+                    "in": "path",
+                    "name": "name",
+                    "required": true,
+                    "type": "string",
+                  },
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Get a workflow configruation object by name",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'GET,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+            },
+            "/workflow/execution": {
+              "get": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Returns:
+    A list of workflow executions.
+
+Raises:
+    200: All workflow executions returned sucessfully.
+    500: ChaliceViewError - internal server error",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "List all workflow executions",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'POST,GET,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+              "post": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "The Body contains the name of the workflow to execute, at least one input
+media type within the media object.  A dictionary of stage configuration
+objects can be passed in to override the default configuration of the operations
+within the stages.
+
+Body:
+
+.. code-block:: python
+
+    {
+    "Name":"Default",
+    "Input": media-object
+    "Configuration": {
+        {
+        "stage-name": {
+            "Operations": {
+                "SplitAudio": {
+                   "Enabled": True,
+                   "MediaTypes": {
+                       "Video": True/False,
+                       "Audio": True/False,
+                       "Frame": True/False
+                   }
+               },
+           },
+       }
+       ...
+       }
+    }
+
+
+Returns:
+    A dict mapping keys to the corresponding workflow execution created including
+    the WorkflowExecutionId, the AWS queue and state machine resources assiciated with
+    the workflow execution and the current execution status of the workflow.
+
+    .. code-block:: python
+
+        {
+            "Name": string,
+            "StartAt": "Preprocess",
+            "Stages": {
+                "stage-name": {
+                    "Type": "NestedQueue",
+                    "Resource": queueARN,
+                    "StateMachine": stateMachineARN,
+                    "Next": "Analysis"
+                },
+                ...,
+                "stage-name: {
+                    "Type": "NestedQueue",
+                    "Resource": queueARN,
+                    "StateMachine": stateMachineARN,
+                    "End": true
+                }
+            }
+        }
+
+Raises:
+    200: The workflow execution was created successfully.
+    400: Bad Request - the input workflow was not found or was invalid
+    500: ChaliceViewError - internal server error",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Execute a workflow.",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+            },
+            "/workflow/execution/asset/{asset_id}": {
+              "get": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Returns:
+    A list of dictionaries containing the workflow executions matching the AssetId.
+
+Raises:
+    200: Workflow executions returned sucessfully.
+    404: Not found
+    500: ChaliceViewError - internal server error",
+                "parameters": [
+                  {
+                    "in": "path",
+                    "name": "asset_id",
+                    "required": true,
+                    "type": "string",
+                  },
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Get workflow executions by AssetId",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'GET,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+            },
+            "/workflow/execution/status/{status}": {
+              "get": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Returns:
+    A list of dictionaries containing the workflow executions with the requested status
+
+Raises:
+    200: All workflows returned sucessfully.
+    404: Not found
+    500: Internal server error",
+                "parameters": [
+                  {
+                    "in": "path",
+                    "name": "status",
+                    "required": true,
+                    "type": "string",
+                  },
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Get all workflow executions with the specified status",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'GET,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+            },
+            "/workflow/execution/{id}": {
+              "delete": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Returns:
+
+Raises:
+    200: Workflow execution deleted sucessfully.
+    404: Not found
+    500: ChaliceViewError - internal server error",
+                "parameters": [
+                  {
+                    "in": "path",
+                    "name": "id",
+                    "required": true,
+                    "type": "string",
+                  },
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Delete a workflow executions",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+              "get": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Returns:
+    A dictionary containing the workflow execution.
+
+Raises:
+    200: Workflow executions returned sucessfully.
+    404: Not found
+    500: ChaliceViewError - internal server error",
+                "parameters": [
+                  {
+                    "in": "path",
+                    "name": "id",
+                    "required": true,
+                    "type": "string",
+                  },
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Get a workflow execution by id",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'PUT,GET,DELETE,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+              "put": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "   Options:
+
+       Resume a workflow that is in a Waiting Status in a specific stage.
+
+Body:
+
+.. code-block:: python
+
+    {
+    "WaitingStageName":"<stage-name>"
+    }
+
+
+Returns:
+    A dict mapping keys to the corresponding workflow execution with its current status
+
+    .. code-block:: python
+
+        {
+            "Id: string,
+            "Status": "Resumed"
+        }
+
+Raises:
+    200: The workflow execution was updated successfully.
+    400: Bad Request - the input stage was not found, the current stage did not match the WaitingStageName,
+         or the Workflow Status was not "Waiting"
+    500: ChaliceViewError - internal server error",
+                "parameters": [
+                  {
+                    "in": "path",
+                    "name": "id",
+                    "required": true,
+                    "type": "string",
+                  },
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Update a workflow execution",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+            },
+            "/workflow/list/operation/{operator_name}": {
+              "get": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Returns:
+    A list of workflow definitions.
+
+Raises:
+    200: All workflows returned sucessfully.
+    500: Internal server error",
+                "parameters": [
+                  {
+                    "in": "path",
+                    "name": "operator_name",
+                    "required": true,
+                    "type": "string",
+                  },
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "List all workflow defintions that contain an operator",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'GET,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+            },
+            "/workflow/list/stage/{stage_name}": {
+              "get": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Returns:
+    A list of workflow definitions.
+
+Raises:
+    200: All workflows returned sucessfully.
+    500: ChaliceViewError - internal server error",
+                "parameters": [
+                  {
+                    "in": "path",
+                    "name": "stage_name",
+                    "required": true,
+                    "type": "string",
+                  },
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "List all workflow defintions that contain a stage",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'GET,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+            },
+            "/workflow/operation": {
+              "get": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Returns:
+    A list of operation definitions.
+
+Raises:
+    200: All operations returned sucessfully.
+    500: ChaliceViewError - internal server error",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "List all defined operators",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'POST,PUT,GET,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+              "post": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "- Generates an operation state machine using the operation lambda(s) provided
+- Creates a singleton operator stage that can be used to run the operator as a single-operator
+  stage in a workflow.
+
+Operators can be synchronous (Sync) or asynchronous (Async). Synchronous operators complete
+before returning control to the invoker, while asynchronous operators return control to the invoker
+when the operation is successfully initiated, but not complete. Asynchronous operators require
+an additional monitoring task to check the status of the operation.
+
+For more information on how to implemenent lambdas to be used in MI operators, please
+refer to the MI Developer Quick Start.
+
+
+
+Body:
+.. code-block:: python
+
+    {
+        "Name":"operation-name",
+        "Type": ["Async"|"Sync"],
+        "Configuration" : {
+                "MediaType": "Video",
+                "Enabled:": True,
+                "configuration1": "value1",
+                "configuration2": "value2",
+                ...
+            }
+        "StartLambdaArn":arn,
+        "MonitorLambdaArn":arn
+        }
+
+Returns:
+    A dict mapping keys to the corresponding operation.
+
+    .. code-block:: python
+
+        {
+            "Name": string,
+            "Type": ["Async"|"Sync"],
+            "Configuration" : {
+                "MediaType": "Video|Frame|Audio|Text|...",
+                "Enabled:": boolean,
+                "configuration1": "value1",
+                "configuration2": "value2",
+                ...
+            }
+            "StartLambdaArn":arn,
+            "MonitorLambdaArn":arn,
+            "StateMachineAsl": ASL-string
+            "StageName": string
+        }
+
+Raises:
+    200: The operation and stage was created successfully.
+    400: Bad Request
+         - one of the input lambdas was not found
+         - one or more of the required input keys is missing
+         - an input value is invalid
+    409: Conflict
+    500: ChaliceViewError - internal server error",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Create a new operation",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+              "put": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "    ",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Update operation NOT IMPLEMENTED",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+            },
+            "/workflow/operation/{name}": {
+              "delete": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Returns:
+    A dictionary contianing the operation definition.
+
+Raises:
+    200: Operation deleted sucessfully.
+    400: Bad Request - there are dependent workflows and query parameter force=false
+    500: ChaliceViewError - internal server error",
+                "parameters": [
+                  {
+                    "in": "path",
+                    "name": "name",
+                    "required": true,
+                    "type": "string",
+                  },
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Delete a an operation",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+              "get": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Returns:
+    A dictionary containing the operation definition.
+
+Raises:
+    200: All operations returned sucessfully.
+    404: Not found
+    500: Internal server error",
+                "parameters": [
+                  {
+                    "in": "path",
+                    "name": "name",
+                    "required": true,
+                    "type": "string",
+                  },
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Get an operation definition by name",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'GET,DELETE,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+            },
+            "/workflow/stage": {
+              "get": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Returns:
+    A list of operation definitions.
+
+Raises:
+    200: All operations returned sucessfully.
+    500: ChaliceViewError - internal server error",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "List all stage defintions",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'POST,PUT,GET,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+              "post": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "A stage is a set of operations that are grouped so they can be executed in parallel.
+When the stage is executed as part of a workflow, operations within a stage are executed as
+branches in a parallel Step Functions state.  The generated state machines status is tracked by the
+workflow engine control plane during execution.
+
+An optional Configuration for each operator in the stage can be input to override the
+default configuration for the stage.
+
+Body:
+
+.. code-block:: python
+
+        {
+        "Name":"stage-name",
+        "Operations": ["operation-name1", "operation-name2", ...]
+        }
+
+Returns:
+    A dict mapping keys to the corresponding stage created including
+    the ARN of the state machine created.
+
+    {
+        "Name": string,
+        "Operations": [
+            "operation-name1",
+            "operation-name2",
+            ...
+        ],
+        "Configuration": {
+            "operation-name1": operation-configuration-object1,
+            "operation-name2": operation-configuration-object1,
+            ...
+        }
+    },
+    {
+        "Name": "TestStage",
+        "Operations": [
+            "TestOperator"
+        ],
+        "Configuration": {
+            "TestOperator": {
+                "MediaType": "Video",
+                "Enabled": true
+            }
+        }
+    }
+
+Raises:
+    200: The stage was created successfully.
+    400: Bad Request - one of the input state machines was not found or was invalid
+    409: Conflict
+    500: ChaliceViewError - internal server error",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Create a stage state machine from a list of existing operations.",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+              "put": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "XXX",
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Update a stage NOT IMPLEMENTED",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+            },
+            "/workflow/stage/{name}": {
+              "delete": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Returns:
+    A dictionary contianing the stage definition.
+
+Raises:
+    200: Stage deleted sucessfully.
+    400: Bad Request - there are dependent workflows and query parameter force=False
+    404: Not found
+    500: ChaliceViewError - internal server error",
+                "parameters": [
+                  {
+                    "in": "path",
+                    "name": "name",
+                    "required": true,
+                    "type": "string",
+                  },
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Delete a stage",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+              "get": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Returns:
+    A dictionary contianing the stage definition.
+
+Raises:
+    200: All stages returned sucessfully.
+    404: Not found
+    500: Internal server error",
+                "parameters": [
+                  {
+                    "in": "path",
+                    "name": "name",
+                    "required": true,
+                    "type": "string",
+                  },
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Get a stage definition by name",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'GET,DELETE,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+            },
+            "/workflow/{name}": {
+              "delete": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Returns:
+
+Raises:
+    200: Workflow deleted sucessfully.
+    404: Not found
+    500: ChaliceViewError - internal server error",
+                "parameters": [
+                  {
+                    "in": "path",
+                    "name": "name",
+                    "required": true,
+                    "type": "string",
+                  },
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Delete a workflow",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+              "get": {
+                "consumes": [
+                  "application/json",
+                ],
+                "description": "Returns:
+    A dictionary contianing the workflow definition.
+
+Raises:
+    200: All workflows returned sucessfully.
+    404: Not found
+    500: ChaliceViewError - internal server error",
+                "parameters": [
+                  {
+                    "in": "path",
+                    "name": "name",
+                    "required": true,
+                    "type": "string",
+                  },
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "security": [
+                  {
+                    "sigv4": [],
+                  },
+                ],
+                "summary": "Get a workflow definition by name",
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "httpMethod": "POST",
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Sub": "arn:\${AWS::Partition}:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${APIHandler.Arn}/invocations",
+                  },
+                },
+              },
+              "options": {
+                "consumes": [
+                  "application/json",
+                ],
+                "produces": [
+                  "application/json",
+                ],
+                "responses": {
+                  "200": {
+                    "description": "200 response",
+                    "headers": {
+                      "Access-Control-Allow-Headers": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Methods": {
+                        "type": "string",
+                      },
+                      "Access-Control-Allow-Origin": {
+                        "type": "string",
+                      },
+                    },
+                    "schema": {
+                      "$ref": "#/definitions/Empty",
+                    },
+                  },
+                },
+                "x-amazon-apigateway-integration": {
+                  "contentHandling": "CONVERT_TO_TEXT",
+                  "passthroughBehavior": "when_no_match",
+                  "requestTemplates": {
+                    "application/json": "{"statusCode": 200}",
+                  },
+                  "responses": {
+                    "default": {
+                      "responseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Authorization,Content-Type,X-Amz-Date,X-Amz-Security-Token,X-Api-Key'",
+                        "method.response.header.Access-Control-Allow-Methods": "'GET,DELETE,OPTIONS'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      },
+                      "statusCode": "200",
+                    },
+                  },
+                  "type": "mock",
+                },
+              },
+            },
+          },
+          "schemes": [
+            "https",
+          ],
+          "securityDefinitions": {
+            "sigv4": {
+              "in": "header",
+              "name": "Authorization",
+              "type": "apiKey",
+              "x-amazon-apigateway-authtype": "awsSigv4",
+            },
+          },
+          "swagger": "2.0",
+          "x-amazon-apigateway-binary-media-types": [
+            "application/octet-stream",
+            "application/x-tar",
+            "application/zip",
+            "audio/basic",
+            "audio/ogg",
+            "audio/mp4",
+            "audio/mpeg",
+            "audio/wav",
+            "audio/webm",
+            "image/png",
+            "image/jpg",
+            "image/jpeg",
+            "image/gif",
+            "video/ogg",
+            "video/mpeg",
+            "video/webm",
+          ],
+        },
+        "EndpointConfiguration": "EDGE",
+        "StageName": "api",
+      },
+      "Type": "AWS::Serverless::Api",
+    },
+    "WorkflowCustomResource": {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-L1",
+              "reason": "Latest lambda version not supported at this time.",
+            },
+          ],
+        },
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W89",
+              "reason": "This Lambda function does not need to access any resource provisioned within a VPC.",
+            },
+            {
+              "id": "W92",
+              "reason": "This function does not require performance optimization, so the default concurrency limits suffice.",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "CodeUri": {
+          "Bucket": {
+            "Ref": "DeploymentPackageBucket",
+          },
+          "Key": {
+            "Ref": "DeploymentPackageKey",
+          },
+        },
+        "Environment": {
+          "Variables": {
+            "COMPLETE_STAGE_LAMBDA_ARN": {
+              "Ref": "CompleteStageLambdaArn",
+            },
+            "DATAPLANE_BUCKET": {
+              "Ref": "DataPlaneBucket",
+            },
+            "DataplaneEndpoint": {
+              "Ref": "DataplaneEndpoint",
+            },
+            "FILTER_OPERATION_LAMBDA_ARN": {
+              "Ref": "FilterOperationLambdaArn",
+            },
+            "FRAMEWORK_VERSION": "",
+            "HISTORY_TABLE_NAME": {
+              "Ref": "HistoryTableName",
+            },
+            "OPERATION_TABLE_NAME": {
+              "Ref": "OperationTableName",
+            },
+            "OPERATOR_FAILED_LAMBDA_ARN": {
+              "Ref": "OperatorFailedHandlerLambdaArn",
+            },
+            "STACK_SHORT_UUID": {
+              "Ref": "ShortUUID",
+            },
+            "STAGE_EXECUTION_QUEUE_URL": {
+              "Ref": "StageExecutionQueueUrl",
+            },
+            "STAGE_EXECUTION_ROLE": {
+              "Ref": "StageExecutionRole",
+            },
+            "STAGE_TABLE_NAME": {
+              "Ref": "StageTableName",
+            },
+            "STEP_FUNCTION_LOG_GROUP_ARN": {
+              "Ref": "StepFunctionLogGroupArn",
+            },
+            "SYSTEM_TABLE_NAME": {
+              "Ref": "SystemTableName",
+            },
+            "USER_POOL_ARN": "",
+            "WORKFLOW_EXECUTION_TABLE_NAME": {
+              "Ref": "WorkflowExecutionTableName",
+            },
+            "WORKFLOW_SCHEDULER_LAMBDA_ARN": {
+              "Ref": "WorkflowSchedulerLambdaArn",
+            },
+            "WORKFLOW_TABLE_NAME": {
+              "Ref": "WorkflowTableName",
+            },
+            "botoConfig": {
+              "Ref": "botoConfig",
+            },
+          },
+        },
+        "Handler": "app.workflow_custom_resource",
+        "Layers": [
+          {
+            "Ref": "MediaInsightsOnAwsPython311Layer",
+          },
+        ],
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "WorkflowCustomResourceRole",
+            "Arn",
+          ],
+        },
+        "Runtime": "python3.11",
+        "Tags": {
+          "aws-chalice": "version=1.31.2:stage=dev:app=workflowapi",
+        },
+        "Timeout": 180,
+        "Tracing": {
+          "Ref": "TracingConfigMode",
+        },
+      },
+      "Type": "AWS::Serverless::Function",
+    },
+    "WorkflowCustomResourceRole": {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-IAM5",
+              "reason": "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources",
+            },
+          ],
+        },
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W11",
+              "reason": "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+              "Sid": "",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Description": "This role is used by the workflow api lambda when invoked by CloudFormation",
+        "Policies": [
+          {
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:",
+                        {
+                          "Ref": "AWS::Partition",
+                        },
+                        ":logs:",
+                        {
+                          "Ref": "AWS::Region",
+                        },
+                        ":",
+                        {
+                          "Ref": "AWS::AccountId",
+                        },
+                        ":log-group:/aws/lambda/*-WorkflowCustomResource-*",
+                      ],
+                    ],
+                  },
+                  "Sid": "Logging",
+                },
+                {
+                  "Action": [
+                    "iam:PassRole",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "StageExecutionRole",
+                  },
+                },
+                {
+                  "Action": [
+                    "sqs:CreateQueue",
+                    "sqs:ListQueues",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "SqsQueueArn",
+                  },
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetItem",
+                    "dynamodb:PutItem",
+                    "dynamodb:UpdateItem",
+                    "dynamodb:DeleteItem",
+                    "dynamodb:Scan",
+                    "dynamodb:Query",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": [
+                    {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "arn:",
+                          {
+                            "Ref": "AWS::Partition",
+                          },
+                          ":dynamodb:",
+                          {
+                            "Ref": "AWS::Region",
+                          },
+                          ":",
+                          {
+                            "Ref": "AWS::AccountId",
+                          },
+                          ":table/",
+                          {
+                            "Ref": "SystemTableName",
+                          },
+                        ],
+                      ],
+                    },
+                    {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "arn:",
+                          {
+                            "Ref": "AWS::Partition",
+                          },
+                          ":dynamodb:",
+                          {
+                            "Ref": "AWS::Region",
+                          },
+                          ":",
+                          {
+                            "Ref": "AWS::AccountId",
+                          },
+                          ":table/",
+                          {
+                            "Ref": "WorkflowTableName",
+                          },
+                        ],
+                      ],
+                    },
+                    {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "arn:",
+                          {
+                            "Ref": "AWS::Partition",
+                          },
+                          ":dynamodb:",
+                          {
+                            "Ref": "AWS::Region",
+                          },
+                          ":",
+                          {
+                            "Ref": "AWS::AccountId",
+                          },
+                          ":table/",
+                          {
+                            "Ref": "WorkflowExecutionTableName",
+                          },
+                        ],
+                      ],
+                    },
+                    {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "arn:",
+                          {
+                            "Ref": "AWS::Partition",
+                          },
+                          ":dynamodb:",
+                          {
+                            "Ref": "AWS::Region",
+                          },
+                          ":",
+                          {
+                            "Ref": "AWS::AccountId",
+                          },
+                          ":table/",
+                          {
+                            "Ref": "WorkflowExecutionTableName",
+                          },
+                          "/*",
+                        ],
+                      ],
+                    },
+                    {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "arn:",
+                          {
+                            "Ref": "AWS::Partition",
+                          },
+                          ":dynamodb:",
+                          {
+                            "Ref": "AWS::Region",
+                          },
+                          ":",
+                          {
+                            "Ref": "AWS::AccountId",
+                          },
+                          ":table/",
+                          {
+                            "Ref": "HistoryTableName",
+                          },
+                        ],
+                      ],
+                    },
+                    {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "arn:",
+                          {
+                            "Ref": "AWS::Partition",
+                          },
+                          ":dynamodb:",
+                          {
+                            "Ref": "AWS::Region",
+                          },
+                          ":",
+                          {
+                            "Ref": "AWS::AccountId",
+                          },
+                          ":table/",
+                          {
+                            "Ref": "OperationTableName",
+                          },
+                        ],
+                      ],
+                    },
+                    {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "arn:",
+                          {
+                            "Ref": "AWS::Partition",
+                          },
+                          ":dynamodb:",
+                          {
+                            "Ref": "AWS::Region",
+                          },
+                          ":",
+                          {
+                            "Ref": "AWS::AccountId",
+                          },
+                          ":table/",
+                          {
+                            "Ref": "StageTableName",
+                          },
+                        ],
+                      ],
+                    },
+                  ],
+                },
+                {
+                  "Action": [
+                    "states:ListStateMachines",
+                    "states:DescribeStateMachine",
+                    "states:CreateStateMachine",
+                    "states:UpdateStateMachine",
+                    "states:DeleteStateMachine",
+                    "states:TagResource",
+                    "states:UntagResource",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:",
+                        {
+                          "Ref": "AWS::Partition",
+                        },
+                        ":states:",
+                        {
+                          "Ref": "AWS::Region",
+                        },
+                        ":",
+                        {
+                          "Ref": "AWS::AccountId",
+                        },
+                        ":stateMachine:*-",
+                        {
+                          "Ref": "ShortUUID",
+                        },
+                      ],
+                    ],
+                  },
+                },
+                {
+                  "Action": [
+                    "iam:ListRolePolicies",
+                    "iam:PutRolePolicy",
+                    "iam:DeleteRolePolicy",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "StageExecutionRole",
+                  },
+                },
+                {
+                  "Action": [
+                    "kms:Decrypt",
+                    "kms:GenerateDataKey",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:",
+                        {
+                          "Ref": "AWS::Partition",
+                        },
+                        ":kms:",
+                        {
+                          "Ref": "AWS::Region",
+                        },
+                        ":",
+                        {
+                          "Ref": "AWS::AccountId",
+                        },
+                        ":key/",
+                        {
+                          "Ref": "KmsKeyId",
+                        },
+                      ],
+                    ],
+                  },
+                },
+              ],
+              "Version": "2012-10-17",
+            },
+            "PolicyName": "MieWorkflowCustomResourceRolePolicy",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+  },
+  "Transform": "AWS::Serverless-2016-10-31",
+}
+`;

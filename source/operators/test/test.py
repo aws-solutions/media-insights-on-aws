@@ -1,6 +1,6 @@
-# Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
-    
+
 import os
 import boto3
 import urllib3
@@ -69,47 +69,31 @@ def text_async_ok_monitor_lambda_handler(event, context):
     return test_lambda_handler(event, context, "text-test-async", "Text", "Success", "Monitor")
 
 
-def test_lambda_handler(event, context, operator_name, mediaType, status, type):
+def test_lambda_handler(event, context, operator_name, media_type, status, type):
 
     try:
         print(json.dumps(event))
         # set output status, media, and metatdata for workflow - these get passed to other
         # stages of the workflow through the control plane
-        dataplane = DataPlane()
 
         operator_object = MediaInsightsOperationHelper(event)
         operator_object.update_workflow_status("Complete")
         metadata = {}
-        metadata[operator_object.name] = {"Meta": "Workflow metadata for "+operator_object.name}
-        
+        metadata[operator_object.name] = {"Meta": "Workflow metadata for " + operator_object.name}
+
         if "TestCustomConfig" in operator_object.configuration:
             metadata[operator_object.name]["TestCustomConfig"] = operator_object.configuration["TestCustomConfig"]
-            
 
-        operator_object.add_workflow_metadata_json(
-                metadata
-            )
+        operator_object.add_workflow_metadata_json(metadata)
 
         if "OutputMediaType" in operator_object.configuration:
-            mediaType = operator_object.configuration["OutputMediaType"]
+            media_type = operator_object.configuration["OutputMediaType"]
 
-        if mediaType == "Video":
+        if media_type in ("Video", "Audio", "Image", "Text"):
             operator_object.add_media_object(
-                    "Video", "S3BucketFrom{}".format(operator_object.name), "S3/Key/From/{}/video".format(operator_object.name)
+                media_type, "S3BucketFrom{}".format(operator_object.name), "S3/Key/From/{}/{}".format(operator_object.name, media_type.lower())
             )
-        elif mediaType == "Audio":
-            operator_object.add_media_object(
-                    "Audio", "S3BucketFrom{}".format(operator_object.name), "S3/Key/From/{}/audio".format(operator_object.name)
-            )
-        elif mediaType == "Image":
-            operator_object.add_media_object(
-                    "Text", "S3BucketFrom{}".format(operator_object.name), "S3/Key/From/{}/image".format(operator_object.name)
-            )
-        elif mediaType == "Text":
-            operator_object.add_media_object(
-                    "Text", "S3BucketFrom{}".format(operator_object.name), "S3/Key/From/{}/text".format(operator_object.name)
-            )
-        
+
     except Exception as e:
         operator_object.update_workflow_status("Error")
         operator_object.add_workflow_metadata(Message="Oh no! Something went wrong: {}".format(str(e)))
@@ -120,39 +104,3 @@ def test_lambda_handler(event, context, operator_name, mediaType, status, type):
         else:
             operator_object.update_workflow_status("Complete")
         return operator_object.return_output_object()
-
-
-
-
-# def text_test_async_lambda_handler(event, context):
-#     '''
-#     This lambda is stub used to test data exchange between operators within a workflow.
-#     MediaType: video
-#     '''
-
-#     return test_lambda_handler(event, context, "text-test-async", "Start")
-
-# def text_test_async_monitor_lambda_handler(event, context):
-#     '''
-#     This lambda is stub used to test data exchange between operators within a workflow.
-#     '''
-
-#     return test_lambda_handler(event, context, "text-test-async", "Monitor")
-
-
-
-# def audio_test_sync_lambda_handler(event, context):
-#     '''
-#     This lambda is stub used to test data exchange between operators within a workflow.
-#     MediaType: video
-#     '''
-
-#     return test_lambda_handler(event, context, "audio-test-sync", "Start")
-
-# def text_test_sync_lambda_handler(event, context):
-#     '''
-#     This lambda is stub used to test data exchange between operators within a workflow.
-#     MediaType: video
-#     '''
-
-#     return test_lambda_handler(event, context, "text-test-sync", "Start")

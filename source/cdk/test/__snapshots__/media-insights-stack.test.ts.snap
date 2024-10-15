@@ -1,0 +1,5443 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Snapshot media-insights root stack test 1`] = `
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Conditions": {
+    "DeployAnalyticsPipelineCondition": {
+      "Fn::Equals": [
+        {
+          "Ref": "DeployAnalyticsPipeline",
+        },
+        "Yes",
+      ],
+    },
+    "DeployTestResourcesCondition": {
+      "Fn::Equals": [
+        {
+          "Ref": "DeployTestResources",
+        },
+        "Yes",
+      ],
+    },
+    "EnableAnonymizedData": {
+      "Fn::Equals": [
+        {
+          "Fn::FindInMap": [
+            "AnonymizedData",
+            "SendAnonymizedData",
+            "Data",
+          ],
+        },
+        "Yes",
+      ],
+    },
+    "EnableTraceOnEntryPoints": {
+      "Fn::Equals": [
+        {
+          "Ref": "EnableXrayTrace",
+        },
+        "Yes",
+      ],
+    },
+  },
+  "Description": "(SO0163) - media-insights-on-aws. This is the base AWS CloudFormation template that provisions Media Insights on AWS services and provides parameters for user configurable settings. Version %%VERSION%%",
+  "Mappings": {
+    "AnonymizedData": {
+      "SendAnonymizedData": {
+        "Data": "Yes",
+      },
+    },
+    "ServiceprincipalMap": "[REMOVED]",
+    "SourceCode": {
+      "General": {
+        "CodeKeyPrefix": "media-insights-on-aws/%%VERSION%%",
+        "FrameworkVersion": "%%VERSION%%",
+        "GlobalS3Bucket": "%%GLOBAL_BUCKET_NAME%%",
+        "RegionalS3Bucket": "%%REGIONAL_BUCKET_NAME%%",
+        "TemplateKeyPrefix": "media-insights-on-aws/%%VERSION%%",
+      },
+    },
+  },
+  "Metadata": {
+    "AWS::CloudFormation::Interface": {
+      "ParameterGroups": [
+        {
+          "Label": {
+            "default": "System Configuration",
+          },
+          "Parameters": [
+            "MaxConcurrentWorkflows",
+          ],
+        },
+      ],
+    },
+  },
+  "Outputs": {
+    "AnalyticsStreamArn": {
+      "Condition": "DeployAnalyticsPipelineCondition",
+      "Description": "Arn of the dataplane pipeline",
+      "Export": {
+        "Name": {
+          "Fn::Join": [
+            ":",
+            [
+              {
+                "Ref": "AWS::StackName",
+              },
+              "AnalyticsStreamArn",
+            ],
+          ],
+        },
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "Analytics",
+          "Outputs.MiTestStackAnalyticsAnalyticsStreamArn",
+        ],
+      },
+    },
+    "DataPlaneHandlerArn": {
+      "Description": "API Handler Lambda ARN for dataplane.",
+      "Export": {
+        "Name": {
+          "Fn::Join": [
+            ":",
+            [
+              {
+                "Ref": "AWS::StackName",
+              },
+              "DataPlaneHandlerArn",
+            ],
+          ],
+        },
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "MediaInsightsDataplaneApiStack",
+          "Outputs.APIHandlerArn",
+        ],
+      },
+    },
+    "DataplaneApiEndpoint": {
+      "Description": "Endpoint for data persistence API",
+      "Export": {
+        "Name": {
+          "Fn::Join": [
+            ":",
+            [
+              {
+                "Ref": "AWS::StackName",
+              },
+              "DataplaneApiEndpoint",
+            ],
+          ],
+        },
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "MediaInsightsDataplaneApiStack",
+          "Outputs.EndpointURL",
+        ],
+      },
+    },
+    "DataplaneApiRestID": {
+      "Description": "REST API ID for dataplane API",
+      "Export": {
+        "Name": {
+          "Fn::Join": [
+            ":",
+            [
+              {
+                "Ref": "AWS::StackName",
+              },
+              "DataplaneApiId",
+            ],
+          ],
+        },
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "MediaInsightsDataplaneApiStack",
+          "Outputs.RestAPIId",
+        ],
+      },
+    },
+    "DataplaneBucket": {
+      "Description": "Bucket used to store transfomred media object from workflow execution",
+      "Export": {
+        "Name": {
+          "Fn::Join": [
+            ":",
+            [
+              {
+                "Ref": "AWS::StackName",
+              },
+              "DataplaneBucket",
+            ],
+          ],
+        },
+      },
+      "Value": {
+        "Ref": "Dataplane",
+      },
+    },
+    "MediaInsightsOnAwsPython310LayerArn": {
+      "Description": "Lambda layer for Python 3.10 libraries",
+      "Export": {
+        "Name": {
+          "Fn::Join": [
+            ":",
+            [
+              {
+                "Ref": "AWS::StackName",
+              },
+              "MediaInsightsOnAwsPython310Layer",
+            ],
+          ],
+        },
+      },
+      "Value": {
+        "Ref": "MediaInsightsOnAwsPython310Layer",
+      },
+    },
+    "MediaInsightsOnAwsPython311LayerArn": {
+      "Description": "Lambda layer for Python 3.11 libraries",
+      "Export": {
+        "Name": {
+          "Fn::Join": [
+            ":",
+            [
+              {
+                "Ref": "AWS::StackName",
+              },
+              "MediaInsightsOnAwsPython311Layer",
+            ],
+          ],
+        },
+      },
+      "Value": {
+        "Ref": "MediaInsightsOnAwsPython311Layer",
+      },
+    },
+    "MediaInsightsOnAwsPython39LayerArn": {
+      "Description": "Lambda layer for Python 3.9 libraries",
+      "Export": {
+        "Name": {
+          "Fn::Join": [
+            ":",
+            [
+              {
+                "Ref": "AWS::StackName",
+              },
+              "MediaInsightsOnAwsPython39Layer",
+            ],
+          ],
+        },
+      },
+      "Value": {
+        "Ref": "MediaInsightsOnAwsPython39Layer",
+      },
+    },
+    "MieKMSAlias": {
+      "Description": "Alias of the Media Insights on AWS KMS Key",
+      "Export": {
+        "Name": {
+          "Fn::Join": [
+            ":",
+            [
+              {
+                "Ref": "AWS::StackName",
+              },
+              "MieKMSAlias",
+            ],
+          ],
+        },
+      },
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "alias/",
+            {
+              "Ref": "AWS::StackName",
+            },
+          ],
+        ],
+      },
+    },
+    "MieKMSArn": {
+      "Description": "ARN of the Media Insights on AWS KMS Key",
+      "Export": {
+        "Name": {
+          "Fn::Join": [
+            ":",
+            [
+              {
+                "Ref": "AWS::StackName",
+              },
+              "MieKMSArn",
+            ],
+          ],
+        },
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "MieKey",
+          "Arn",
+        ],
+      },
+    },
+    "MieKMSId": {
+      "Description": "ID of the Media Insights on AWS KMS Key",
+      "Export": {
+        "Name": {
+          "Fn::Join": [
+            ":",
+            [
+              {
+                "Ref": "AWS::StackName",
+              },
+              "MieKMSId",
+            ],
+          ],
+        },
+      },
+      "Value": {
+        "Ref": "MieKey",
+      },
+    },
+    "MieSNSTopic": {
+      "Description": "ARN of the Media Insights on AWS SNS Workflow Execution Topic",
+      "Export": {
+        "Name": {
+          "Fn::Join": [
+            ":",
+            [
+              {
+                "Ref": "AWS::StackName",
+              },
+              "MieSNSTopic",
+            ],
+          ],
+        },
+      },
+      "Value": {
+        "Ref": "WorkflowExecutionEventTopic",
+      },
+    },
+    "MieSQSQueue": {
+      "Description": "ARN of the Media Insights on AWS Workflow Execution Queue",
+      "Export": {
+        "Name": {
+          "Fn::Join": [
+            ":",
+            [
+              {
+                "Ref": "AWS::StackName",
+              },
+              "MieSQSQueue",
+            ],
+          ],
+        },
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "WorkflowExecutionEventQueue",
+          "Arn",
+        ],
+      },
+    },
+    "OperatorLibraryStack": {
+      "Description": "Nested cloudformation stack that contains the Media Insights on AWS operator library",
+      "Export": {
+        "Name": {
+          "Fn::Join": [
+            ":",
+            [
+              {
+                "Ref": "AWS::StackName",
+              },
+              "OperatorLibraryStack",
+            ],
+          ],
+        },
+      },
+      "Value": {
+        "Fn::Select": [
+          1,
+          {
+            "Fn::Split": [
+              "/",
+              {
+                "Ref": "OperatorLibrary",
+              },
+            ],
+          },
+        ],
+      },
+    },
+    "TestStack": {
+      "Condition": "DeployTestResourcesCondition",
+      "Value": {
+        "Ref": "TestResources",
+      },
+    },
+    "Version": {
+      "Description": "Media Insights on AWS Version",
+      "Export": {
+        "Name": {
+          "Fn::Join": [
+            ":",
+            [
+              {
+                "Ref": "AWS::StackName",
+              },
+              "Version",
+            ],
+          ],
+        },
+      },
+      "Value": {
+        "Fn::FindInMap": [
+          "SourceCode",
+          "General",
+          "FrameworkVersion",
+        ],
+      },
+    },
+    "WorkflowApiEndpoint": {
+      "Description": "Endpoint for workflow Creation, Execution and Monitoring API",
+      "Export": {
+        "Name": {
+          "Fn::Join": [
+            ":",
+            [
+              {
+                "Ref": "AWS::StackName",
+              },
+              "WorkflowApiEndpoint",
+            ],
+          ],
+        },
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "MediaInsightsWorkflowApi",
+          "Outputs.EndpointURL",
+        ],
+      },
+    },
+    "WorkflowApiRestID": {
+      "Description": "REST API ID for workflow API",
+      "Export": {
+        "Name": {
+          "Fn::Join": [
+            ":",
+            [
+              {
+                "Ref": "AWS::StackName",
+              },
+              "WorkflowApiId",
+            ],
+          ],
+        },
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "MediaInsightsWorkflowApi",
+          "Outputs.RestAPIId",
+        ],
+      },
+    },
+    "WorkflowCustomResourceArn": {
+      "Description": "Custom resource for creating operations, stages and workflows using CloudFormation",
+      "Export": {
+        "Name": {
+          "Fn::Join": [
+            ":",
+            [
+              {
+                "Ref": "AWS::StackName",
+              },
+              "WorkflowCustomResourceArn",
+            ],
+          ],
+        },
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "MediaInsightsWorkflowApi",
+          "Outputs.WorkflowCustomResourceArn",
+        ],
+      },
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+    "DeployAnalyticsPipeline": {
+      "AllowedValues": [
+        "Yes",
+        "No",
+      ],
+      "Default": "Yes",
+      "Description": "Deploy a metadata streaming pipeline that can be consumed by downstream analytics plaforms",
+      "Type": "String",
+    },
+    "DeployTestResources": {
+      "AllowedValues": [
+        "Yes",
+        "No",
+      ],
+      "Default": "No",
+      "Description": "Deploy test resources which contains lambdas required for integration and e2e testing",
+      "Type": "String",
+    },
+    "EnableXrayTrace": {
+      "AllowedValues": [
+        "Yes",
+        "No",
+      ],
+      "Default": "No",
+      "Description": "Turn on Xray tracing on all entry points to the stack",
+      "Type": "String",
+    },
+    "ExternalBucketArn": {
+      "Default": "",
+      "Description": "(Optional) If you intend to input media files from a bucket outside the stack into the workflows, then specify the Amazon S3 ARN for those files here.",
+      "Type": "String",
+    },
+    "MaxConcurrentWorkflows": {
+      "Default": 5,
+      "Description": "Maximum number of workflows to run concurrently.  When the maximum is reached, additional workflows are added to a wait queue.",
+      "MinValue": 1,
+      "Type": "Number",
+    },
+    "SolutionId": {
+      "Default": "SO0163",
+      "Description": "(Optional) AWS Solution Id used for reporting purposes",
+      "Type": "String",
+    },
+    "SolutionVersion": {
+      "Default": "%%VERSION%%",
+      "Description": "(Optional) AWS Solution version used for reporting purposes",
+      "Type": "String",
+    },
+  },
+  "Resources": {
+    "Analytics": {
+      "Condition": "DeployAnalyticsPipelineCondition",
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "MediaInsightsDataplaneApiStack",
+        "MediaInsightsWorkflowApi",
+      ],
+      "Properties": {
+        "Parameters": {
+          "botoConfig": {
+            "Fn::Join": [
+              "",
+              [
+                "{"user_agent_extra": "AwsSolution/",
+                {
+                  "Ref": "SolutionId",
+                },
+                "/",
+                {
+                  "Ref": "SolutionVersion",
+                },
+                ""}",
+              ],
+            ],
+          },
+          "referencetoMiTestStackDataplaneTableF492DF1EStreamArn": {
+            "Fn::GetAtt": [
+              "DataplaneTable",
+              "StreamArn",
+            ],
+          },
+          "referencetoMiTestStackMieKeyArn": {
+            "Fn::GetAtt": [
+              "MieKey",
+              "Arn",
+            ],
+          },
+        },
+        "TemplateURL": {
+          "Fn::Join": [
+            "",
+            [
+              "https://s3.",
+              {
+                "Ref": "AWS::Region",
+              },
+              ".",
+              {
+                "Ref": "AWS::URLSuffix",
+              },
+              "/",
+              {
+                "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
+              },
+              /[HASH REMOVED].json,
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::CloudFormation::Stack",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "AnonymizedDataCustomResource": {
+      "DependsOn": [
+        "AnonymizedDataCustomResourceRole",
+      ],
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-L1",
+              "reason": "Latest lambda version not supported at this time.",
+            },
+          ],
+        },
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W89",
+              "reason": "This Lambda function does not need to access any resource provisioned within a VPC.",
+            },
+            {
+              "id": "W92",
+              "reason": "This function does not require performance optimization, so the default concurrency limits suffice.",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Join": [
+              "-",
+              [
+                {
+                  "Fn::FindInMap": [
+                    "SourceCode",
+                    "General",
+                    "RegionalS3Bucket",
+                  ],
+                },
+                {
+                  "Ref": "AWS::Region",
+                },
+              ],
+            ],
+          },
+          "S3Key": {
+            "Fn::Join": [
+              "/",
+              [
+                {
+                  "Fn::FindInMap": [
+                    "SourceCode",
+                    "General",
+                    "CodeKeyPrefix",
+                  ],
+                },
+                "anonymized-data-logger.zip",
+              ],
+            ],
+          },
+        },
+        "Description": "Used to send anonymized data",
+        "FunctionName": {
+          "Fn::Join": [
+            "",
+            [
+              {
+                "Ref": "AWS::StackName",
+              },
+              "-anonymized-data",
+            ],
+          ],
+        },
+        "Handler": "anonymized-data-logger.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "AnonymizedDataCustomResourceRole",
+            "Arn",
+          ],
+        },
+        "Runtime": "python3.11",
+        "Timeout": 180,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "AnonymizedDataCustomResourceRole": {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-IAM5",
+              "reason": "Resource ARNs are not generated at the time of policy creation",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:",
+                        {
+                          "Ref": "AWS::Partition",
+                        },
+                        ":logs:",
+                        {
+                          "Ref": "AWS::Region",
+                        },
+                        ":",
+                        {
+                          "Ref": "AWS::AccountId",
+                        },
+                        ":log-group:/aws/lambda/*",
+                      ],
+                    ],
+                  },
+                },
+                {
+                  "Action": "ssm:PutParameter",
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:",
+                        {
+                          "Ref": "AWS::Partition",
+                        },
+                        ":ssm:",
+                        {
+                          "Ref": "AWS::Region",
+                        },
+                        ":",
+                        {
+                          "Ref": "AWS::AccountId",
+                        },
+                        ":parameter/*",
+                      ],
+                    ],
+                  },
+                },
+              ],
+              "Version": "2012-10-17",
+            },
+            "PolicyName": {
+              "Fn::Join": [
+                "",
+                [
+                  {
+                    "Ref": "AWS::StackName",
+                  },
+                  "-anonymized-data-logger",
+                ],
+              ],
+            },
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "AnonymizedDataUuid": {
+      "Condition": "EnableAnonymizedData",
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "Resource": "UUID",
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "AnonymizedDataCustomResource",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "Custom::UUID",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "AnonymizedMetric": {
+      "Condition": "EnableAnonymizedData",
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "Resource": "AnonymizedMetric",
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "AnonymizedDataCustomResource",
+            "Arn",
+          ],
+        },
+        "SolutionId": "SO0163",
+        "UUID": {
+          "Fn::GetAtt": [
+            "AnonymizedDataUuid",
+            "UUID",
+          ],
+        },
+        "Version": {
+          "Fn::FindInMap": [
+            "SourceCode",
+            "General",
+            "FrameworkVersion",
+          ],
+        },
+      },
+      "Type": "Custom::AnonymizedMetric",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "AppRegistryApplicationAttributeAssociation": {
+      "Properties": {
+        "Application": {
+          "Fn::GetAtt": [
+            "Application",
+            "Id",
+          ],
+        },
+        "AttributeGroup": {
+          "Fn::GetAtt": [
+            "DefaultApplicationAttributes",
+            "Id",
+          ],
+        },
+      },
+      "Type": "AWS::ServiceCatalogAppRegistry::AttributeGroupAssociation",
+    },
+    "AppRegistryApplicationStackAssociation": {
+      "Properties": {
+        "Application": {
+          "Fn::GetAtt": [
+            "Application",
+            "Id",
+          ],
+        },
+        "Resource": {
+          "Ref": "AWS::StackId",
+        },
+        "ResourceType": "CFN_STACK",
+      },
+      "Type": "AWS::ServiceCatalogAppRegistry::ResourceAssociation",
+    },
+    "AppRegistryApplicationStackAssociationNestedStackAnalytics": {
+      "Condition": "DeployAnalyticsPipelineCondition",
+      "Properties": {
+        "Application": {
+          "Fn::GetAtt": [
+            "Application",
+            "Id",
+          ],
+        },
+        "Resource": {
+          "Ref": "Analytics",
+        },
+        "ResourceType": "CFN_STACK",
+      },
+      "Type": "AWS::ServiceCatalogAppRegistry::ResourceAssociation",
+    },
+    "AppRegistryApplicationStackAssociationNestedStackDataplane": {
+      "Properties": {
+        "Application": {
+          "Fn::GetAtt": [
+            "Application",
+            "Id",
+          ],
+        },
+        "Resource": {
+          "Ref": "MediaInsightsDataplaneApiStack",
+        },
+        "ResourceType": "CFN_STACK",
+      },
+      "Type": "AWS::ServiceCatalogAppRegistry::ResourceAssociation",
+    },
+    "AppRegistryApplicationStackAssociationNestedStackOperator": {
+      "Properties": {
+        "Application": {
+          "Fn::GetAtt": [
+            "Application",
+            "Id",
+          ],
+        },
+        "Resource": {
+          "Ref": "OperatorLibrary",
+        },
+        "ResourceType": "CFN_STACK",
+      },
+      "Type": "AWS::ServiceCatalogAppRegistry::ResourceAssociation",
+    },
+    "AppRegistryApplicationStackAssociationNestedStackTestResources": {
+      "Condition": "DeployTestResourcesCondition",
+      "Properties": {
+        "Application": {
+          "Fn::GetAtt": [
+            "Application",
+            "Id",
+          ],
+        },
+        "Resource": {
+          "Ref": "TestResources",
+        },
+        "ResourceType": "CFN_STACK",
+      },
+      "Type": "AWS::ServiceCatalogAppRegistry::ResourceAssociation",
+    },
+    "AppRegistryApplicationStackAssociationNestedStackWorkflow": {
+      "Properties": {
+        "Application": {
+          "Fn::GetAtt": [
+            "Application",
+            "Id",
+          ],
+        },
+        "Resource": {
+          "Ref": "MediaInsightsWorkflowApi",
+        },
+        "ResourceType": "CFN_STACK",
+      },
+      "Type": "AWS::ServiceCatalogAppRegistry::ResourceAssociation",
+    },
+    "Application": {
+      "Properties": {
+        "Description": "Service Catalog application to track and manage all your resources for the solution Media Insights on AWS",
+        "Name": {
+          "Fn::Join": [
+            "-",
+            [
+              "media-insights-on-aws",
+              {
+                "Ref": "AWS::Region",
+              },
+              {
+                "Ref": "AWS::AccountId",
+              },
+              {
+                "Ref": "AWS::StackName",
+              },
+            ],
+          ],
+        },
+        "Tags": {
+          "Solutions:ApplicationType": "AWS-Solutions",
+          "Solutions:SolutionID": "SO0163",
+          "Solutions:SolutionName": "Media Insights on AWS",
+          "Solutions:SolutionVersion": "%%VERSION%%",
+        },
+      },
+      "Type": "AWS::ServiceCatalogAppRegistry::Application",
+    },
+    "CheckWaitOperationLambda": {
+      "DependsOn": [
+        "OperationLambdaExecutionRoleDefaultPolicy",
+        "OperationLambdaExecutionRole",
+      ],
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-L1",
+              "reason": "Latest lambda version not supported at this time.",
+            },
+          ],
+        },
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W89",
+              "reason": "This Lambda function does not need to access any resource provisioned within a VPC.",
+            },
+            {
+              "id": "W92",
+              "reason": "This function does not require performance optimization, so the default concurrency limits suffice.",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Join": [
+              "-",
+              [
+                {
+                  "Fn::FindInMap": [
+                    "SourceCode",
+                    "General",
+                    "RegionalS3Bucket",
+                  ],
+                },
+                {
+                  "Ref": "AWS::Region",
+                },
+              ],
+            ],
+          },
+          "S3Key": {
+            "Fn::Join": [
+              "/",
+              [
+                {
+                  "Fn::FindInMap": [
+                    "SourceCode",
+                    "General",
+                    "CodeKeyPrefix",
+                  ],
+                },
+                "workflow.zip",
+              ],
+            ],
+          },
+        },
+        "Environment": {
+          "Variables": {
+            "OPERATION_TABLE_NAME": {
+              "Ref": "OperationTable",
+            },
+            "STAGE_EXECUTION_QUEUE_URL": {
+              "Ref": "StageExecutionQueue",
+            },
+            "STAGE_TABLE_NAME": {
+              "Ref": "StageTable",
+            },
+            "WORKFLOW_EXECUTION_TABLE_NAME": {
+              "Ref": "WorkflowExecutionTable",
+            },
+            "WORKFLOW_TABLE_NAME": {
+              "Ref": "WorkflowTable",
+            },
+            "botoConfig": {
+              "Fn::Join": [
+                "",
+                [
+                  "{"user_agent_extra": "AwsSolution/",
+                  {
+                    "Ref": "SolutionId",
+                  },
+                  "/",
+                  {
+                    "Ref": "SolutionVersion",
+                  },
+                  ""}",
+                ],
+              ],
+            },
+          },
+        },
+        "FunctionName": {
+          "Fn::Join": [
+            "",
+            [
+              {
+                "Ref": "AWS::StackName",
+              },
+              "-check-wait-operation",
+            ],
+          ],
+        },
+        "Handler": "app.check_wait_operation_lambda",
+        "Layers": [
+          {
+            "Ref": "MediaInsightsOnAwsPython311Layer",
+          },
+        ],
+        "MemorySize": 256,
+        "Role": {
+          "Fn::GetAtt": [
+            "OperationLambdaExecutionRole",
+            "Arn",
+          ],
+        },
+        "Runtime": "python3.11",
+        "Tags": [
+          {
+            "Key": "environment",
+            "Value": "mie",
+          },
+        ],
+        "Timeout": 900,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "CompleteStageLambda": {
+      "DependsOn": [
+        "OperationLambdaExecutionRoleDefaultPolicy",
+        "OperationLambdaExecutionRole",
+        "WorkflowSchedulerLambda",
+      ],
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-L1",
+              "reason": "Latest lambda version not supported at this time.",
+            },
+          ],
+        },
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W89",
+              "reason": "This Lambda function does not need to access any resource provisioned within a VPC.",
+            },
+            {
+              "id": "W92",
+              "reason": "This function does not require performance optimization, so the default concurrency limits suffice.",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Join": [
+              "-",
+              [
+                {
+                  "Fn::FindInMap": [
+                    "SourceCode",
+                    "General",
+                    "RegionalS3Bucket",
+                  ],
+                },
+                {
+                  "Ref": "AWS::Region",
+                },
+              ],
+            ],
+          },
+          "S3Key": {
+            "Fn::Join": [
+              "/",
+              [
+                {
+                  "Fn::FindInMap": [
+                    "SourceCode",
+                    "General",
+                    "CodeKeyPrefix",
+                  ],
+                },
+                "workflow.zip",
+              ],
+            ],
+          },
+        },
+        "Environment": {
+          "Variables": {
+            "OPERATION_TABLE_NAME": {
+              "Ref": "OperationTable",
+            },
+            "STAGE_EXECUTION_QUEUE_URL": {
+              "Ref": "StageExecutionQueue",
+            },
+            "STAGE_TABLE_NAME": {
+              "Ref": "StageTable",
+            },
+            "SYSTEM_TABLE_NAME": {
+              "Ref": "SystemTable",
+            },
+            "WORKFLOW_EXECUTION_TABLE_NAME": {
+              "Ref": "WorkflowExecutionTable",
+            },
+            "WORKFLOW_SCHEDULER_LAMBDA_ARN": {
+              "Fn::GetAtt": [
+                "WorkflowSchedulerLambda",
+                "Arn",
+              ],
+            },
+            "WORKFLOW_TABLE_NAME": {
+              "Ref": "WorkflowTable",
+            },
+            "botoConfig": {
+              "Fn::Join": [
+                "",
+                [
+                  "{"user_agent_extra": "AwsSolution/",
+                  {
+                    "Ref": "SolutionId",
+                  },
+                  "/",
+                  {
+                    "Ref": "SolutionVersion",
+                  },
+                  ""}",
+                ],
+              ],
+            },
+          },
+        },
+        "Handler": "app.complete_stage_execution_lambda",
+        "Layers": [
+          {
+            "Ref": "MediaInsightsOnAwsPython311Layer",
+          },
+        ],
+        "MemorySize": 256,
+        "Role": {
+          "Fn::GetAtt": [
+            "OperationLambdaExecutionRole",
+            "Arn",
+          ],
+        },
+        "Runtime": "python3.11",
+        "Tags": [
+          {
+            "Key": "environment",
+            "Value": "mie",
+          },
+        ],
+        "Timeout": 900,
+        "TracingConfig": {
+          "Mode": "PassThrough",
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "Dataplane": {
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "KMSMasterKeyID": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition",
+                      },
+                      ":kms:",
+                      {
+                        "Ref": "AWS::Region",
+                      },
+                      ":",
+                      {
+                        "Ref": "AWS::AccountId",
+                      },
+                      ":alias/",
+                      {
+                        "Ref": "AWS::StackName",
+                      },
+                    ],
+                  ],
+                },
+                "SSEAlgorithm": "aws:kms",
+              },
+            },
+          ],
+        },
+        "CorsConfiguration": {
+          "CorsRules": [
+            {
+              "AllowedHeaders": [
+                "*",
+              ],
+              "AllowedMethods": [
+                "HEAD",
+                "GET",
+                "POST",
+                "DELETE",
+                "PUT",
+              ],
+              "AllowedOrigins": [
+                "*",
+              ],
+              "ExposedHeaders": [
+                "x-amz-server-side-encryption",
+                "x-amz-request-id",
+                "x-amz-id-2",
+                "ETag",
+              ],
+              "Id": "AllowUploadsFromWebApp",
+              "MaxAge": 3000,
+            },
+          ],
+        },
+        "LifecycleConfiguration": {
+          "Rules": [
+            {
+              "AbortIncompleteMultipartUpload": {
+                "DaysAfterInitiation": 1,
+              },
+              "ExpirationInDays": 10,
+              "Id": "Keep access log for 10 days",
+              "Prefix": "access_logs/",
+              "Status": "Enabled",
+            },
+            {
+              "AbortIncompleteMultipartUpload": {
+                "DaysAfterInitiation": 1,
+              },
+              "ExpirationInDays": 10,
+              "Id": "Keep cloudfront log for 10 days",
+              "Prefix": "cf_logs/",
+              "Status": "Enabled",
+            },
+          ],
+        },
+        "LoggingConfiguration": {
+          "DestinationBucketName": {
+            "Ref": "DataplaneLogsBucket",
+          },
+          "LogFilePrefix": "access_logs/",
+        },
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true,
+        },
+        "Tags": [
+          {
+            "Key": "environment",
+            "Value": "mie",
+          },
+        ],
+        "VersioningConfiguration": {
+          "Status": "Enabled",
+        },
+      },
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "DataplaneLogsBucket": {
+      "DeletionPolicy": "Retain",
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-S1",
+              "reason": "Used to store access logs for other buckets",
+            },
+          ],
+        },
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W35",
+              "reason": "Used to store access logs for other buckets",
+            },
+            {
+              "id": "W51",
+              "reason": "Bucket is private and does not need a bucket policy",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "AccessControl": "LogDeliveryWrite",
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256",
+              },
+            },
+          ],
+        },
+        "OwnershipControls": {
+          "Rules": [
+            {
+              "ObjectOwnership": "ObjectWriter",
+            },
+          ],
+        },
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true,
+        },
+        "Tags": [
+          {
+            "Key": "environment",
+            "Value": "mie",
+          },
+        ],
+        "VersioningConfiguration": {
+          "Status": "Enabled",
+        },
+      },
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "DataplaneLogsBucketPolicy": {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-S1",
+              "reason": "Used to store access logs for other buckets",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "Bucket": {
+          "Ref": "DataplaneLogsBucket",
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*",
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "DataplaneLogsBucket",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "DataplaneLogsBucket",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
+    "DataplanePolicy": {
+      "Properties": {
+        "Bucket": {
+          "Ref": "Dataplane",
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*",
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "Dataplane",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "Dataplane",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
+    "DataplaneTable": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "MieKeyAlias",
+      ],
+      "Metadata": {
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W28",
+              "reason": "Table name is constructed with stack name. On update, we need to keep the existing table name.",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "AssetId",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "Locked",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "LockedAt",
+            "AttributeType": "N",
+          },
+        ],
+        "BillingMode": "PAY_PER_REQUEST",
+        "GlobalSecondaryIndexes": [
+          {
+            "IndexName": "LockIndex",
+            "KeySchema": [
+              {
+                "AttributeName": "Locked",
+                "KeyType": "HASH",
+              },
+              {
+                "AttributeName": "LockedAt",
+                "KeyType": "RANGE",
+              },
+            ],
+            "Projection": {
+              "NonKeyAttributes": [
+                "LockedBy",
+              ],
+              "ProjectionType": "INCLUDE",
+            },
+          },
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "AssetId",
+            "KeyType": "HASH",
+          },
+        ],
+        "PointInTimeRecoverySpecification": {
+          "PointInTimeRecoveryEnabled": true,
+        },
+        "SSESpecification": {
+          "KMSMasterKeyId": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":kms:",
+                {
+                  "Ref": "AWS::Region",
+                },
+                ":",
+                {
+                  "Ref": "AWS::AccountId",
+                },
+                ":alias/",
+                {
+                  "Ref": "AWS::StackName",
+                },
+              ],
+            ],
+          },
+          "SSEEnabled": true,
+          "SSEType": "KMS",
+        },
+        "StreamSpecification": {
+          "StreamViewType": "NEW_AND_OLD_IMAGES",
+        },
+        "TableName": {
+          "Fn::Join": [
+            "",
+            [
+              {
+                "Ref": "AWS::StackName",
+              },
+              "DataplaneTable",
+            ],
+          ],
+        },
+        "Tags": [
+          {
+            "Key": "environment",
+            "Value": "mie",
+          },
+        ],
+      },
+      "Type": "AWS::DynamoDB::Table",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "DefaultApplicationAttributes": {
+      "Properties": {
+        "Attributes": {
+          "ApplicationType": "AWS-Solutions",
+          "SolutionID": "SO0163",
+          "SolutionName": "Media Insights on AWS",
+          "Version": "%%VERSION%%",
+        },
+        "Description": "Attribute group for solution information",
+        "Name": {
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "AWS::Region",
+              },
+              {
+                "Ref": "AWS::StackName",
+              },
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::ServiceCatalogAppRegistry::AttributeGroup",
+    },
+    "FilterOperationLambda": {
+      "DependsOn": [
+        "OperationLambdaExecutionRoleDefaultPolicy",
+        "OperationLambdaExecutionRole",
+      ],
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-L1",
+              "reason": "Latest lambda version not supported at this time.",
+            },
+          ],
+        },
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W89",
+              "reason": "This Lambda function does not need to access any resource provisioned within a VPC.",
+            },
+            {
+              "id": "W92",
+              "reason": "This function does not require performance optimization, so the default concurrency limits suffice.",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Join": [
+              "-",
+              [
+                {
+                  "Fn::FindInMap": [
+                    "SourceCode",
+                    "General",
+                    "RegionalS3Bucket",
+                  ],
+                },
+                {
+                  "Ref": "AWS::Region",
+                },
+              ],
+            ],
+          },
+          "S3Key": {
+            "Fn::Join": [
+              "/",
+              [
+                {
+                  "Fn::FindInMap": [
+                    "SourceCode",
+                    "General",
+                    "CodeKeyPrefix",
+                  ],
+                },
+                "workflow.zip",
+              ],
+            ],
+          },
+        },
+        "Environment": {
+          "Variables": {
+            "OPERATION_TABLE_NAME": {
+              "Ref": "OperationTable",
+            },
+            "STAGE_EXECUTION_QUEUE_URL": {
+              "Ref": "StageExecutionQueue",
+            },
+            "STAGE_TABLE_NAME": {
+              "Ref": "StageTable",
+            },
+            "WORKFLOW_EXECUTION_TABLE_NAME": {
+              "Ref": "WorkflowExecutionTable",
+            },
+            "WORKFLOW_TABLE_NAME": {
+              "Ref": "WorkflowTable",
+            },
+            "botoConfig": {
+              "Fn::Join": [
+                "",
+                [
+                  "{"user_agent_extra": "AwsSolution/",
+                  {
+                    "Ref": "SolutionId",
+                  },
+                  "/",
+                  {
+                    "Ref": "SolutionVersion",
+                  },
+                  ""}",
+                ],
+              ],
+            },
+          },
+        },
+        "Handler": "app.filter_operation_lambda",
+        "Layers": [
+          {
+            "Ref": "MediaInsightsOnAwsPython311Layer",
+          },
+        ],
+        "MemorySize": 256,
+        "Role": {
+          "Fn::GetAtt": [
+            "OperationLambdaExecutionRole",
+            "Arn",
+          ],
+        },
+        "Runtime": "python3.11",
+        "Tags": [
+          {
+            "Key": "environment",
+            "Value": "mie",
+          },
+        ],
+        "Timeout": 900,
+        "TracingConfig": {
+          "Mode": "PassThrough",
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "GetMediaConvertEndpoint": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "FunctionKey": "get_mediaconvert_endpoint",
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "MieHelperFunction",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "Custom::CustomResource",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "GetShortUUID": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "FunctionKey": "get_short_uuid",
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "MieHelperFunction",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "Custom::CustomResource",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "HistoryTable": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "MieKeyAlias",
+      ],
+      "Metadata": {
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W28",
+              "reason": "Table name is constructed with stack name. On update, we need to keep the existing table name.",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "Id",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "Version",
+            "AttributeType": "S",
+          },
+        ],
+        "BillingMode": "PAY_PER_REQUEST",
+        "KeySchema": [
+          {
+            "AttributeName": "Id",
+            "KeyType": "HASH",
+          },
+          {
+            "AttributeName": "Version",
+            "KeyType": "RANGE",
+          },
+        ],
+        "PointInTimeRecoverySpecification": {
+          "PointInTimeRecoveryEnabled": true,
+        },
+        "SSESpecification": {
+          "KMSMasterKeyId": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":kms:",
+                {
+                  "Ref": "AWS::Region",
+                },
+                ":",
+                {
+                  "Ref": "AWS::AccountId",
+                },
+                ":alias/",
+                {
+                  "Ref": "AWS::StackName",
+                },
+              ],
+            ],
+          },
+          "SSEEnabled": true,
+          "SSEType": "KMS",
+        },
+        "TableName": {
+          "Fn::Join": [
+            "",
+            [
+              {
+                "Ref": "AWS::StackName",
+              },
+              "History",
+            ],
+          ],
+        },
+        "Tags": [
+          {
+            "Key": "environment",
+            "Value": "mie",
+          },
+        ],
+      },
+      "Type": "AWS::DynamoDB::Table",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "InitSystemTable": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "MediaInsightsDataplaneApiStack",
+      ],
+      "Properties": {
+        "FunctionKey": "init_system_table",
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "MieHelperFunction",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "Custom::CustomResource",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "LambdaSchedule": {
+      "DependsOn": [
+        "WorkflowSchedulerLambda",
+      ],
+      "Properties": {
+        "Description": "A schedule for the Lambda function..",
+        "ScheduleExpression": "rate(1 minute)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Arn": {
+              "Fn::GetAtt": [
+                "WorkflowSchedulerLambda",
+                "Arn",
+              ],
+            },
+            "Id": "Target0",
+          },
+        ],
+      },
+      "Type": "AWS::Events::Rule",
+    },
+    "LambdaScheduleAllowEventRuleMiTestStackWorkflowSchedulerLambda7E3D9E02": {
+      "DependsOn": [
+        "WorkflowSchedulerLambda",
+      ],
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "WorkflowSchedulerLambda",
+            "Arn",
+          ],
+        },
+        "Principal": "events.amazonaws.com",
+        "SourceArn": {
+          "Fn::GetAtt": [
+            "LambdaSchedule",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "MediaInsightsDataplaneApiStack": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "Parameters": {
+          "DataplaneBucketName": {
+            "Ref": "Dataplane",
+          },
+          "DataplaneTableName": {
+            "Ref": "DataplaneTable",
+          },
+          "DeploymentPackageBucket": {
+            "Fn::Join": [
+              "-",
+              [
+                {
+                  "Fn::FindInMap": [
+                    "SourceCode",
+                    "General",
+                    "RegionalS3Bucket",
+                  ],
+                },
+                {
+                  "Ref": "AWS::Region",
+                },
+              ],
+            ],
+          },
+          "DeploymentPackageKey": {
+            "Fn::Join": [
+              "/",
+              [
+                {
+                  "Fn::FindInMap": [
+                    "SourceCode",
+                    "General",
+                    "CodeKeyPrefix",
+                  ],
+                },
+                "dataplaneapi.zip",
+              ],
+            ],
+          },
+          "ExternalBucketArn": {
+            "Ref": "ExternalBucketArn",
+          },
+          "FrameworkVersion": {
+            "Fn::FindInMap": [
+              "SourceCode",
+              "General",
+              "FrameworkVersion",
+            ],
+          },
+          "KmsKeyId": {
+            "Ref": "MieKey",
+          },
+          "MediaInsightsOnAwsPython311Layer": {
+            "Ref": "MediaInsightsOnAwsPython311Layer",
+          },
+          "TracingConfigMode": {
+            "Fn::If": [
+              "EnableTraceOnEntryPoints",
+              "Active",
+              "PassThrough",
+            ],
+          },
+          "botoConfig": {
+            "Fn::Join": [
+              "",
+              [
+                "{"user_agent_extra": "AwsSolution/",
+                {
+                  "Ref": "SolutionId",
+                },
+                "/",
+                {
+                  "Ref": "SolutionVersion",
+                },
+                ""}",
+              ],
+            ],
+          },
+        },
+        "TemplateURL": {
+          "Fn::Join": [
+            "",
+            [
+              "https://s3.",
+              {
+                "Ref": "AWS::Region",
+              },
+              ".",
+              {
+                "Ref": "AWS::URLSuffix",
+              },
+              "/",
+              {
+                "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
+              },
+              /[HASH REMOVED].json,
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::CloudFormation::Stack",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "MediaInsightsOnAwsPython310Layer": {
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "CompatibleRuntimes": [
+          "python3.10",
+        ],
+        "Content": {
+          "S3Bucket": {
+            "Fn::Join": [
+              "-",
+              [
+                {
+                  "Fn::FindInMap": [
+                    "SourceCode",
+                    "General",
+                    "RegionalS3Bucket",
+                  ],
+                },
+                {
+                  "Ref": "AWS::Region",
+                },
+              ],
+            ],
+          },
+          "S3Key": {
+            "Fn::Join": [
+              "/",
+              [
+                {
+                  "Fn::FindInMap": [
+                    "SourceCode",
+                    "General",
+                    "CodeKeyPrefix",
+                  ],
+                },
+                "media_insights_on_aws_lambda_layer_python3.10-v5.1.8.zip",
+              ],
+            ],
+          },
+        },
+        "Description": "Boto3 and MediaInsightsOnAwsLambdaHelper packages for Python 3.10",
+        "LayerName": "media-insights-on-aws-python310",
+        "LicenseInfo": "Apache-2.0",
+      },
+      "Type": "AWS::Lambda::LayerVersion",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "MediaInsightsOnAwsPython311Layer": {
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "CompatibleRuntimes": [
+          "python3.11",
+        ],
+        "Content": {
+          "S3Bucket": {
+            "Fn::Join": [
+              "-",
+              [
+                {
+                  "Fn::FindInMap": [
+                    "SourceCode",
+                    "General",
+                    "RegionalS3Bucket",
+                  ],
+                },
+                {
+                  "Ref": "AWS::Region",
+                },
+              ],
+            ],
+          },
+          "S3Key": {
+            "Fn::Join": [
+              "/",
+              [
+                {
+                  "Fn::FindInMap": [
+                    "SourceCode",
+                    "General",
+                    "CodeKeyPrefix",
+                  ],
+                },
+                "media_insights_on_aws_lambda_layer_python3.11-v5.1.8.zip",
+              ],
+            ],
+          },
+        },
+        "Description": "Boto3 and MediaInsightsOnAwsLambdaHelper packages for Python 3.11",
+        "LayerName": "media-insights-on-aws-python311",
+        "LicenseInfo": "Apache-2.0",
+      },
+      "Type": "AWS::Lambda::LayerVersion",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "MediaInsightsOnAwsPython39Layer": {
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "CompatibleRuntimes": [
+          "python3.9",
+        ],
+        "Content": {
+          "S3Bucket": {
+            "Fn::Join": [
+              "-",
+              [
+                {
+                  "Fn::FindInMap": [
+                    "SourceCode",
+                    "General",
+                    "RegionalS3Bucket",
+                  ],
+                },
+                {
+                  "Ref": "AWS::Region",
+                },
+              ],
+            ],
+          },
+          "S3Key": {
+            "Fn::Join": [
+              "/",
+              [
+                {
+                  "Fn::FindInMap": [
+                    "SourceCode",
+                    "General",
+                    "CodeKeyPrefix",
+                  ],
+                },
+                "media_insights_on_aws_lambda_layer_python3.9-v5.1.8.zip",
+              ],
+            ],
+          },
+        },
+        "Description": "Boto3 and MediaInsightsOnAwsLambdaHelper packages for Python 3.9",
+        "LayerName": "media-insights-on-aws-python39",
+        "LicenseInfo": "Apache-2.0",
+      },
+      "Type": "AWS::Lambda::LayerVersion",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "MediaInsightsWorkflowApi": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "Parameters": {
+          "CompleteStageLambdaArn": {
+            "Fn::GetAtt": [
+              "CompleteStageLambda",
+              "Arn",
+            ],
+          },
+          "DataPlaneBucket": {
+            "Ref": "Dataplane",
+          },
+          "DataplaneEndpoint": {
+            "Fn::GetAtt": [
+              "MediaInsightsDataplaneApiStack",
+              "Outputs.APIHandlerName",
+            ],
+          },
+          "DataplaneHandlerArn": {
+            "Fn::GetAtt": [
+              "MediaInsightsDataplaneApiStack",
+              "Outputs.APIHandlerArn",
+            ],
+          },
+          "DeploymentPackageBucket": {
+            "Fn::Join": [
+              "-",
+              [
+                {
+                  "Fn::FindInMap": [
+                    "SourceCode",
+                    "General",
+                    "RegionalS3Bucket",
+                  ],
+                },
+                {
+                  "Ref": "AWS::Region",
+                },
+              ],
+            ],
+          },
+          "DeploymentPackageKey": {
+            "Fn::Join": [
+              "/",
+              [
+                {
+                  "Fn::FindInMap": [
+                    "SourceCode",
+                    "General",
+                    "CodeKeyPrefix",
+                  ],
+                },
+                "workflowapi.zip",
+              ],
+            ],
+          },
+          "FilterOperationLambdaArn": {
+            "Fn::GetAtt": [
+              "FilterOperationLambda",
+              "Arn",
+            ],
+          },
+          "FrameworkVersion": {
+            "Fn::FindInMap": [
+              "SourceCode",
+              "General",
+              "FrameworkVersion",
+            ],
+          },
+          "HistoryTableName": {
+            "Ref": "HistoryTable",
+          },
+          "KmsKeyId": {
+            "Ref": "MieKey",
+          },
+          "MediaInsightsOnAwsPython311Layer": {
+            "Ref": "MediaInsightsOnAwsPython311Layer",
+          },
+          "OperationTableName": {
+            "Ref": "OperationTable",
+          },
+          "OperatorFailedHandlerLambdaArn": {
+            "Fn::GetAtt": [
+              "OperatorFailedLambda",
+              "Arn",
+            ],
+          },
+          "ShortUUID": {
+            "Fn::GetAtt": [
+              "GetShortUUID",
+              "Data",
+            ],
+          },
+          "SqsQueueArn": {
+            "Fn::GetAtt": [
+              "StageExecutionQueue",
+              "Arn",
+            ],
+          },
+          "StageExecutionQueueUrl": {
+            "Ref": "StageExecutionQueue",
+          },
+          "StageExecutionRole": {
+            "Fn::GetAtt": [
+              "StepFunctionRole",
+              "Arn",
+            ],
+          },
+          "StageTableName": {
+            "Ref": "StageTable",
+          },
+          "StepFunctionLogGroupArn": {
+            "Fn::GetAtt": [
+              "StepFunctionLogGroup",
+              "Arn",
+            ],
+          },
+          "SystemTableName": {
+            "Ref": "SystemTable",
+          },
+          "TracingConfigMode": {
+            "Fn::If": [
+              "EnableTraceOnEntryPoints",
+              "Active",
+              "PassThrough",
+            ],
+          },
+          "WorkflowExecutionTableName": {
+            "Ref": "WorkflowExecutionTable",
+          },
+          "WorkflowSchedulerLambdaArn": {
+            "Fn::GetAtt": [
+              "WorkflowSchedulerLambda",
+              "Arn",
+            ],
+          },
+          "WorkflowTableName": {
+            "Ref": "WorkflowTable",
+          },
+          "botoConfig": {
+            "Fn::Join": [
+              "",
+              [
+                "{"user_agent_extra": "AwsSolution/",
+                {
+                  "Ref": "SolutionId",
+                },
+                "/",
+                {
+                  "Ref": "SolutionVersion",
+                },
+                ""}",
+              ],
+            ],
+          },
+        },
+        "TemplateURL": {
+          "Fn::Join": [
+            "",
+            [
+              "https://s3.",
+              {
+                "Ref": "AWS::Region",
+              },
+              ".",
+              {
+                "Ref": "AWS::URLSuffix",
+              },
+              "/",
+              {
+                "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
+              },
+              /[HASH REMOVED].json,
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::CloudFormation::Stack",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "MieHelperExecutionRole": {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-IAM5",
+              "reason": "Resource ARNs are not generated at the time of policy creation",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:",
+                        {
+                          "Ref": "AWS::Partition",
+                        },
+                        ":logs:",
+                        {
+                          "Ref": "AWS::Region",
+                        },
+                        ":",
+                        {
+                          "Ref": "AWS::AccountId",
+                        },
+                        ":log-group:/aws/lambda/*",
+                      ],
+                    ],
+                  },
+                },
+                {
+                  "Action": "dynamodb:PutItem",
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "SystemTable",
+                      "Arn",
+                    ],
+                  },
+                },
+                {
+                  "Action": "mediaconvert:DescribeEndpoints",
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:",
+                        {
+                          "Ref": "AWS::Partition",
+                        },
+                        ":mediaconvert:",
+                        {
+                          "Ref": "AWS::Region",
+                        },
+                        ":",
+                        {
+                          "Ref": "AWS::AccountId",
+                        },
+                        ":endpoints/*",
+                      ],
+                    ],
+                  },
+                },
+                {
+                  "Action": [
+                    "kms:GenerateDataKey",
+                    "kms:Decrypt",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "MieKey",
+                      "Arn",
+                    ],
+                  },
+                },
+              ],
+              "Version": "2012-10-17",
+            },
+            "PolicyName": "root",
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "environment",
+            "Value": "mie",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "MieHelperFunction": {
+      "DependsOn": [
+        "MieHelperExecutionRole",
+      ],
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-L1",
+              "reason": "Latest lambda version not supported at this time.",
+            },
+          ],
+        },
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W89",
+              "reason": "This Lambda function does not need to access any resource provisioned within a VPC.",
+            },
+            {
+              "id": "W92",
+              "reason": "This function does not require performance optimization, so the default concurrency limits suffice.",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "Code": {
+          "ZipFile": "import string
+import cfnresponse
+import random
+import boto3
+import os
+def id_generator(size=6, chars=string.ascii_lowercase + string.digits):
+  return "".join(random.choices(chars, k=size))
+def get_mediaconvert_endpoint():
+  mediaconvert_client = boto3.client("mediaconvert", region_name=os.environ['AWS_REGION'])
+  response = mediaconvert_client.describe_endpoints()
+  mediaconvert_endpoint = response["Endpoints"][0]["Url"]
+  response_data = {'Data': mediaconvert_endpoint}
+  return response_data
+def init_system_table():
+  dynamodb_client = boto3.resource("dynamodb")
+  SYSTEM_TABLE_NAME = os.environ["SYSTEM_TABLE_NAME"]
+  DEFAULT_MAX_CONCURRENT_WORKFLOWS = int(os.environ["DEFAULT_MAX_CONCURRENT_WORKFLOWS"])
+  system_table = dynamodb_client.Table(SYSTEM_TABLE_NAME)
+  config={"Name":"MaxConcurrentWorkflows", "Value":DEFAULT_MAX_CONCURRENT_WORKFLOWS}
+  return system_table.put_item(Item=config)
+def handler(event, context):
+  print("We got the following event:\\n", event)
+  if event['ResourceProperties']['FunctionKey'] == 'get_short_uuid':
+    response_data = {'Data': id_generator()}
+    cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data, "CustomResourcePhysicalID")
+  elif event['ResourceProperties']['FunctionKey'] == 'init_system_table':
+    response_data = init_system_table()
+    cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data, "CustomResourcePhysicalID")
+  elif event['ResourceProperties']['FunctionKey'] == 'get_mediaconvert_endpoint':
+      response_data = get_mediaconvert_endpoint()
+      cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data, "CustomResourcePhysicalID")
+",
+        },
+        "Environment": {
+          "Variables": {
+            "DEFAULT_MAX_CONCURRENT_WORKFLOWS": {
+              "Ref": "MaxConcurrentWorkflows",
+            },
+            "SYSTEM_TABLE_NAME": {
+              "Ref": "SystemTable",
+            },
+          },
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "MieHelperExecutionRole",
+            "Arn",
+          ],
+        },
+        "Runtime": "python3.11",
+        "Tags": [
+          {
+            "Key": "environment",
+            "Value": "mie",
+          },
+        ],
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "MieHelperFunctionPermissions": {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-L1",
+              "reason": "Latest lambda version not supported at this time.",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "MieHelperFunction",
+            "Arn",
+          ],
+        },
+        "Principal": "cloudformation.amazonaws.com",
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "MieKey": {
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "Description": "Media Insights on AWS provided KMS key for encryption",
+        "EnableKeyRotation": true,
+        "KeyPolicy": {
+          "Statement": [
+            {
+              "Action": "kms:*",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition",
+                      },
+                      ":iam::",
+                      {
+                        "Ref": "AWS::AccountId",
+                      },
+                      ":root",
+                    ],
+                  ],
+                },
+              },
+              "Resource": "*",
+            },
+            {
+              "Action": [
+                "kms:Decrypt",
+                "kms:GenerateDataKey*",
+              ],
+              "Condition": {
+                "StringEquals": {
+                  "aws:SourceAccount": {
+                    "Ref": "AWS::AccountId",
+                  },
+                },
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "s3.amazonaws.com",
+                  "sns.amazonaws.com",
+                  "sqs.amazonaws.com",
+                ],
+              },
+              "Resource": "*",
+            },
+            {
+              "Action": [
+                "kms:Encrypt",
+                "kms:Decrypt",
+                "kms:ReEncrypt*",
+                "kms:GenerateDataKey*",
+                "kms:DescribeKey",
+                "kms:CreateGrant",
+              ],
+              "Condition": {
+                "StringEquals": {
+                  "aws:SourceAccount": {
+                    "Ref": "AWS::AccountId",
+                  },
+                },
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "dynamodb.amazonaws.com",
+              },
+              "Resource": "*",
+            },
+            {
+              "Action": [
+                "kms:Encrypt",
+                "kms:Decrypt",
+                "kms:ReEncrypt*",
+                "kms:GenerateDataKey*",
+                "kms:DescribeKey",
+              ],
+              "Condition": {
+                "StringEquals": {
+                  "aws:SourceAccount": {
+                    "Ref": "AWS::AccountId",
+                  },
+                },
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "rekognition.amazonaws.com",
+              },
+              "Resource": "*",
+            },
+            {
+              "Action": [
+                "kms:Decrypt",
+                "kms:GenerateDataKey",
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "sns.amazonaws.com",
+              },
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::KMS::Key",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "MieKeyAlias": {
+      "Properties": {
+        "AliasName": {
+          "Fn::Join": [
+            "",
+            [
+              "alias/",
+              {
+                "Ref": "AWS::StackName",
+              },
+            ],
+          ],
+        },
+        "TargetKeyId": {
+          "Fn::GetAtt": [
+            "MieKey",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::KMS::Alias",
+    },
+    "OperationLambdaExecutionRole": {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-IAM5",
+              "reason": "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources",
+            },
+          ],
+        },
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W11",
+              "reason": "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Policies": [
+          {
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Action": [
+                    "states:DescribeExecution",
+                    "states:GetExecutionHistory",
+                    "states:StopExecution",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:",
+                        {
+                          "Ref": "AWS::Partition",
+                        },
+                        ":states:",
+                        {
+                          "Ref": "AWS::Region",
+                        },
+                        ":",
+                        {
+                          "Ref": "AWS::AccountId",
+                        },
+                        ":execution:*:*",
+                      ],
+                    ],
+                  },
+                },
+                {
+                  "Action": "lambda:InvokeFunction",
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "WorkflowSchedulerLambda",
+                      "Arn",
+                    ],
+                  },
+                },
+                {
+                  "Action": "states:StartExecution",
+                  "Condition": {
+                    "StringEquals": {
+                      "aws:ResourceTag/environment": "mie",
+                    },
+                  },
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:",
+                        {
+                          "Ref": "AWS::Partition",
+                        },
+                        ":states:",
+                        {
+                          "Ref": "AWS::Region",
+                        },
+                        ":",
+                        {
+                          "Ref": "AWS::AccountId",
+                        },
+                        ":stateMachine:*",
+                      ],
+                    ],
+                  },
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetItem",
+                    "dynamodb:Query",
+                    "dynamodb:Scan",
+                    "dynamodb:DescribeTable",
+                    "dynamodb:BatchGetItem",
+                    "dynamodb:GetRecords",
+                    "dynamodb:DescribeLimits",
+                    "dynamodb:PutItem",
+                    "dynamodb:UpdateItem",
+                    "dynamodb:DeleteItem",
+                    "dynamodb:BatchWriteItem",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": [
+                    {
+                      "Fn::GetAtt": [
+                        "WorkflowTable",
+                        "Arn",
+                      ],
+                    },
+                    {
+                      "Fn::GetAtt": [
+                        "WorkflowExecutionTable",
+                        "Arn",
+                      ],
+                    },
+                    {
+                      "Fn::Join": [
+                        "",
+                        [
+                          {
+                            "Fn::GetAtt": [
+                              "WorkflowExecutionTable",
+                              "Arn",
+                            ],
+                          },
+                          "/index/*",
+                        ],
+                      ],
+                    },
+                    {
+                      "Fn::GetAtt": [
+                        "SystemTable",
+                        "Arn",
+                      ],
+                    },
+                  ],
+                },
+                {
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:",
+                        {
+                          "Ref": "AWS::Partition",
+                        },
+                        ":logs:",
+                        {
+                          "Ref": "AWS::Region",
+                        },
+                        ":",
+                        {
+                          "Ref": "AWS::AccountId",
+                        },
+                        ":log-group:/aws/lambda/*",
+                      ],
+                    ],
+                  },
+                },
+                {
+                  "Action": [
+                    "sqs:DeleteMessage",
+                    "sqs:ListQueues",
+                    "sqs:ChangeMessageVisibility",
+                    "sqs:ReceiveMessage",
+                    "sqs:SendMessage",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": [
+                    {
+                      "Fn::GetAtt": [
+                        "StageExecutionQueue",
+                        "Arn",
+                      ],
+                    },
+                    {
+                      "Fn::GetAtt": [
+                        "WorkflowExecutionLambdaDeadLetterQueue",
+                        "Arn",
+                      ],
+                    },
+                  ],
+                },
+                {
+                  "Action": [
+                    "xray:PutTraceSegments",
+                    "xray:PutTelemetryRecords",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": "*",
+                },
+                {
+                  "Action": "kms:Decrypt",
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "MieKey",
+                      "Arn",
+                    ],
+                  },
+                },
+              ],
+              "Version": "2012-10-17",
+            },
+            "PolicyName": {
+              "Fn::Join": [
+                "",
+                [
+                  {
+                    "Ref": "AWS::StackName",
+                  },
+                  "-operation-lambda",
+                ],
+              ],
+            },
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "environment",
+            "Value": "mie",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "OperationLambdaExecutionRoleDefaultPolicy": {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-IAM5",
+              "reason": "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sqs:SendMessage",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "WorkflowExecutionLambdaDeadLetterQueue",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "OperationLambdaExecutionRoleDefaultPolicy",
+        "Roles": [
+          {
+            "Ref": "OperationLambdaExecutionRole",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "OperationTable": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "MieKeyAlias",
+      ],
+      "Metadata": {
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W28",
+              "reason": "Table name is constructed with stack name. On update, we need to keep the existing table name.",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "Name",
+            "AttributeType": "S",
+          },
+        ],
+        "BillingMode": "PAY_PER_REQUEST",
+        "KeySchema": [
+          {
+            "AttributeName": "Name",
+            "KeyType": "HASH",
+          },
+        ],
+        "PointInTimeRecoverySpecification": {
+          "PointInTimeRecoveryEnabled": true,
+        },
+        "SSESpecification": {
+          "KMSMasterKeyId": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":kms:",
+                {
+                  "Ref": "AWS::Region",
+                },
+                ":",
+                {
+                  "Ref": "AWS::AccountId",
+                },
+                ":alias/",
+                {
+                  "Ref": "AWS::StackName",
+                },
+              ],
+            ],
+          },
+          "SSEEnabled": true,
+          "SSEType": "KMS",
+        },
+        "TableName": {
+          "Fn::Join": [
+            "",
+            [
+              {
+                "Ref": "AWS::StackName",
+              },
+              "Operation",
+            ],
+          ],
+        },
+        "Tags": [
+          {
+            "Key": "environment",
+            "Value": "mie",
+          },
+        ],
+      },
+      "Type": "AWS::DynamoDB::Table",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "OperatorFailedLambda": {
+      "DependsOn": [
+        "operatorFailedRoleDefaultPolicy",
+        "operatorFailedRole",
+      ],
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-L1",
+              "reason": "Latest lambda version not supported at this time.",
+            },
+          ],
+        },
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W89",
+              "reason": "This Lambda function does not need to access any resource provisioned within a VPC.",
+            },
+            {
+              "id": "W92",
+              "reason": "This function does not require performance optimization, so the default concurrency limits suffice.",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Join": [
+              "-",
+              [
+                {
+                  "Fn::FindInMap": [
+                    "SourceCode",
+                    "General",
+                    "RegionalS3Bucket",
+                  ],
+                },
+                {
+                  "Ref": "AWS::Region",
+                },
+              ],
+            ],
+          },
+          "S3Key": {
+            "Fn::Join": [
+              "/",
+              [
+                {
+                  "Fn::FindInMap": [
+                    "SourceCode",
+                    "General",
+                    "CodeKeyPrefix",
+                  ],
+                },
+                "operator_failed.zip",
+              ],
+            ],
+          },
+        },
+        "Handler": "operator_failed.lambda_handler",
+        "Layers": [
+          {
+            "Ref": "MediaInsightsOnAwsPython311Layer",
+          },
+        ],
+        "Role": {
+          "Fn::GetAtt": [
+            "operatorFailedRole",
+            "Arn",
+          ],
+        },
+        "Runtime": "python3.11",
+        "Tags": [
+          {
+            "Key": "environment",
+            "Value": "mie",
+          },
+        ],
+        "TracingConfig": {
+          "Mode": "PassThrough",
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "OperatorLibrary": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "MediaInsightsDataplaneApiStack",
+        "MediaInsightsWorkflowApi",
+      ],
+      "Properties": {
+        "Parameters": {
+          "Boto3UserAgent": {
+            "Fn::Join": [
+              "",
+              [
+                "{"user_agent_extra": "AwsSolution/",
+                {
+                  "Ref": "SolutionId",
+                },
+                "/",
+                {
+                  "Ref": "SolutionVersion",
+                },
+                ""}",
+              ],
+            ],
+          },
+          "CheckWaitOperationLambda": {
+            "Fn::GetAtt": [
+              "CheckWaitOperationLambda",
+              "Arn",
+            ],
+          },
+          "DataPlaneBucket": {
+            "Ref": "Dataplane",
+          },
+          "DataPlaneEndpoint": {
+            "Fn::GetAtt": [
+              "MediaInsightsDataplaneApiStack",
+              "Outputs.APIHandlerName",
+            ],
+          },
+          "DataPlaneHandlerArn": {
+            "Fn::GetAtt": [
+              "MediaInsightsDataplaneApiStack",
+              "Outputs.APIHandlerArn",
+            ],
+          },
+          "ExternalBucketArn": {
+            "Ref": "ExternalBucketArn",
+          },
+          "MediaConvertEndpoint": {
+            "Fn::GetAtt": [
+              "GetMediaConvertEndpoint",
+              "Data",
+            ],
+          },
+          "StartWaitOperationLambda": {
+            "Fn::GetAtt": [
+              "StartWaitOperationLambda",
+              "Arn",
+            ],
+          },
+          "WorkflowCustomResourceArn": {
+            "Fn::GetAtt": [
+              "MediaInsightsWorkflowApi",
+              "Outputs.WorkflowCustomResourceArn",
+            ],
+          },
+          "referencetoMiTestStackMediaInsightsOnAwsPython311Layer": {
+            "Ref": "MediaInsightsOnAwsPython311Layer",
+          },
+          "referencetoMiTestStackMieKey": {
+            "Ref": "MieKey",
+          },
+          "referencetoMiTestStackMieKeyArn": {
+            "Fn::GetAtt": [
+              "MieKey",
+              "Arn",
+            ],
+          },
+        },
+        "TemplateURL": {
+          "Fn::Join": [
+            "",
+            [
+              "https://s3.",
+              {
+                "Ref": "AWS::Region",
+              },
+              ".",
+              {
+                "Ref": "AWS::URLSuffix",
+              },
+              "/",
+              {
+                "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
+              },
+              /[HASH REMOVED].json,
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::CloudFormation::Stack",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "StageExecutionDeadLetterQueue": {
+      "DeletionPolicy": "Delete",
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-SQS3",
+              "reason": "The SQS queue is a dead-letter queue (DLQ)",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "KmsMasterKeyId": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":kms:",
+              {
+                "Ref": "AWS::Region",
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId",
+              },
+              ":alias/",
+              {
+                "Ref": "AWS::StackName",
+              },
+            ],
+          ],
+        },
+        "MessageRetentionPeriod": 43200,
+        "QueueName": {
+          "Fn::Join": [
+            "",
+            [
+              {
+                "Ref": "AWS::StackName",
+              },
+              "-StageExecDLQ",
+            ],
+          ],
+        },
+        "Tags": [
+          {
+            "Key": "environment",
+            "Value": "mie",
+          },
+        ],
+      },
+      "Type": "AWS::SQS::Queue",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "StageExecutionDeadLetterQueuePolicy": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sqs:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*",
+              },
+              "Resource": {
+                "Fn::GetAtt": [
+                  "StageExecutionDeadLetterQueue",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Queues": [
+          {
+            "Ref": "StageExecutionDeadLetterQueue",
+          },
+        ],
+      },
+      "Type": "AWS::SQS::QueuePolicy",
+    },
+    "StageExecutionQueue": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "KmsMasterKeyId": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":kms:",
+              {
+                "Ref": "AWS::Region",
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId",
+              },
+              ":alias/",
+              {
+                "Ref": "AWS::StackName",
+              },
+            ],
+          ],
+        },
+        "QueueName": {
+          "Fn::Join": [
+            "",
+            [
+              {
+                "Ref": "AWS::StackName",
+              },
+              "-StageExec",
+            ],
+          ],
+        },
+        "ReceiveMessageWaitTimeSeconds": 20,
+        "RedrivePolicy": {
+          "deadLetterTargetArn": {
+            "Fn::GetAtt": [
+              "StageExecutionDeadLetterQueue",
+              "Arn",
+            ],
+          },
+          "maxReceiveCount": 1,
+        },
+        "Tags": [
+          {
+            "Key": "environment",
+            "Value": "mie",
+          },
+        ],
+        "VisibilityTimeout": 43200,
+      },
+      "Type": "AWS::SQS::Queue",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "StageExecutionQueuePolicy": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sqs:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*",
+              },
+              "Resource": {
+                "Fn::GetAtt": [
+                  "StageExecutionQueue",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Queues": [
+          {
+            "Ref": "StageExecutionQueue",
+          },
+        ],
+      },
+      "Type": "AWS::SQS::QueuePolicy",
+    },
+    "StageExecutionRole": {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-IAM5",
+              "reason": "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources",
+            },
+          ],
+        },
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W11",
+              "reason": "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Policies": [
+          {
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Action": "states:StartExecution",
+                  "Condition": {
+                    "StringEquals": {
+                      "aws:ResourceTag/environment": "mie",
+                    },
+                  },
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:",
+                        {
+                          "Ref": "AWS::Partition",
+                        },
+                        ":states:",
+                        {
+                          "Ref": "AWS::Region",
+                        },
+                        ":",
+                        {
+                          "Ref": "AWS::AccountId",
+                        },
+                        ":stateMachine:*",
+                      ],
+                    ],
+                  },
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetItem",
+                    "dynamodb:Query",
+                    "dynamodb:Scan",
+                    "dynamodb:DescribeTable",
+                    "dynamodb:BatchGetItem",
+                    "dynamodb:GetRecords",
+                    "dynamodb:DescribeLimits",
+                    "dynamodb:PutItem",
+                    "dynamodb:UpdateItem",
+                    "dynamodb:DeleteItem",
+                    "dynamodb:BatchWriteItem",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": [
+                    {
+                      "Fn::GetAtt": [
+                        "WorkflowTable",
+                        "Arn",
+                      ],
+                    },
+                    {
+                      "Fn::GetAtt": [
+                        "WorkflowExecutionTable",
+                        "Arn",
+                      ],
+                    },
+                    {
+                      "Fn::Join": [
+                        "",
+                        [
+                          {
+                            "Fn::GetAtt": [
+                              "WorkflowExecutionTable",
+                              "Arn",
+                            ],
+                          },
+                          "/index/*",
+                        ],
+                      ],
+                    },
+                    {
+                      "Fn::GetAtt": [
+                        "SystemTable",
+                        "Arn",
+                      ],
+                    },
+                  ],
+                },
+                {
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:",
+                        {
+                          "Ref": "AWS::Partition",
+                        },
+                        ":logs:",
+                        {
+                          "Ref": "AWS::Region",
+                        },
+                        ":",
+                        {
+                          "Ref": "AWS::AccountId",
+                        },
+                        ":log-group:/aws/lambda/*",
+                      ],
+                    ],
+                  },
+                },
+                {
+                  "Action": [
+                    "sqs:DeleteMessage",
+                    "sqs:ListQueues",
+                    "sqs:ChangeMessageVisibility",
+                    "sqs:ReceiveMessage",
+                    "sqs:SendMessage",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": [
+                    {
+                      "Fn::GetAtt": [
+                        "StageExecutionQueue",
+                        "Arn",
+                      ],
+                    },
+                    {
+                      "Fn::GetAtt": [
+                        "WorkflowExecutionLambdaDeadLetterQueue",
+                        "Arn",
+                      ],
+                    },
+                  ],
+                },
+                {
+                  "Action": [
+                    "xray:PutTraceSegments",
+                    "xray:PutTelemetryRecords",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": "*",
+                },
+                {
+                  "Action": "kms:Decrypt",
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "MieKey",
+                      "Arn",
+                    ],
+                  },
+                },
+              ],
+              "Version": "2012-10-17",
+            },
+            "PolicyName": {
+              "Fn::Join": [
+                "",
+                [
+                  {
+                    "Ref": "AWS::StackName",
+                  },
+                  "-stage-execution-lambda",
+                ],
+              ],
+            },
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "environment",
+            "Value": "mie",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "StageExecutionRoleDefaultPolicy": {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-IAM5",
+              "reason": "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sqs:SendMessage",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "WorkflowExecutionLambdaDeadLetterQueue",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "StageExecutionRoleDefaultPolicy",
+        "Roles": [
+          {
+            "Ref": "StageExecutionRole",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "StageTable": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "MieKeyAlias",
+      ],
+      "Metadata": {
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W28",
+              "reason": "Table name is constructed with stack name. On update, we need to keep the existing table name.",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "Name",
+            "AttributeType": "S",
+          },
+        ],
+        "BillingMode": "PAY_PER_REQUEST",
+        "KeySchema": [
+          {
+            "AttributeName": "Name",
+            "KeyType": "HASH",
+          },
+        ],
+        "PointInTimeRecoverySpecification": {
+          "PointInTimeRecoveryEnabled": true,
+        },
+        "SSESpecification": {
+          "KMSMasterKeyId": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":kms:",
+                {
+                  "Ref": "AWS::Region",
+                },
+                ":",
+                {
+                  "Ref": "AWS::AccountId",
+                },
+                ":alias/",
+                {
+                  "Ref": "AWS::StackName",
+                },
+              ],
+            ],
+          },
+          "SSEEnabled": true,
+          "SSEType": "KMS",
+        },
+        "TableName": {
+          "Fn::Join": [
+            "",
+            [
+              {
+                "Ref": "AWS::StackName",
+              },
+              "Stage",
+            ],
+          ],
+        },
+        "Tags": [
+          {
+            "Key": "environment",
+            "Value": "mie",
+          },
+        ],
+      },
+      "Type": "AWS::DynamoDB::Table",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "StartWaitOperationLambda": {
+      "DependsOn": [
+        "OperationLambdaExecutionRoleDefaultPolicy",
+        "OperationLambdaExecutionRole",
+      ],
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-L1",
+              "reason": "Latest lambda version not supported at this time.",
+            },
+          ],
+        },
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W89",
+              "reason": "This Lambda function does not need to access any resource provisioned within a VPC.",
+            },
+            {
+              "id": "W92",
+              "reason": "This function does not require performance optimization, so the default concurrency limits suffice.",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Join": [
+              "-",
+              [
+                {
+                  "Fn::FindInMap": [
+                    "SourceCode",
+                    "General",
+                    "RegionalS3Bucket",
+                  ],
+                },
+                {
+                  "Ref": "AWS::Region",
+                },
+              ],
+            ],
+          },
+          "S3Key": {
+            "Fn::Join": [
+              "/",
+              [
+                {
+                  "Fn::FindInMap": [
+                    "SourceCode",
+                    "General",
+                    "CodeKeyPrefix",
+                  ],
+                },
+                "workflow.zip",
+              ],
+            ],
+          },
+        },
+        "Environment": {
+          "Variables": {
+            "OPERATION_TABLE_NAME": {
+              "Ref": "OperationTable",
+            },
+            "STAGE_EXECUTION_QUEUE_URL": {
+              "Ref": "StageExecutionQueue",
+            },
+            "STAGE_TABLE_NAME": {
+              "Ref": "StageTable",
+            },
+            "WORKFLOW_EXECUTION_TABLE_NAME": {
+              "Ref": "WorkflowExecutionTable",
+            },
+            "WORKFLOW_TABLE_NAME": {
+              "Ref": "WorkflowTable",
+            },
+            "botoConfig": {
+              "Fn::Join": [
+                "",
+                [
+                  "{"user_agent_extra": "AwsSolution/",
+                  {
+                    "Ref": "SolutionId",
+                  },
+                  "/",
+                  {
+                    "Ref": "SolutionVersion",
+                  },
+                  ""}",
+                ],
+              ],
+            },
+          },
+        },
+        "FunctionName": {
+          "Fn::Join": [
+            "",
+            [
+              {
+                "Ref": "AWS::StackName",
+              },
+              "-start-wait-operation",
+            ],
+          ],
+        },
+        "Handler": "app.start_wait_operation_lambda",
+        "Layers": [
+          {
+            "Ref": "MediaInsightsOnAwsPython311Layer",
+          },
+        ],
+        "MemorySize": 256,
+        "Role": {
+          "Fn::GetAtt": [
+            "OperationLambdaExecutionRole",
+            "Arn",
+          ],
+        },
+        "Runtime": "python3.11",
+        "Tags": [
+          {
+            "Key": "environment",
+            "Value": "mie",
+          },
+        ],
+        "Timeout": 900,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "StateMachineErrorCloudWatchEvent": {
+      "DependsOn": [
+        "WorkflowErrorHandlerLambda",
+      ],
+      "Properties": {
+        "Description": "state machine error handler",
+        "EventPattern": {
+          "detail": {
+            "status": [
+              "FAILED",
+              "ABORTED",
+              "TIMED_OUT",
+            ],
+          },
+          "detail-type": [
+            "Step Functions Execution Status Change",
+          ],
+          "source": [
+            "aws.states",
+          ],
+        },
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              {
+                "Ref": "AWS::StackName",
+              },
+              "-state-error-handler",
+            ],
+          ],
+        },
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Arn": {
+              "Fn::GetAtt": [
+                "WorkflowErrorHandlerLambda",
+                "Arn",
+              ],
+            },
+            "Id": "Target0",
+          },
+        ],
+      },
+      "Type": "AWS::Events::Rule",
+    },
+    "StateMachineErrorCloudWatchEventAllowEventRuleMiTestStackWorkflowErrorHandlerLambda84BAA536": {
+      "DependsOn": [
+        "WorkflowErrorHandlerLambda",
+      ],
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "WorkflowErrorHandlerLambda",
+            "Arn",
+          ],
+        },
+        "Principal": "events.amazonaws.com",
+        "SourceArn": {
+          "Fn::GetAtt": [
+            "StateMachineErrorCloudWatchEvent",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "StepFunctionLogGroup": {
+      "DeletionPolicy": "Retain",
+      "Metadata": {
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W84",
+              "reason": "Log group data is encrypted by default in CloudWatch",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "LogGroupName": {
+          "Fn::Join": [
+            "",
+            [
+              "/aws/vendedlogs/states/",
+              {
+                "Ref": "AWS::StackName",
+              },
+              "-StepFunctionLogGroup-",
+              {
+                "Fn::GetAtt": [
+                  "GetShortUUID",
+                  "Data",
+                ],
+              },
+            ],
+          ],
+        },
+        "RetentionInDays": 14,
+        "Tags": [
+          {
+            "Key": "environment",
+            "Value": "mie",
+          },
+        ],
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "StepFunctionRole": {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-IAM5",
+              "reason": "The X-Ray and Cloudwatch policies use actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources and https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazoncloudwatchlogs.html",
+            },
+          ],
+        },
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W11",
+              "reason": "The X-Ray and Cloudwatch policies use actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources and https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazoncloudwatchlogs.html",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": {
+                  "Fn::FindInMap": [
+                    "ServiceprincipalMap",
+                    {
+                      "Ref": "AWS::Region",
+                    },
+                    "states",
+                  ],
+                },
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Policies": [
+          {
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Action": "lambda:InvokeFunction",
+                  "Effect": "Allow",
+                  "Resource": [
+                    "arn:aws:lambda:*:*:function:*OperatorLibrary*",
+                    "arn:aws:lambda:*:*:function:*start-wait-operation",
+                    "arn:aws:lambda:*:*:function:*check-wait-operation",
+                    "arn:aws:lambda:*:*:function:*CompleteStageLambda*",
+                    "arn:aws:lambda:*:*:function:*OperatorFailedLambda*",
+                    "arn:aws:lambda:*:*:function:*FilterOperationLambda*",
+                  ],
+                },
+                {
+                  "Action": [
+                    "xray:PutTraceSegments",
+                    "xray:PutTelemetryRecords",
+                    "xray:GetSamplingRules",
+                    "xray:GetSamplingTargets",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": "*",
+                },
+                {
+                  "Action": [
+                    "logs:CreateLogDelivery",
+                    "logs:GetLogDelivery",
+                    "logs:UpdateLogDelivery",
+                    "logs:DeleteLogDelivery",
+                    "logs:ListLogDeliveries",
+                    "logs:PutResourcePolicy",
+                    "logs:DescribeResourcePolicies",
+                    "logs:DescribeLogGroups",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": "*",
+                },
+              ],
+              "Version": "2012-10-17",
+            },
+            "PolicyName": {
+              "Fn::Join": [
+                "",
+                [
+                  {
+                    "Ref": "AWS::StackName",
+                  },
+                  "-sfn-lambda-exec",
+                ],
+              ],
+            },
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "environment",
+            "Value": "mie",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "SystemTable": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "MieKeyAlias",
+      ],
+      "Metadata": {
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W28",
+              "reason": "Table name is constructed with stack name. On update, we need to keep the existing table name.",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "Name",
+            "AttributeType": "S",
+          },
+        ],
+        "BillingMode": "PAY_PER_REQUEST",
+        "KeySchema": [
+          {
+            "AttributeName": "Name",
+            "KeyType": "HASH",
+          },
+        ],
+        "PointInTimeRecoverySpecification": {
+          "PointInTimeRecoveryEnabled": true,
+        },
+        "SSESpecification": {
+          "KMSMasterKeyId": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":kms:",
+                {
+                  "Ref": "AWS::Region",
+                },
+                ":",
+                {
+                  "Ref": "AWS::AccountId",
+                },
+                ":alias/",
+                {
+                  "Ref": "AWS::StackName",
+                },
+              ],
+            ],
+          },
+          "SSEEnabled": true,
+          "SSEType": "KMS",
+        },
+        "TableName": {
+          "Fn::Join": [
+            "",
+            [
+              {
+                "Ref": "AWS::StackName",
+              },
+              "System",
+            ],
+          ],
+        },
+        "Tags": [
+          {
+            "Key": "environment",
+            "Value": "mie",
+          },
+        ],
+      },
+      "Type": "AWS::DynamoDB::Table",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "TestResources": {
+      "Condition": "DeployTestResourcesCondition",
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "MediaInsightsDataplaneApiStack",
+        "MediaInsightsWorkflowApi",
+        "OperatorLibrary",
+      ],
+      "Properties": {
+        "Parameters": {
+          "DataPlaneBucket": {
+            "Ref": "Dataplane",
+          },
+          "DataplaneEndpoint": {
+            "Fn::GetAtt": [
+              "MediaInsightsDataplaneApiStack",
+              "Outputs.APIHandlerName",
+            ],
+          },
+          "referencetoMiTestStackMediaInsightsOnAwsPython311Layer": {
+            "Ref": "MediaInsightsOnAwsPython311Layer",
+          },
+        },
+        "TemplateURL": {
+          "Fn::Join": [
+            "",
+            [
+              "https://s3.",
+              {
+                "Ref": "AWS::Region",
+              },
+              ".",
+              {
+                "Ref": "AWS::URLSuffix",
+              },
+              "/",
+              {
+                "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
+              },
+              /[HASH REMOVED].json,
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::CloudFormation::Stack",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "WorkflowErrorHandlerLambda": {
+      "DependsOn": [
+        "OperationLambdaExecutionRoleDefaultPolicy",
+        "OperationLambdaExecutionRole",
+      ],
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-L1",
+              "reason": "Latest lambda version not supported at this time.",
+            },
+          ],
+        },
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W89",
+              "reason": "This Lambda function does not need to access any resource provisioned within a VPC.",
+            },
+            {
+              "id": "W92",
+              "reason": "This function does not require performance optimization, so the default concurrency limits suffice.",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Join": [
+              "-",
+              [
+                {
+                  "Fn::FindInMap": [
+                    "SourceCode",
+                    "General",
+                    "RegionalS3Bucket",
+                  ],
+                },
+                {
+                  "Ref": "AWS::Region",
+                },
+              ],
+            ],
+          },
+          "S3Key": {
+            "Fn::Join": [
+              "/",
+              [
+                {
+                  "Fn::FindInMap": [
+                    "SourceCode",
+                    "General",
+                    "CodeKeyPrefix",
+                  ],
+                },
+                "workflow.zip",
+              ],
+            ],
+          },
+        },
+        "DeadLetterConfig": {
+          "TargetArn": {
+            "Fn::GetAtt": [
+              "WorkflowExecutionLambdaDeadLetterQueue",
+              "Arn",
+            ],
+          },
+        },
+        "Environment": {
+          "Variables": {
+            "DEFAULT_MAX_CONCURRENT_WORKFLOWS": {
+              "Ref": "MaxConcurrentWorkflows",
+            },
+            "OPERATION_TABLE_NAME": {
+              "Ref": "OperationTable",
+            },
+            "STAGE_EXECUTION_QUEUE_URL": {
+              "Ref": "StageExecutionQueue",
+            },
+            "STAGE_TABLE_NAME": {
+              "Ref": "StageTable",
+            },
+            "SYSTEM_TABLE_NAME": {
+              "Ref": "SystemTable",
+            },
+            "ShortUUID": {
+              "Fn::GetAtt": [
+                "GetShortUUID",
+                "Data",
+              ],
+            },
+            "WORKFLOW_EXECUTION_TABLE_NAME": {
+              "Ref": "WorkflowExecutionTable",
+            },
+            "WORKFLOW_SCHEDULER_LAMBDA_ARN": {
+              "Fn::GetAtt": [
+                "WorkflowSchedulerLambda",
+                "Arn",
+              ],
+            },
+            "WORKFLOW_TABLE_NAME": {
+              "Ref": "WorkflowTable",
+            },
+          },
+        },
+        "Handler": "app.workflow_error_handler_lambda",
+        "Layers": [
+          {
+            "Ref": "MediaInsightsOnAwsPython311Layer",
+          },
+        ],
+        "MemorySize": 256,
+        "ReservedConcurrentExecutions": 1,
+        "Role": {
+          "Fn::GetAtt": [
+            "OperationLambdaExecutionRole",
+            "Arn",
+          ],
+        },
+        "Runtime": "python3.11",
+        "Tags": [
+          {
+            "Key": "environment",
+            "Value": "mie",
+          },
+        ],
+        "Timeout": 900,
+        "TracingConfig": {
+          "Mode": {
+            "Fn::If": [
+              "EnableTraceOnEntryPoints",
+              "Active",
+              "PassThrough",
+            ],
+          },
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "WorkflowExecutionEventQueue": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "KmsMasterKeyId": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":kms:",
+              {
+                "Ref": "AWS::Region",
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId",
+              },
+              ":alias/",
+              {
+                "Ref": "AWS::StackName",
+              },
+            ],
+          ],
+        },
+        "RedrivePolicy": {
+          "deadLetterTargetArn": {
+            "Fn::GetAtt": [
+              "WorkflowExecutionLambdaDeadLetterQueue",
+              "Arn",
+            ],
+          },
+          "maxReceiveCount": 1,
+        },
+      },
+      "Type": "AWS::SQS::Queue",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "WorkflowExecutionEventQueueMiTestStackWorkflowExecutionEventTopic51C4E0D6": {
+      "DependsOn": [
+        "WorkflowExecutionEventQueuePolicy",
+      ],
+      "Properties": {
+        "Endpoint": {
+          "Fn::GetAtt": [
+            "WorkflowExecutionEventQueue",
+            "Arn",
+          ],
+        },
+        "Protocol": "sqs",
+        "TopicArn": {
+          "Ref": "WorkflowExecutionEventTopic",
+        },
+      },
+      "Type": "AWS::SNS::Subscription",
+    },
+    "WorkflowExecutionEventQueuePolicy": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sqs:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*",
+              },
+              "Resource": {
+                "Fn::GetAtt": [
+                  "WorkflowExecutionEventQueue",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": "sqs:SendMessage",
+              "Condition": {
+                "ArnEquals": {
+                  "aws:SourceArn": {
+                    "Ref": "WorkflowExecutionEventTopic",
+                  },
+                },
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "sns.amazonaws.com",
+              },
+              "Resource": {
+                "Fn::GetAtt": [
+                  "WorkflowExecutionEventQueue",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Queues": [
+          {
+            "Ref": "WorkflowExecutionEventQueue",
+          },
+        ],
+      },
+      "Type": "AWS::SQS::QueuePolicy",
+    },
+    "WorkflowExecutionEventTopic": {
+      "Properties": {
+        "KmsMasterKeyId": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":kms:",
+              {
+                "Ref": "AWS::Region",
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId",
+              },
+              ":alias/",
+              {
+                "Ref": "AWS::StackName",
+              },
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::SNS::Topic",
+    },
+    "WorkflowExecutionEventTopicPolicy": {
+      "Metadata": {
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W11",
+              "reason": "The topic permissions are scoped to the account using the condition",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "SNS:Subscribe",
+                "SNS:Receive",
+              ],
+              "Condition": {
+                "StringEquals": {
+                  "AWS:SourceOwner": {
+                    "Ref": "AWS::AccountId",
+                  },
+                },
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition",
+                      },
+                      ":iam::",
+                      {
+                        "Ref": "AWS::AccountId",
+                      },
+                      ":root",
+                    ],
+                  ],
+                },
+              },
+              "Resource": {
+                "Ref": "WorkflowExecutionEventTopic",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Topics": [
+          {
+            "Ref": "WorkflowExecutionEventTopic",
+          },
+        ],
+      },
+      "Type": "AWS::SNS::TopicPolicy",
+    },
+    "WorkflowExecutionLambdaDeadLetterQueue": {
+      "DeletionPolicy": "Delete",
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-SQS3",
+              "reason": "The SQS queue is a dead-letter queue (DLQ)",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "KmsMasterKeyId": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":kms:",
+              {
+                "Ref": "AWS::Region",
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId",
+              },
+              ":alias/",
+              {
+                "Ref": "AWS::StackName",
+              },
+            ],
+          ],
+        },
+        "MessageRetentionPeriod": 43200,
+        "QueueName": {
+          "Fn::Join": [
+            "",
+            [
+              {
+                "Ref": "AWS::StackName",
+              },
+              "-WorkflowExecLambdaDLQ",
+            ],
+          ],
+        },
+        "Tags": [
+          {
+            "Key": "environment",
+            "Value": "mie",
+          },
+        ],
+      },
+      "Type": "AWS::SQS::Queue",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "WorkflowExecutionLambdaDeadLetterQueuePolicy": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sqs:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*",
+              },
+              "Resource": {
+                "Fn::GetAtt": [
+                  "WorkflowExecutionLambdaDeadLetterQueue",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Queues": [
+          {
+            "Ref": "WorkflowExecutionLambdaDeadLetterQueue",
+          },
+        ],
+      },
+      "Type": "AWS::SQS::QueuePolicy",
+    },
+    "WorkflowExecutionStreamLambdaRole": {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-IAM5",
+              "reason": "Lambda requires ability to write to cloudwatch *, as configured in the default AWS lambda execution role.",
+            },
+          ],
+        },
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W11",
+              "reason": "Lambda requires ability to write to cloudwatch *, as configured in the default AWS lambda execution role.",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Policies": [
+          {
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Action": [
+                    "dynamodb:DescribeStream",
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator",
+                    "dynamodb:ListStreams",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "WorkflowExecutionTable",
+                      "StreamArn",
+                    ],
+                  },
+                },
+                {
+                  "Action": "sns:Publish",
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "WorkflowExecutionEventTopic",
+                  },
+                },
+                {
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:",
+                        {
+                          "Ref": "AWS::Partition",
+                        },
+                        ":logs:",
+                        {
+                          "Ref": "AWS::Region",
+                        },
+                        ":",
+                        {
+                          "Ref": "AWS::AccountId",
+                        },
+                        ":log-group:/aws/lambda/*",
+                      ],
+                    ],
+                  },
+                },
+                {
+                  "Action": [
+                    "kms:GenerateDataKey",
+                    "kms:Decrypt",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "MieKey",
+                      "Arn",
+                    ],
+                  },
+                },
+              ],
+              "Version": "2012-10-17",
+            },
+            "PolicyName": {
+              "Fn::Join": [
+                "",
+                [
+                  {
+                    "Ref": "AWS::StackName",
+                  },
+                  "-WorkflowExecutionLambdaStreamAccessPolicy",
+                ],
+              ],
+            },
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "WorkflowExecutionStreamingFunction": {
+      "DependsOn": [
+        "WorkflowExecutionStreamLambdaRole",
+      ],
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-L1",
+              "reason": "Latest lambda version not supported at this time.",
+            },
+          ],
+        },
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W89",
+              "reason": "This Lambda function does not need to access any resource provisioned within a VPC.",
+            },
+            {
+              "id": "W92",
+              "reason": "This function does not require performance optimization, so the default concurrency limits suffice.",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Join": [
+              "-",
+              [
+                {
+                  "Fn::FindInMap": [
+                    "SourceCode",
+                    "General",
+                    "RegionalS3Bucket",
+                  ],
+                },
+                {
+                  "Ref": "AWS::Region",
+                },
+              ],
+            ],
+          },
+          "S3Key": {
+            "Fn::Join": [
+              "/",
+              [
+                {
+                  "Fn::FindInMap": [
+                    "SourceCode",
+                    "General",
+                    "CodeKeyPrefix",
+                  ],
+                },
+                "workflowstream.zip",
+              ],
+            ],
+          },
+        },
+        "Environment": {
+          "Variables": {
+            "TOPIC_ARN": {
+              "Ref": "WorkflowExecutionEventTopic",
+            },
+            "botoConfig": {
+              "Fn::Join": [
+                "",
+                [
+                  "{"user_agent_extra": "AwsSolution/",
+                  {
+                    "Ref": "SolutionId",
+                  },
+                  "/",
+                  {
+                    "Ref": "SolutionVersion",
+                  },
+                  ""}",
+                ],
+              ],
+            },
+          },
+        },
+        "Handler": "workflowstream.lambda_handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "WorkflowExecutionStreamLambdaRole",
+            "Arn",
+          ],
+        },
+        "Runtime": "python3.11",
+        "Tags": [
+          {
+            "Key": "environment",
+            "Value": "mie",
+          },
+        ],
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "WorkflowExecutionStreamingFunctionEventMapping": {
+      "Properties": {
+        "EventSourceArn": {
+          "Fn::GetAtt": [
+            "WorkflowExecutionTable",
+            "StreamArn",
+          ],
+        },
+        "FunctionName": {
+          "Ref": "WorkflowExecutionStreamingFunction",
+        },
+        "StartingPosition": "LATEST",
+      },
+      "Type": "AWS::Lambda::EventSourceMapping",
+    },
+    "WorkflowExecutionTable": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "MieKeyAlias",
+      ],
+      "Metadata": {
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W28",
+              "reason": "Table name is constructed with stack name. On update, we need to keep the existing table name.",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "Id",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "Status",
+            "AttributeType": "S",
+          },
+          {
+            "AttributeName": "AssetId",
+            "AttributeType": "S",
+          },
+        ],
+        "BillingMode": "PAY_PER_REQUEST",
+        "GlobalSecondaryIndexes": [
+          {
+            "IndexName": "WorkflowExecutionStatus",
+            "KeySchema": [
+              {
+                "AttributeName": "Status",
+                "KeyType": "HASH",
+              },
+            ],
+            "Projection": {
+              "ProjectionType": "ALL",
+            },
+          },
+          {
+            "IndexName": "WorkflowExecutionAssetId",
+            "KeySchema": [
+              {
+                "AttributeName": "AssetId",
+                "KeyType": "HASH",
+              },
+            ],
+            "Projection": {
+              "ProjectionType": "ALL",
+            },
+          },
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "Id",
+            "KeyType": "HASH",
+          },
+        ],
+        "PointInTimeRecoverySpecification": {
+          "PointInTimeRecoveryEnabled": true,
+        },
+        "SSESpecification": {
+          "KMSMasterKeyId": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":kms:",
+                {
+                  "Ref": "AWS::Region",
+                },
+                ":",
+                {
+                  "Ref": "AWS::AccountId",
+                },
+                ":alias/",
+                {
+                  "Ref": "AWS::StackName",
+                },
+              ],
+            ],
+          },
+          "SSEEnabled": true,
+          "SSEType": "KMS",
+        },
+        "StreamSpecification": {
+          "StreamViewType": "NEW_AND_OLD_IMAGES",
+        },
+        "TableName": {
+          "Fn::Join": [
+            "",
+            [
+              {
+                "Ref": "AWS::StackName",
+              },
+              "WorkflowExecution",
+            ],
+          ],
+        },
+        "Tags": [
+          {
+            "Key": "environment",
+            "Value": "mie",
+          },
+        ],
+      },
+      "Type": "AWS::DynamoDB::Table",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "WorkflowSchedulerLambda": {
+      "DependsOn": [
+        "StageExecutionRoleDefaultPolicy",
+        "StageExecutionRole",
+      ],
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-L1",
+              "reason": "Latest lambda version not supported at this time.",
+            },
+          ],
+        },
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W89",
+              "reason": "This Lambda function does not need to access any resource provisioned within a VPC.",
+            },
+            {
+              "id": "W92",
+              "reason": "This function does not require performance optimization, so the default concurrency limits suffice.",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Join": [
+              "-",
+              [
+                {
+                  "Fn::FindInMap": [
+                    "SourceCode",
+                    "General",
+                    "RegionalS3Bucket",
+                  ],
+                },
+                {
+                  "Ref": "AWS::Region",
+                },
+              ],
+            ],
+          },
+          "S3Key": {
+            "Fn::Join": [
+              "/",
+              [
+                {
+                  "Fn::FindInMap": [
+                    "SourceCode",
+                    "General",
+                    "CodeKeyPrefix",
+                  ],
+                },
+                "workflow.zip",
+              ],
+            ],
+          },
+        },
+        "DeadLetterConfig": {
+          "TargetArn": {
+            "Fn::GetAtt": [
+              "WorkflowExecutionLambdaDeadLetterQueue",
+              "Arn",
+            ],
+          },
+        },
+        "Environment": {
+          "Variables": {
+            "DEFAULT_MAX_CONCURRENT_WORKFLOWS": {
+              "Ref": "MaxConcurrentWorkflows",
+            },
+            "OPERATION_TABLE_NAME": {
+              "Ref": "OperationTable",
+            },
+            "STAGE_EXECUTION_QUEUE_URL": {
+              "Ref": "StageExecutionQueue",
+            },
+            "STAGE_TABLE_NAME": {
+              "Ref": "StageTable",
+            },
+            "SYSTEM_TABLE_NAME": {
+              "Ref": "SystemTable",
+            },
+            "WORKFLOW_EXECUTION_TABLE_NAME": {
+              "Ref": "WorkflowExecutionTable",
+            },
+            "WORKFLOW_TABLE_NAME": {
+              "Ref": "WorkflowTable",
+            },
+            "botoConfig": {
+              "Fn::Join": [
+                "",
+                [
+                  "{"user_agent_extra": "AwsSolution/",
+                  {
+                    "Ref": "SolutionId",
+                  },
+                  "/",
+                  {
+                    "Ref": "SolutionVersion",
+                  },
+                  ""}",
+                ],
+              ],
+            },
+          },
+        },
+        "Handler": "app.workflow_scheduler_lambda",
+        "Layers": [
+          {
+            "Ref": "MediaInsightsOnAwsPython311Layer",
+          },
+        ],
+        "MemorySize": 256,
+        "ReservedConcurrentExecutions": 1,
+        "Role": {
+          "Fn::GetAtt": [
+            "StageExecutionRole",
+            "Arn",
+          ],
+        },
+        "Runtime": "python3.11",
+        "Tags": [
+          {
+            "Key": "environment",
+            "Value": "mie",
+          },
+        ],
+        "Timeout": 900,
+        "TracingConfig": {
+          "Mode": {
+            "Fn::If": [
+              "EnableTraceOnEntryPoints",
+              "Active",
+              "PassThrough",
+            ],
+          },
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "WorkflowTable": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "MieKeyAlias",
+      ],
+      "Metadata": {
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W28",
+              "reason": "Table name is constructed with stack name. On update, we need to keep the existing table name.",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "Name",
+            "AttributeType": "S",
+          },
+        ],
+        "BillingMode": "PAY_PER_REQUEST",
+        "KeySchema": [
+          {
+            "AttributeName": "Name",
+            "KeyType": "HASH",
+          },
+        ],
+        "PointInTimeRecoverySpecification": {
+          "PointInTimeRecoveryEnabled": true,
+        },
+        "SSESpecification": {
+          "KMSMasterKeyId": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":kms:",
+                {
+                  "Ref": "AWS::Region",
+                },
+                ":",
+                {
+                  "Ref": "AWS::AccountId",
+                },
+                ":alias/",
+                {
+                  "Ref": "AWS::StackName",
+                },
+              ],
+            ],
+          },
+          "SSEEnabled": true,
+          "SSEType": "KMS",
+        },
+        "TableName": {
+          "Fn::Join": [
+            "",
+            [
+              {
+                "Ref": "AWS::StackName",
+              },
+              "Workflow",
+            ],
+          ],
+        },
+        "Tags": [
+          {
+            "Key": "environment",
+            "Value": "mie",
+          },
+        ],
+      },
+      "Type": "AWS::DynamoDB::Table",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "operatorFailedRole": {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-IAM5",
+              "reason": "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources",
+            },
+          ],
+        },
+        "cfn_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "W11",
+              "reason": "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Policies": [
+          {
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:",
+                        {
+                          "Ref": "AWS::Partition",
+                        },
+                        ":logs:*:*:*:*",
+                      ],
+                    ],
+                  },
+                },
+                {
+                  "Action": [
+                    "xray:PutTraceSegments",
+                    "xray:PutTelemetryRecords",
+                  ],
+                  "Effect": "Allow",
+                  "Resource": "*",
+                },
+              ],
+              "Version": "2012-10-17",
+            },
+            "PolicyName": {
+              "Fn::Join": [
+                "",
+                [
+                  {
+                    "Ref": "AWS::StackName",
+                  },
+                  "-operator-failed",
+                ],
+              ],
+            },
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "environment",
+            "Value": "mie",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "operatorFailedRoleDefaultPolicy": {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-IAM5",
+              "reason": "The X-Ray policy uses actions that must be applied to all resources. See https://docs.aws.amazon.com/xray/latest/devguide/security_iam_id-based-policy-examples.html#xray-permissions-resources",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "operatorFailedRoleDefaultPolicy",
+        "Roles": [
+          {
+            "Ref": "operatorFailedRole",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;

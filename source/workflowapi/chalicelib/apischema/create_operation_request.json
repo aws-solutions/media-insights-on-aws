@@ -76,6 +76,10 @@
         "type": "string",
         "title": "The Type Schema",
         "default": "",
+        "enum": [
+          "Sync",
+          "Async"
+        ],
         "examples": [
           "Sync",
           "Async"

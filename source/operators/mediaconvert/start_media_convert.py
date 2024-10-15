@@ -1,8 +1,10 @@
-# Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 import os
 import boto3
+import json
+from botocore import config
 from aws_xray_sdk.core import xray_recorder
 from aws_xray_sdk.core import patch_all
 
@@ -12,18 +14,32 @@ from MediaInsightsEngineLambdaHelper import MasExecutionError
 patch_all()
 
 region = os.environ['AWS_REGION']
+mie_config = json.loads(os.environ['botoConfig'])
+dataplane_bucket = os.environ['DATAPLANE_BUCKET']
+config = config.Config(**mie_config)
+
 mediaconvert_role = os.environ['mediaconvertRole']
-mediaconvert = boto3.client("mediaconvert", region_name=region)
+mediaconvert = boto3.client("mediaconvert", config=config, region_name=region)
+
+media_convert_client = None
 
 
-def lambda_handler(event, context):
+def get_mediaconvert_client():
+    mediaconvert_endpoint = os.environ["MEDIACONVERT_ENDPOINT"]
+    global media_convert_client
+    if media_convert_client is None:
+        media_convert_client = boto3.client("mediaconvert", region_name=region, endpoint_url=mediaconvert_endpoint)
+    return media_convert_client
+
+
+def lambda_handler(event, _context):
     print("We got the following event:\n", event)
     operator_object = MediaInsightsOperationHelper(event)
 
     try:
         workflow_id = str(operator_object.workflow_execution_id)
-        bucket = operator_object.input["Media"]["Video"]["S3Bucket"]
-        key = operator_object.input["Media"]["Video"]["S3Key"]
+        source_bucket = operator_object.input["Media"]["Video"]["S3Bucket"]
+        source_key = operator_object.input["Media"]["Video"]["S3Key"]
     except KeyError as e:
         operator_object.update_workflow_status("Error")
         operator_object.add_workflow_metadata(MediaconvertError="Missing a required metadata key {e}".format(e=e))
@@ -36,27 +52,10 @@ def lambda_handler(event, context):
         print("No asset id passed in with this workflow", e)
         asset_id = ''
 
-    file_input = "s3://" + bucket + "/" + key
-    destination = "s3://" + bucket + "/" + 'private/assets/' + asset_id + "/workflows/" + workflow_id + "/"
+    file_input = "s3://" + source_bucket + "/" + source_key
+    destination = "s3://" + dataplane_bucket + "/" + 'private/assets/' + asset_id + "/workflows/" + workflow_id + "/"
 
-    # Get mediaconvert endpoint from cache if available
-    if ("MEDIACONVERT_ENDPOINT" in os.environ):
-        mediaconvert_endpoint = os.environ["MEDIACONVERT_ENDPOINT"]
-        customer_mediaconvert = boto3.client("mediaconvert", region_name=region, endpoint_url=mediaconvert_endpoint)
-    else:
-        try:
-            response = mediaconvert.describe_endpoints()
-        except Exception as e:
-            print("Exception:\n", e)
-            operator_object.update_workflow_status("Error")
-            operator_object.add_workflow_metadata(MediaconvertError=str(e))
-            raise MasExecutionError(operator_object.return_output_object())
-        else:
-            mediaconvert_endpoint = response["Endpoints"][0]["Url"]
-            # Cache the mediaconvert endpoint in order to avoid getting throttled on
-            # the DescribeEndpoints API.
-            os.environ["MEDIACONVERT_ENDPOINT"] = mediaconvert_endpoint
-            customer_mediaconvert = boto3.client("mediaconvert", region_name=region, endpoint_url=mediaconvert_endpoint)
+    customer_mediaconvert = get_mediaconvert_client()
 
     try:
         response = customer_mediaconvert.create_job(
@@ -132,7 +131,6 @@ def lambda_handler(event, context):
     else:
         job_id = response['Job']['Id']
         operator_object.update_workflow_status("Executing")
-        operator_object.add_workflow_metadata(MediaconvertJobId=job_id, MediaconvertInputFile=key, AssetId=asset_id,
-                                      WorkflowExecutionId=workflow_id)
+        operator_object.add_workflow_metadata(MediaconvertJobId=job_id, MediaconvertInputFile=source_key, AssetId=asset_id,
+                                              WorkflowExecutionId=workflow_id)
         return operator_object.return_output_object()
-

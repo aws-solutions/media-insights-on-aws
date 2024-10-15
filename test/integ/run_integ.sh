@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 ###############################################################################
 # PURPOSE: This script runs our pytest integration test suite.
 #
 # PRELIMINARY:
-#  You must have a functioning MIE deployment. Set the required environment variables; see the testing readme for more
+#  You must have a functioning MI deployment. Set the required environment variables; see the testing readme for more
 #  details.
 #
 # USAGE:
@@ -16,15 +16,15 @@
 ###############################################################################
 # User-defined environment variables
 
-if [ -z MIE_REGION ]
+if [ -z REGION ]
 then
-    echo "You must set the AWS region your MIE stack is install in under the env variable 'MIE_REGION'. Quitting."
+    echo "You must set the AWS region your MI stack is install in under the env variable 'REGION'. Quitting."
     exit
 fi
 
-if [ -z MIE_STACK_NAME ]
+if [ -z MI_STACK_NAME ]
 then
-    echo "You must set the name of your MIE stack under the env variable 'MIE_STACK_NAME'. Quitting."
+    echo "You must set the name of your MI stack under the env variable 'MI_STACK_NAME'. Quitting."
     exit
 fi
 
@@ -45,8 +45,7 @@ fi
 echo "------------------------------------------------------------------------------"
 echo "Creating a temporary Python virtualenv for this script"
 echo "------------------------------------------------------------------------------"
-python -c "import os; print (os.getenv('VIRTUAL_ENV'))" | grep -q None
-if [ $? -ne 0 ]; then
+if [ -n "${VIRTUAL_ENV:-}" ]; then
     echo "ERROR: Do not run this script inside Virtualenv. Type \`deactivate\` and run again.";
     exit 1;
 fi
@@ -67,16 +66,10 @@ echo "--------------------------------------------------------------------------
 echo "Setup test environment variables"
 
 export TEST_MEDIA_PATH="../test-media/"
-export TEST_IMAGE="sample-image.jpg"
-export TEST_VIDEO="sample-video.mp4"
-export TEST_AUDIO="sample-audio.m4a"
-export TEST_TEXT="sample-text.txt"
-export TEST_JSON="sample-data.json"
-export TEST_FACE_IMAGE="sample-face.jpg"
-export TEST_FACE_COLLECTION_ID="temporary_face_collection"
-
-# Retrieve exports from mie stack
-#export BUCKET_NAME=`aws cloudformation list-stack-resources --profile default --stack-name $MIE_STACK_NAME --region $REGION --output text --query 'StackResourceSummaries[?LogicalResourceId == \`Dataplane\`]'.PhysicalResourceId`
+export SAMPLE_IMAGE="sample-image.jpg"
+export SAMPLE_TERMINOLOGY="sampleterminology"
+export TEST_PARALLEL_DATA_NAME="sample_parallel_data"
+export TEST_PARALLEL_DATA="sample_parallel_data.csv"
 
 echo "------------------------------------------------------------------------------"
 if [ "$1" = "" ]; then
@@ -103,11 +96,18 @@ elif [ "$1" = "workflowapi" ]; then
     else
 	exit 1
     fi
+elif [ "$1" = "nightswatch" ]; then
+    echo "Running all integ tests for nightswatch"
+    pytest -ra -W ignore::DeprecationWarning -p no:cacheproviders  --json="$FUNCTIONAL_TESTS_DIR/results/$RESULTS_FILE_NAME" --html="$FUNCTIONAL_TESTS_DIR/results/result-integ.html"
+    if [ $? -eq 0 ]; then
+	exit 0
+    else
+	exit 1
+    fi
 else
     echo "Invalid positional parameter. Quitting."
     exit
 fi
-
 
 echo "------------------------------------------------------------------------------"
 echo "Cleaning up"

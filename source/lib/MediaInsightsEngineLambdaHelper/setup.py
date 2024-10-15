@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 import setuptools
 
 with open("README.md", "r") as fh:
@@ -5,10 +8,10 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="Media Insights Engine Lambda Helper",
-    version="0.0.4",
-    author="Brandon Dold",
-    author_email="brandold@amazon.com",
-    description="Helper classes for developing Media Insights Engine Lambda Functions",
+    version="1.0.0",
+    author="AWS Solutions Builder",
+    author_email="redacted@example.com",
+    description="Helper classes for developing Media Insights on AWS Lambda Functions",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://code.amazon.com/packages/MediaInsightsEngine",

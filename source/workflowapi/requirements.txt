@@ -1,2 +1,6 @@
 docopt==0.6.2
-jsonschema==2.6.0
+# jsonschema will be pinned to this specific versions due to issues in newer ones
+# See the following issues for more details:
+#  - https://github.com/aws/aws-cdk/issues/26300
+#  - https://github.com/python-jsonschema/jsonschema/issues/1117
+jsonschema==4.17.3

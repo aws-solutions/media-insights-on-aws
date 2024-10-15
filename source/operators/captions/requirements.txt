@@ -1,1 +1,1 @@
-webvtt-py
+webvtt-py==0.4.6

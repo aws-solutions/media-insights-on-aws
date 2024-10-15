@@ -1,4 +1,4 @@
-# Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 import json
@@ -6,7 +6,7 @@ import ast
 from MediaInsightsEngineLambdaHelper import MediaInsightsOperationHelper
 
 
-def lambda_handler(event, context):
+def lambda_handler(event, _context):
 
     print("Received: ", event)
 
@@ -33,11 +33,11 @@ def lambda_handler(event, context):
 
         except KeyError as e:
             print("Missing a required key for building the output object: ", e)
-            raise Exception
+            raise
         else:
             # Check to see where the exception came from
 
-            if error["Error"] is not "MasExecutionError":
+            if error["Error"] != "MasExecutionError":
                 formatted_output["MetaData"] = {}
                 formatted_output["MetaData"]["{name}Error".format(name=event["Name"])] = error["Error"]
 
@@ -56,4 +56,3 @@ def lambda_handler(event, context):
 
             print("Returning the following event to the controlplane: ", output_object.return_output_object())
             return output_object.return_output_object()
-

@@ -50,7 +50,8 @@ cleanup() {
 }
 
 pip3 install wheel
-pip3 install --quiet boto3 chalice docopt pyyaml jsonschema aws_xray_sdk
+# Pin versions to match ../../deployment/build-s3-dist.sh
+pip3 install --quiet boto3 chalice==1.31.2 docopt pyyaml jsonschema==4.17.3 aws_xray_sdk
 export PYTHONPATH="$PYTHONPATH:$source_dir/lib/MediaInsightsEngineLambdaHelper/"
 if [ $? -ne 0 ]; then
     echo "ERROR: Failed to install required Python libraries." >&2

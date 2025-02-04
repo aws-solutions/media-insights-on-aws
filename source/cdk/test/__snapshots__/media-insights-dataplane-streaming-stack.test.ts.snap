@@ -40,6 +40,7 @@ exports[`Snapshot media-insights-dataplane-streaming stack test 1`] = `
   },
   "Resources": {
     "AnalyticsStream": {
+      "DeletionPolicy": "Retain",
       "Metadata": {
         "cdk_nag": {
           "rules_to_suppress": [
@@ -69,6 +70,7 @@ exports[`Snapshot media-insights-dataplane-streaming stack test 1`] = `
         ],
       },
       "Type": "AWS::Kinesis::Stream",
+      "UpdateReplacePolicy": "Retain",
     },
     "DynamoDBStreamingFunction": {
       "DependsOn": [
@@ -182,6 +184,12 @@ exports[`Snapshot media-insights-dataplane-streaming stack test 1`] = `
           "Ref": "DynamoDBStreamingFunction",
         },
         "StartingPosition": "LATEST",
+        "Tags": [
+          {
+            "Key": "environment",
+            "Value": "mie",
+          },
+        ],
       },
       "Type": "AWS::Lambda::EventSourceMapping",
     },

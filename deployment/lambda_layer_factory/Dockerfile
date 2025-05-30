@@ -1,4 +1,5 @@
-FROM public.ecr.aws/amazonlinux/amazonlinux:2023.5.20240819.0
+FROM public.ecr.aws/amazonlinux/amazonlinux:2023-minimal
+RUN ln -s /usr/bin/microdnf /usr/bin/yum
 
 WORKDIR /
 RUN yum update -y
@@ -27,6 +28,14 @@ RUN tar -xzf Python-3.11.4.tgz
 WORKDIR /Python-3.11.4
 RUN ./configure --enable-optimizations
 RUN make install
+
+# Update pip and setuptools for all Python versions - use explicit version to ensure consistency
+RUN python3.9 -m pip install --upgrade pip setuptools==78.1.1
+RUN python3.10 -m pip install --upgrade pip setuptools==78.1.1
+RUN python3.11 -m pip install --upgrade pip setuptools==78.1.1
+
+# ── 2️⃣ tell pip to refuse silent downgrades later ──────────────
+ENV PIP_UPGRADE_STRATEGY=eager
 
 # Install Python packages and build zip files at runtime
 WORKDIR /

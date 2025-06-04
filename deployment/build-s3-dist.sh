@@ -315,12 +315,20 @@ else
   fi
   cd "$build_dir"/lambda_layer_factory/ || exit 1
   rm -rf MediaInsightsEngineLambdaHelper/
-  file=$(ls Media_Insights_Engine*.whl)
+  wheel=$(find . -maxdepth 1 -type f \
+        -iname 'media_insights_engine_lambda_helper*.whl' \
+        | head -n 1)
+
+  if [[ -z "$wheel" ]]; then
+    echo "ERROR: media_insights_engine_lambda_helper wheel not found." >&2
+    exit 1
+  fi
   # Note, $(pwd) will be mapped to /packages/ in the Docker container used for building the Lambda zip files. We reference /packages/ in requirements.txt for that reason.
   # Add the whl file to requirements.txt if it is not already there
   mv requirements.txt requirements.txt.old
-  cat requirements.txt.old | grep -v "Media_Insights_Engine_Lambda_Helper" > requirements.txt
-  echo "/packages/$file" >> requirements.txt;
+  grep -v -Ei 'media[_-]insights[_-]engine[_-]lambda[_-]helper' requirements.txt.old \
+    > requirements.txt
+  echo "/packages/$(basename "$wheel")" >> requirements.txt
   # Build Lambda layer zip files and rename them to the filenames expected by the stack. The Lambda layer build script runs in Docker.
   # If Docker is not installed, then we'll use prebuilt Lambda layer zip files.
   echo "Running build-lambda-layer.sh:"

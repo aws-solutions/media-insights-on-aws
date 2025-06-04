@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 echo "================================================================================"
 echo "Installing the packages listed in requirements.txt:"
@@ -6,11 +7,14 @@ echo "==========================================================================
 
 cat /packages/requirements.txt
 
-for i in "$@"
-do
-    echo "Installing for Python version $i"
-    mkdir -p /packages/lambda_layer-python-$i/python/lib/python$i/site-packages
-    pip$i install -q -r /packages/requirements.txt -t /packages/lambda_layer-python-$i/python/lib/python$i/site-packages    
+for pyver in "$@"; do
+  echo "🔧 Bootstrapping pip for Python ${pyver}"
+  python${pyver} -m ensurepip --upgrade
+  python${pyver} -m pip install --no-cache-dir --upgrade pip
+
+  echo "📦 Installing requirements for Python ${pyver}"
+  python${pyver} -m pip install --no-cache-dir -r /packages/requirements.txt \
+      -t "/packages/lambda_layer-python-${pyver}/python/lib/python${pyver}/site-packages"
 done
 
 echo "================================================================================"

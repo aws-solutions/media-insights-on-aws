@@ -1295,6 +1295,7 @@ export class OperatorLibraryStack extends NestedStack {
             const custom = new CustomResource(scope, id === outputName ? `CustomResource${id}` : id, {
                 resourceType: "Custom::CustomResource",
                 serviceToken: workflowCustomResourceArn.valueAsString,
+                serviceTimeout: Duration.minutes(10),
                 properties,
             });
 

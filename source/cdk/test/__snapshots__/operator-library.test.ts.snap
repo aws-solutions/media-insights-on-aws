@@ -1547,6 +1547,7 @@ exports[`Snapshot operator-library stack test 1`] = `
         },
         "Name": "CreateSRTCaptions",
         "ResourceType": "Operation",
+        "ServiceTimeout": "600",
         "ServiceToken": {
           "Ref": "WorkflowCustomResourceArn",
         },
@@ -1671,6 +1672,7 @@ exports[`Snapshot operator-library stack test 1`] = `
         },
         "Name": "CreateVTTCaptions",
         "ResourceType": "Operation",
+        "ServiceTimeout": "600",
         "ServiceToken": {
           "Ref": "WorkflowCustomResourceArn",
         },
@@ -1694,6 +1696,7 @@ exports[`Snapshot operator-library stack test 1`] = `
         },
         "Name": "GenericDataLookup",
         "ResourceType": "Operation",
+        "ServiceTimeout": "600",
         "ServiceToken": {
           "Ref": "WorkflowCustomResourceArn",
         },
@@ -1723,6 +1726,7 @@ exports[`Snapshot operator-library stack test 1`] = `
         },
         "Name": "Mediaconvert",
         "ResourceType": "Operation",
+        "ServiceTimeout": "600",
         "ServiceToken": {
           "Ref": "WorkflowCustomResourceArn",
         },
@@ -1856,6 +1860,7 @@ exports[`Snapshot operator-library stack test 1`] = `
         },
         "Name": "Mediainfo",
         "ResourceType": "Operation",
+        "ServiceTimeout": "600",
         "ServiceToken": {
           "Ref": "WorkflowCustomResourceArn",
         },
@@ -1879,6 +1884,7 @@ exports[`Snapshot operator-library stack test 1`] = `
         },
         "Name": "MediainfoImage",
         "ResourceType": "Operation",
+        "ServiceTimeout": "600",
         "ServiceToken": {
           "Ref": "WorkflowCustomResourceArn",
         },
@@ -1908,6 +1914,7 @@ exports[`Snapshot operator-library stack test 1`] = `
         },
         "Name": "Polly",
         "ResourceType": "Operation",
+        "ServiceTimeout": "600",
         "ServiceToken": {
           "Ref": "WorkflowCustomResourceArn",
         },
@@ -1938,6 +1945,7 @@ exports[`Snapshot operator-library stack test 1`] = `
         },
         "Name": "PollyWebCaptions",
         "ResourceType": "Operation",
+        "ServiceTimeout": "600",
         "ServiceToken": {
           "Ref": "WorkflowCustomResourceArn",
         },
@@ -2591,6 +2599,7 @@ exports[`Snapshot operator-library stack test 1`] = `
         },
         "Name": "Thumbnail",
         "ResourceType": "Operation",
+        "ServiceTimeout": "600",
         "ServiceToken": {
           "Ref": "WorkflowCustomResourceArn",
         },
@@ -2621,6 +2630,7 @@ exports[`Snapshot operator-library stack test 1`] = `
         },
         "Name": "TranscribeAudio",
         "ResourceType": "Operation",
+        "ServiceTimeout": "600",
         "ServiceToken": {
           "Ref": "WorkflowCustomResourceArn",
         },
@@ -2651,6 +2661,7 @@ exports[`Snapshot operator-library stack test 1`] = `
         },
         "Name": "TranscribeVideo",
         "ResourceType": "Operation",
+        "ServiceTimeout": "600",
         "ServiceToken": {
           "Ref": "WorkflowCustomResourceArn",
         },
@@ -2778,6 +2789,7 @@ exports[`Snapshot operator-library stack test 1`] = `
         },
         "Name": "Translate",
         "ResourceType": "Operation",
+        "ServiceTimeout": "600",
         "ServiceToken": {
           "Ref": "WorkflowCustomResourceArn",
         },
@@ -2811,6 +2823,7 @@ exports[`Snapshot operator-library stack test 1`] = `
         },
         "Name": "TranslateWebCaptions",
         "ResourceType": "Operation",
+        "ServiceTimeout": "600",
         "ServiceToken": {
           "Ref": "WorkflowCustomResourceArn",
         },
@@ -2837,6 +2850,7 @@ exports[`Snapshot operator-library stack test 1`] = `
         },
         "Name": "Wait",
         "ResourceType": "Operation",
+        "ServiceTimeout": "600",
         "ServiceToken": {
           "Ref": "WorkflowCustomResourceArn",
         },
@@ -2960,6 +2974,7 @@ exports[`Snapshot operator-library stack test 1`] = `
         },
         "Name": "WebCaptions",
         "ResourceType": "Operation",
+        "ServiceTimeout": "600",
         "ServiceToken": {
           "Ref": "WorkflowCustomResourceArn",
         },
@@ -3087,6 +3102,7 @@ exports[`Snapshot operator-library stack test 1`] = `
         },
         "Name": "WebToSRTCaptions",
         "ResourceType": "Operation",
+        "ServiceTimeout": "600",
         "ServiceToken": {
           "Ref": "WorkflowCustomResourceArn",
         },
@@ -3214,6 +3230,7 @@ exports[`Snapshot operator-library stack test 1`] = `
         },
         "Name": "WebToVTTCaptions",
         "ResourceType": "Operation",
+        "ServiceTimeout": "600",
         "ServiceToken": {
           "Ref": "WorkflowCustomResourceArn",
         },
@@ -3425,6 +3442,7 @@ exports[`Snapshot operator-library stack test 1`] = `
         },
         "Name": "celebrityRecognition",
         "ResourceType": "Operation",
+        "ServiceTimeout": "600",
         "ServiceToken": {
           "Ref": "WorkflowCustomResourceArn",
         },
@@ -3448,6 +3466,7 @@ exports[`Snapshot operator-library stack test 1`] = `
         },
         "Name": "celebrityRecognitionImage",
         "ResourceType": "Operation",
+        "ServiceTimeout": "600",
         "ServiceToken": {
           "Ref": "WorkflowCustomResourceArn",
         },
@@ -4460,6 +4479,7 @@ exports[`Snapshot operator-library stack test 1`] = `
         },
         "Name": "ComprehendEntities",
         "ResourceType": "Operation",
+        "ServiceTimeout": "600",
         "ServiceToken": {
           "Ref": "WorkflowCustomResourceArn",
         },
@@ -4489,6 +4509,7 @@ exports[`Snapshot operator-library stack test 1`] = `
         },
         "Name": "ComprehendKeyPhrases",
         "ResourceType": "Operation",
+        "ServiceTimeout": "600",
         "ServiceToken": {
           "Ref": "WorkflowCustomResourceArn",
         },
@@ -4899,6 +4920,7 @@ exports[`Snapshot operator-library stack test 1`] = `
         },
         "Name": "contentModeration",
         "ResourceType": "Operation",
+        "ServiceTimeout": "600",
         "ServiceToken": {
           "Ref": "WorkflowCustomResourceArn",
         },
@@ -4922,6 +4944,7 @@ exports[`Snapshot operator-library stack test 1`] = `
         },
         "Name": "contentModerationImage",
         "ResourceType": "Operation",
+        "ServiceTimeout": "600",
         "ServiceToken": {
           "Ref": "WorkflowCustomResourceArn",
         },
@@ -4951,6 +4974,7 @@ exports[`Snapshot operator-library stack test 1`] = `
         },
         "Name": "faceDetection",
         "ResourceType": "Operation",
+        "ServiceTimeout": "600",
         "ServiceToken": {
           "Ref": "WorkflowCustomResourceArn",
         },
@@ -4974,6 +4998,7 @@ exports[`Snapshot operator-library stack test 1`] = `
         },
         "Name": "faceDetectionImage",
         "ResourceType": "Operation",
+        "ServiceTimeout": "600",
         "ServiceToken": {
           "Ref": "WorkflowCustomResourceArn",
         },
@@ -5004,6 +5029,7 @@ exports[`Snapshot operator-library stack test 1`] = `
         },
         "Name": "faceSearch",
         "ResourceType": "Operation",
+        "ServiceTimeout": "600",
         "ServiceToken": {
           "Ref": "WorkflowCustomResourceArn",
         },
@@ -5028,6 +5054,7 @@ exports[`Snapshot operator-library stack test 1`] = `
         },
         "Name": "faceSearchImage",
         "ResourceType": "Operation",
+        "ServiceTimeout": "600",
         "ServiceToken": {
           "Ref": "WorkflowCustomResourceArn",
         },
@@ -5489,6 +5516,7 @@ exports[`Snapshot operator-library stack test 1`] = `
         },
         "Name": "labelDetection",
         "ResourceType": "Operation",
+        "ServiceTimeout": "600",
         "ServiceToken": {
           "Ref": "WorkflowCustomResourceArn",
         },
@@ -5512,6 +5540,7 @@ exports[`Snapshot operator-library stack test 1`] = `
         },
         "Name": "labelDetectionImage",
         "ResourceType": "Operation",
+        "ServiceTimeout": "600",
         "ServiceToken": {
           "Ref": "WorkflowCustomResourceArn",
         },
@@ -6072,6 +6101,7 @@ exports[`Snapshot operator-library stack test 1`] = `
         },
         "Name": "personTracking",
         "ResourceType": "Operation",
+        "ServiceTimeout": "600",
         "ServiceToken": {
           "Ref": "WorkflowCustomResourceArn",
         },
@@ -6624,6 +6654,7 @@ exports[`Snapshot operator-library stack test 1`] = `
         },
         "Name": "shotDetection",
         "ResourceType": "Operation",
+        "ServiceTimeout": "600",
         "ServiceToken": {
           "Ref": "WorkflowCustomResourceArn",
         },
@@ -7984,6 +8015,7 @@ exports[`Snapshot operator-library stack test 1`] = `
         },
         "Name": "technicalCueDetection",
         "ResourceType": "Operation",
+        "ServiceTimeout": "600",
         "ServiceToken": {
           "Ref": "WorkflowCustomResourceArn",
         },
@@ -8013,6 +8045,7 @@ exports[`Snapshot operator-library stack test 1`] = `
         },
         "Name": "textDetection",
         "ResourceType": "Operation",
+        "ServiceTimeout": "600",
         "ServiceToken": {
           "Ref": "WorkflowCustomResourceArn",
         },
@@ -8036,6 +8069,7 @@ exports[`Snapshot operator-library stack test 1`] = `
         },
         "Name": "textDetectionImage",
         "ResourceType": "Operation",
+        "ServiceTimeout": "600",
         "ServiceToken": {
           "Ref": "WorkflowCustomResourceArn",
         },

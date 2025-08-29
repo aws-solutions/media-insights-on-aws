@@ -1,3 +1,5 @@
+# NOTE: This solution is no longer being supported
+
 ![scheduled-workflow](https://github.com/aws-solutions/media-insights-on-aws/workflows/scheduled-workflow/badge.svg) ![release-workflow](https://github.com/aws-solutions/media-insights-on-aws/workflows/release-workflow/badge.svg)
 
 ![Media Insights on AWS logo](docs/assets/images/MI_logo.png)

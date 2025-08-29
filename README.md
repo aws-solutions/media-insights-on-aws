@@ -17,18 +17,6 @@ For additional details and sample use cases, refer to [How to Rapidly Prototype 
 
 This repository contains the Media Insights on AWS back-end framework. Users interact with the framework through REST APIs or by invoking Lambda functions directly. You will not find a graphical user interface (GUI) in this repository, but a reference application for Media Insights on AWS that includes a GUI is in the [Content Localization](https://github.com/aws-solutions/content-localization-on-aws) repository. 
 
-# Install
-
-You can deploy Media Insights on AWS in your AWS account with the following Cloud Formation templates. **The Cloud Formation stack name must be 12 or fewer characters long**.
-
-Region| Launch
-------|-----
-US East (N. Virginia) | [![Launch in us-east-1](docs/assets/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=mi&templateURL=https://solutions-reference.s3.amazonaws.com/media-insights-on-aws/latest/media-insights-on-aws-stack.template)
-US West (Oregon) | [![Launch in us-west-2](docs/assets/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=mi&templateURL=https://solutions-reference.s3.amazonaws.com/media-insights-on-aws/latest/media-insights-on-aws-stack.template)
-EU West (Ireland) | [![Launch in eu-west-1](docs/assets/images/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks/new?stackName=mi&templateURL=https://solutions-reference.s3.amazonaws.com/media-insights-on-aws/latest/media-insights-on-aws-stack.template)
-
-The Cloud Formation options for these one-click deploys are described in the [installation parameters](#installation-parameters) section.
-
 ## Build from scratch:
 
 Run the following commands to build and deploy Media Insights on AWS from scratch. Be sure to define values for `MI_STACK_NAME` and `REGION` first.
